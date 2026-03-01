@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, ShieldCheck, PieChart } from 'lucide-react';
 
 const Sidebar = ({ onLogout }) => {
     const location = useLocation();
@@ -9,6 +9,8 @@ const Sidebar = ({ onLogout }) => {
         { name: 'Add Vehicle', href: '/add-vehicle', icon: PlusCircle },
         { name: 'My Vehicles', href: '/my-vehicles', icon: Car },
         { name: 'Add Service', href: '/add-service', icon: Wrench },
+        { name: 'Garage Portal', href: '/garage-portal', icon: ShieldCheck },
+        { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];
 
     return (
@@ -34,8 +36,8 @@ const Sidebar = ({ onLogout }) => {
                             key={item.name}
                             to={item.href}
                             className={`group flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${isActive
-                                    ? 'bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50'
-                                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                ? 'bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50'
+                                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                                 }`}
                         >
                             <Icon

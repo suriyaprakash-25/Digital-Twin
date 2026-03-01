@@ -9,6 +9,9 @@ import MyVehicles from './pages/MyVehicles';
 import AddService from './pages/AddService';
 import ServiceHistory from './pages/ServiceHistory';
 import EditVehicle from './pages/EditVehicle';
+import ResaleReport from './pages/ResaleReport';
+import GaragePortal from './pages/GaragePortal';
+import Analytics from './pages/Analytics';
 
 function App() {
   return (
@@ -32,6 +35,9 @@ function App() {
           <Route path="/my-vehicles" element={<MyVehicles />} />
           <Route path="add-service" element={<AddService />} />
           <Route path="service-history/:vehicleId" element={<ServiceHistory />} />
+          <Route path="resale-report/:vehicleId" element={<ResaleReport />} />
+          <Route path="/garage-portal" element={<GaragePortal />} />
+          <Route path="/analytics" element={<Analytics />} />
         </Route>
       </Routes>
     </Router>

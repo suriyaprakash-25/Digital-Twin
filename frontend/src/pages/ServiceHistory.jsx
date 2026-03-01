@@ -41,6 +41,8 @@ const ServiceHistory = () => {
         setExpandedService(expandedService === id ? null : id);
     };
 
+    const totalExpense = services.reduce((sum, service) => sum + Number(service.totalCost || 0), 0);
+
     return (
         <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Link
@@ -61,9 +63,17 @@ const ServiceHistory = () => {
                         Production Service History
                     </h1>
                     {vehicle && (
-                        <p className="text-blue-700 mt-2 font-bold bg-blue-50 inline-block px-4 py-1.5 rounded-full border border-blue-100 text-sm shadow-sm">
-                            {vehicle.brand} {vehicle.model} • <span className="font-mono">{vehicle.vehicleNumber}</span>
-                        </p>
+                        <div className="flex flex-wrap items-center gap-3 mt-2">
+                            <p className="text-blue-700 font-bold bg-blue-50 inline-block px-4 py-1.5 rounded-full border border-blue-100 text-sm shadow-sm">
+                                {vehicle.brand} {vehicle.model} • <span className="font-mono">{vehicle.vehicleNumber}</span>
+                            </p>
+                            {services.length > 0 && (
+                                <p className="text-emerald-700 font-bold bg-emerald-50 inline-flex items-center px-4 py-1.5 rounded-full border border-emerald-100 text-sm shadow-sm whitespace-nowrap">
+                                    Total Expense: <IndianRupee className="h-3.5 w-3.5 ml-1 mr-0.5 shrink-0" />
+                                    {totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                            )}
+                        </div>
                     )}
                 </div>
 

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 import datetime
 import os
 from bson.objectid import ObjectId
@@ -138,7 +138,12 @@ def add_vehicle():
         "currentOdometerKm": int(current_odometer_km) if current_odometer_km else 0,
         "averageMonthlyKm": int(average_monthly_km) if average_monthly_km else 0,
         
+        # Audit & Data Integrity
         "ownerId": owner_id,
+        "createdBy": owner_id,
+        "role": get_jwt().get("role", "Vehicle Owner"),
+        "verificationStatus": "Pending",
+        "isArchived": False,
         "createdAt": datetime.datetime.utcnow()
     }
     
@@ -157,7 +162,8 @@ def get_my_vehicles():
     
     owner_id = get_jwt_identity()
     
-    vehicles_cursor = vehicles_collection.find({"ownerId": owner_id})
+    # Filter out soft-deleted (archived) vehicles
+    vehicles_cursor = vehicles_collection.find({"ownerId": owner_id, "isArchived": {"$ne": True}})
     vehicles = []
     
     for v in vehicles_cursor:
@@ -190,6 +196,8 @@ def get_my_vehicles():
             "averageMonthlyKm": v.get("averageMonthlyKm"),
             "ownerId": v.get("ownerId"),
             "rcBookUrl": v.get("rcBookUrl"),
+            "verificationStatus": v.get("verificationStatus", "Pending"),
+            "isArchived": v.get("isArchived", False),
             "createdAt": v.get("createdAt").isoformat() if v.get("createdAt") else None
         })
         
@@ -222,8 +230,12 @@ def edit_vehicle(vehicle_id):
         vehicles_collection = db["vehicles"]
         owner_id = get_jwt_identity()
         
-        # Verify ownership
-        vehicle = vehicles_collection.find_one({"_id": ObjectId(vehicle_id), "ownerId": owner_id})
+        # Verify ownership and not archived
+        vehicle = vehicles_collection.find_one({
+            "_id": ObjectId(vehicle_id), 
+            "ownerId": owner_id,
+            "isArchived": {"$ne": True}
+        })
         if not vehicle:
             return jsonify({"msg": "Vehicle not found or unauthorized"}), 404
             
@@ -276,20 +288,18 @@ def delete_vehicle(vehicle_id):
         if not vehicle:
             return jsonify({"msg": "Vehicle not found or unauthorized"}), 404
             
-        # Delete RC Book file if exists
-        old_rc_url = vehicle.get("rcBookUrl")
-        if old_rc_url:
-            old_filename = old_rc_url.split("/")[-1]
-            old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], old_filename)
-            if os.path.exists(old_path):
-                os.remove(old_path)
-                
-        # Delete related services
-        services_collection.delete_many({"vehicleId": vehicle_id})
+        # Soft delete related services
+        services_collection.update_many(
+            {"vehicleId": vehicle_id},
+            {"$set": {"isArchived": True}}
+        )
         
-        # Delete vehicle
-        vehicles_collection.delete_one({"_id": ObjectId(vehicle_id)})
+        # Soft delete vehicle
+        vehicles_collection.update_one(
+            {"_id": ObjectId(vehicle_id)},
+            {"$set": {"isArchived": True}}
+        )
         
-        return jsonify({"msg": "Vehicle deleted successfully"}), 200
+        return jsonify({"msg": "Vehicle archived successfully"}), 200
     except Exception as e:
-        return jsonify({"msg": "Error deleting vehicle", "error": str(e)}), 500
+        return jsonify({"msg": "Error archiving vehicle", "error": str(e)}), 500

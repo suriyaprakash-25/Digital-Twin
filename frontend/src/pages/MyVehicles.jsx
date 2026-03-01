@@ -113,6 +113,12 @@ const MyVehicles = () => {
                                             <Edit className="h-4 w-4" /> Edit Details
                                         </button>
                                         <button
+                                            onClick={() => navigate(`/resale-report/${vehicle.id}`)}
+                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-600 flex items-center gap-2 font-medium transition-colors border-b border-slate-100 pb-3 mb-1"
+                                        >
+                                            <ShieldAlert className="h-4 w-4" /> Trust Report
+                                        </button>
+                                        <button
                                             onClick={() => handleDelete(vehicle.id)}
                                             className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium transition-colors"
                                         >

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 import datetime
 from bson.objectid import ObjectId
 
@@ -101,8 +101,12 @@ def add_service():
         # Integrity metadata
         "abnormalKmJump": flagged_abnormal_jump,
         "confidenceScore": 80 if flagged_abnormal_jump else 100,
-        "createdAt": datetime.datetime.utcnow(),
-        "ownerId": owner_id
+        "ownerId": owner_id,
+        "createdBy": owner_id,
+        "role": get_jwt().get("role", "Vehicle Owner"),
+        "verificationStatus": "Pending",
+        "isArchived": False,
+        "createdAt": datetime.datetime.utcnow()
     }
     
     try:
@@ -129,8 +133,11 @@ def get_services(vehicle_id):
     except Exception as e:
          return jsonify({"msg": "Invalid vehicle ID"}), 400
     
-    # Get services sorted by latest date
-    services_cursor = services_collection.find({"vehicleId": vehicle_id}).sort("serviceDate", -1)
+    # Get services sorted by latest date, excluding archived
+    services_cursor = services_collection.find({
+        "vehicleId": vehicle_id,
+        "isArchived": {"$ne": True}
+    }).sort("serviceDate", -1)
     services = []
     
     for s in services_cursor:
@@ -152,6 +159,8 @@ def get_services(vehicle_id):
             "recommendedKm": s.get("recommendedKm"),
             "recommendedDate": s.get("recommendedDate"),
             "abnormalKmJump": s.get("abnormalKmJump", False),
+            "verificationStatus": s.get("verificationStatus", "Pending"),
+            "isArchived": s.get("isArchived", False),
             "createdAt": s.get("createdAt").isoformat() if s.get("createdAt") else None
         })
         

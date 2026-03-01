@@ -4,6 +4,8 @@ import { Car, Activity, Wrench, Settings, TrendingUp } from 'lucide-react';
 
 const Dashboard = () => {
     const [vehicles, setVehicles] = useState([]);
+    const [reminders, setReminders] = useState([]);
+    const [healthData, setHealthData] = useState({});
     const [loading, setLoading] = useState(true);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -11,10 +13,33 @@ const Dashboard = () => {
         const fetchDashboardData = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('http://localhost:5000/api/vehicles/myvehicles', {
+
+                // Fetch vehicles
+                const vehiclesRes = await axios.get('http://localhost:5000/api/vehicles/myvehicles', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setVehicles(res.data);
+                const fetchedVehicles = vehiclesRes.data;
+                setVehicles(fetchedVehicles);
+
+                // Fetch reminders
+                const remindersRes = await axios.get('http://localhost:5000/api/reminders', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setReminders(remindersRes.data);
+
+                // Fetch health data for each vehicle
+                const healthPromises = fetchedVehicles.map(v =>
+                    axios.get(`http://localhost:5000/api/health/${v.id}`, { headers: { Authorization: `Bearer ${token}` } })
+                        .catch(() => ({ data: { healthScore: 100 } })) // Fallback on error
+                );
+
+                const healthResponses = await Promise.all(healthPromises);
+                const healthMap = {};
+                healthResponses.forEach((res, index) => {
+                    healthMap[fetchedVehicles[index].id] = res.data;
+                });
+                setHealthData(healthMap);
+
             } catch (err) {
                 console.error('Failed to fetch dashboard data', err);
             } finally {
@@ -24,6 +49,16 @@ const Dashboard = () => {
 
         fetchDashboardData();
     }, []);
+
+    // Derived statistics
+    const activeAlertsCount = reminders.filter(r => r.status === 'overdue' || r.priority === 'critical' || r.priority === 'high').length;
+    const upcomingServicesCount = reminders.filter(r => r.type === 'service').length;
+
+    let avgHealth = 0;
+    if (vehicles.length > 0) {
+        const total = Object.values(healthData).reduce((sum, h) => sum + (h.healthScore || 100), 0);
+        avgHealth = Math.round(total / vehicles.length);
+    }
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -50,73 +85,115 @@ const Dashboard = () => {
                     value={loading ? '-' : vehicles.length.toString()}
                     icon={<Car className="h-6 w-6 text-blue-600" />}
                     color="blue"
-                    trend="+1 this month"
+                    trend={vehicles.length > 0 ? "Active Fleet" : "Add one to start"}
                 />
                 <DashboardCard
                     title="Active Alerts"
-                    value="0"
-                    icon={<Activity className="h-6 w-6 text-rose-600" />}
-                    color="rose"
-                    trend="Looking good"
+                    value={loading ? '-' : activeAlertsCount.toString()}
+                    icon={<Activity className={`h-6 w-6 ${activeAlertsCount > 0 ? 'text-rose-600' : 'text-slate-400'}`} />}
+                    color={activeAlertsCount > 0 ? "rose" : "slate"}
+                    trend={activeAlertsCount > 0 ? "Requires action" : "Looking good"}
                 />
                 <DashboardCard
                     title="Upcoming Services"
-                    value="0"
-                    icon={<Wrench className="h-6 w-6 text-amber-600" />}
-                    color="amber"
-                    trend="All up to date"
+                    value={loading ? '-' : upcomingServicesCount.toString()}
+                    icon={<Wrench className={`h-6 w-6 ${upcomingServicesCount > 0 ? 'text-amber-600' : 'text-slate-400'}`} />}
+                    color={upcomingServicesCount > 0 ? "amber" : "slate"}
+                    trend={upcomingServicesCount > 0 ? "Schedule soon" : "All up to date"}
                 />
                 <DashboardCard
                     title="System Health"
-                    value="100%"
+                    value={loading ? '-' : `${avgHealth}%`}
                     icon={<Settings className="h-6 w-6 text-emerald-600" />}
-                    color="emerald"
-                    trend="Optimal performance"
+                    color={avgHealth >= 80 ? 'emerald' : avgHealth >= 50 ? 'amber' : 'rose'}
+                    trend={avgHealth >= 80 ? 'Optimal performance' : 'Needs attention'}
                 />
             </div>
 
-            <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm relative overflow-hidden">
-                <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                        <TrendingUp className="h-6 w-6 text-blue-500" />
-                        Recent Fleet Activity
-                    </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Reminders List */}
+                <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                            <Activity className="h-6 w-6 text-rose-500" />
+                            Smart Reminders
+                        </h2>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex justify-center py-12">
+                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-600"></div>
+                        </div>
+                    ) : reminders.length === 0 ? (
+                        <div className="text-center py-16 bg-slate-50/50 rounded-2xl border border-slate-200 border-dashed">
+                            <p className="text-slate-900 font-semibold text-lg">No pending reminders.</p>
+                            <p className="text-slate-500 mt-1 font-medium">Your fleet is completely up to date.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {reminders.slice(0, 5).map(r => (
+                                <div key={r.id} className={`flex flex-col p-5 bg-white rounded-2xl border ${r.priority === 'critical' ? 'border-rose-200 bg-rose-50/30' : 'border-slate-100'} hover:border-rose-200 hover:shadow-md transition-all`}>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-bold text-slate-900">{r.title}</h4>
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold shadow-sm ${r.status === 'overdue' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                                            {r.status === 'overdue' ? 'OVERDUE' : `${r.daysRemaining} days`}
+                                        </span>
+                                    </div>
+                                    <p className="text-slate-600 text-sm font-medium">{r.vehicleName} ({r.vehicleNumber})</p>
+                                    <p className="text-slate-400 text-xs mt-1">Due: {new Date(r.dueDate).toLocaleDateString()}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
-                {loading ? (
-                    <div className="flex justify-center py-12">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                {/* Fleet Details with Health Scores */}
+                <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                            <TrendingUp className="h-6 w-6 text-blue-500" />
+                            Fleet Health
+                        </h2>
                     </div>
-                ) : vehicles.length === 0 ? (
-                    <div className="text-center py-16 bg-slate-50/50 rounded-2xl border border-slate-200 border-dashed">
-                        <div className="mx-auto h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                            <Car className="h-8 w-8 text-slate-400" />
+
+                    {loading ? (
+                        <div className="flex justify-center py-12">
+                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
                         </div>
-                        <p className="text-slate-900 font-semibold text-lg">No vehicles registered yet.</p>
-                        <p className="text-slate-500 mt-1 font-medium">Add your first vehicle to start building your digital twin.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {vehicles.slice(0, 5).map(v => (
-                            <div key={v.id} className="flex items-center justify-between p-5 bg-white rounded-2xl border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all duration-300 group cursor-pointer">
-                                <div className="flex items-center gap-5">
-                                    <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
-                                        <Car className="h-6 w-6 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                    ) : vehicles.length === 0 ? (
+                        <div className="text-center py-16 bg-slate-50/50 rounded-2xl border border-slate-200 border-dashed">
+                            <Car className="h-8 w-8 text-slate-400 mx-auto mb-4" />
+                            <p className="text-slate-900 font-semibold text-lg">No vehicles registered.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {vehicles.slice(0, 5).map(v => {
+                                const h = healthData[v.id] || { healthScore: 100, conditionLevel: 'Excellent' };
+                                const scoreColor = h.healthScore >= 80 ? 'text-emerald-600' : h.healthScore >= 50 ? 'text-amber-600' : 'text-rose-600';
+                                const barColor = h.healthScore >= 80 ? 'bg-emerald-500' : h.healthScore >= 50 ? 'bg-amber-500' : 'bg-rose-500';
+
+                                return (
+                                    <div key={v.id} className="flex flex-col p-5 bg-white rounded-2xl border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all group">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <div>
+                                                <p className="text-slate-900 font-bold text-lg">{v.brand} {v.model}</p>
+                                                <p className="text-slate-500 font-medium text-xs mt-0.5">{v.vehicleNumber}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className={`text-2xl font-black tracking-tight ${scoreColor}`}>{h.healthScore}</p>
+                                                <p className="text-slate-400 text-xs font-bold uppercase">{h.conditionLevel}</p>
+                                            </div>
+                                        </div>
+                                        {/* Progress Bar */}
+                                        <div className="w-full bg-slate-100 rounded-full h-2.5 mb-1 overflow-hidden">
+                                            <div className={`${barColor} h-2.5 rounded-full transition-all duration-1000`} style={{ width: `${h.healthScore}%` }}></div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-slate-900 font-bold text-lg">{v.model} <span className="text-slate-400 font-normal text-sm ml-1">({v.year})</span></p>
-                                        <p className="text-slate-500 font-medium text-sm mt-0.5">{v.vehicleNumber} • {v.fuelType}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <span className="px-3.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold shadow-sm shadow-emerald-100/50">
-                                        Active Twin
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
