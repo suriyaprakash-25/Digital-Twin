@@ -5,7 +5,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { loadConfig } = require('./src/config');
-const { connectToMongo } = require('./src/db');
+const { connectToMongo, getMongoStatus, getDb } = require('./src/db');
 
 const authRoutes = require('./src/routes/auth');
 const vehicleRoutes = require('./src/routes/vehicles');
@@ -36,6 +36,31 @@ app.use('/uploads', express.static(uploadsDir));
 // Root
 app.get('/', (req, res) => {
   res.send('Mobility Digital Twin API is running!');
+});
+
+// Simple status endpoint to confirm DB connectivity
+app.get('/api/status', async (req, res) => {
+  const status = getMongoStatus();
+  let pingOk = false;
+
+  try {
+    if (status.connected) {
+      await getDb().command({ ping: 1 });
+      pingOk = true;
+    }
+  } catch (e) {
+    pingOk = false;
+  }
+
+  res.status(status.connected && pingOk ? 200 : 503).json({
+    ok: status.connected && pingOk,
+    mongo: {
+      connected: status.connected,
+      dbName: status.dbName,
+      pingOk,
+      lastError: status.lastError
+    }
+  });
 });
 
 // Routes
