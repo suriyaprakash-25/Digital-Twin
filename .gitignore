@@ -1,6 +1,7 @@
 node_modules/
 backend/venv/
-backend/__pycache__/
+**/__pycache__/
+*.pyc
 backend/uploads/
 .env
 .DS_Store
