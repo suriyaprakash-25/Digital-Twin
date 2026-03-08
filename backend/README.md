@@ -15,12 +15,25 @@ Edit `.env` if needed:
 
 - `MONGO_URI=mongodb://127.0.0.1:27017`
 - `MONGO_DB_NAME=digital_twin`
+- `JWT_SECRET_KEY=<required>`
+
+Optional (for FCM push notifications):
+
+- `FIREBASE_SERVICE_ACCOUNT_PATH=<path-to-firebase-adminsdk.json>`
 
 Collections used by the backend:
 
 - `users`
 - `vehicles`
 - `services`
+
+Marketplace collections:
+
+- `garages`
+- `garageServices`
+- `bookings`
+- `deviceTokens`
+- `notifications`
 
 If you accidentally inserted documents into the default `test` database via Compass, you can copy them into `digital_twin`:
 

@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const { getDb } = require('../db');
 const { loadConfig } = require('../config');
+const { normalizeRole } = require('../middleware/auth');
 
 const router = express.Router();
 const config = loadConfig();
@@ -11,7 +12,7 @@ const config = loadConfig();
 router.post('/signup', async (req, res) => {
   const { name, email, password, role } = req.body || {};
 
-  if (!name || !email || !password || !role) {
+  if (!name || !email || !password) {
     return res.status(400).json({ msg: 'All fields are required' });
   }
 
@@ -25,11 +26,13 @@ router.post('/signup', async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(String(password), 10);
 
+  const normalizedRole = normalizeRole(role);
+
   const newUser = {
     name,
     email,
     password: hashedPassword,
-    role,
+    role: normalizedRole,
     createdAt: new Date()
   };
 
@@ -62,7 +65,7 @@ router.post('/login', async (req, res) => {
 
   const token = jwt.sign(
     {
-      role: user.role
+      role: normalizeRole(user.role)
     },
     config.jwtSecret,
     {
@@ -78,7 +81,7 @@ router.post('/login', async (req, res) => {
       id: String(user._id),
       name: user.name,
       email: user.email,
-      role: user.role
+      role: normalizeRole(user.role)
     }
   });
 });

@@ -12,6 +12,10 @@ import EditVehicle from './pages/EditVehicle';
 import ResaleReport from './pages/ResaleReport';
 import GaragePortal from './pages/GaragePortal';
 import Analytics from './pages/Analytics';
+import HomeRedirect from './pages/HomeRedirect';
+import UserDashboard from './pages/UserDashboard';
+import GarageDashboard from './pages/GarageDashboard';
+import Marketplace from './pages/Marketplace';
 
 function App() {
   return (
@@ -29,7 +33,13 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
+          <Route index element={<HomeRedirect />} />
+          <Route path="/user-dashboard" element={<UserDashboard />} />
+          <Route path="/garage-dashboard" element={<GarageDashboard />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+
+          {/* Legacy digital twin routes */}
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/add-vehicle" element={<AddVehicle />} />
           <Route path="/edit-vehicle/:id" element={<EditVehicle />} />
           <Route path="/my-vehicles" element={<MyVehicles />} />

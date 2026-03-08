@@ -1,5 +1,22 @@
 # React + Vite
 
+## Setup (FCM Web Push)
+
+Create `frontend/.env` from the example and paste your Firebase Web App config:
+
+```bash
+cp .env.example .env
+```
+
+Required for push notifications:
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_VAPID_KEY`
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

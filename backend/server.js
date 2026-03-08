@@ -6,6 +6,7 @@ const cors = require('cors');
 
 const { loadConfig } = require('./src/config');
 const { connectToMongo, getMongoStatus, getDb } = require('./src/db');
+const { initFirebase, getFirebaseInitError } = require('./src/firebase');
 
 const authRoutes = require('./src/routes/auth');
 const vehicleRoutes = require('./src/routes/vehicles');
@@ -15,6 +16,10 @@ const reminderRoutes = require('./src/routes/reminders');
 const resaleRoutes = require('./src/routes/resale');
 const garageRoutes = require('./src/routes/garage');
 const analyticsRoutes = require('./src/routes/analytics');
+const marketplaceRoutes = require('./src/routes/marketplace');
+const garagesRoutes = require('./src/routes/garages');
+const bookingRoutes = require('./src/routes/bookings');
+const notificationRoutes = require('./src/routes/notifications');
 
 const app = express();
 const config = loadConfig();
@@ -59,6 +64,10 @@ app.get('/api/status', async (req, res) => {
       dbName: status.dbName,
       pingOk,
       lastError: status.lastError
+    },
+    firebase: {
+      initialized: Boolean(initFirebase(config)),
+      lastError: getFirebaseInitError()
     }
   });
 });
@@ -72,6 +81,12 @@ app.use('/api/reminders', reminderRoutes);
 app.use('/api/resale', resaleRoutes);
 app.use('/api/garage', garageRoutes);
 app.use('/api/analytics', analyticsRoutes);
+
+// Marketplace + two-sided garage workflows
+app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/garages', garagesRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Start after DB connects
 (async () => {
