@@ -1,17 +1,36 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, ShieldCheck, PieChart } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, ShieldCheck, PieChart, Store } from 'lucide-react';
+
+function normalizeRole(role) {
+    const r = String(role || '').trim().toLowerCase();
+    if (r === 'garage' || r === 'service_center' || r === 'servicecenter' || r === 'service center') return 'GARAGE';
+    if (r === 'vehicle_owner' || r === 'vehicle owner' || r === 'user' || r === 'customer' || r === 'owner') return 'USER';
+    return role || 'USER';
+}
 
 const Sidebar = ({ onLogout }) => {
     const location = useLocation();
 
-    const navigation = [
-        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    const userRaw = localStorage.getItem('user');
+    const user = userRaw ? JSON.parse(userRaw) : null;
+    const role = normalizeRole(user?.role);
+
+    const userNavigation = [
+        { name: 'Dashboard', href: '/user-dashboard', icon: LayoutDashboard },
+        { name: 'Marketplace', href: '/marketplace', icon: Store },
         { name: 'Add Vehicle', href: '/add-vehicle', icon: PlusCircle },
         { name: 'My Vehicles', href: '/my-vehicles', icon: Car },
         { name: 'Add Service', href: '/add-service', icon: Wrench },
+        { name: 'Analytics', href: '/analytics', icon: PieChart },
+    ];
+
+    const garageNavigation = [
+        { name: 'Dashboard', href: '/garage-dashboard', icon: LayoutDashboard },
         { name: 'Garage Portal', href: '/garage-portal', icon: ShieldCheck },
         { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];
+
+    const navigation = role === 'GARAGE' ? garageNavigation : userNavigation;
 
     return (
         <div className="flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-sm z-20 transition-all duration-300">

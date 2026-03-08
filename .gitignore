@@ -7,3 +7,7 @@ backend/uploads/
 .DS_Store
 dist/
 build/
+
+# Firebase Admin service account keys (NEVER commit)
+backend/*firebase-adminsdk*.json
+backend/firebase-service-account*.json

@@ -3,6 +3,20 @@ const { loadConfig } = require('../config');
 
 const config = loadConfig();
 
+function normalizeRole(role) {
+  const r = String(role || '').trim().toLowerCase();
+
+  if (r === 'garage' || r === 'service_center' || r === 'servicecenter' || r === 'service centre' || r === 'service center') {
+    return 'GARAGE';
+  }
+
+  if (r === 'vehicle_owner' || r === 'vehicle owner' || r === 'user' || r === 'customer' || r === 'owner') {
+    return 'USER';
+  }
+
+  return String(role || 'USER');
+}
+
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';
   const parts = authHeader.split(' ');
@@ -16,7 +30,7 @@ function requireAuth(req, res, next) {
     const payload = jwt.verify(token, config.jwtSecret);
     req.user = {
       id: payload.sub,
-      role: payload.role
+      role: normalizeRole(payload.role)
     };
     return next();
   } catch (e) {
@@ -24,4 +38,17 @@ function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth };
+function requireRole(allowedRoles) {
+  const allowed = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+  const normalizedAllowed = allowed.map(normalizeRole);
+
+  return function roleMiddleware(req, res, next) {
+    const role = normalizeRole(req.user && req.user.role);
+    if (!normalizedAllowed.includes(role)) {
+      return res.status(403).json({ msg: 'Forbidden' });
+    }
+    return next();
+  };
+}
+
+module.exports = { requireAuth, requireRole, normalizeRole };

@@ -1,8 +1,21 @@
 import { Outlet, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import Sidebar from './Sidebar';
+import { tryRegisterFcmToken } from '../utils/fcm';
 
 const MainLayout = () => {
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const authToken = localStorage.getItem('token');
+        if (!authToken) return;
+
+        // Best-effort: if Firebase web config env vars are not provided,
+        // this will no-op with a reason.
+        tryRegisterFcmToken({ authToken, requestPermission: false }).catch(() => {
+            // ignore
+        });
+    }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
