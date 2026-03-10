@@ -40,7 +40,7 @@ const Sidebar = ({ onLogout }) => {
                         <Car className="h-5 w-5 text-white" />
                     </div>
                     <span className="text-slate-900 font-extrabold text-lg tracking-tight hidden sm:block truncate">
-                        Mobility DT
+                        Drivix
                     </span>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Car, CheckCircle, Hash, Calendar, Fuel, FileText, User, Phone, IndianRupee, Activity, Tag, Shield, FileCheck, Layers } from 'lucide-react';
+import { Car, CheckCircle, Hash, Calendar, Fuel, FileText, User, Phone, IndianRupee, Activity, Tag, FileCheck, Layers } from 'lucide-react';
 
 const AddVehicle = () => {
     const [formData, setFormData] = useState({
@@ -9,8 +9,6 @@ const AddVehicle = () => {
         vehicleNumber: '', brand: '', model: '', variant: '', vehicleType: 'Car', fuelType: 'Petrol', color: '', year: '', registrationDate: '', registeredRTO: '',
         // Ownership
         ownerName: '', phone: '', ownershipCount: '1', purchaseDate: '', purchasePrice: '',
-        // Legal
-        insuranceProvider: '', insuranceExpiry: '', pucExpiry: '', rcExpiry: '', roadTaxValidTill: '', fitnessExpiry: '',
         // Verification
         chassisNumber: '', engineNumber: '',
         // Usage
@@ -135,22 +133,6 @@ const AddVehicle = () => {
                         {renderInputGroup("Ownership Count", "ownershipCount", "number", <Hash className="h-5 w-5" />, "1", null, { min: 1 })}
                         {renderInputGroup("Purchase Date", "purchaseDate", "date", <Calendar className="h-5 w-5" />)}
                         {renderInputGroup("Purchase Price (₹)", "purchasePrice", "number", <IndianRupee className="h-5 w-5" />, "e.g. 1000000")}
-                    </div>
-                </div>
-
-                {/* Legal & Validity */}
-                <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="bg-emerald-50 px-8 py-5 border-b border-emerald-100 flex items-center gap-3">
-                        <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600"><Shield /></div>
-                        <h2 className="text-xl font-bold text-slate-800">Legal Validity (Expiries)</h2>
-                    </div>
-                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {renderInputGroup("Insurance Provider", "insuranceProvider", "text", <Shield className="h-5 w-5" />, "e.g. HDFC ERGO")}
-                        {renderInputGroup("Insurance Expiry", "insuranceExpiry", "date", <Calendar className="h-5 w-5" />)}
-                        {renderInputGroup("PUC Expiry", "pucExpiry", "date", <Calendar className="h-5 w-5" />)}
-                        {renderInputGroup("RC Expiry", "rcExpiry", "date", <Calendar className="h-5 w-5" />)}
-                        {renderInputGroup("Road Tax Valid Till", "roadTaxValidTill", "date", <Calendar className="h-5 w-5" />)}
-                        {renderInputGroup("Fitness Expiry", "fitnessExpiry", "date", <Calendar className="h-5 w-5" />)}
                     </div>
                 </div>
 
