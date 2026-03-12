@@ -15,6 +15,8 @@ const Sidebar = ({ onLogout }) => {
     const user = userRaw ? JSON.parse(userRaw) : null;
     const role = normalizeRole(user?.role);
 
+    const dashboardHref = role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard';
+
     const userNavigation = [
         { name: 'Dashboard', href: '/user-dashboard', icon: LayoutDashboard },
         { name: 'Marketplace', href: '/marketplace', icon: Store },
@@ -35,14 +37,17 @@ const Sidebar = ({ onLogout }) => {
     return (
         <div className="flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-sm z-20 transition-all duration-300">
             <div className="flex items-center justify-center p-6 border-b border-slate-100 bg-white/50 backdrop-blur-sm">
-                <div className="flex items-center gap-3 w-full px-2">
+                {/* <div className="flex items-center gap-3 w-full px-2"> */}
+                    <Link to={dashboardHref} aria-label="Go to dashboard" className='flex items-center gap-3 w-full px-2 rounded-lg hover:bg-slate-50
+             focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40'>
                     <div className="h-10 w-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
                         <Car className="h-5 w-5 text-white" />
                     </div>
                     <span className="text-slate-900 font-extrabold text-lg tracking-tight hidden sm:block truncate">
                         Drivix
                     </span>
-                </div>
+                    </Link>
+                {/* </div> */}
             </div>
 
             <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5">
