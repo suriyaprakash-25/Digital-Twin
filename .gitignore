@@ -11,3 +11,4 @@ build/
 # Firebase Admin service account keys (NEVER commit)
 backend/*firebase-adminsdk*.json
 backend/firebase-service-account*.json
+backend/garage-platform-cc42d-firebase-adminsdk-fbsvc-fbfa40d04a.json
