@@ -18,9 +18,9 @@ const MainLayout = () => {
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
+        localStorage.clear();
+        window.location.replace("/");
+        
     };
 
     return (
