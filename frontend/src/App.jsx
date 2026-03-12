@@ -15,6 +15,8 @@ import GaragePortal from './pages/GaragePortal';
 import Analytics from './pages/Analytics';
 import UserDashboard from './pages/UserDashboard';
 import GarageDashboard from './pages/GarageDashboard';
+import GarageProfile from './pages/GarageProfile';
+import GarageServices from './pages/GarageServices';
 import Marketplace from './pages/Marketplace';
 
 function App() {
@@ -47,6 +49,8 @@ function App() {
           <Route path="/service-history/:vehicleId" element={<ServiceHistory />} />
           <Route path="/resale-report/:vehicleId" element={<ResaleReport />} />
           <Route path="/garage-portal" element={<GaragePortal />} />
+          <Route path="/garage-profile" element={<GarageProfile />} />
+          <Route path="/garage-services" element={<GarageServices />} />
           <Route path="/analytics" element={<Analytics />} />
         </Route>
       </Routes>

@@ -48,6 +48,7 @@ router.get('/', async (req, res) => {
       ownerUserId: g.ownerUserId,
       isActive: Boolean(g.isActive !== false),
       createdAt: g.createdAt,
+      garageLocation: g.garageLocation || null,
       services: servicesByGarage.get(String(g._id)) || []
     }));
 

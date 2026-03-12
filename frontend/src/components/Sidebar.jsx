@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, ShieldCheck, PieChart, Store } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2 } from 'lucide-react';
 
 function normalizeRole(role) {
     const r = String(role || '').trim().toLowerCase();
@@ -26,7 +26,8 @@ const Sidebar = ({ onLogout }) => {
 
     const garageNavigation = [
         { name: 'Dashboard', href: '/garage-dashboard', icon: LayoutDashboard },
-        { name: 'Garage Portal', href: '/garage-portal', icon: ShieldCheck },
+        { name: 'Garage Profile', href: '/garage-profile', icon: Building2 },
+        { name: 'Your Services', href: '/garage-services', icon: Wrench },
         { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];
 
