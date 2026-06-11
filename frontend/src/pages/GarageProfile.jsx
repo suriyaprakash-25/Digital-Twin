@@ -101,7 +101,7 @@ const GarageProfile = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600" />
       </div>
     );
   }
@@ -118,7 +118,7 @@ const GarageProfile = () => {
       </button>
 
       {/* Hero banner */}
-      <div className="relative rounded-3xl overflow-hidden mb-8 bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 p-8 shadow-2xl">
+      <div className="relative rounded-3xl overflow-hidden mb-8 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-8 shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.25),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(16,185,129,0.15),transparent_60%)]" />
         <div className="relative z-10 flex items-center gap-6">
@@ -127,14 +127,14 @@ const GarageProfile = () => {
             <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg">
               {photoUrl
                 ? <img src={photoUrl} alt="Garage" className="w-full h-full object-cover" />
-                : <div className="w-full h-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-black">{initials}</div>
+                : <div className="w-full h-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-black">{initials}</div>
               }
             </div>
             <button
               type="button"
               onClick={() => photoInputRef.current?.click()}
               disabled={uploadingPhoto}
-              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-md transition-colors disabled:opacity-60"
+              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-teal-500 hover:bg-teal-600 text-white rounded-lg flex items-center justify-center shadow-md transition-colors disabled:opacity-60"
               title="Upload garage photo"
             >
               {uploadingPhoto
@@ -150,7 +150,7 @@ const GarageProfile = () => {
             />
           </div>
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-bold tracking-wide border border-blue-500/30 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-500/20 text-teal-300 rounded-full text-xs font-bold tracking-wide border border-teal-500/30 mb-2">
               <Store className="h-3.5 w-3.5" /> Garage Partner
             </div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight">
@@ -182,7 +182,7 @@ const GarageProfile = () => {
       {/* Form card */}
       <form onSubmit={handleSave} className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
         <div className="px-8 py-5 border-b border-slate-100 flex items-center gap-3 bg-slate-50">
-          <div className="p-2 bg-blue-100 rounded-xl text-blue-600"><Building2 className="h-5 w-5" /></div>
+          <div className="p-2 bg-teal-100 rounded-xl text-teal-600"><Building2 className="h-5 w-5" /></div>
           <div>
             <h2 className="text-lg font-extrabold text-slate-900">Garage Information</h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5">This info appears in the marketplace listing</p>
@@ -196,7 +196,7 @@ const GarageProfile = () => {
               onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
               placeholder="e.g. Sharma Auto Works"
               required
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </Field>
 
@@ -205,7 +205,7 @@ const GarageProfile = () => {
               value={profile.phone}
               onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
               placeholder="e.g. 9876543210"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </Field>
 
@@ -214,7 +214,7 @@ const GarageProfile = () => {
               value={profile.city}
               onChange={e => setProfile(p => ({ ...p, city: e.target.value }))}
               placeholder="e.g. Bengaluru"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </Field>
 
@@ -223,7 +223,7 @@ const GarageProfile = () => {
               value={profile.address}
               onChange={e => setProfile(p => ({ ...p, address: e.target.value }))}
               placeholder="Street, Area, Landmark"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </Field>
 
@@ -234,7 +234,7 @@ const GarageProfile = () => {
                 onChange={e => setProfile(p => ({ ...p, description: e.target.value }))}
                 placeholder="Tell customers what makes your garage special — specialisations, certifications, experience..."
                 rows={4}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all resize-none"
               />
             </Field>
           </div>
@@ -247,7 +247,7 @@ const GarageProfile = () => {
           <button
             type="submit"
             disabled={saving || !isDirty}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
           >
             <Save className="h-4 w-4" />
             {saving ? 'Saving…' : 'Save Profile'}
@@ -259,7 +259,7 @@ const GarageProfile = () => {
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden mt-6">
         <div className="px-8 py-5 flex items-center justify-between bg-slate-50 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-xl text-blue-600"><MapPin className="h-5 w-5" /></div>
+            <div className="p-2 bg-teal-100 rounded-xl text-teal-600"><MapPin className="h-5 w-5" /></div>
             <div>
               <h2 className="text-lg font-extrabold text-slate-900">Garage Location</h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -292,7 +292,7 @@ const GarageProfile = () => {
               <button
                 type="button"
                 onClick={() => setShowLocationPicker(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition-all shadow-sm"
               >
                 <MapPin className="h-4 w-4" />
                 {garageLocation ? 'Edit Location' : 'Add Garage Location'}

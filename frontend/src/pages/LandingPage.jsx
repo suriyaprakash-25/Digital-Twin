@@ -76,24 +76,24 @@ const LandingPage = () => {
     @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
     @keyframes floatY2{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
     @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-    @keyframes glowPulse{0%,100%{box-shadow:0 4px 24px rgba(37,99,235,.35),0 2px 8px rgba(37,99,235,.15)}50%{box-shadow:0 8px 40px rgba(37,99,235,.55),0 4px 16px rgba(37,99,235,.25)}}
+    @keyframes glowPulse{0%,100%{box-shadow:0 4px 24px rgba(13,148,136,.35),0 2px 8px rgba(13,148,136,.15)}50%{box-shadow:0 8px 40px rgba(13,148,136,.55),0 4px 16px rgba(13,148,136,.25)}}
     @keyframes dotPulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
     @keyframes scanline{0%{top:-4px}100%{top:100%}}
     .fu{opacity:0;animation:fadeUp .75s ease forwards}
     .fu1{animation-delay:.1s}.fu2{animation-delay:.25s}.fu3{animation-delay:.4s}.fu4{animation-delay:.55s}.fu5{animation-delay:.7s}
     .float{animation:floatY 7s ease-in-out infinite}
     .float2{animation:floatY2 9s 1s ease-in-out infinite}
-    .shimmer-text{background:linear-gradient(90deg,#2563eb,#0284c7,#7c3aed,#2563eb);background-size:250% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 4.5s linear infinite}
+    .shimmer-text{background:linear-gradient(90deg,#0d9488,#14b8a6,#0f766e,#0d9488);background-size:250% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 4.5s linear infinite}
     .glow-cta{animation:glowPulse 3s ease-in-out infinite;transition:transform .18s ease}
     .glow-cta:hover{transform:translateY(-3px) scale(1.03)!important}
     .card{transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;background:#fff;border:1px solid #e2e8f0;border-radius:20px}
-    .card:hover{transform:translateY(-10px)!important;box-shadow:0 24px 60px rgba(37,99,235,.13)!important;border-color:rgba(37,99,235,.35)!important}
+    .card:hover{transform:translateY(-10px)!important;box-shadow:0 24px 60px rgba(13,148,136,.13)!important;border-color:rgba(13,148,136,.35)!important}
     .nav-a{color:#475569;font-size:.88rem;font-weight:500;text-decoration:none;position:relative;transition:color .2s}
-    .nav-a::after{content:'';position:absolute;width:0;height:2px;bottom:-5px;left:0;background:linear-gradient(90deg,#2563eb,#0284c7);transition:width .3s ease}
-    .nav-a:hover{color:#2563eb}.nav-a:hover::after{width:100%}
-    .scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(37,99,235,.4),transparent);animation:scanline 2.5s linear infinite;pointer-events:none}
+    .nav-a::after{content:'';position:absolute;width:0;height:2px;bottom:-5px;left:0;background:linear-gradient(90deg,#0d9488,#14b8a6);transition:width .3s ease}
+    .nav-a:hover{color:#0d9488}.nav-a:hover::after{width:100%}
+    .scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(13,148,136,.4),transparent);animation:scanline 2.5s linear infinite;pointer-events:none}
     ::-webkit-scrollbar{width:6px;background:#f1f5f9}
-    ::-webkit-scrollbar-thumb{background:rgba(37,99,235,.3);border-radius:6px}
+    ::-webkit-scrollbar-thumb{background:rgba(13,148,136,.3);border-radius:6px}
   `;
 
   return (
@@ -114,16 +114,13 @@ const LandingPage = () => {
       }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: 'linear-gradient(135deg,#2563eb,#06b6d4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 22px rgba(37,99,235,.55)',
-          }}>
-            <Car size={18} color="#fff" strokeWidth={2.5} />
-          </div>
+          <img
+            src="/logo.jpeg"
+            alt="Driveportz logo"
+            style={{ height: 40, width: 40, borderRadius: 10, objectFit: 'cover', boxShadow: '0 0 22px rgba(13,148,136,.35)' }}
+          />
           <span style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#0f172a' }}>
-            Dri<span style={{ color: '#2563eb' }}>vix</span>
+            Drive<span style={{ color: '#0d9488' }}>portz</span>
           </span>
         </div>
 
@@ -146,7 +143,7 @@ const LandingPage = () => {
             Log in
           </Link>
           <Link to="/signup" className="glow-cta" style={{
-            background: 'linear-gradient(135deg,#2563eb,#1d4ed8)',
+            background: 'linear-gradient(135deg,#0d9488,#0f766e)',
             color: '#fff', fontWeight: 700, fontSize: '.88rem',
             padding: '.48rem 1.3rem', borderRadius: 8, textDecoration: 'none',
             display: 'flex', alignItems: 'center', gap: 6,
@@ -159,152 +156,119 @@ const LandingPage = () => {
       {/* ════════════════════════════════
            HERO
       ════════════════════════════════ */}
-      <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 64, background: 'linear-gradient(160deg,#eff6ff 0%,#f8fafc 50%,#f0f9ff 100%)' }}>
+      <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 64, background: 'linear-gradient(160deg,#f0fdfa 0%,#f8fafc 50%,#f0fdfa 100%)' }}>
         {/* grid bg */}
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(37,99,235,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.05) 1px,transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(13,148,136,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(13,148,136,.05) 1px,transparent 1px)',
           backgroundSize: '64px 64px', pointerEvents: 'none',
         }} />
         {/* orb 1 */}
-        <div style={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle,rgba(37,99,235,.1) 0%,transparent 68%)', top: -160, left: -160, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle,rgba(13,148,136,.1) 0%,transparent 68%)', top: -160, left: -160, pointerEvents: 'none' }} />
         {/* orb 2 */}
         <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(2,132,199,.08) 0%,transparent 68%)', bottom: -80, right: -80, pointerEvents: 'none' }} />
         {/* orb 3 */}
         <div style={{ position: 'absolute', width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle,rgba(124,58,237,.07) 0%,transparent 68%)', top: '45%', left: '58%', pointerEvents: 'none' }} />
 
-        {/* ── Automotive background illustration ── */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '58%', pointerEvents: 'none', overflow: 'hidden' }}>
-          <svg viewBox="0 0 1440 300" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg"
-            style={{ position: 'absolute', bottom: 0, width: '100%' }}>
+        {/* ── Animated abstract hero background ── */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+          {/* Animated circuit network SVG */}
+          <svg viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.6 }}>
             <defs>
-              <linearGradient id="bodyFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.07" />
-                <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.04" />
+              <linearGradient id="circuitGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#0d9488" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.1" />
               </linearGradient>
-              <linearGradient id="glassFill" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.18" />
-                <stop offset="100%" stopColor="#2563eb" stopOpacity="0.1" />
+              <linearGradient id="circuitGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.08" />
               </linearGradient>
+              <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#5eead4" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#0d9488" stopOpacity="0" />
+              </radialGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
             </defs>
 
-            {/* ── MAIN CAR BODY — modern sedan ── */}
-            {/*
-              Path traces clockwise starting from front bumper bottom:
-              Front bumper → hood → A-pillar / windshield → roof →
-              C-pillar → trunk → rear bumper → bottom (with wheel arch cutouts) → Z
-            */}
-            <path d="
-              M 237,268
-              C 236,257 239,242 253,230
-              C 260,224 273,217 296,212
-              C 344,207 398,204 462,200
-              C 492,196 515,195 536,191
-              C 562,178 583,150 600,124
-              C 611,112 624,106 638,104
-              L 856,104
-              C 872,106 889,117 906,136
-              C 922,154 936,174 946,188
-              C 962,196 998,201 1040,204
-              C 1082,206 1132,210 1170,216
-              C 1182,221 1191,238 1193,258
-              L 1194,268
-              L 1086,268
-              Q 1040,170 994,268
-              L 460,268
-              Q 415,170 369,268
-              Z"
-              fill="url(#bodyFill)"
-              stroke="rgba(37,99,235,0.32)"
-              strokeWidth="1.8"
-              strokeLinejoin="round"
-            />
+            {/* Circuit paths — data flowing through a network */}
+            <path d="M -20,400 Q 200,350 360,420 T 720,380 T 1080,440 T 1460,400"
+              fill="none" stroke="url(#circuitGrad1)" strokeWidth="1.5" strokeDasharray="8,12">
+              <animate attributeName="stroke-dashoffset" from="0" to="-40" dur="3s" repeatCount="indefinite" />
+            </path>
+            <path d="M -20,500 Q 300,440 500,520 T 900,460 T 1200,530 T 1460,480"
+              fill="none" stroke="url(#circuitGrad2)" strokeWidth="1.2" strokeDasharray="6,14">
+              <animate attributeName="stroke-dashoffset" from="0" to="-40" dur="4s" repeatCount="indefinite" />
+            </path>
+            <path d="M -20,300 Q 250,260 440,310 T 820,280 T 1100,340 T 1460,290"
+              fill="none" stroke="url(#circuitGrad1)" strokeWidth="1" strokeDasharray="5,16" opacity="0.5">
+              <animate attributeName="stroke-dashoffset" from="0" to="-42" dur="5s" repeatCount="indefinite" />
+            </path>
 
-            {/* ── GREENHOUSE — windshield + side windows + C-pillar glass ── */}
-            <path d="
-              M 540,190
-              C 562,178 584,150 602,126
-              C 612,114 624,107 638,104
-              L 856,104
-              C 870,106 888,118 906,137
-              L 912,162
-              L 640,158
-              Z"
-              fill="url(#glassFill)"
-              stroke="rgba(37,99,235,0.24)"
-              strokeWidth="1.2"
-            />
-
-            {/* ── B-PILLAR (centre door post) ── */}
-            <line x1="748" y1="104" x2="748" y2="160"
-              stroke="rgba(37,99,235,0.38)" strokeWidth="3" />
-
-            {/* ── DOOR GAP ── */}
-            <path d="M 748,160 L 752,268"
-              stroke="rgba(37,99,235,0.22)" strokeWidth="1.5" />
-
-            {/* ── BELT LINE / character line ── */}
-            <path d="M 558,191 C 598,172 638,160 700,157 C 760,155 820,157 878,161 C 908,164 936,169 955,177"
-              fill="none" stroke="rgba(37,99,235,0.16)" strokeWidth="1.2" />
-
-            {/* ── HOOD SURFACE CREASE ── */}
-            <path d="M 296,211 C 344,207 398,204 462,200 C 492,196 515,195 536,191"
-              fill="none" stroke="rgba(37,99,235,0.18)" strokeWidth="1" />
-
-            {/* ── FRONT LED HEADLIGHT ── */}
-            <path d="M 253,228 C 253,220 259,214 268,213 L 294,211 C 290,220 285,229 281,235 L 255,236 Z"
-              fill="rgba(37,99,235,0.22)" stroke="rgba(37,99,235,0.44)" strokeWidth="1.2" />
-            <line x1="258" y1="214" x2="290" y2="212"
-              stroke="rgba(219,234,254,0.7)" strokeWidth="1.2" />
-
-            {/* ── REAR TAIL LIGHT ── */}
-            <path d="M 1178,217 C 1183,222 1190,238 1193,257 L 1194,268 L 1170,268 L 1169,214 Z"
-              fill="rgba(220,38,38,0.18)" stroke="rgba(220,38,38,0.38)" strokeWidth="1.2" />
-
-            {/* ── SIDE MIRROR ── */}
-            <path d="M 534,175 L 530,163 L 516,160 L 514,172 Z"
-              fill="rgba(37,99,235,0.16)" stroke="rgba(37,99,235,0.38)" strokeWidth="1.2" />
-
-            {/* ── FRONT WHEEL: tyre → outer rim → inner rim → hub → 6 spokes ── */}
-            <circle cx="415" cy="228" r="52"
-              fill="rgba(15,23,42,0.05)" stroke="rgba(37,99,235,0.32)" strokeWidth="2" />
-            <circle cx="415" cy="228" r="36"
-              fill="rgba(37,99,235,0.05)" stroke="rgba(37,99,235,0.24)" strokeWidth="1.4" />
-            <circle cx="415" cy="228" r="12"
-              fill="rgba(37,99,235,0.15)" stroke="rgba(37,99,235,0.36)" strokeWidth="1.2" />
-            {[0, 60, 120, 180, 240, 300].map(a => (
-              <line key={a}
-                x1={415 + 12 * Math.cos(a * Math.PI / 180)} y1={228 + 12 * Math.sin(a * Math.PI / 180)}
-                x2={415 + 34 * Math.cos(a * Math.PI / 180)} y2={228 + 34 * Math.sin(a * Math.PI / 180)}
-                stroke="rgba(37,99,235,0.28)" strokeWidth="2" />
+            {/* Intersection nodes with glow */}
+            {[
+              { cx: 360, cy: 420, r: 4, delay: '0s' },
+              { cx: 720, cy: 380, r: 5, delay: '0.5s' },
+              { cx: 1080, cy: 440, r: 4, delay: '1s' },
+              { cx: 500, cy: 520, r: 3.5, delay: '1.5s' },
+              { cx: 900, cy: 460, r: 4.5, delay: '0.8s' },
+              { cx: 440, cy: 310, r: 3, delay: '2s' },
+              { cx: 820, cy: 280, r: 3.5, delay: '1.2s' },
+            ].map((n, i) => (
+              <g key={i}>
+                <circle cx={n.cx} cy={n.cy} r={n.r * 5} fill="url(#nodeGlow)" opacity="0.4">
+                  <animate attributeName="opacity" values="0.2;0.5;0.2" dur="3s" begin={n.delay} repeatCount="indefinite" />
+                </circle>
+                <circle cx={n.cx} cy={n.cy} r={n.r} fill="#5eead4" filter="url(#glow)">
+                  <animate attributeName="r" values={`${n.r};${n.r * 1.4};${n.r}`} dur="2.5s" begin={n.delay} repeatCount="indefinite" />
+                </circle>
+              </g>
             ))}
 
-            {/* ── REAR WHEEL ── */}
-            <circle cx="1040" cy="228" r="52"
-              fill="rgba(15,23,42,0.05)" stroke="rgba(37,99,235,0.32)" strokeWidth="2" />
-            <circle cx="1040" cy="228" r="36"
-              fill="rgba(37,99,235,0.05)" stroke="rgba(37,99,235,0.24)" strokeWidth="1.4" />
-            <circle cx="1040" cy="228" r="12"
-              fill="rgba(37,99,235,0.15)" stroke="rgba(37,99,235,0.36)" strokeWidth="1.2" />
-            {[0, 60, 120, 180, 240, 300].map(a => (
-              <line key={a}
-                x1={1040 + 12 * Math.cos(a * Math.PI / 180)} y1={228 + 12 * Math.sin(a * Math.PI / 180)}
-                x2={1040 + 34 * Math.cos(a * Math.PI / 180)} y2={228 + 34 * Math.sin(a * Math.PI / 180)}
-                stroke="rgba(37,99,235,0.28)" strokeWidth="2" />
+            {/* Vertical connector lines between paths */}
+            {[
+              { x: 360, y1: 310, y2: 420 },
+              { x: 720, y1: 280, y2: 380 },
+              { x: 900, y1: 460, y2: 530 },
+            ].map((l, i) => (
+              <line key={i} x1={l.x} y1={l.y1} x2={l.x} y2={l.y2}
+                stroke="rgba(94,234,212,0.15)" strokeWidth="1" strokeDasharray="3,6">
+                <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="2s" repeatCount="indefinite" />
+              </line>
             ))}
-
-            {/* ── GROUND LINE + SHADOW ── */}
-            <line x1="0" y1="278" x2="1440" y2="278"
-              stroke="rgba(37,99,235,0.2)" strokeWidth="1.5" />
-            <ellipse cx="720" cy="282" rx="520" ry="10" fill="rgba(37,99,235,0.04)" />
-
-            {/* ── MOTION LINES ── */}
-            <line x1="10" y1="262" x2="218" y2="262" stroke="rgba(37,99,235,0.2)" strokeWidth="1.8" strokeDasharray="26,10" />
-            <line x1="10" y1="252" x2="158" y2="252" stroke="rgba(37,99,235,0.13)" strokeWidth="1.2" strokeDasharray="20,12" />
-            <line x1="10" y1="244" x2="192" y2="244" stroke="rgba(37,99,235,0.09)" strokeWidth="1" strokeDasharray="16,14" />
-            <line x1="1222" y1="262" x2="1430" y2="262" stroke="rgba(37,99,235,0.2)" strokeWidth="1.8" strokeDasharray="26,10" />
-            <line x1="1282" y1="252" x2="1430" y2="252" stroke="rgba(37,99,235,0.13)" strokeWidth="1.2" strokeDasharray="20,12" />
           </svg>
+
+          {/* Floating particle dots */}
+          {[
+            { left: '8%', top: '25%', size: 6, dur: '6s', delay: '0s' },
+            { left: '15%', top: '60%', size: 4, dur: '8s', delay: '1s' },
+            { left: '25%', top: '40%', size: 5, dur: '7s', delay: '0.5s' },
+            { left: '42%', top: '72%', size: 3, dur: '9s', delay: '2s' },
+            { left: '58%', top: '20%', size: 5, dur: '6.5s', delay: '1.5s' },
+            { left: '70%', top: '55%', size: 4, dur: '7.5s', delay: '0.8s' },
+            { left: '82%', top: '35%', size: 6, dur: '8s', delay: '2.5s' },
+            { left: '90%', top: '65%', size: 3, dur: '6s', delay: '1.2s' },
+            { left: '35%', top: '15%', size: 4, dur: '9s', delay: '3s' },
+            { left: '65%', top: '78%', size: 5, dur: '7s', delay: '0.3s' },
+          ].map((p, i) => (
+            <div key={i} style={{
+              position: 'absolute', left: p.left, top: p.top,
+              width: p.size, height: p.size, borderRadius: '50%',
+              background: 'radial-gradient(circle, #5eead4, transparent)',
+              animation: `floatY ${p.dur} ease-in-out infinite`,
+              animationDelay: p.delay, opacity: 0.5,
+            }} />
+          ))}
+
+          {/* Large glowing accent orb — bottom center */}
+          <div style={{
+            position: 'absolute', bottom: '-12%', left: '50%', transform: 'translateX(-50%)',
+            width: 800, height: 400, borderRadius: '50%',
+            background: 'radial-gradient(ellipse, rgba(13,148,136,0.12) 0%, rgba(13,148,136,0.04) 40%, transparent 70%)',
+          }} />
         </div>
 
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '5rem 2rem 4rem', width: '100%' }}>
@@ -312,11 +276,11 @@ const LandingPage = () => {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.6rem' }}>
             <div className="fu fu1" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'rgba(37,99,235,.08)', border: '1px solid rgba(37,99,235,.25)',
+              background: 'rgba(13,148,136,.08)', border: '1px solid rgba(13,148,136,.25)',
               borderRadius: 100, padding: '.38rem 1rem',
             }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22d3ee', boxShadow: '0 0 8px #22d3ee', display: 'inline-block', animation: 'dotPulse 2s ease-in-out infinite' }} />
-              <span style={{ fontSize: '.75rem', fontWeight: 700, color: '#2563eb', letterSpacing: '.08em', textTransform: 'uppercase' }}>The Future of Vehicle Intelligence</span>
+              <span style={{ fontSize: '.75rem', fontWeight: 700, color: '#0d9488', letterSpacing: '.08em', textTransform: 'uppercase' }}>The Future of Vehicle Intelligence</span>
             </div>
           </div>
 
@@ -334,7 +298,7 @@ const LandingPage = () => {
           {/* CTAs */}
           <div className="fu fu4" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '4.5rem' }}>
             <Link to="/signup" className="glow-cta" style={{
-              background: 'linear-gradient(135deg,#2563eb,#1d4ed8)',
+              background: 'linear-gradient(135deg,#0d9488,#0f766e)',
               color: '#fff', fontWeight: 700, fontSize: '1rem',
               padding: '.9rem 2.5rem', borderRadius: 12, textDecoration: 'none',
               display: 'flex', alignItems: 'center', gap: 8,
@@ -362,14 +326,14 @@ const LandingPage = () => {
             <div style={{
               background: '#fff', backdropFilter: 'blur(24px)',
               border: '1px solid #e2e8f0', borderRadius: 24,
-              padding: '2rem', boxShadow: '0 20px 60px rgba(37,99,235,.1),0 4px 20px rgba(0,0,0,.06)',
+              padding: '2rem', boxShadow: '0 20px 60px rgba(13,148,136,.1),0 4px 20px rgba(0,0,0,.06)',
               position: 'relative', overflow: 'hidden',
             }}>
               <div className="scan" />
               {/* header row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.6rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 46, height: 46, borderRadius: 13, background: 'linear-gradient(135deg,#2563eb,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(37,99,235,.5)' }}>
+                  <div style={{ width: 46, height: 46, borderRadius: 13, background: 'linear-gradient(135deg,#0d9488,#5eead4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(13,148,136,.5)' }}>
                     <Car size={22} color="#fff" />
                   </div>
                   <div>
@@ -386,9 +350,9 @@ const LandingPage = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '.9rem', marginBottom: '1.4rem' }}>
                 {[
                   { label: 'Health Score', val: '92', unit: '/100', color: '#16a34a' },
-                  { label: 'Trust Score', val: '87', unit: '/100', color: '#2563eb' },
+                  { label: 'Trust Score', val: '87', unit: '/100', color: '#0d9488' },
                   { label: 'Est. Value', val: '₹18.4L', unit: '', color: '#d97706' },
-                  { label: 'Next Service', val: '2,100', unit: 'km', color: '#7c3aed' },
+                  { label: 'Next Service', val: '2,100', unit: 'km', color: '#0f766e' },
                 ].map(s => (
                   <div key={s.label} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: '1rem', textAlign: 'center' }}>
                     <div style={{ fontSize: '1.55rem', fontWeight: 900, color: s.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
@@ -402,7 +366,7 @@ const LandingPage = () => {
               {/* Progress bar */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ flex: 1, height: 7, background: '#e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-                  <div style={{ width: '72%', height: '100%', background: 'linear-gradient(90deg,#2563eb,#0284c7)', borderRadius: 10 }} />
+                  <div style={{ width: '72%', height: '100%', background: 'linear-gradient(90deg,#0d9488,#14b8a6)', borderRadius: 10 }} />
                 </div>
                 <span style={{ fontSize: '.72rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>72% service cycle complete</span>
               </div>
@@ -443,13 +407,13 @@ const LandingPage = () => {
             <div className="float2" style={{
               position: 'absolute', right: '8%', bottom: '-6%',
               background: '#fff', backdropFilter: 'blur(16px)',
-              border: '1px solid #bfdbfe', borderRadius: 14,
+              border: '1px solid #99f6e4', borderRadius: 14,
               padding: '.8rem 1.1rem', animationDelay: '1.5s',
-              boxShadow: '0 8px 30px rgba(37,99,235,.1)',
+              boxShadow: '0 8px 30px rgba(13,148,136,.1)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <TrendingUp size={13} color="#2563eb" />
-                <span style={{ fontSize: '.75rem', fontWeight: 700, color: '#2563eb' }}>Resale Valuation Ready</span>
+                <TrendingUp size={13} color="#0d9488" />
+                <span style={{ fontSize: '.75rem', fontWeight: 700, color: '#0d9488' }}>Resale Valuation Ready</span>
               </div>
               <div style={{ fontSize: '.68rem', color: '#94a3b8' }}>₹17.2L – ₹19.6L estimated range</div>
             </div>
@@ -463,9 +427,9 @@ const LandingPage = () => {
       <div ref={statsRef} style={{ borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '3.5rem 2rem', background: '#fff' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '2rem', textAlign: 'center' }}>
           {[
-            { val: c1.toLocaleString() + '+', label: 'Vehicles Tracked', icon: <Car size={20} color="#2563eb" />, color: '#2563eb' },
-            { val: c2.toLocaleString() + '+', label: 'Verified Garages', icon: <Store size={20} color="#0284c7" />, color: '#0284c7' },
-            { val: c3 + '%', label: 'Health Accuracy', icon: <Award size={20} color="#7c3aed" />, color: '#7c3aed' },
+            { val: c1.toLocaleString() + '+', label: 'Vehicles Tracked', icon: <Car size={20} color="#0d9488" />, color: '#0d9488' },
+            { val: c2.toLocaleString() + '+', label: 'Verified Garages', icon: <Store size={20} color="#14b8a6" />, color: '#14b8a6' },
+            { val: c3 + '%', label: 'Health Accuracy', icon: <Award size={20} color="#0f766e" />, color: '#0f766e' },
             { val: '₹' + c4 + 'Cr+', label: 'Fraud Prevented', icon: <Shield size={20} color="#d97706" />, color: '#d97706' },
           ].map(s => (
             <div key={s.label}>
@@ -486,7 +450,7 @@ const LandingPage = () => {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           {/* Section heading */}
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#3b82f6', letterSpacing: '.12em', textTransform: 'uppercase' }}>PLATFORM FEATURES</span>
+            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#14b8a6', letterSpacing: '.12em', textTransform: 'uppercase' }}>PLATFORM FEATURES</span>
             <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', lineHeight: 1.08, color: '#0f172a' }}>
               Everything Your Vehicle Needs
             </h2>
@@ -498,9 +462,9 @@ const LandingPage = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(316px,1fr))', gap: '1.4rem' }}>
             {[
               {
-                icon: <Shield size={26} color="#2563eb" />,
-                bg: '#eff6ff', border: '#bfdbfe',
-                tag: 'ANTI-FRAUD', tagColor: '#2563eb',
+                icon: <Shield size={26} color="#0d9488" />,
+                bg: '#f0fdfa', border: '#99f6e4',
+                tag: 'ANTI-FRAUD', tagColor: '#0d9488',
                 title: 'Fraud-Proof Service History',
                 desc: 'Dual-layer verification cross-checks odometer readings from owners and garages. Tamper flags trigger automatically on discrepancies exceeding 50 km.',
               },
@@ -519,16 +483,16 @@ const LandingPage = () => {
                 desc: 'Algorithmic depreciation model plus a trust score adjusted for ownership transfers, verified history and accident records to compute a precise price range.',
               },
               {
-                icon: <Bell size={26} color="#7c3aed" />,
-                bg: '#f5f3ff', border: '#ddd6fe',
-                tag: 'PROACTIVE ALERTS', tagColor: '#7c3aed',
+                icon: <Bell size={26} color="#0f766e" />,
+                bg: '#f0fdfa', border: '#99f6e4',
+                tag: 'PROACTIVE ALERTS', tagColor: '#0f766e',
                 title: 'Smart Legal Reminders',
                 desc: 'Never miss an expiry. Priority-based alerts for Insurance, PUC, RC, Fitness Certificate and Road Tax — dispatched weeks before they lapse.',
               },
               {
-                icon: <Store size={26} color="#0284c7" />,
-                bg: '#f0f9ff', border: '#bae6fd',
-                tag: 'MARKETPLACE', tagColor: '#0284c7',
+                icon: <Store size={26} color="#14b8a6" />,
+                bg: '#f0fdfa', border: '#99f6e4',
+                tag: 'MARKETPLACE', tagColor: '#14b8a6',
                 title: 'Verified Garage Marketplace',
                 desc: 'Discover certified service centres, compare pricing, and book appointments. Every service claim is cross-verified on our platform for authenticity.',
               },
@@ -565,7 +529,7 @@ const LandingPage = () => {
       <section id="how-it-works" ref={howRef} style={{ padding: '7rem 2rem', background: '#fff' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#06b6d4', letterSpacing: '.12em', textTransform: 'uppercase' }}>HOW IT WORKS</span>
+            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#5eead4', letterSpacing: '.12em', textTransform: 'uppercase' }}>HOW IT WORKS</span>
             <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', color: '#0f172a' }}>
               Up and Running in 3 Steps
             </h2>
@@ -573,11 +537,11 @@ const LandingPage = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '2rem', position: 'relative' }}>
             {/* connector */}
-            <div style={{ position: 'absolute', top: 56, left: '22%', right: '22%', height: 2, background: 'linear-gradient(90deg,rgba(37,99,235,.5),rgba(6,182,212,.5),rgba(167,139,250,.5))', zIndex: 0 }} />
+            <div style={{ position: 'absolute', top: 56, left: '22%', right: '22%', height: 2, background: 'linear-gradient(90deg,rgba(13,148,136,.5),rgba(6,182,212,.5),rgba(167,139,250,.5))', zIndex: 0 }} />
 
             {[
-              { n: '01', c: '#3b82f6', t: 'Register Your Vehicle', d: "Add your vehicle's complete digital profile — ownership history, legal documents, chassis & engine numbers, and current odometer reading." },
-              { n: '02', c: '#06b6d4', t: 'Log Every Service', d: 'Record each visit with parts replaced, costs, and mechanic notes. Our system cross-verifies garage-reported odometer against your records in real time.' },
+              { n: '01', c: '#14b8a6', t: 'Register Your Vehicle', d: "Add your vehicle's complete digital profile — ownership history, legal documents, chassis & engine numbers, and current odometer reading." },
+              { n: '02', c: '#5eead4', t: 'Log Every Service', d: 'Record each visit with parts replaced, costs, and mechanic notes. Our system cross-verifies garage-reported odometer against your records in real time.' },
               { n: '03', c: '#a78bfa', t: 'Get Full Intelligence', d: "Receive health scores, resale valuations, fraud alerts, and expiry reminders. Your vehicle's complete lifecycle, intelligently managed for you." },
             ].map((s, i) => (
               <div key={s.n} style={{
@@ -637,7 +601,7 @@ const LandingPage = () => {
           <div className="float" style={{
             background: '#fff',
             border: '1px solid #e2e8f0', borderRadius: 24, padding: '2.5rem',
-            boxShadow: '0 20px 60px rgba(37,99,235,.08),0 4px 20px rgba(0,0,0,.05)',
+            boxShadow: '0 20px 60px rgba(13,148,136,.08),0 4px 20px rgba(0,0,0,.05)',
           }}>
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <div style={{ fontSize: '.72rem', color: '#94a3b8', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: '.6rem' }}>VEHICLE HEALTH SCORE</div>
@@ -662,9 +626,9 @@ const LandingPage = () => {
             </div>
             {[
               { label: 'Legal Documents', pct: 95, c: '#16a34a' },
-            { label: 'Service Consistency', pct: 88, c: '#2563eb' },
-            { label: 'Verification Score', pct: 90, c: '#7c3aed' },
-            { label: 'Safety Record', pct: 97, c: '#0284c7' },
+            { label: 'Service Consistency', pct: 88, c: '#0d9488' },
+            { label: 'Verification Score', pct: 90, c: '#0f766e' },
+            { label: 'Safety Record', pct: 97, c: '#14b8a6' },
             ].map(m => (
               <div key={m.label} style={{ marginBottom: '.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.78rem', marginBottom: '.35rem' }}>
@@ -689,7 +653,7 @@ const LandingPage = () => {
           <div className="float2" style={{
             background: '#fff',
             border: '1px solid #e2e8f0', borderRadius: 24, padding: '2rem',
-            boxShadow: '0 20px 60px rgba(37,99,235,.08),0 4px 20px rgba(0,0,0,.05)', position: 'relative', overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(13,148,136,.08),0 4px 20px rgba(0,0,0,.05)', position: 'relative', overflow: 'hidden',
           }}>
             <div className="scan" />
             <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '1.1rem' }}>TAMPER DETECTION REPORT</div>
@@ -708,13 +672,13 @@ const LandingPage = () => {
             </div>
 
             {/* Normal */}
-            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 13, padding: '1rem 1.1rem', marginBottom: '.7rem' }}>
+            <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 13, padding: '1rem 1.1rem', marginBottom: '.7rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '.88rem', color: '#0f172a' }}>Brake Replacement</div>
                   <div style={{ fontSize: '.72rem', color: '#94a3b8', marginTop: 3 }}>Mar 3, 2025 &nbsp;•&nbsp; 45,200 km</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#2563eb', fontSize: '.78rem', fontWeight: 700 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0d9488', fontSize: '.78rem', fontWeight: 700 }}>
                   <CheckCircle size={13} /> OK
                 </div>
               </div>
@@ -788,7 +752,7 @@ const LandingPage = () => {
           <div className="float" style={{
             background: '#fff',
             border: '1px solid #e2e8f0', borderRadius: 24, padding: '2.5rem',
-            boxShadow: '0 20px 60px rgba(37,99,235,.08),0 4px 20px rgba(0,0,0,.05)',
+            boxShadow: '0 20px 60px rgba(13,148,136,.08),0 4px 20px rgba(0,0,0,.05)',
           }}>
             <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '1.4rem' }}>RESALE REPORT</div>
             {/* Trust score ring */}
@@ -800,13 +764,13 @@ const LandingPage = () => {
                     strokeDasharray="264" strokeDashoffset={264 - 264 * 0.84} transform="rotate(-90 50 50)" />
                   <defs>
                     <linearGradient id="tGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#2563eb" />
-                      <stop offset="100%" stopColor="#06b6d4" />
+                      <stop offset="0%" stopColor="#0d9488" />
+                      <stop offset="100%" stopColor="#5eead4" />
                     </linearGradient>
                   </defs>
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#2563eb', letterSpacing: '-0.04em', lineHeight: 1 }}>84</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0d9488', letterSpacing: '-0.04em', lineHeight: 1 }}>84</div>
                   <div style={{ fontSize: '.6rem', color: '#94a3b8', marginTop: 2 }}>TRUST</div>
                 </div>
               </div>
@@ -845,23 +809,23 @@ const LandingPage = () => {
       {/* ════════════════════════════════
            FOR GARAGES
       ════════════════════════════════ */}
-      <section id="for-garages" style={{ padding: '7rem 2rem', background: '#eff6ff' }}>
+      <section id="for-garages" style={{ padding: '7rem 2rem', background: '#f0fdfa' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
-          <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#0284c7', letterSpacing: '.12em', textTransform: 'uppercase' }}>FOR GARAGE PARTNERS</span>
+          <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#14b8a6', letterSpacing: '.12em', textTransform: 'uppercase' }}>FOR GARAGE PARTNERS</span>
           <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', marginBottom: '1rem', color: '#0f172a' }}>
             Grow Your Workshop Online
           </h2>
           <p style={{ fontSize: '1.05rem', color: '#64748b', maxWidth: 540, margin: '0 auto 3.5rem', lineHeight: 1.75 }}>
-            Join Drivix as a verified partner. Manage bookings, verify service claims, and build lasting trust with thousands of vehicle owners.
+            Join Driveportz as a verified partner. Manage bookings, verify service claims, and build lasting trust with thousands of vehicle owners.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1.4rem' }}>
             {[
-              { icon: <Globe size={28} color="#06b6d4" />, title: 'Online Presence', desc: 'Create a verified garage profile with services, pricing, and availability. Get discovered by thousands of vehicle owners in your area.' },
-              { icon: <Users size={28} color="#3b82f6" />, title: 'Booking Management', desc: 'Accept and track service bookings in real time with a full status timeline — from request through completion.' },
+              { icon: <Globe size={28} color="#5eead4" />, title: 'Online Presence', desc: 'Create a verified garage profile with services, pricing, and availability. Get discovered by thousands of vehicle owners in your area.' },
+              { icon: <Users size={28} color="#14b8a6" />, title: 'Booking Management', desc: 'Accept and track service bookings in real time with a full status timeline — from request through completion.' },
               { icon: <Award size={28} color="#a78bfa" />, title: 'Trust Certification', desc: 'Earn verification badges by cross-validating service records. Higher trust ratings attract premium customers and repeat business.' },
             ].map(item => (
               <div key={item.title} className="card" style={{ padding: '2rem', textAlign: 'left' }}>
-                <div style={{ width: 56, height: 56, borderRadius: 15, background: '#eff6ff', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                <div style={{ width: 56, height: 56, borderRadius: 15, background: '#f0fdfa', border: '1px solid #99f6e4', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
                   {item.icon}
                 </div>
                 <h3 style={{ fontSize: '1.08rem', fontWeight: 700, marginBottom: '.7rem', color: '#0f172a' }}>{item.title}</h3>
@@ -873,13 +837,13 @@ const LandingPage = () => {
           <div style={{ marginTop: '2.8rem' }}>
             <Link to="/signup" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: '#2563eb', border: '1px solid #2563eb',
+              background: '#0d9488', border: '1px solid #0d9488',
               color: '#fff', fontWeight: 700, fontSize: '.97rem',
               padding: '.85rem 2.4rem', borderRadius: 12, textDecoration: 'none',
-              transition: 'all .2s', boxShadow: '0 4px 20px rgba(37,99,235,.3)',
+              transition: 'all .2s', boxShadow: '0 4px 20px rgba(13,148,136,.3)',
             }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#1d4ed8'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(37,99,235,.4)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(37,99,235,.3)'; }}>
+              onMouseEnter={e => { e.currentTarget.style.background = '#0f766e'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(13,148,136,.4)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#0d9488'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(13,148,136,.3)'; }}>
               Register Your Garage <ArrowRight size={17} />
             </Link>
           </div>
@@ -895,7 +859,7 @@ const LandingPage = () => {
           <div className="float" style={{
             background: '#fff',
             border: '1px solid #e2e8f0', borderRadius: 24, padding: '2rem',
-            boxShadow: '0 20px 60px rgba(37,99,235,.08),0 4px 20px rgba(0,0,0,.05)',
+            boxShadow: '0 20px 60px rgba(13,148,136,.08),0 4px 20px rgba(0,0,0,.05)',
           }}>
             <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '1.2rem' }}>FLEET ANALYTICS</div>
             {/* KPI cards */}
@@ -912,7 +876,7 @@ const LandingPage = () => {
               <div style={{ fontSize: '.72rem', color: '#94a3b8', marginBottom: '.6rem' }}>Monthly Expense Trend (₹)</div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 80 }}>
                 {[35, 55, 42, 68, 80, 62, 90, 74, 58, 88, 76, 95].map((h, i) => (
-                  <div key={i} style={{ flex: 1, background: `linear-gradient(to top,#2563eb,#06b6d4)`, borderRadius: '4px 4px 0 0', height: h + '%', opacity: i === 11 ? 1 : 0.5 + i * 0.04 }} />
+                  <div key={i} style={{ flex: 1, background: `linear-gradient(to top,#0d9488,#5eead4)`, borderRadius: '4px 4px 0 0', height: h + '%', opacity: i === 11 ? 1 : 0.5 + i * 0.04 }} />
                 ))}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
@@ -924,9 +888,9 @@ const LandingPage = () => {
             {/* Category donut placeholder */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem', marginTop: '.5rem' }}>
               {[
-                { c: '#2563eb', l: 'Periodic Maintenance', pct: '42%' },
-                { c: '#0284c7', l: 'Repairs', pct: '28%' },
-                { c: '#7c3aed', l: 'Major Service', pct: '18%' },
+                { c: '#0d9488', l: 'Periodic Maintenance', pct: '42%' },
+                { c: '#14b8a6', l: 'Repairs', pct: '28%' },
+                { c: '#0f766e', l: 'Major Service', pct: '18%' },
                 { c: '#d97706', l: 'Breakdown', pct: '12%' },
               ].map(cat => (
                 <div key={cat.l} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -967,32 +931,32 @@ const LandingPage = () => {
       {/* ════════════════════════════════
            FINAL CTA
       ════════════════════════════════ */}
-      <section style={{ padding: '7rem 2rem', background: 'linear-gradient(160deg,#eff6ff 0%,#f8fafc 60%,#f0f9ff 100%)' }}>
+      <section style={{ padding: '7rem 2rem', background: 'linear-gradient(160deg,#f0fdfa 0%,#f8fafc 60%,#f0fdfa 100%)' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{
             background: '#fff',
-            border: '1px solid #bfdbfe', borderRadius: 28,
+            border: '1px solid #99f6e4', borderRadius: 28,
             padding: 'clamp(2.5rem,6vw,5rem)', textAlign: 'center',
             position: 'relative', overflow: 'hidden',
-            boxShadow: '0 20px 80px rgba(37,99,235,.1)',
+            boxShadow: '0 20px 80px rgba(13,148,136,.1)',
           }}>
-            <div style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle,rgba(37,99,235,.07) 0%,transparent 70%)', top: -170, right: -100, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle,rgba(13,148,136,.07) 0%,transparent 70%)', top: -170, right: -100, pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle,rgba(124,58,237,.06) 0%,transparent 70%)', bottom: -110, left: -60, pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 100, padding: '.32rem .9rem', marginBottom: '1.4rem' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', display: 'inline-block', animation: 'dotPulse 2s ease-in-out infinite' }} />
-                <span style={{ fontSize: '.7rem', fontWeight: 700, color: '#2563eb', letterSpacing: '.08em' }}>FREE TO GET STARTED</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 100, padding: '.32rem .9rem', marginBottom: '1.4rem' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0d9488', display: 'inline-block', animation: 'dotPulse 2s ease-in-out infinite' }} />
+                <span style={{ fontSize: '.7rem', fontWeight: 700, color: '#0d9488', letterSpacing: '.08em' }}>FREE TO GET STARTED</span>
               </div>
               <h2 style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.08, marginBottom: '1rem', color: '#0f172a' }}>
                 Start Protecting Your{' '}
                 <span className="shimmer-text">Vehicle Today</span>
               </h2>
               <p style={{ fontSize: '1.05rem', color: '#64748b', maxWidth: 480, margin: '0 auto 2.5rem', lineHeight: 1.75 }}>
-                Join thousands of vehicle owners who trust Drivix to track, protect, and maximise the value of their vehicles.
+                Join thousands of vehicle owners who trust Driveportz to track, protect, and maximise the value of their vehicles.
               </p>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <Link to="/signup" className="glow-cta" style={{
-                  background: 'linear-gradient(135deg,#2563eb,#1d4ed8)',
+                  background: 'linear-gradient(135deg,#0d9488,#0f766e)',
                   color: '#fff', fontWeight: 700, fontSize: '1rem',
                   padding: '.95rem 2.6rem', borderRadius: 12, textDecoration: 'none',
                   display: 'flex', alignItems: 'center', gap: 8,
@@ -1023,17 +987,19 @@ const LandingPage = () => {
       <footer style={{ borderTop: '1px solid #e2e8f0', padding: '2.5rem 2.5rem', background: '#fff' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#2563eb,#0284c7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Car size={14} color="#fff" />
-            </div>
-            <span style={{ fontWeight: 900, fontSize: '1rem', letterSpacing: '-0.03em', color: '#0f172a' }}>Dri<span style={{ color: '#2563eb' }}>vix</span></span>
+            <img
+              src="/logo.jpeg"
+              alt="Driveportz logo"
+              style={{ height: 32, width: 32, borderRadius: 8, objectFit: 'cover' }}
+            />
+            <span style={{ fontWeight: 900, fontSize: '1rem', letterSpacing: '-0.03em', color: '#0f172a' }}>Drive<span style={{ color: '#0d9488' }}>portz</span></span>
             <span style={{ fontSize: '.78rem', color: '#94a3b8', marginLeft: 4 }}>Mobility Digital Twin Platform</span>
           </div>
-          <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 Drivix. All rights reserved.</div>
+          <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 Driveportz. All rights reserved.</div>
           <div style={{ display: 'flex', gap: '1.5rem' }}>
             {[['Log in', '/login'], ['Sign up', '/signup']].map(([label, to]) => (
               <Link key={to} to={to} style={{ fontSize: '.82rem', color: '#94a3b8', textDecoration: 'none', transition: 'color .2s' }}
-                onMouseEnter={e => e.target.style.color = '#2563eb'} onMouseLeave={e => e.target.style.color = '#94a3b8'}>
+                onMouseEnter={e => e.target.style.color = '#0d9488'} onMouseLeave={e => e.target.style.color = '#94a3b8'}>
                 {label}
               </Link>
             ))}

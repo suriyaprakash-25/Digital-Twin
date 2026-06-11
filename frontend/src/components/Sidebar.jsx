@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2 } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2 } from 'lucide-react';
 
 function normalizeRole(role) {
     const r = String(role || '').trim().toLowerCase();
@@ -19,6 +19,7 @@ const Sidebar = ({ onLogout }) => {
 
     const userNavigation = [
         { name: 'Dashboard', href: '/user-dashboard', icon: LayoutDashboard },
+        { name: 'My Profile', href: '/my-profile', icon: UserCircle2 },
         { name: 'Marketplace', href: '/marketplace', icon: Store },
         { name: 'Add Vehicle', href: '/add-vehicle', icon: PlusCircle },
         { name: 'My Vehicles', href: '/my-vehicles', icon: Car },
@@ -40,12 +41,14 @@ const Sidebar = ({ onLogout }) => {
             <div className="flex items-center justify-center p-6 border-b border-slate-100 bg-white/50 backdrop-blur-sm">
                 {/* <div className="flex items-center gap-3 w-full px-2"> */}
                     <Link to={dashboardHref} aria-label="Go to dashboard" className='flex items-center gap-3 w-full px-2 rounded-lg hover:bg-slate-50
-             focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40'>
-                    <div className="h-10 w-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
-                        <Car className="h-5 w-5 text-white" />
-                    </div>
+             focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40'>
+                    <img
+                        src="/logo.jpeg"
+                        alt="Driveportz logo"
+                        className="h-10 w-10 rounded-xl object-cover shadow-md shrink-0"
+                    />
                     <span className="text-slate-900 font-extrabold text-lg tracking-tight hidden sm:block truncate">
-                        Drivix
+                        Driveportz
                     </span>
                     </Link>
                 {/* </div> */}
@@ -61,12 +64,12 @@ const Sidebar = ({ onLogout }) => {
                             key={item.name}
                             to={item.href}
                             className={`group flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${isActive
-                                ? 'bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50'
+                                ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-100/50'
                                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                                 }`}
                         >
                             <Icon
-                                className={`flex-shrink-0 h-5 w-5 mr-3 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'
+                                className={`flex-shrink-0 h-5 w-5 mr-3 transition-colors ${isActive ? 'text-teal-600' : 'text-slate-400 group-hover:text-teal-500'
                                     }`}
                             />
                             {item.name}

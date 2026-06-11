@@ -11,7 +11,7 @@ self.addEventListener('push', (event) => {
   }
 
   const notification = payload.notification || payload.data || {};
-  const title = notification.title || 'Drivix';
+  const title = notification.title || 'Driveportz';
   const options = {
     body: notification.body || '',
     data: payload.data || {},

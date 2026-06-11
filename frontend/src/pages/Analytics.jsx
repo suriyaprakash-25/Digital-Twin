@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { Activity, TrendingUp, DollarSign, Wrench, PieChart as PieChartIcon, CalendarCheck, CheckCircle, Clock } from 'lucide-react';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const COLORS = ['#14b8a6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 const Analytics = () => {
     const [data, setData] = useState(null);
@@ -41,7 +41,7 @@ const Analytics = () => {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-[60vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
             </div>
         );
     }
@@ -78,7 +78,7 @@ const Analytics = () => {
                         </div>
                         <div className="flex flex-wrap gap-4">
                             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[110px]">
-                                <p className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Total Bookings</p>
+                                <p className="text-teal-300 text-xs font-bold uppercase tracking-wider mb-1">Total Bookings</p>
                                 <p className="text-2xl font-black">{totalBookings}</p>
                             </div>
                             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[110px]">
@@ -99,11 +99,11 @@ const Analytics = () => {
 
                 {/* Summary cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-center gap-4">
-                        <div className="bg-blue-100 p-3 rounded-xl"><CalendarCheck className="h-6 w-6 text-blue-600" /></div>
+                    <div className="bg-teal-50 border border-teal-100 rounded-2xl p-5 flex items-center gap-4">
+                        <div className="bg-teal-100 p-3 rounded-xl"><CalendarCheck className="h-6 w-6 text-teal-600" /></div>
                         <div>
-                            <p className="text-sm text-blue-600 font-semibold">Total Bookings</p>
-                            <p className="text-3xl font-black text-blue-800">{totalBookings}</p>
+                            <p className="text-sm text-teal-600 font-semibold">Total Bookings</p>
+                            <p className="text-3xl font-black text-teal-800">{totalBookings}</p>
                         </div>
                     </div>
                     <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex items-center gap-4">
@@ -126,7 +126,7 @@ const Analytics = () => {
                     {/* Monthly Bookings BarChart */}
                     <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
                         <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-900 border-b border-slate-100 pb-4">
-                            <CalendarCheck className="h-5 w-5 text-blue-500" />
+                            <CalendarCheck className="h-5 w-5 text-teal-500" />
                             Monthly Bookings
                         </h3>
                         {bookingsByMonth.length === 0 ? (
@@ -142,7 +142,7 @@ const Analytics = () => {
                                             formatter={(value) => [value, 'Bookings']}
                                             contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                         />
-                                        <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={32} />
+                                        <Bar dataKey="count" fill="#14b8a6" radius={[6, 6, 0, 0]} barSize={32} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -263,10 +263,10 @@ const Analytics = () => {
     return (
         <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
             <header className="mb-8 p-8 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
-                <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-blue-600/30 to-transparent"></div>
+                <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-teal-600/30 to-transparent"></div>
                 <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-6">
                     <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-bold tracking-wide border border-blue-500/30 mb-3">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-500/20 text-teal-300 rounded-full text-xs font-bold tracking-wide border border-teal-500/30 mb-3">
                             <TrendingUp className="h-4 w-4" /> Advanced Twin Analytics
                         </div>
                         <h1 className="text-4xl font-extrabold tracking-tight">Fleet Intelligence</h1>
@@ -276,7 +276,7 @@ const Analytics = () => {
                     </div>
                     <div className="flex gap-4">
                         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[120px]">
-                            <p className="text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Fleet Km</p>
+                            <p className="text-teal-300 text-xs font-bold uppercase tracking-wider mb-1">Fleet Km</p>
                             <p className="text-2xl font-black">{totalFleetKm.toLocaleString()}</p>
                         </div>
                         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[120px]">
@@ -291,7 +291,7 @@ const Analytics = () => {
                 {/* Expense Trend Line Chart */}
                 <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
                     <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-900 border-b border-slate-100 pb-4">
-                        <DollarSign className="h-5 w-5 text-blue-500" />
+                        <DollarSign className="h-5 w-5 text-teal-500" />
                         Monthly Total Expenses
                     </h3>
                     {expenseTrend.length === 0 ? (
@@ -307,7 +307,7 @@ const Analytics = () => {
                                         formatter={(value) => [formatCurrency(value), "Cost"]}
                                         contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                     />
-                                    <Line type="monotone" dataKey="cost" stroke="#3b82f6" strokeWidth={4} activeDot={{ r: 8 }} />
+                                    <Line type="monotone" dataKey="cost" stroke="#14b8a6" strokeWidth={4} activeDot={{ r: 8 }} />
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>

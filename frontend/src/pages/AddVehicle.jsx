@@ -15,6 +15,7 @@ const AddVehicle = () => {
         currentOdometerKm: '', averageMonthlyKm: ''
     });
     const [rcBookFile, setRcBookFile] = useState(null);
+    const [insuranceFile, setInsuranceFile] = useState(null);
     const [status, setStatus] = useState({ type: '', message: '' });
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
@@ -33,6 +34,7 @@ const AddVehicle = () => {
             const submitData = new FormData();
             Object.keys(formData).forEach(key => submitData.append(key, formData[key]));
             if (rcBookFile) submitData.append('rcBook', rcBookFile);
+            if (insuranceFile) submitData.append('insuranceDocument', insuranceFile);
 
             await axios.post('http://localhost:5000/api/vehicles/add', submitData, {
                 headers: {
@@ -57,7 +59,7 @@ const AddVehicle = () => {
         <div className="space-y-2">
             <label className="text-sm font-bold text-slate-700">{label}</label>
             <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-teal-500 transition-colors">
                     {icon}
                 </div>
                 {options ? (
@@ -66,7 +68,7 @@ const AddVehicle = () => {
                         value={formData[name]}
                         onChange={handleChange}
                         required={extraProps.required}
-                        className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium hover:border-slate-300 shadow-sm appearance-none cursor-pointer"
+                        className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium hover:border-slate-300 shadow-sm appearance-none cursor-pointer"
                     >
                         {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
@@ -78,7 +80,7 @@ const AddVehicle = () => {
                         value={formData[name]}
                         onChange={handleChange}
                         {...extraProps}
-                        className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium hover:border-slate-300 shadow-sm"
+                        className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium hover:border-slate-300 shadow-sm"
                     />
                 )}
             </div>
@@ -103,8 +105,8 @@ const AddVehicle = () => {
 
                 {/* Identity Details */}
                 <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="bg-blue-50 px-8 py-5 border-b border-blue-100 flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><Car /></div>
+                    <div className="bg-teal-50 px-8 py-5 border-b border-teal-100 flex items-center gap-3">
+                        <div className="p-2 bg-teal-100 rounded-lg text-teal-600"><Car /></div>
                         <h2 className="text-xl font-bold text-slate-800">Identity Details</h2>
                     </div>
                     <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -123,8 +125,8 @@ const AddVehicle = () => {
 
                 {/* Ownership Details */}
                 <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="bg-indigo-50 px-8 py-5 border-b border-indigo-100 flex items-center gap-3">
-                        <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600"><User /></div>
+                    <div className="bg-teal-50 px-8 py-5 border-b border-teal-100 flex items-center gap-3">
+                        <div className="p-2 bg-teal-100 rounded-lg text-teal-600"><User /></div>
                         <h2 className="text-xl font-bold text-slate-800">Ownership Details</h2>
                     </div>
                     <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -148,14 +150,30 @@ const AddVehicle = () => {
                                 <label className="text-sm font-bold text-slate-700">RC Book Document (Optional)</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <FileText className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                        <FileText className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                                     </div>
                                     <input
                                         name="rcBook"
                                         type="file"
                                         accept=".pdf,image/*"
                                         onChange={(e) => setRcBookFile(e.target.files[0])}
-                                        className="block w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white transition-all font-medium shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"
+                                        className="block w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white transition-all font-medium shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-100 file:text-teal-700 hover:file:bg-teal-200 cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">Insurance Document (Optional)</label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <FileText className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
+                                    </div>
+                                    <input
+                                        name="insuranceDocument"
+                                        type="file"
+                                        accept=".pdf,image/*"
+                                        onChange={(e) => setInsuranceFile(e.target.files[0])}
+                                        className="block w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white transition-all font-medium shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-100 file:text-teal-700 hover:file:bg-teal-200 cursor-pointer"
                                     />
                                 </div>
                             </div>
@@ -175,7 +193,7 @@ const AddVehicle = () => {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="px-8 py-4 border border-transparent text-sm font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-md hover:shadow-xl disabled:opacity-50 flex items-center gap-2"
+                        className="px-8 py-4 border border-transparent text-sm font-bold rounded-xl text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all shadow-md hover:shadow-xl disabled:opacity-50 flex items-center gap-2"
                     >
                         {isLoading ? 'Registering...' : (
                             <><Car className="h-5 w-5" /> Register Complete Profiling</>

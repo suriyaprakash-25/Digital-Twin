@@ -28,7 +28,7 @@ const config = loadConfig();
 app.use(cors());
 
 // Body parsing
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Uploads folder (mirrors Flask behavior)

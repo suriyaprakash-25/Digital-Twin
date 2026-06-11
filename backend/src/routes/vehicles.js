@@ -8,8 +8,10 @@ const { parseAnyDate, isPastDateOnly } = require('../utils/dates');
 
 const router = express.Router();
 
-router.post('/add', requireAuth, upload.single('rcBook'), async (req, res) => {
+router.post('/add', requireAuth, upload.fields([{ name: 'rcBook', maxCount: 1 }, { name: 'insuranceDocument', maxCount: 1 }]), async (req, res) => {
   const data = req.body || {};
+  const rcBookFile = req.files && req.files.rcBook ? req.files.rcBook[0] : null;
+  const insuranceDocumentFile = req.files && req.files.insuranceDocument ? req.files.insuranceDocument[0] : null;
 
   const vehicleNumber = data.vehicleNumber;
   const model = data.model;
@@ -55,14 +57,14 @@ router.post('/add', requireAuth, upload.single('rcBook'), async (req, res) => {
 
   const existing = await vehicles.findOne({ vehicleNumber });
   if (existing) {
-    if (req.file) {
-      removeUploadByUrl(`/uploads/${req.file.filename}`);
-    }
+    if (rcBookFile) removeUploadByUrl(`/uploads/${rcBookFile.filename}`);
+    if (insuranceDocumentFile) removeUploadByUrl(`/uploads/${insuranceDocumentFile.filename}`);
     return res.status(400).json({ msg: 'Vehicle with this number already exists' });
   }
 
   const ownerId = req.user.id;
-  const rcBookUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  const rcBookUrl = rcBookFile ? `/uploads/${rcBookFile.filename}` : null;
+  const insuranceDocumentUrl = insuranceDocumentFile ? `/uploads/${insuranceDocumentFile.filename}` : null;
 
   const newVehicle = {
     vehicleNumber,
@@ -92,6 +94,7 @@ router.post('/add', requireAuth, upload.single('rcBook'), async (req, res) => {
     chassisNumber: data.chassisNumber,
     engineNumber: data.engineNumber,
     rcBookUrl,
+    insuranceDocumentUrl,
 
     currentOdometerKm: data.currentOdometerKm ? parseInt(data.currentOdometerKm, 10) : 0,
     averageMonthlyKm: data.averageMonthlyKm ? parseInt(data.averageMonthlyKm, 10) : 0,
@@ -149,6 +152,7 @@ router.get('/myvehicles', requireAuth, async (req, res) => {
       averageMonthlyKm: v.averageMonthlyKm,
       ownerId: v.ownerId,
       rcBookUrl: v.rcBookUrl,
+      insuranceDocumentUrl: v.insuranceDocumentUrl,
       verificationStatus: v.verificationStatus || 'Pending',
       isArchived: v.isArchived || false,
       createdAt: v.createdAt ? new Date(v.createdAt).toISOString() : null
@@ -158,8 +162,10 @@ router.get('/myvehicles', requireAuth, async (req, res) => {
   return res.status(200).json(results);
 });
 
-router.put('/:vehicle_id', requireAuth, upload.single('rcBook'), async (req, res) => {
+router.put('/:vehicle_id', requireAuth, upload.fields([{ name: 'rcBook', maxCount: 1 }, { name: 'insuranceDocument', maxCount: 1 }]), async (req, res) => {
   const vehicleId = req.params.vehicle_id;
+  const rcBookFile = req.files && req.files.rcBook ? req.files.rcBook[0] : null;
+  const insuranceDocumentFile = req.files && req.files.insuranceDocument ? req.files.insuranceDocument[0] : null;
 
   let objectId;
   try {
@@ -212,7 +218,8 @@ router.put('/:vehicle_id', requireAuth, upload.single('rcBook'), async (req, res
   try {
     const vehicle = await vehicles.findOne({ _id: objectId, ownerId: req.user.id, isArchived: { $ne: true } });
     if (!vehicle) {
-      if (req.file) removeUploadByUrl(`/uploads/${req.file.filename}`);
+      if (rcBookFile) removeUploadByUrl(`/uploads/${rcBookFile.filename}`);
+      if (insuranceDocumentFile) removeUploadByUrl(`/uploads/${insuranceDocumentFile.filename}`);
       return res.status(404).json({ msg: 'Vehicle not found or unauthorized' });
     }
 
@@ -220,16 +227,24 @@ router.put('/:vehicle_id', requireAuth, upload.single('rcBook'), async (req, res
     if (nextVehicleNumber && nextVehicleNumber !== vehicle.vehicleNumber) {
       const conflict = await vehicles.findOne({ vehicleNumber: nextVehicleNumber });
       if (conflict) {
-        if (req.file) removeUploadByUrl(`/uploads/${req.file.filename}`);
+        if (rcBookFile) removeUploadByUrl(`/uploads/${rcBookFile.filename}`);
+        if (insuranceDocumentFile) removeUploadByUrl(`/uploads/${insuranceDocumentFile.filename}`);
         return res.status(400).json({ msg: 'Vehicle with this number already exists' });
       }
     }
 
-    if (req.file) {
+    if (rcBookFile) {
       if (vehicle.rcBookUrl) {
         removeUploadByUrl(vehicle.rcBookUrl);
       }
-      updateData.rcBookUrl = `/uploads/${req.file.filename}`;
+      updateData.rcBookUrl = `/uploads/${rcBookFile.filename}`;
+    }
+
+    if (insuranceDocumentFile) {
+      if (vehicle.insuranceDocumentUrl) {
+        removeUploadByUrl(vehicle.insuranceDocumentUrl);
+      }
+      updateData.insuranceDocumentUrl = `/uploads/${insuranceDocumentFile.filename}`;
     }
 
     if (Object.keys(updateData).length > 0) {

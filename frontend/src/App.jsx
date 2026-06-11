@@ -18,6 +18,7 @@ import GarageDashboard from './pages/GarageDashboard';
 import GarageProfile from './pages/GarageProfile';
 import GarageServices from './pages/GarageServices';
 import Marketplace from './pages/Marketplace';
+import MyProfile from './pages/MyProfile';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           }
         >
           <Route path="/user-dashboard" element={<UserDashboard />} />
+          <Route path="/my-profile" element={<MyProfile />} />
           <Route path="/garage-dashboard" element={<GarageDashboard />} />
           <Route path="/marketplace" element={<Marketplace />} />
 

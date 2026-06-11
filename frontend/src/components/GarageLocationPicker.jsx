@@ -131,7 +131,7 @@ const GarageLocationPicker = ({ token, initialLocation, readOnly = false, onSave
       {/* Coordinates display */}
       {location && (
         <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono">
-          <MapPin className="h-4 w-4 text-blue-500 flex-shrink-0" />
+          <MapPin className="h-4 w-4 text-teal-500 flex-shrink-0" />
           <span className="text-slate-700">
             {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
           </span>
@@ -168,7 +168,7 @@ const GarageLocationPicker = ({ token, initialLocation, readOnly = false, onSave
           >
             {detecting
               ? <Loader2 className="h-4 w-4 animate-spin" />
-              : <Navigation className="h-4 w-4 text-blue-500" />}
+              : <Navigation className="h-4 w-4 text-teal-500" />}
             Detect My Location
           </button>
 
@@ -176,7 +176,7 @@ const GarageLocationPicker = ({ token, initialLocation, readOnly = false, onSave
             type="button"
             onClick={handleSave}
             disabled={saving || !location || saved}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             {saving
               ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -204,7 +204,7 @@ const GarageLocationPicker = ({ token, initialLocation, readOnly = false, onSave
           href={googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-sm"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition-all shadow-sm"
         >
           <Navigation className="h-4 w-4" />
           Get Directions

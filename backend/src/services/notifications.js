@@ -87,7 +87,7 @@ async function notifyUser(userId, { title, body, data }) {
 
   const pushResult = await sendToTokens(tokenList, {
     notification: {
-      title: String(title || 'Drivix'),
+      title: String(title || 'Driveportz'),
       body: String(body || '')
     },
     data: {

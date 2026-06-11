@@ -31,7 +31,7 @@ const ResaleReport = () => {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-[60vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
             </div>
         );
     }
@@ -41,7 +41,7 @@ const ResaleReport = () => {
             <div className="max-w-4xl mx-auto text-center mt-20 p-8 bg-red-50 rounded-3xl border border-red-100">
                 <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-red-700">{error}</h2>
-                <Link to="/my-vehicles" className="text-blue-600 font-semibold mt-4 inline-block hover:underline">
+                <Link to="/my-vehicles" className="text-teal-600 font-semibold mt-4 inline-block hover:underline">
                     Return to My Vehicles
                 </Link>
             </div>
@@ -76,7 +76,7 @@ const ResaleReport = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                     <div>
                         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-                            <ShieldCheck className="h-10 w-10 text-blue-600" />
+                            <ShieldCheck className="h-10 w-10 text-teal-600" />
                             Buyer Verification Report
                         </h1>
                         <p className="text-slate-500 mt-2 font-medium text-lg">
@@ -112,11 +112,11 @@ const ResaleReport = () => {
 
                 {/* Valuation Engine */}
                 <div className="col-span-1 lg:col-span-2 bg-slate-900 rounded-3xl p-8 shadow-xl text-white relative overflow-hidden flex flex-col justify-center">
-                    <div className="absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-blue-600/20 to-transparent"></div>
+                    <div className="absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-teal-600/20 to-transparent"></div>
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-6">
-                            <Activity className="h-5 w-5 text-blue-400" />
-                            <h3 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Algorithmic Valuation</h3>
+                            <Activity className="h-5 w-5 text-teal-400" />
+                            <h3 className="text-sm font-bold text-teal-400 uppercase tracking-widest">Algorithmic Valuation</h3>
                         </div>
 
                         <div className="flex items-end gap-3 mb-2">
@@ -152,7 +152,7 @@ const ResaleReport = () => {
                 {/* Audit Analysis */}
                 <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
                     <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                        <ShieldCheck className="h-5 w-5 text-blue-500" />
+                        <ShieldCheck className="h-5 w-5 text-teal-500" />
                         Lifecycle Factors
                     </h3>
 
@@ -179,7 +179,7 @@ const ResaleReport = () => {
                 {/* Condition Breakdown */}
                 <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
                     <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                        <Activity className="h-5 w-5 text-blue-500" />
+                        <Activity className="h-5 w-5 text-teal-500" />
                         Component Status
                     </h3>
 
@@ -189,7 +189,7 @@ const ResaleReport = () => {
                                 <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Maintenance Quality</p>
                                 <p className="text-lg font-black text-slate-900">{maintenanceQuality}</p>
                             </div>
-                            <div className={`h-12 w-12 rounded-full flex items-center justify-center font-bold text-lg ${maintenanceQuality === 'Excellent' ? 'bg-emerald-100 text-emerald-700' : maintenanceQuality === 'Good' ? 'bg-blue-100 text-blue-700' : 'bg-rose-100 text-rose-700'}`}>
+                            <div className={`h-12 w-12 rounded-full flex items-center justify-center font-bold text-lg ${maintenanceQuality === 'Excellent' ? 'bg-emerald-100 text-emerald-700' : maintenanceQuality === 'Good' ? 'bg-teal-100 text-teal-700' : 'bg-rose-100 text-rose-700'}`}>
                                 {maintenanceQuality === 'Excellent' ? 'A+' : maintenanceQuality === 'Good' ? 'B' : 'C'}
                             </div>
                         </div>

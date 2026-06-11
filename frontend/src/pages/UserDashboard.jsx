@@ -73,7 +73,7 @@ const UserDashboard = () => {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-extrabold text-slate-900">Your Vehicles</h2>
-            <Link to="/my-vehicles" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+            <Link to="/my-vehicles" className="text-sm font-semibold text-teal-600 hover:text-teal-700">
               View
             </Link>
           </div>
@@ -125,7 +125,7 @@ const UserDashboard = () => {
                   <div className="text-sm font-extrabold text-slate-900">
                     {b.service?.title || 'Service'} • {b.garage?.name || 'Garage'}
                   </div>
-                  <div className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700">
+                  <div className="text-xs font-bold px-3 py-1 rounded-full bg-teal-50 text-teal-700">
                     {b.status}
                   </div>
                 </div>

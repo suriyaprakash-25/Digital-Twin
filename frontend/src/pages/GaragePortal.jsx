@@ -150,11 +150,11 @@ const GaragePortal = () => {
                                 Audit Service Record
                             </h2>
 
-                            <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl mb-8 flex gap-6 text-sm">
-                                <div><span className="font-bold text-blue-900 block mb-1">Vehicle</span> {selectedService.vehicleInfo}</div>
-                                <div><span className="font-bold text-blue-900 block mb-1">Date</span> {selectedService.serviceDate}</div>
-                                <div><span className="font-bold text-blue-900 block mb-1">Claimed Km</span> {selectedService.odometerKm} km</div>
-                                <div><span className="font-bold text-blue-900 block mb-1">Category</span> {selectedService.serviceCategory}</div>
+                            <div className="p-4 bg-teal-50 border border-teal-100 rounded-2xl mb-8 flex gap-6 text-sm">
+                                <div><span className="font-bold text-teal-900 block mb-1">Vehicle</span> {selectedService.vehicleInfo}</div>
+                                <div><span className="font-bold text-teal-900 block mb-1">Date</span> {selectedService.serviceDate}</div>
+                                <div><span className="font-bold text-teal-900 block mb-1">Claimed Km</span> {selectedService.odometerKm} km</div>
+                                <div><span className="font-bold text-teal-900 block mb-1">Category</span> {selectedService.serviceCategory}</div>
                             </div>
 
                             <form onSubmit={handleVerifySubmit} className="space-y-6">

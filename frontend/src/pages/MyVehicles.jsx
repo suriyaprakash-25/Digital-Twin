@@ -52,7 +52,7 @@ const MyVehicles = () => {
                 </div>
                 <Link
                     to="/add-vehicle"
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2"
                 >
                     <Plus className="h-5 w-5" />
                     Add Vehicle
@@ -61,12 +61,12 @@ const MyVehicles = () => {
 
             {loading ? (
                 <div className="flex justify-center items-center py-24">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
                 </div>
             ) : vehicles.length === 0 ? (
                 <div className="bg-white border border-slate-200 border-dashed rounded-3xl p-16 text-center shadow-sm">
-                    <div className="mx-auto h-24 w-24 bg-blue-50 rounded-full flex items-center justify-center border border-blue-100 mb-6 shadow-sm">
-                        <Car className="h-12 w-12 text-blue-400" />
+                    <div className="mx-auto h-24 w-24 bg-teal-50 rounded-full flex items-center justify-center border border-teal-100 mb-6 shadow-sm">
+                        <Car className="h-12 w-12 text-teal-400" />
                     </div>
                     <h3 className="text-2xl font-extrabold text-slate-900 mb-3">No Vehicles Found</h3>
                     <p className="text-slate-500 mb-8 max-w-md mx-auto font-medium text-lg">
@@ -85,7 +85,7 @@ const MyVehicles = () => {
                     {vehicles.map((vehicle) => (
                         <div
                             key={vehicle.id}
-                            className="bg-white border border-slate-100 rounded-3xl overflow-hidden hover:border-blue-200 transition-all duration-300 group hover:-translate-y-1.5 hover:shadow-xl shadow-sm relative flex flex-col"
+                            className="bg-white border border-slate-100 rounded-3xl overflow-hidden hover:border-teal-200 transition-all duration-300 group hover:-translate-y-1.5 hover:shadow-xl shadow-sm relative flex flex-col"
                         >
                             {/* Three Dot Context Menu */}
                             <div
@@ -108,7 +108,7 @@ const MyVehicles = () => {
                                     <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-2 sm:text-sm origin-top-right animate-in fade-in zoom-in duration-200">
                                         <button
                                             onClick={() => navigate(`/edit-vehicle/${vehicle.id}`)}
-                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2 font-medium transition-colors"
+                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
                                         >
                                             <Edit className="h-4 w-4" /> Edit Details
                                         </button>
@@ -130,7 +130,7 @@ const MyVehicles = () => {
 
                             <div className="p-8 flex-1">
                                 <div className="flex justify-between items-start mb-6">
-                                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 text-blue-600 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                                    <div className="p-4 bg-teal-50 rounded-2xl border border-teal-100 text-teal-600 group-hover:scale-110 group-hover:bg-teal-600 group-hover:text-white transition-all shadow-sm">
                                         <Car className="h-7 w-7" />
                                     </div>
                                     <span className="px-4 py-1.5 bg-slate-50 text-slate-600 border border-slate-200 rounded-full text-xs font-bold shadow-sm">
@@ -142,7 +142,7 @@ const MyVehicles = () => {
                                     {vehicle.brand ? `${vehicle.brand} ${vehicle.model}` : vehicle.model} {vehicle.variant && <span className="font-normal text-slate-500 text-lg">({vehicle.variant})</span>}
                                 </h3>
                                 <div className="flex items-center gap-2 mt-2 mb-8 flex-wrap">
-                                    <span className="px-3 py-1 text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg whitespace-nowrap">
+                                    <span className="px-3 py-1 text-xs font-bold text-teal-600 bg-teal-50 border border-teal-100 rounded-lg whitespace-nowrap">
                                         {vehicle.vehicleNumber}
                                     </span>
                                     {vehicle.currentOdometerKm > 0 && (
@@ -170,17 +170,30 @@ const MyVehicles = () => {
                                     </div>
                                 </div>
 
-                                {vehicle.rcBookUrl && (
-                                    <div className="mt-4">
-                                        <a
-                                            href={`http://localhost:5000${vehicle.rcBookUrl}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
-                                        >
-                                            <FileText className="h-4 w-4" />
-                                            View RC Book
-                                        </a>
+                                {(vehicle.rcBookUrl || vehicle.insuranceDocumentUrl) && (
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        {vehicle.rcBookUrl && (
+                                            <a
+                                                href={`http://localhost:5000${vehicle.rcBookUrl}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 bg-teal-50 px-3 py-2 rounded-lg border border-teal-100 hover:bg-teal-100 transition-colors"
+                                            >
+                                                <FileText className="h-4 w-4" />
+                                                View RC Book
+                                            </a>
+                                        )}
+                                        {vehicle.insuranceDocumentUrl && (
+                                            <a
+                                                href={`http://localhost:5000${vehicle.insuranceDocumentUrl}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                                            >
+                                                <FileText className="h-4 w-4" />
+                                                View Insurance
+                                            </a>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -188,14 +201,14 @@ const MyVehicles = () => {
                             <div className="px-8 py-5 bg-slate-50/80 border-t border-slate-100 flex justify-between items-center mt-auto">
                                 <button
                                     onClick={() => navigate(`/service-history/${vehicle.id}`)}
-                                    className="text-sm font-bold text-slate-600 hover:text-blue-600 flex items-center gap-1.5 transition-colors"
+                                    className="text-sm font-bold text-slate-600 hover:text-teal-600 flex items-center gap-1.5 transition-colors"
                                 >
                                     <History className="h-4.5 w-4.5" />
                                     View History
                                 </button>
                                 <button
                                     onClick={() => navigate('/add-service')}
-                                    className="text-sm font-bold text-white transition-all px-4 py-2 bg-slate-900 hover:bg-blue-600 rounded-lg shadow-sm hover:shadow-md"
+                                    className="text-sm font-bold text-white transition-all px-4 py-2 bg-slate-900 hover:bg-teal-600 rounded-lg shadow-sm hover:shadow-md"
                                 >
                                     Add Service
                                 </button>

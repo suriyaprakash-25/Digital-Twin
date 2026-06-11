@@ -91,6 +91,8 @@ router.post('/add', requireAuth, async (req, res) => {
     recommendedKm: data.recommendedKm,
     recommendedDate: data.recommendedDate,
 
+    billPhotoUrls: Array.isArray(data.billPhotoUrls) ? data.billPhotoUrls : [],
+
     abnormalKmJump: flaggedAbnormalJump,
     confidenceScore: flaggedAbnormalJump ? 80 : 100,
     ownerId,
@@ -154,11 +156,42 @@ router.get('/:vehicle_id', requireAuth, async (req, res) => {
       abnormalKmJump: s.abnormalKmJump || false,
       verificationStatus: s.verificationStatus || 'Pending',
       isArchived: s.isArchived || false,
+      billPhotoUrls: Array.isArray(s.billPhotoUrls) ? s.billPhotoUrls : (s.billPhotoUrl ? [s.billPhotoUrl] : []),
       createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : null
     });
   }
 
   return res.status(200).json(results);
+});
+
+// DELETE a service record
+router.delete('/:service_id', requireAuth, async (req, res) => {
+  const serviceId = req.params.service_id;
+  const db = getDb();
+  const services = db.collection('services');
+  const vehicles = db.collection('vehicles');
+
+  try {
+    const serviceObjectId = new ObjectId(serviceId);
+    
+    // Find service to get vehicleId
+    const service = await services.findOne({ _id: serviceObjectId });
+    if (!service) {
+      return res.status(404).json({ msg: 'Service record not found' });
+    }
+
+    // Verify ownership
+    const vehicleObjectId = new ObjectId(service.vehicleId);
+    const vehicle = await vehicles.findOne({ _id: vehicleObjectId, ownerId: req.user.id });
+    if (!vehicle) {
+      return res.status(403).json({ msg: 'Unauthorized: You do not own this vehicle' });
+    }
+
+    await services.deleteOne({ _id: serviceObjectId });
+    return res.status(200).json({ msg: 'Service record deleted successfully' });
+  } catch (e) {
+    return res.status(500).json({ msg: 'Error deleting service record', error: String(e && e.message ? e.message : e) });
+  }
 });
 
 module.exports = router;

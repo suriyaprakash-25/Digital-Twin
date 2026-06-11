@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -16,7 +16,7 @@ function normalizeRole(role) {
 
 const statusMeta = {
   PENDING:     { label: 'Pending',     color: 'bg-amber-100 text-amber-700',    icon: <Clock className="h-3.5 w-3.5" /> },
-  ACCEPTED:    { label: 'Accepted',    color: 'bg-blue-100 text-blue-700',      icon: <CheckCircle className="h-3.5 w-3.5" /> },
+  ACCEPTED:    { label: 'Accepted',    color: 'bg-teal-100 text-teal-700',      icon: <CheckCircle className="h-3.5 w-3.5" /> },
   IN_PROGRESS: { label: 'In Progress', color: 'bg-violet-100 text-violet-700',  icon: <Loader2 className="h-3.5 w-3.5" /> },
   COMPLETED:   { label: 'Completed',   color: 'bg-emerald-100 text-emerald-700',icon: <CheckCircle className="h-3.5 w-3.5" /> },
   REJECTED:    { label: 'Rejected',    color: 'bg-red-100 text-red-700',        icon: <XCircle className="h-3.5 w-3.5" /> },
@@ -38,11 +38,11 @@ const GarageDashboard = () => {
 
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
-  async function loadAll() {
+  const loadAll = useCallback(async () => {
     setError('');
     try {
       const [pRes, sRes, bRes, nRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/garages/me', headers),
+        axios.get('http://localhost:5000/api/garages/me', headers).catch(() => ({ data: { exists: false } })),
         axios.get('http://localhost:5000/api/garages/me/services', headers).catch(() => ({ data: [] })),
         axios.get('http://localhost:5000/api/bookings/garage', headers).catch(() => ({ data: [] })),
         axios.get('http://localhost:5000/api/notifications?limit=20', headers).catch(() => ({ data: [] })),
@@ -56,9 +56,9 @@ const GarageDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }
+  }, [headers]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { loadAll(); }, [headers]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadAll(); }, [loadAll]);
 
   const updateBookingStatus = async (bookingId, status) => {
     try {
@@ -71,6 +71,14 @@ const GarageDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600" />
+      </div>
+    );
+  }
+
   if (role !== 'GARAGE') {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm text-center">
@@ -81,10 +89,27 @@ const GarageDashboard = () => {
     );
   }
 
-  if (loading) {
+  if (!profile) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600" />
+      <div className="bg-white border border-slate-200 rounded-2xl p-10 shadow-sm text-center space-y-4">
+        <div className="w-16 h-16 bg-teal-50 border border-teal-100 rounded-2xl flex items-center justify-center mx-auto">
+          <Store className="h-8 w-8 text-teal-500" />
+        </div>
+        <div className="text-xl font-extrabold text-slate-900">Set Up Your Garage Profile</div>
+        <p className="text-slate-500 text-sm max-w-sm mx-auto">
+          You haven&apos;t created your garage profile yet. Set it up to start accepting bookings and managing your services.
+        </p>
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">
+            {error}
+          </div>
+        )}
+        <Link
+          to="/garage-profile"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
+        >
+          <Store className="h-4 w-4" /> Create Garage Profile
+        </Link>
       </div>
     );
   }
@@ -101,7 +126,7 @@ const GarageDashboard = () => {
     <div className="space-y-8 pb-12">
 
       {/* Hero header */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 p-8 shadow-2xl">
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-8 shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.3),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(16,185,129,0.15),transparent_60%)]" />
         <div className="relative z-10">
@@ -110,7 +135,7 @@ const GarageDashboard = () => {
               <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg flex-shrink-0">
                 {profile?.photoUrl
                   ? <img src={profile.photoUrl} alt="Garage" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-white text-xl font-black">{initials}</div>
+                  : <div className="w-full h-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center text-white text-xl font-black">{initials}</div>
                 }
               </div>
               <div>
@@ -129,7 +154,7 @@ const GarageDashboard = () => {
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { label: 'Total Services',  value: services.length,  icon: <Wrench className="h-5 w-5 text-blue-400" />,        bg: 'bg-blue-500/10' },
+              { label: 'Total Services',  value: services.length,  icon: <Wrench className="h-5 w-5 text-teal-400" />,        bg: 'bg-teal-500/10' },
               { label: 'Pending',         value: pendingCount,      icon: <Clock className="h-5 w-5 text-amber-400" />,        bg: 'bg-amber-500/10' },
               { label: 'In Progress',     value: inProgressCount,   icon: <Loader2 className="h-5 w-5 text-violet-400" />,     bg: 'bg-violet-500/10' },
               { label: 'Completed',       value: completedCount,    icon: <TrendingUp className="h-5 w-5 text-emerald-400" />, bg: 'bg-emerald-500/10' },
@@ -160,7 +185,7 @@ const GarageDashboard = () => {
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-xl text-blue-600"><CalendarCheck className="h-5 w-5" /></div>
+            <div className="p-2 bg-teal-100 rounded-xl text-teal-600"><CalendarCheck className="h-5 w-5" /></div>
             <div>
               <h2 className="text-base font-extrabold text-slate-900">Booking Requests</h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">{bookings.length} total bookings</p>
@@ -201,7 +226,7 @@ const GarageDashboard = () => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => updateBookingStatus(b.id, 'ACCEPTED')}
-                      className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">Accept</button>
+                      className="px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 text-xs font-bold hover:bg-teal-100 transition-colors">Accept</button>
                     <button onClick={() => updateBookingStatus(b.id, 'IN_PROGRESS')}
                       className="px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 text-xs font-bold hover:bg-violet-100 transition-colors">In Progress</button>
                     <button onClick={() => updateBookingStatus(b.id, 'COMPLETED')}

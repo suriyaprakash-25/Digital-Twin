@@ -70,7 +70,7 @@ const GarageServices = () => {
   };
 
   const categoryColors = [
-    'from-blue-500 to-blue-600',
+    'from-teal-500 to-teal-600',
     'from-emerald-500 to-emerald-600',
     'from-violet-500 to-violet-600',
     'from-amber-500 to-amber-600',
@@ -99,7 +99,7 @@ const GarageServices = () => {
         </div>
         <button
           onClick={() => setShowForm(v => !v)}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-teal-700 transition-all shadow-md hover:shadow-lg"
         >
           <Plus className="h-4 w-4" />
           Add Service
@@ -124,10 +124,10 @@ const GarageServices = () => {
       {showForm && (
         <form
           onSubmit={handleAdd}
-          className="bg-white border border-blue-100 rounded-3xl shadow-md overflow-hidden mb-8"
+          className="bg-white border border-teal-100 rounded-3xl shadow-md overflow-hidden mb-8"
         >
-          <div className="px-8 py-5 bg-blue-50 border-b border-blue-100 flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-xl text-blue-600"><Wrench className="h-5 w-5" /></div>
+          <div className="px-8 py-5 bg-teal-50 border-b border-teal-100 flex items-center gap-3">
+            <div className="p-2 bg-teal-100 rounded-xl text-teal-600"><Wrench className="h-5 w-5" /></div>
             <div>
               <h2 className="text-base font-extrabold text-slate-900">New Service</h2>
               <p className="text-xs text-slate-500 mt-0.5">This will be shown to customers in the marketplace</p>
@@ -143,7 +143,7 @@ const GarageServices = () => {
                 onChange={e => setNewService(s => ({ ...s, title: e.target.value }))}
                 placeholder="e.g. Full Car Service"
                 required
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
               />
             </div>
 
@@ -155,7 +155,7 @@ const GarageServices = () => {
                 value={newService.description}
                 onChange={e => setNewService(s => ({ ...s, description: e.target.value }))}
                 placeholder="What's included?"
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
               />
             </div>
 
@@ -169,7 +169,7 @@ const GarageServices = () => {
                 value={newService.price}
                 onChange={e => setNewService(s => ({ ...s, price: e.target.value }))}
                 placeholder="e.g. 2500"
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
               />
             </div>
 
@@ -183,7 +183,7 @@ const GarageServices = () => {
                 value={newService.durationMins}
                 onChange={e => setNewService(s => ({ ...s, durationMins: e.target.value }))}
                 placeholder="e.g. 120"
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
               />
             </div>
           </div>
@@ -198,7 +198,7 @@ const GarageServices = () => {
             <button
               type="submit"
               disabled={adding}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all"
             >
               <Plus className="h-4 w-4" />
               {adding ? 'Adding…' : 'Add Service'}
@@ -210,7 +210,7 @@ const GarageServices = () => {
       {/* Services grid */}
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600" />
+          <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-teal-600" />
         </div>
       ) : services.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 bg-white border border-dashed border-slate-200 rounded-3xl text-center">
@@ -221,7 +221,7 @@ const GarageServices = () => {
           </p>
           <button
             onClick={() => setShowForm(true)}
-            className="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-blue-700 transition-all"
+            className="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-teal-700 transition-all"
           >
             <Plus className="h-4 w-4" /> Add First Service
           </button>
@@ -231,7 +231,7 @@ const GarageServices = () => {
           {services.map((s, i) => (
             <div
               key={s.id}
-              className="group bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-200 transition-all overflow-hidden flex flex-col"
+              className="group bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-teal-200 transition-all overflow-hidden flex flex-col"
             >
               {/* Colour accent bar */}
               <div className={`h-1.5 bg-gradient-to-r ${categoryColors[i % categoryColors.length]}`} />

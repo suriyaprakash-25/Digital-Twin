@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Car, Lock, Mail, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ArrowRight } from 'lucide-react';
 import { tryRegisterFcmToken } from '../utils/fcm';
 
 const normalizeRole = (role) => {
@@ -49,19 +49,19 @@ const Login = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden px-4">
             {/* Decorative background elements */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-100 blur-[100px] opacity-60"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-100 blur-[100px] opacity-60"></div>
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-teal-100 blur-[100px] opacity-60"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-teal-100 blur-[100px] opacity-60"></div>
 
             <div className="max-w-md w-full relative z-10 glass-card p-10 rounded-3xl">
                 <div className="text-center">
-                    <div className="mx-auto h-16 w-16 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 mb-6 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                        <Car className="h-8 w-8 text-white" />
+                    <div className="flex flex-col items-center mb-6">
+                        <img src="/logo.jpeg" alt="Driveportz" className="h-16 w-16 rounded-2xl object-cover shadow-lg shadow-teal-500/20 transform rotate-3 hover:rotate-0 transition-transform duration-300" />
                     </div>
                     <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
                         Welcome Back
                     </h2>
                     <p className="mt-2 text-sm text-slate-500 font-medium">
-                        Sign in to access your digital twin dashboard
+                        Sign in to your Driveportz account
                     </p>
                 </div>
 
@@ -75,14 +75,14 @@ const Login = () => {
                     <div className="space-y-5">
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                             </div>
                             <input
                                 id="email-address"
                                 name="email"
                                 type="email"
                                 required
-                                className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm hover:border-slate-300"
+                                className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all sm:text-sm shadow-sm hover:border-slate-300"
                                 placeholder="Email address"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -90,14 +90,14 @@ const Login = () => {
                         </div>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                             </div>
                             <input
                                 id="password"
                                 name="password"
                                 type="password"
                                 required
-                                className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm shadow-sm hover:border-slate-300"
+                                className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all sm:text-sm shadow-sm hover:border-slate-300"
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -120,7 +120,7 @@ const Login = () => {
 
                     <div className="text-center text-sm text-slate-500 font-medium">
                         Don't have an account?{' '}
-                        <Link to="/signup" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                        <Link to="/signup" className="font-semibold text-teal-600 hover:text-teal-700 transition-colors">
                             Create Account
                         </Link>
                     </div>

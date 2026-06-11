@@ -110,7 +110,7 @@ const Marketplace = () => {
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           placeholder="Search by garage name or location…"
-          className="w-full pl-11 pr-10 py-3 border border-slate-200 rounded-2xl bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all"
+          className="w-full pl-11 pr-10 py-3 border border-slate-200 rounded-2xl bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
         />
         {searchQuery && (
           <button
@@ -197,7 +197,7 @@ const Marketplace = () => {
                     href={`https://www.google.com/maps?q=${g.garageLocation.latitude},${g.garageLocation.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm font-bold hover:bg-blue-100 transition-all"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 text-sm font-bold hover:bg-teal-100 transition-all"
                   >
                     <Navigation className="h-4 w-4" />
                     Show Location

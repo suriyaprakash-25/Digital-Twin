@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Car, Lock, Mail, User, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Lock, Mail, User, ShieldCheck, ArrowRight } from 'lucide-react';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -37,18 +37,18 @@ const Signup = () => {
         <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden px-4 py-12">
             {/* Decorative background elements */}
             <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-100 blur-[100px] opacity-60"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-100 blur-[100px] opacity-60"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-teal-100 blur-[100px] opacity-60"></div>
 
             <div className="max-w-md w-full relative z-10 glass-card p-10 rounded-3xl">
                 <div className="text-center">
-                    <div className="mx-auto h-16 w-16 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 mb-6 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
-                        <Car className="h-8 w-8 text-white" />
+                    <div className="flex flex-col items-center mb-6">
+                        <img src="/logo.jpeg" alt="Driveportz" className="h-16 w-16 rounded-2xl object-cover shadow-lg shadow-emerald-500/20 transform -rotate-3 hover:rotate-0 transition-transform duration-300" />
                     </div>
                     <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
                         Create Account
                     </h2>
                     <p className="mt-2 text-sm text-slate-500 font-medium">
-                        Join Mobility Digital Twin today
+                        Join Driveportz today
                     </p>
                 </div>
 
