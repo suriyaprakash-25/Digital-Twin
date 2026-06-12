@@ -14,6 +14,10 @@ function normalizeRole(role) {
     return 'USER';
   }
 
+  if (r === 'admin' || r === 'administrator') {
+    return 'ADMIN';
+  }
+
   return String(role || 'USER');
 }
 

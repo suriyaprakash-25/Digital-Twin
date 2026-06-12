@@ -20,6 +20,15 @@ import GarageServices from './pages/GarageServices';
 import Marketplace from './pages/Marketplace';
 import MyProfile from './pages/MyProfile';
 
+// Admin
+import AdminLayout from './components/admin/AdminLayout';
+import AdminRoute from './components/admin/AdminRoute';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminGarages from './pages/admin/AdminGarages';
+import AdminRevenue from './pages/admin/AdminRevenue';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
+
 function App() {
   return (
     <Router>
@@ -28,6 +37,21 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+
+        {/* Admin routes */}
+        <Route
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/garages" element={<AdminGarages />} />
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
+          <Route path="/admin/revenue" element={<AdminRevenue />} />
+        </Route>
 
         {/* Protected Dashboard Routes — pathless layout */}
         <Route
@@ -61,3 +85,4 @@ function App() {
 }
 
 export default App;
+

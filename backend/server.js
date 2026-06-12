@@ -20,6 +20,7 @@ const marketplaceRoutes = require('./src/routes/marketplace');
 const garagesRoutes = require('./src/routes/garages');
 const bookingRoutes = require('./src/routes/bookings');
 const notificationRoutes = require('./src/routes/notifications');
+const adminRoutes = require('./src/routes/admin');
 
 const app = express();
 const config = loadConfig();
@@ -87,6 +88,7 @@ app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/garages', garagesRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Start after DB connects
 (async () => {

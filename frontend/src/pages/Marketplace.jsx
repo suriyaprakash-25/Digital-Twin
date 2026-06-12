@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { MapPin, Navigation, Search, X } from 'lucide-react';
+import { MapPin, Navigation, Search, X, ShieldCheck } from 'lucide-react';
 
 const Marketplace = () => {
   const [garages, setGarages] = useState([]);
@@ -185,8 +185,16 @@ const Marketplace = () => {
         {filteredGarages.map((g) => (
           <div key={g.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <div className="text-lg font-extrabold text-slate-900">{g.name}</div>
+                <div>
+                <div className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                  {g.name}
+                  {g.verified && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      Verified
+                    </span>
+                  )}
+                </div>
                 <div className="text-sm text-slate-600 mt-1">{[g.address, g.city].filter(Boolean).join(', ')}</div>
                 {g.phone ? <div className="text-sm text-slate-600 mt-1">Phone: {g.phone}</div> : null}
                 {g.description ? <div className="text-sm text-slate-600 mt-2">{g.description}</div> : null}

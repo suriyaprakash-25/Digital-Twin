@@ -8,6 +8,7 @@ const normalizeRole = (role) => {
     const r = String(role || '').trim().toLowerCase();
     if (r === 'garage' || r === 'service_center' || r === 'servicecenter' || r === 'service center') return 'GARAGE';
     if (r === 'vehicle_owner' || r === 'vehicle owner' || r === 'user' || r === 'customer' || r === 'owner') return 'USER';
+    if (r === 'admin' || r === 'administrator') return 'ADMIN';
     return role || 'USER';
 };
 
@@ -38,7 +39,11 @@ const Login = () => {
             });
 
             const role = normalizeRole(response.data.user?.role);
-            navigate(role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard');
+            if (role === 'ADMIN') {
+                navigate('/admin');
+            } else {
+                navigate(role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard');
+            }
         } catch (err) {
             setError(err.response?.data?.msg || 'Failed to login. Please try again.');
         } finally {

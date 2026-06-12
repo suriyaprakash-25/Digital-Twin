@@ -47,6 +47,8 @@ router.get('/', async (req, res) => {
       description: g.description,
       ownerUserId: g.ownerUserId,
       isActive: Boolean(g.isActive !== false),
+      verified: g.verified === true,
+      photoUrl: g.photoUrl || null,
       createdAt: g.createdAt,
       garageLocation: g.garageLocation || null,
       services: servicesByGarage.get(String(g._id)) || []
