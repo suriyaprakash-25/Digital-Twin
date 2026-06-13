@@ -53,6 +53,35 @@ const LandingPage = () => {
   const c3 = useCounter(98, 1800, statsVisible);
   const c4 = useCounter(240, 2200, statsVisible);
 
+  /* ── Parallax hero card ───────────────────────────── */
+  const heroCardRef = useRef(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const tiltRaf = useRef(null);
+
+  const handleHeroMouseMove = (e) => {
+    if (tiltRaf.current) cancelAnimationFrame(tiltRaf.current);
+    tiltRaf.current = requestAnimationFrame(() => {
+      const rect = heroCardRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = (e.clientX - cx) / (rect.width / 2);   // -1 … 1
+      const dy = (e.clientY - cy) / (rect.height / 2);  // -1 … 1
+      setTilt({ x: dy * -6, y: dx * 6 });               // max 6° tilt
+    });
+  };
+
+  const handleHeroMouseLeave = () => {
+    if (tiltRaf.current) cancelAnimationFrame(tiltRaf.current);
+    setTilt({ x: 0, y: 0 });
+  };
+
+  /* ── Smooth scroll without hash in URL ─────────────── */
+  const scrollTo = (id) => (e) => {
+    e.preventDefault();
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   /* auth redirect */
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -71,7 +100,7 @@ const LandingPage = () => {
 
   /* ── inline keyframes ─────────────────────────────── */
   const css = `
-    *{box-sizing:border-box;margin:0;padding:0;}
+    *{box-sizing:border-box;}
     @keyframes fadeUp{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
     @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
     @keyframes floatY2{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
@@ -97,7 +126,7 @@ const LandingPage = () => {
   `;
 
   return (
-    <div style={{ background: '#f8fafc', color: '#0f172a', fontFamily: "'Inter',system-ui,sans-serif", overflowX: 'hidden', lineHeight: 1 }}>
+    <div style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
       <style>{css}</style>
 
       {/* ════════════════════════════════
@@ -117,17 +146,14 @@ const LandingPage = () => {
           <img
             src="/logo.jpeg"
             alt="Driveportz logo"
-            style={{ height: 40, width: 40, borderRadius: 10, objectFit: 'cover', boxShadow: '0 0 22px rgba(13,148,136,.35)' }}
+            style={{ height: 50, width: 50, borderRadius: 12, objectFit: 'cover', boxShadow: '0 0 22px rgba(13,148,136,.35)' }}
           />
-          <span style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#0f172a' }}>
-            Drive<span style={{ color: '#0d9488' }}>portz</span>
-          </span>
         </div>
 
         {/* Nav links */}
         <div style={{ display: 'flex', gap: '2.25rem', alignItems: 'center' }}>
-          {[['#features', 'Features'], ['#how-it-works', 'How It Works'], ['#for-garages', 'For Garages'], ['#analytics', 'Analytics']].map(([href, label]) => (
-            <a key={href} href={href} className="nav-a">{label}</a>
+          {[['features', 'Features'], ['how-it-works', 'How It Works'], ['for-garages', 'For Garages'], ['analytics', 'Analytics']].map(([id, label]) => (
+            <button key={id} onClick={scrollTo(id)} className="nav-a" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{label}</button>
           ))}
         </div>
 
@@ -156,270 +182,68 @@ const LandingPage = () => {
       {/* ════════════════════════════════
            HERO
       ════════════════════════════════ */}
-      <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 64, background: 'linear-gradient(160deg,#f0fdfa 0%,#f8fafc 50%,#f0fdfa 100%)' }}>
-        {/* grid bg */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(13,148,136,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(13,148,136,.05) 1px,transparent 1px)',
-          backgroundSize: '64px 64px', pointerEvents: 'none',
-        }} />
-        {/* orb 1 */}
-        <div style={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle,rgba(13,148,136,.1) 0%,transparent 68%)', top: -160, left: -160, pointerEvents: 'none' }} />
-        {/* orb 2 */}
-        <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(2,132,199,.08) 0%,transparent 68%)', bottom: -80, right: -80, pointerEvents: 'none' }} />
-        {/* orb 3 */}
-        <div style={{ position: 'absolute', width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle,rgba(124,58,237,.07) 0%,transparent 68%)', top: '45%', left: '58%', pointerEvents: 'none' }} />
-
-        {/* ── Animated abstract hero background ── */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-          {/* Animated circuit network SVG */}
-          <svg viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.6 }}>
-            <defs>
-              <linearGradient id="circuitGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#0d9488" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.1" />
-              </linearGradient>
-              <linearGradient id="circuitGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.08" />
-              </linearGradient>
-              <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#5eead4" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#0d9488" stopOpacity="0" />
-              </radialGradient>
-              <filter id="glow">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-            </defs>
-
-            {/* Circuit paths — data flowing through a network */}
-            <path d="M -20,400 Q 200,350 360,420 T 720,380 T 1080,440 T 1460,400"
-              fill="none" stroke="url(#circuitGrad1)" strokeWidth="1.5" strokeDasharray="8,12">
-              <animate attributeName="stroke-dashoffset" from="0" to="-40" dur="3s" repeatCount="indefinite" />
-            </path>
-            <path d="M -20,500 Q 300,440 500,520 T 900,460 T 1200,530 T 1460,480"
-              fill="none" stroke="url(#circuitGrad2)" strokeWidth="1.2" strokeDasharray="6,14">
-              <animate attributeName="stroke-dashoffset" from="0" to="-40" dur="4s" repeatCount="indefinite" />
-            </path>
-            <path d="M -20,300 Q 250,260 440,310 T 820,280 T 1100,340 T 1460,290"
-              fill="none" stroke="url(#circuitGrad1)" strokeWidth="1" strokeDasharray="5,16" opacity="0.5">
-              <animate attributeName="stroke-dashoffset" from="0" to="-42" dur="5s" repeatCount="indefinite" />
-            </path>
-
-            {/* Intersection nodes with glow */}
-            {[
-              { cx: 360, cy: 420, r: 4, delay: '0s' },
-              { cx: 720, cy: 380, r: 5, delay: '0.5s' },
-              { cx: 1080, cy: 440, r: 4, delay: '1s' },
-              { cx: 500, cy: 520, r: 3.5, delay: '1.5s' },
-              { cx: 900, cy: 460, r: 4.5, delay: '0.8s' },
-              { cx: 440, cy: 310, r: 3, delay: '2s' },
-              { cx: 820, cy: 280, r: 3.5, delay: '1.2s' },
-            ].map((n, i) => (
-              <g key={i}>
-                <circle cx={n.cx} cy={n.cy} r={n.r * 5} fill="url(#nodeGlow)" opacity="0.4">
-                  <animate attributeName="opacity" values="0.2;0.5;0.2" dur="3s" begin={n.delay} repeatCount="indefinite" />
-                </circle>
-                <circle cx={n.cx} cy={n.cy} r={n.r} fill="#5eead4" filter="url(#glow)">
-                  <animate attributeName="r" values={`${n.r};${n.r * 1.4};${n.r}`} dur="2.5s" begin={n.delay} repeatCount="indefinite" />
-                </circle>
-              </g>
-            ))}
-
-            {/* Vertical connector lines between paths */}
-            {[
-              { x: 360, y1: 310, y2: 420 },
-              { x: 720, y1: 280, y2: 380 },
-              { x: 900, y1: 460, y2: 530 },
-            ].map((l, i) => (
-              <line key={i} x1={l.x} y1={l.y1} x2={l.x} y2={l.y2}
-                stroke="rgba(94,234,212,0.15)" strokeWidth="1" strokeDasharray="3,6">
-                <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="2s" repeatCount="indefinite" />
-              </line>
-            ))}
-          </svg>
-
-          {/* Floating particle dots */}
-          {[
-            { left: '8%', top: '25%', size: 6, dur: '6s', delay: '0s' },
-            { left: '15%', top: '60%', size: 4, dur: '8s', delay: '1s' },
-            { left: '25%', top: '40%', size: 5, dur: '7s', delay: '0.5s' },
-            { left: '42%', top: '72%', size: 3, dur: '9s', delay: '2s' },
-            { left: '58%', top: '20%', size: 5, dur: '6.5s', delay: '1.5s' },
-            { left: '70%', top: '55%', size: 4, dur: '7.5s', delay: '0.8s' },
-            { left: '82%', top: '35%', size: 6, dur: '8s', delay: '2.5s' },
-            { left: '90%', top: '65%', size: 3, dur: '6s', delay: '1.2s' },
-            { left: '35%', top: '15%', size: 4, dur: '9s', delay: '3s' },
-            { left: '65%', top: '78%', size: 5, dur: '7s', delay: '0.3s' },
-          ].map((p, i) => (
-            <div key={i} style={{
-              position: 'absolute', left: p.left, top: p.top,
-              width: p.size, height: p.size, borderRadius: '50%',
-              background: 'radial-gradient(circle, #5eead4, transparent)',
-              animation: `floatY ${p.dur} ease-in-out infinite`,
-              animationDelay: p.delay, opacity: 0.5,
-            }} />
-          ))}
-
-          {/* Large glowing accent orb — bottom center */}
-          <div style={{
-            position: 'absolute', bottom: '-12%', left: '50%', transform: 'translateX(-50%)',
-            width: 800, height: 400, borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(13,148,136,0.12) 0%, rgba(13,148,136,0.04) 40%, transparent 70%)',
-          }} />
-        </div>
-
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '5rem 2rem 4rem', width: '100%' }}>
-          {/* Badge */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.6rem' }}>
-            <div className="fu fu1" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'rgba(13,148,136,.08)', border: '1px solid rgba(13,148,136,.25)',
-              borderRadius: 100, padding: '.38rem 1rem',
-            }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22d3ee', boxShadow: '0 0 8px #22d3ee', display: 'inline-block', animation: 'dotPulse 2s ease-in-out infinite' }} />
-              <span style={{ fontSize: '.75rem', fontWeight: 700, color: '#0d9488', letterSpacing: '.08em', textTransform: 'uppercase' }}>The Future of Vehicle Intelligence</span>
+      <main className="pt-24 pb-12 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto min-h-screen flex items-center">
+        {/* Hero Section Canvas – Parallax wrapper */}
+        <div
+          style={{ perspective: '1200px' }}
+          onMouseMove={handleHeroMouseMove}
+          onMouseLeave={handleHeroMouseLeave}
+        >
+        <div
+          ref={heroCardRef}
+          className="canvas-card rounded-xl overflow-hidden w-full flex flex-col md:flex-row min-h-[680px]"
+          style={{
+            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.01)`,
+            transition: 'transform 0.12s ease-out, box-shadow 0.12s ease-out',
+            boxShadow: `
+              ${tilt.y * 2}px ${tilt.x * -2}px 40px rgba(15,23,42,0.10),
+              0 30px 60px -15px rgba(15,23,42,0.08)
+            `,
+            willChange: 'transform',
+          }}
+        >
+          {/* Left Side: Content */}
+          <div className="w-full md:w-1/2 p-12 md:p-24 flex flex-col justify-center">
+            <div className="max-w-xl">
+              <span className="text-primary font-label-md text-label-md uppercase tracking-widest mb-4 block">Precision Engineering</span>
+              <h1 className="font-display text-display text-on-secondary-fixed mb-6">Your Vehicle's Digital Brain</h1>
+              <p className="font-body-lg text-body-lg text-on-surface-variant mb-10 leading-relaxed">
+                The definitive operating system for automotive management. Experience surgical efficiency in vehicle diagnostics, garage workflow, and real-time telemetry analytics.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  to="/signup"
+                  className="bg-primary-container text-on-primary-fixed flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-label-md text-label-md hover:opacity-90 transition-all active:scale-95"
+                >
+                  Start for Free
+                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                </Link>
+                <button
+                  onClick={scrollTo('features')}
+                  className="border border-on-secondary-fixed text-on-secondary-fixed flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-label-md text-label-md hover:bg-surface-container-low transition-all text-center"
+                >
+                  Explore Features
+                </button>
+              </div>
             </div>
           </div>
-
-          {/* Headline */}
-          <h1 className="fu fu2" style={{ fontSize: 'clamp(2.8rem,6.5vw,5.2rem)', fontWeight: 900, lineHeight: 1.04, letterSpacing: '-0.045em', textAlign: 'center', marginBottom: '1.4rem', color: '#0f172a' }}>
-            Your Vehicle's{' '}
-            <span className="shimmer-text">Digital Brain</span>
-          </h1>
-
-          {/* Sub */}
-          <p className="fu fu3" style={{ fontSize: 'clamp(.95rem,1.8vw,1.2rem)', color: '#64748b', maxWidth: 620, margin: '0 auto 2.8rem', lineHeight: 1.75, textAlign: 'center' }}>
-            Track every service, monitor health, detect odometer fraud, and unlock true resale value — all in one intelligent platform built for the modern driver.
-          </p>
-
-          {/* CTAs */}
-          <div className="fu fu4" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '4.5rem' }}>
-            <Link to="/signup" className="glow-cta" style={{
-              background: 'linear-gradient(135deg,#0d9488,#0f766e)',
-              color: '#fff', fontWeight: 700, fontSize: '1rem',
-              padding: '.9rem 2.5rem', borderRadius: 12, textDecoration: 'none',
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              Start for Free <ArrowRight size={17} />
-            </Link>
-            <a href="#features" style={{
-              background: '#fff', color: '#374151',
-              fontWeight: 600, fontSize: '1rem',
-              padding: '.9rem 2.5rem', borderRadius: 12, textDecoration: 'none',
-              border: '1px solid #e2e8f0',
-              display: 'flex', alignItems: 'center', gap: 8,
-              transition: 'all .2s',
-              boxShadow: '0 1px 4px rgba(0,0,0,.06)',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}>
-              Explore Features
-            </a>
-          </div>
-
-          {/* ── Dashboard mockup ── */}
-          <div className="fu fu5 float" style={{ maxWidth: 880, margin: '0 auto', position: 'relative' }}>
-            {/* Main card */}
-            <div style={{
-              background: '#fff', backdropFilter: 'blur(24px)',
-              border: '1px solid #e2e8f0', borderRadius: 24,
-              padding: '2rem', boxShadow: '0 20px 60px rgba(13,148,136,.1),0 4px 20px rgba(0,0,0,.06)',
-              position: 'relative', overflow: 'hidden',
-            }}>
-              <div className="scan" />
-              {/* header row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.6rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 46, height: 46, borderRadius: 13, background: 'linear-gradient(135deg,#0d9488,#5eead4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(13,148,136,.5)' }}>
-                    <Car size={22} color="#fff" />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>Toyota Fortuner</div>
-                    <div style={{ color: '#94a3b8', fontSize: '.78rem', marginTop: 2 }}>KA 05 MX 2847 &nbsp;•&nbsp; 2022 &nbsp;•&nbsp; 44,820 km</div>
-                  </div>
-                </div>
-                <div style={{ background: 'rgba(74,222,128,.15)', border: '1px solid rgba(74,222,128,.35)', color: '#4ade80', fontWeight: 700, fontSize: '.82rem', padding: '.32rem .9rem', borderRadius: 50 }}>
-                  ● Excellent Condition
+          {/* Right Side: Illustration */}
+          <div className="w-full md:w-1/2 bg-surface-container-low flex items-center justify-center p-4 md:p-6 border-l border-outline-variant">
+            <div className="relative w-full aspect-[1.79]">
+              <img alt="Driveportz Garage Scene" className="w-full h-full object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk4bG_vORRaC8TqJQ2YDu4CTj1TluAhujbKRLmbilwg4F2zUHl63eYWwHkv4znCgknFRNEvdYVTWZKSlT4VNsROIXA3T89oudaVPZV19d5ugjnnr8VIfvSuN-7Siy3GXSlGtwoeYEfvWqGIHz_w9YytM2h3s_SnpHnkrI6gQDnzr7Wss7oLVQvSx7P6Uj15fzhXQVZ58ulN90baB2k1nMhV1Oh77E5j_02-2wIxGDhSKfnSev4tDwT-psdmWMGJ2qzsbSphImQxs"/>
+              {/* Decorative Floating Data Nodes (Vector Style) */}
+              <div className="absolute top-10 right-10 py-2 px-3 canvas-card rounded-lg flex items-center gap-2 animate-bounce">
+                <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>analytics</span>
+                <div>
+                  <p className="text-[9px] uppercase font-bold text-outline leading-tight">Real-time Data</p>
+                  <p className="font-bold text-[12px] text-on-surface leading-tight">98.2% Accurate</p>
                 </div>
               </div>
-
-              {/* Stats grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '.9rem', marginBottom: '1.4rem' }}>
-                {[
-                  { label: 'Health Score', val: '92', unit: '/100', color: '#16a34a' },
-                  { label: 'Trust Score', val: '87', unit: '/100', color: '#0d9488' },
-                  { label: 'Est. Value', val: '₹18.4L', unit: '', color: '#d97706' },
-                  { label: 'Next Service', val: '2,100', unit: 'km', color: '#0f766e' },
-                ].map(s => (
-                  <div key={s.label} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: '1rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.55rem', fontWeight: 900, color: s.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
-                      {s.val}<span style={{ fontSize: '.72rem', color: '#94a3b8' }}>{s.unit}</span>
-                    </div>
-                    <div style={{ fontSize: '.7rem', color: '#64748b', marginTop: 6, fontWeight: 500 }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Progress bar */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ flex: 1, height: 7, background: '#e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-                  <div style={{ width: '72%', height: '100%', background: 'linear-gradient(90deg,#0d9488,#14b8a6)', borderRadius: 10 }} />
-                </div>
-                <span style={{ fontSize: '.72rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>72% service cycle complete</span>
-              </div>
-            </div>
-
-            {/* Floating badge — left */}
-            <div className="float2" style={{
-              position: 'absolute', left: '-3%', top: '18%',
-              background: '#fff', backdropFilter: 'blur(16px)',
-              border: '1px solid #fde68a', borderRadius: 14,
-              padding: '.8rem 1.1rem', minWidth: 178,
-              boxShadow: '0 8px 30px rgba(217,119,6,.12)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <Bell size={13} color="#d97706" />
-                <span style={{ fontSize: '.75rem', fontWeight: 700, color: '#d97706' }}>Insurance Expiring</span>
-              </div>
-              <div style={{ fontSize: '.68rem', color: '#94a3b8' }}>12 days remaining — Renew now</div>
-            </div>
-
-            {/* Floating badge — right */}
-            <div className="float2" style={{
-              position: 'absolute', right: '-3%', top: '22%',
-              background: '#fff', backdropFilter: 'blur(16px)',
-              border: '1px solid #bbf7d0', borderRadius: 14,
-              padding: '.8rem 1.1rem',
-              animationDelay: '.8s',
-              boxShadow: '0 8px 30px rgba(22,163,74,.1)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <Shield size={13} color="#16a34a" />
-                <span style={{ fontSize: '.75rem', fontWeight: 700, color: '#16a34a' }}>Service Verified</span>
-              </div>
-              <div style={{ fontSize: '.68rem', color: '#94a3b8' }}>No tamper flags detected</div>
-            </div>
-
-            {/* Floating badge — bottom right */}
-            <div className="float2" style={{
-              position: 'absolute', right: '8%', bottom: '-6%',
-              background: '#fff', backdropFilter: 'blur(16px)',
-              border: '1px solid #99f6e4', borderRadius: 14,
-              padding: '.8rem 1.1rem', animationDelay: '1.5s',
-              boxShadow: '0 8px 30px rgba(13,148,136,.1)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <TrendingUp size={13} color="#0d9488" />
-                <span style={{ fontSize: '.75rem', fontWeight: 700, color: '#0d9488' }}>Resale Valuation Ready</span>
-              </div>
-              <div style={{ fontSize: '.68rem', color: '#94a3b8' }}>₹17.2L – ₹19.6L estimated range</div>
             </div>
           </div>
         </div>
-      </section>
+        </div>
+      </main>
 
       {/* ════════════════════════════════
            STATS BAR
