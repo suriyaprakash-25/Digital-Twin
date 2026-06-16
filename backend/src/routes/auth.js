@@ -239,4 +239,104 @@ router.post('/me/license', requireAuth, upload.single('license'), async (req, re
   }
 });
 
+router.post('/google', async (req, res) => {
+  const { credential, role } = req.body || {};
+  if (!credential) {
+    return res.status(400).json({ msg: 'Google credential token is required' });
+  }
+
+  try {
+    const https = require('https');
+    const tokenInfoUrl = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`;
+    
+    const googlePayload = await new Promise((resolve, reject) => {
+      https.get(tokenInfoUrl, (googleRes) => {
+        let data = '';
+        googleRes.on('data', (chunk) => { data += chunk; });
+        googleRes.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+            if (googleRes.statusCode === 200) {
+              resolve(parsed);
+            } else {
+              reject(new Error(parsed.error_description || 'Invalid token'));
+            }
+          } catch (e) {
+            reject(new Error('Failed to parse Google API response'));
+          }
+        });
+      }).on('error', (err) => {
+        reject(err);
+      });
+    });
+
+    if (!googlePayload.email) {
+      return res.status(400).json({ msg: 'Google token does not contain email' });
+    }
+
+    const expectedClientId = process.env.GOOGLE_CLIENT_ID;
+    if (expectedClientId && googlePayload.aud !== expectedClientId) {
+      return res.status(401).json({ msg: 'Token audience mismatch. Unrecognized client ID.' });
+    }
+
+    const email = String(googlePayload.email).trim().toLowerCase();
+    const name = googlePayload.name || googlePayload.given_name || 'Google User';
+    const photoUrl = googlePayload.picture || null;
+
+    const db = getDb();
+    const users = db.collection('users');
+
+    let user = await users.findOne({ email });
+    let isNewUser = false;
+
+    if (!user) {
+      isNewUser = true;
+      const normalizedRole = normalizeRole(role || 'USER');
+      const randomPassword = await bcrypt.hash(Math.random().toString(36).slice(-10), 10);
+      user = {
+        name,
+        email,
+        password: randomPassword,
+        role: normalizedRole,
+        photoUrl,
+        createdAt: new Date()
+      };
+      const result = await users.insertOne(user);
+      user._id = result.insertedId;
+    }
+
+    const token = jwt.sign(
+      {
+        role: normalizeRole(user.role)
+      },
+      config.jwtSecret,
+      {
+        subject: String(user._id),
+        expiresIn: config.jwtExpiresIn
+      }
+    );
+
+    return res.status(200).json({
+      msg: isNewUser ? 'Signup successful' : 'Login successful',
+      token,
+      user: {
+        id: String(user._id),
+        name: user.name,
+        email: user.email,
+        role: normalizeRole(user.role),
+        phone: user.phone || '',
+        city: user.city || '',
+        bio: user.bio || '',
+        photoUrl: user.photoUrl || photoUrl || null,
+        licenseDocumentUrl: user.licenseDocumentUrl || null,
+        createdAt: user.createdAt || null
+      }
+    });
+  } catch (err) {
+    console.error('Google Sign In Error:', err.message);
+    return res.status(401).json({ msg: 'Google authentication failed', error: err.message });
+  }
+});
+
 module.exports = router;
+

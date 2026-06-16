@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Lock, Mail, ArrowRight } from 'lucide-react';
 import { tryRegisterFcmToken } from '../utils/fcm';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 
 const normalizeRole = (role) => {
     const r = String(role || '').trim().toLowerCase();
@@ -49,6 +50,39 @@ const Login = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleGoogleLogin = async (credential) => {
+        setError('');
+        setIsLoading(true);
+
+        try {
+            const response = await axios.post('http://localhost:5000/api/auth/google', {
+                credential,
+            });
+
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+
+            tryRegisterFcmToken({ authToken: response.data.token, requestPermission: true }).catch(() => {
+                // ignore
+            });
+
+            const role = normalizeRole(response.data.user?.role);
+            if (role === 'ADMIN') {
+                navigate('/admin');
+            } else {
+                navigate(role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard');
+            }
+        } catch (err) {
+            setError(err.response?.data?.msg || 'Google Sign In failed. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleError = (err) => {
+        setError(err?.message || 'Google authentication was cancelled or encountered an error.');
     };
 
     return (
@@ -123,6 +157,16 @@ const Login = () => {
                         </button>
                     </div>
 
+                    <div className="relative flex py-2 items-center">
+                        <div className="flex-grow border-t border-slate-200"></div>
+                        <span className="flex-shrink mx-4 text-slate-400 text-xs uppercase font-semibold">Or continue with</span>
+                        <div className="flex-grow border-t border-slate-200"></div>
+                    </div>
+
+                    <div className="w-full">
+                        <GoogleSignInButton onSuccess={handleGoogleLogin} onError={handleGoogleError} />
+                    </div>
+
                     <div className="text-center text-sm text-slate-500 font-medium">
                         Don't have an account?{' '}
                         <Link to="/signup" className="font-semibold text-teal-600 hover:text-teal-700 transition-colors">
@@ -136,3 +180,4 @@ const Login = () => {
 };
 
 export default Login;
+

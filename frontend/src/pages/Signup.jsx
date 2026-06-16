@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Lock, Mail, User, ShieldCheck, ArrowRight } from 'lucide-react';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -31,6 +32,36 @@ const Signup = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleGoogleSignup = async (credential) => {
+        setError('');
+        setIsLoading(true);
+
+        try {
+            const response = await axios.post('http://localhost:5000/api/auth/google', {
+                credential,
+                role: formData.role
+            });
+
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+
+            const role = response.data.user?.role;
+            if (role === 'ADMIN') {
+                navigate('/admin');
+            } else {
+                navigate(role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard');
+            }
+        } catch (err) {
+            setError(err.response?.data?.msg || 'Google Sign Up failed. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleError = (err) => {
+        setError(err?.message || 'Google authentication was cancelled or encountered an error.');
     };
 
     return (
@@ -134,6 +165,16 @@ const Signup = () => {
                         </button>
                     </div>
 
+                    <div className="relative flex py-2 items-center">
+                        <div className="flex-grow border-t border-slate-200"></div>
+                        <span className="flex-shrink mx-4 text-slate-400 text-xs uppercase font-semibold">Or continue with</span>
+                        <div className="flex-grow border-t border-slate-200"></div>
+                    </div>
+
+                    <div className="w-full">
+                        <GoogleSignInButton onSuccess={handleGoogleSignup} onError={handleGoogleError} text="signup_with" />
+                    </div>
+
                     <div className="text-center text-sm text-slate-500 font-medium">
                         Already have an account?{' '}
                         <Link to="/login" className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
@@ -147,3 +188,4 @@ const Signup = () => {
 };
 
 export default Signup;
+
