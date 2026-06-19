@@ -65,7 +65,7 @@ const AddService = () => {
     };
 
     const addPartRow = () => {
-        setPartsReplaced([...partsReplaced, { partName: '', cost: '' }]);
+        setPartsReplaced([...partsReplaced, { partName: '', brand: '', cost: '' }]);
     };
 
     const removePartRow = (index) => {
@@ -327,12 +327,19 @@ const AddService = () => {
                                         <div key={index} className="flex gap-4 items-center animate-in fade-in zoom-in duration-200">
                                             <input
                                                 type="text"
-                                                placeholder="Part Name (e.g. Engine Oil Filter)"
+                                                placeholder="Part Name (e.g. Battery)"
                                                 value={part.partName}
                                                 onChange={(e) => updatePartData(index, 'partName', e.target.value)}
                                                 className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                                             />
-                                            <div className="relative w-48">
+                                            <input
+                                                type="text"
+                                                placeholder="Brand (e.g. Amaron)"
+                                                value={part.brand || ''}
+                                                onChange={(e) => updatePartData(index, 'brand', e.target.value)}
+                                                className="w-48 px-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                                            />
+                                            <div className="relative w-36">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><IndianRupee className="h-4 w-4 text-slate-400" /></div>
                                                 <input
                                                     type="number"

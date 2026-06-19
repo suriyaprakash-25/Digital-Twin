@@ -19,6 +19,9 @@ import GarageProfile from './pages/GarageProfile';
 import GarageServices from './pages/GarageServices';
 import Marketplace from './pages/Marketplace';
 import MyProfile from './pages/MyProfile';
+import Passport from './pages/Passport';
+import Insurance from './pages/Insurance';
+import TransferOwnership from './pages/TransferOwnership';
 
 // Admin
 import AdminLayout from './components/admin/AdminLayout';
@@ -37,6 +40,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/passport/:vehicleId" element={<Passport />} />
 
         {/* Admin routes */}
         <Route
@@ -74,6 +78,8 @@ function App() {
           <Route path="/add-service" element={<AddService />} />
           <Route path="/service-history/:vehicleId" element={<ServiceHistory />} />
           <Route path="/resale-report/:vehicleId" element={<ResaleReport />} />
+          <Route path="/insurance/:vehicleId" element={<Insurance />} />
+          <Route path="/transfer/:vehicleId" element={<TransferOwnership />} />
           <Route path="/garage-portal" element={<GaragePortal />} />
           <Route path="/garage-profile" element={<GarageProfile />} />
           <Route path="/garage-services" element={<GarageServices />} />

@@ -105,8 +105,8 @@ const Dashboard = () => {
                     title="System Health"
                     value={loading ? '-' : `${avgHealth}%`}
                     icon={<Settings className="h-6 w-6 text-emerald-600" />}
-                    color={avgHealth >= 80 ? 'emerald' : avgHealth >= 50 ? 'amber' : 'rose'}
-                    trend={avgHealth >= 80 ? 'Optimal performance' : 'Needs attention'}
+                    color={avgHealth >= 85 ? 'emerald' : avgHealth >= 70 ? 'blue' : avgHealth >= 50 ? 'amber' : 'rose'}
+                    trend={avgHealth >= 85 ? 'Optimal performance' : avgHealth >= 70 ? 'Good condition' : 'Needs attention'}
                 />
             </div>
 
@@ -169,8 +169,20 @@ const Dashboard = () => {
                         <div className="space-y-4">
                             {vehicles.slice(0, 5).map(v => {
                                 const h = healthData[v.id] || { healthScore: 100, conditionLevel: 'Excellent' };
-                                const scoreColor = h.healthScore >= 80 ? 'text-emerald-600' : h.healthScore >= 50 ? 'text-amber-600' : 'text-rose-600';
-                                const barColor = h.healthScore >= 80 ? 'bg-emerald-500' : h.healthScore >= 50 ? 'bg-amber-500' : 'bg-rose-500';
+                                const scoreColor = h.healthScore >= 85
+                                    ? 'text-emerald-600'
+                                    : h.healthScore >= 70
+                                    ? 'text-blue-600'
+                                    : h.healthScore >= 50
+                                    ? 'text-amber-600'
+                                    : 'text-rose-600';
+                                const barColor = h.healthScore >= 85
+                                    ? 'bg-emerald-500'
+                                    : h.healthScore >= 70
+                                    ? 'bg-blue-500'
+                                    : h.healthScore >= 50
+                                    ? 'bg-amber-500'
+                                    : 'bg-rose-500';
 
                                 return (
                                     <div key={v.id} className="flex flex-col p-5 bg-white rounded-2xl border border-slate-100 hover:border-teal-200 hover:shadow-md transition-all group">

@@ -6,6 +6,7 @@ const UserDashboard = () => {
   const [vehicles, setVehicles] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [pendingTransfers, setPendingTransfers] = useState([]);
   const [error, setError] = useState('');
 
   const token = localStorage.getItem('token');
@@ -19,36 +20,87 @@ const UserDashboard = () => {
     [token]
   );
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setError('');
-      try {
-        const [vRes, bRes, nRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/vehicles/myvehicles', headers),
-          axios.get('http://localhost:5000/api/bookings/my', headers),
-          axios.get('http://localhost:5000/api/notifications?limit=20', headers)
-        ]);
-
-        if (cancelled) return;
-        setVehicles(Array.isArray(vRes.data) ? vRes.data : []);
-        setBookings(Array.isArray(bRes.data) ? bRes.data : []);
-        setNotifications(Array.isArray(nRes.data) ? nRes.data : []);
-      } catch (e) {
-        if (cancelled) return;
-        setError(e.response?.data?.msg || 'Failed to load dashboard');
-      }
+  const loadData = async () => {
+    try {
+      const [vRes, bRes, nRes, pRes] = await Promise.all([
+        axios.get('http://localhost:5000/api/vehicles/myvehicles', headers),
+        axios.get('http://localhost:5000/api/bookings/my', headers),
+        axios.get('http://localhost:5000/api/notifications?limit=20', headers),
+        axios.get('http://localhost:5000/api/ownership/pending', headers)
+      ]);
+      setVehicles(Array.isArray(vRes.data) ? vRes.data : []);
+      setBookings(Array.isArray(bRes.data) ? bRes.data : []);
+      setNotifications(Array.isArray(nRes.data) ? nRes.data : []);
+      setPendingTransfers(Array.isArray(pRes.data) ? pRes.data : []);
+    } catch (e) {
+      setError(e.response?.data?.msg || 'Failed to load dashboard');
     }
+  };
 
-    load();
-    return () => {
-      cancelled = true;
-    };
+  useEffect(() => {
+    setError('');
+    loadData();
   }, [headers]);
+
+  const handleAcceptTransfer = async (transferId) => {
+    setError('');
+    try {
+      await axios.post('http://localhost:5000/api/ownership/transfer/accept', { transferId }, headers);
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to accept transfer.');
+    }
+  };
+
+  const handleRejectTransfer = async (transferId) => {
+    setError('');
+    try {
+      await axios.post('http://localhost:5000/api/ownership/transfer/reject', { transferId }, headers);
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to reject transfer.');
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {pendingTransfers.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-6 shadow-sm space-y-4">
+          <h2 className="text-lg font-extrabold text-amber-900 flex items-center gap-2">
+            ⚠️ Pending Ownership Transfers
+          </h2>
+          <div className="space-y-3">
+            {pendingTransfers.map((transfer) => (
+              <div key={transfer.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-4 rounded-2xl bg-white border border-amber-200 gap-4">
+                <div>
+                  <div className="font-extrabold text-slate-900">
+                    {transfer.vehicle ? `${transfer.vehicle.brand} ${transfer.vehicle.model}` : 'Unknown Vehicle'}
+                  </div>
+                  <div className="text-xs text-slate-500 font-mono mt-0.5">{transfer.vehicle?.vehicleNumber}</div>
+                  <div className="text-sm text-slate-600 mt-2">
+                    Transfer request from: <span className="font-semibold text-slate-800">{transfer.sellerName}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => handleAcceptTransfer(transfer.id)}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-755 text-white rounded-xl text-xs font-bold shadow-sm transition-all hover:scale-102"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => handleRejectTransfer(transfer.id)}
+                    className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold shadow-sm transition-all hover:scale-102"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">User Dashboard</h1>

@@ -17,7 +17,8 @@ async function connectToMongo(config) {
 
   try {
     lastError = undefined;
-    client = new MongoClient(config.mongoUri);
+    console.log(`Connecting to MongoDB URI: ${config.mongoUri}...`);
+    client = new MongoClient(config.mongoUri, { serverSelectionTimeoutMS: 5000 });
 
     await client.connect();
     console.log("✅ MongoDB client connected");
@@ -31,9 +32,20 @@ async function connectToMongo(config) {
 
     return db;
   } catch (err) {
-    lastError = err;
-    console.error("❌ MongoDB connection failed:", err && err.message ? err.message : err);
-    throw err;
+    console.warn("⚠️ Remote MongoDB connection failed, trying local fallback...");
+    try {
+      client = new MongoClient('mongodb://127.0.0.1:27017', { serverSelectionTimeoutMS: 3000 });
+      await client.connect();
+      db = client.db('digital_twin');
+      await db.command({ ping: 1 });
+      console.log("✅ Fallback: Connected to local MongoDB");
+      console.log("🗄️ Using DB:", db.databaseName);
+      return db;
+    } catch (fallbackErr) {
+      lastError = err;
+      console.error("❌ MongoDB connection failed (both primary and local fallback):", err && err.message ? err.message : err);
+      throw err;
+    }
   }
 }
 

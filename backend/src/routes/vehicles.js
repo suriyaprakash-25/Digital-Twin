@@ -108,7 +108,19 @@ router.post('/add', requireAuth, upload.fields([{ name: 'rcBook', maxCount: 1 },
   };
 
   try {
-    await vehicles.insertOne(newVehicle);
+    const result = await vehicles.insertOne(newVehicle);
+    const vehicleIdStr = String(result.insertedId || newVehicle._id);
+
+    // Create initial ownership timeline entry
+    const historyDoc = {
+      vehicleId: vehicleIdStr,
+      ownerId: ownerId,
+      ownerName: data.ownerName || req.user.name || 'Original Owner',
+      fromDate: new Date().toISOString(),
+      toDate: null
+    };
+    await db.collection('ownershipHistory').insertOne(historyDoc);
+
     return res.status(201).json({ msg: 'Vehicle added successfully' });
   } catch (e) {
     return res.status(500).json({ msg: 'Error adding vehicle', error: String(e && e.message ? e.message : e) });

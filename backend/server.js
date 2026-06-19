@@ -21,6 +21,9 @@ const garagesRoutes = require('./src/routes/garages');
 const bookingRoutes = require('./src/routes/bookings');
 const notificationRoutes = require('./src/routes/notifications');
 const adminRoutes = require('./src/routes/admin');
+const passportRoutes = require('./src/routes/passport');
+const insuranceRoutes = require('./src/routes/insurance');
+const ownershipRoutes = require('./src/routes/ownership');
 
 const app = express();
 const config = loadConfig();
@@ -89,6 +92,9 @@ app.use('/api/garages', garagesRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/passport', passportRoutes);
+app.use('/api/insurance', insuranceRoutes);
+app.use('/api/ownership', ownershipRoutes);
 
 // Start after DB connects
 (async () => {

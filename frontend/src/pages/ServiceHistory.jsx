@@ -273,7 +273,9 @@ const ServiceHistory = () => {
                                                     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                                                         {service.partsReplaced.map((part, pIdx) => (
                                                             <div key={pIdx} className="flex justify-between items-center p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                                                                <span className="text-sm font-bold text-slate-700">{part.partName}</span>
+                                                                <span className="text-sm font-bold text-slate-700">
+                                                                    {part.partName} {part.brand && <span className="font-normal text-xs text-slate-400 font-sans ml-2 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5">Brand: {part.brand}</span>}
+                                                                </span>
                                                                 <span className="text-sm font-bold text-slate-900 flex items-center">
                                                                     <IndianRupee className="h-3 w-3 mr-0.5 text-slate-400" /> {Number(part.cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                 </span>

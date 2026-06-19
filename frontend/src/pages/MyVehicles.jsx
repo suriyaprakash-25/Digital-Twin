@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Car, Plus, History, Settings2, ShieldAlert, FileText, MoreVertical, Edit, Trash2, Activity } from 'lucide-react';
+import { Car, Plus, History, Settings2, ShieldAlert, FileText, MoreVertical, Edit, Trash2, Activity, QrCode, ShieldCheck, UserPlus } from 'lucide-react';
+import { API_BASE_URL } from '../utils/config';
 
 const MyVehicles = () => {
     const [vehicles, setVehicles] = useState([]);
@@ -105,7 +106,13 @@ const MyVehicles = () => {
                                 </button>
 
                                 {openMenuId === vehicle.id && (
-                                    <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-2 sm:text-sm origin-top-right animate-in fade-in zoom-in duration-200">
+                                    <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-2 sm:text-sm origin-top-right animate-in fade-in zoom-in duration-200">
+                                        <button
+                                            onClick={() => navigate(`/passport/${vehicle.id}`)}
+                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
+                                        >
+                                            <QrCode className="h-4 w-4" /> View Passport
+                                        </button>
                                         <button
                                             onClick={() => navigate(`/edit-vehicle/${vehicle.id}`)}
                                             className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
@@ -114,9 +121,21 @@ const MyVehicles = () => {
                                         </button>
                                         <button
                                             onClick={() => navigate(`/resale-report/${vehicle.id}`)}
-                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-600 flex items-center gap-2 font-medium transition-colors border-b border-slate-100 pb-3 mb-1"
+                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-600 flex items-center gap-2 font-medium transition-colors"
                                         >
                                             <ShieldAlert className="h-4 w-4" /> Trust Report
+                                        </button>
+                                        <button
+                                            onClick={() => navigate(`/insurance/${vehicle.id}`)}
+                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
+                                        >
+                                            <ShieldCheck className="h-4 w-4" /> Manage Insurance
+                                        </button>
+                                        <button
+                                            onClick={() => navigate(`/transfer/${vehicle.id}`)}
+                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors border-b border-slate-100 pb-3 mb-1"
+                                        >
+                                            <UserPlus className="h-4 w-4" /> Transfer Owner
                                         </button>
                                         <button
                                             onClick={() => handleDelete(vehicle.id)}
@@ -174,7 +193,7 @@ const MyVehicles = () => {
                                     <div className="mt-4 flex flex-wrap gap-2">
                                         {vehicle.rcBookUrl && (
                                             <a
-                                                href={`http://localhost:5000${vehicle.rcBookUrl}`}
+                                                href={`${API_BASE_URL}${vehicle.rcBookUrl}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 bg-teal-50 px-3 py-2 rounded-lg border border-teal-100 hover:bg-teal-100 transition-colors"
@@ -185,7 +204,7 @@ const MyVehicles = () => {
                                         )}
                                         {vehicle.insuranceDocumentUrl && (
                                             <a
-                                                href={`http://localhost:5000${vehicle.insuranceDocumentUrl}`}
+                                                href={`${API_BASE_URL}${vehicle.insuranceDocumentUrl}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors"
