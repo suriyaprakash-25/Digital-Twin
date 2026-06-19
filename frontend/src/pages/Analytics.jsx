@@ -64,34 +64,34 @@ const Analytics = () => {
 
         return (
             <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
-                <header className="mb-8 p-8 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                <header className="mb-8 p-5 sm:p-8 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
                     <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-emerald-600/30 to-transparent"></div>
-                    <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-6">
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-4 sm:gap-6">
                         <div>
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-xs font-bold tracking-wide border border-emerald-500/30 mb-3">
                                 <TrendingUp className="h-4 w-4" /> Garage Performance Analytics
                             </div>
-                            <h1 className="text-4xl font-extrabold tracking-tight">Business Insights</h1>
-                            <p className="text-slate-400 mt-2 font-medium text-lg max-w-2xl">
+                            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Business Insights</h1>
+                            <p className="text-slate-400 mt-2 font-medium text-sm sm:text-lg max-w-2xl">
                                 Track bookings, revenue trends, and service performance across your garage operations.
                             </p>
                         </div>
-                        <div className="flex flex-wrap gap-4">
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[110px]">
+                        <div className="flex flex-wrap gap-3 sm:gap-4">
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 sm:p-4 rounded-2xl text-center min-w-[90px] sm:min-w-[110px]">
                                 <p className="text-teal-300 text-xs font-bold uppercase tracking-wider mb-1">Total Bookings</p>
-                                <p className="text-2xl font-black">{totalBookings}</p>
+                                <p className="text-xl sm:text-2xl font-black">{totalBookings}</p>
                             </div>
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[110px]">
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 sm:p-4 rounded-2xl text-center min-w-[90px] sm:min-w-[110px]">
                                 <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider mb-1">Completed</p>
-                                <p className="text-2xl font-black">{completedCount}</p>
+                                <p className="text-xl sm:text-2xl font-black">{completedCount}</p>
                             </div>
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[110px]">
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 sm:p-4 rounded-2xl text-center min-w-[90px] sm:min-w-[110px]">
                                 <p className="text-amber-300 text-xs font-bold uppercase tracking-wider mb-1">Revenue</p>
-                                <p className="text-2xl font-black">₹{(totalRevenue / 1000).toFixed(1)}k</p>
+                                <p className="text-xl sm:text-2xl font-black">₹{(totalRevenue / 1000).toFixed(1)}k</p>
                             </div>
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[110px]">
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 sm:p-4 rounded-2xl text-center min-w-[90px] sm:min-w-[110px]">
                                 <p className="text-purple-300 text-xs font-bold uppercase tracking-wider mb-1">Services</p>
-                                <p className="text-2xl font-black">{totalServices}</p>
+                                <p className="text-xl sm:text-2xl font-black">{totalServices}</p>
                             </div>
                         </div>
                     </div>
@@ -122,7 +122,7 @@ const Analytics = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8">
                     {/* Monthly Bookings BarChart */}
                     <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
                         <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-900 border-b border-slate-100 pb-4">
@@ -176,7 +176,7 @@ const Analytics = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8">
                     {/* Booking Status Pie */}
                     <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col">
                         <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-900 border-b border-slate-100 pb-4">
@@ -262,32 +262,32 @@ const Analytics = () => {
 
     return (
         <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
-            <header className="mb-8 p-8 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
+            <header className="mb-8 p-5 sm:p-8 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
                 <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-teal-600/30 to-transparent"></div>
-                <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-6">
+                <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-4 sm:gap-6">
                     <div>
                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-500/20 text-teal-300 rounded-full text-xs font-bold tracking-wide border border-teal-500/30 mb-3">
                             <TrendingUp className="h-4 w-4" /> Advanced Twin Analytics
                         </div>
-                        <h1 className="text-4xl font-extrabold tracking-tight">Fleet Intelligence</h1>
-                        <p className="text-slate-400 mt-2 font-medium text-lg max-w-2xl">
+                        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Fleet Intelligence</h1>
+                        <p className="text-slate-400 mt-2 font-medium text-sm sm:text-lg max-w-2xl">
                             Visualizing expenses, maintenance history, and lifecycle trends across your registered vehicles.
                         </p>
                     </div>
-                    <div className="flex gap-4">
-                        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[120px]">
+                    <div className="flex flex-wrap gap-3 sm:gap-4">
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 sm:p-4 rounded-2xl text-center min-w-[100px] sm:min-w-[120px]">
                             <p className="text-teal-300 text-xs font-bold uppercase tracking-wider mb-1">Fleet Km</p>
-                            <p className="text-2xl font-black">{totalFleetKm.toLocaleString()}</p>
+                            <p className="text-xl sm:text-2xl font-black">{totalFleetKm.toLocaleString()}</p>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center min-w-[120px]">
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 sm:p-4 rounded-2xl text-center min-w-[100px] sm:min-w-[120px]">
                             <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider mb-1">Services</p>
-                            <p className="text-2xl font-black">{totalServices}</p>
+                            <p className="text-xl sm:text-2xl font-black">{totalServices}</p>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8">
                 {/* Expense Trend Line Chart */}
                 <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
                     <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-900 border-b border-slate-100 pb-4">

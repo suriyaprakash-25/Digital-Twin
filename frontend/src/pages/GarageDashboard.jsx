@@ -126,7 +126,7 @@ const GarageDashboard = () => {
     <div className="space-y-8 pb-12">
 
       {/* Hero header */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-8 shadow-2xl">
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-5 sm:p-8 shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.3),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(16,185,129,0.15),transparent_60%)]" />
         <div className="relative z-10">
@@ -142,7 +142,7 @@ const GarageDashboard = () => {
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-xs font-bold tracking-wide border border-emerald-500/30 mb-1">
                   <Store className="h-3.5 w-3.5" /> Partner Garage
                 </div>
-                <h1 className="text-2xl font-extrabold text-white">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-white">
                   {profile?.name || 'Your Garage'}
                 </h1>
                 {profile?.city && <p className="text-slate-400 text-sm font-medium mt-0.5">{profile.city}</p>}
@@ -152,7 +152,7 @@ const GarageDashboard = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {[
               { label: 'Total Services',  value: services.length,  icon: <Wrench className="h-5 w-5 text-teal-400" />,        bg: 'bg-teal-500/10' },
               { label: 'Pending',         value: pendingCount,      icon: <Clock className="h-5 w-5 text-amber-400" />,        bg: 'bg-amber-500/10' },

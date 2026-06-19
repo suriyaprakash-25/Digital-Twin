@@ -186,3 +186,50 @@ body {
   border: 1px solid rgba(226, 232, 240, 0.8);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
+
+/* =============================================
+   RESPONSIVE / MOBILE UTILITIES
+   ============================================= */
+
+/* Bottom padding for main content so it clears the mobile nav bar */
+@utility pb-mobile-nav {
+  padding-bottom: 5rem; /* 80px — height of bottom nav */
+}
+
+/* Safe area bottom padding for notched devices */
+@utility safe-b {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Sidebar overlay (mobile) */
+@utility sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 30;
+}
+
+/* Smooth slide transition for the sidebar drawer */
+@utility sidebar-drawer {
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Ensure tables scroll on very small screens */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Touch-friendly tap targets */
+@utility touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Responsive heading helpers */
+@utility heading-responsive {
+  font-size: clamp(1.25rem, 5vw, 1.875rem);
+  font-weight: 800;
+  line-height: 1.2;
+}

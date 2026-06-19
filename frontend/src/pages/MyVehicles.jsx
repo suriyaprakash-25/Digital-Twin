@@ -45,14 +45,14 @@ const MyVehicles = () => {
 
     return (
         <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
                 <div>
-                    <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">My Vehicles</h1>
-                    <p className="text-slate-500 mt-2 font-medium text-lg">Manage and view details of your registered digital twins.</p>
+                    <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">My Vehicles</h1>
+                    <p className="text-slate-500 mt-1 sm:mt-2 font-medium text-base sm:text-lg">Manage and view details of your registered digital twins.</p>
                 </div>
                 <Link
                     to="/add-vehicle"
-                    className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2"
+                    className="w-full sm:w-auto px-5 py-2.5 sm:px-6 sm:py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2"
                 >
                     <Plus className="h-5 w-5" />
                     Add Vehicle
@@ -128,7 +128,7 @@ const MyVehicles = () => {
                                 )}
                             </div>
 
-                            <div className="p-8 flex-1">
+                            <div className="p-5 sm:p-8 flex-1">
                                 <div className="flex justify-between items-start mb-6">
                                     <div className="p-4 bg-teal-50 rounded-2xl border border-teal-100 text-teal-600 group-hover:scale-110 group-hover:bg-teal-600 group-hover:text-white transition-all shadow-sm">
                                         <Car className="h-7 w-7" />
@@ -198,7 +198,7 @@ const MyVehicles = () => {
                                 )}
                             </div>
 
-                            <div className="px-8 py-5 bg-slate-50/80 border-t border-slate-100 flex justify-between items-center mt-auto">
+                            <div className="px-5 sm:px-8 py-4 sm:py-5 bg-slate-50/80 border-t border-slate-100 flex justify-between items-center mt-auto">
                                 <button
                                     onClick={() => navigate(`/service-history/${vehicle.id}`)}
                                     className="text-sm font-bold text-slate-600 hover:text-teal-600 flex items-center gap-1.5 transition-colors"

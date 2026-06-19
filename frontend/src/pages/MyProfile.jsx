@@ -201,9 +201,9 @@ const MyProfile = () => {
     <div className="max-w-6xl mx-auto pb-14 animate-in fade-in duration-500 space-y-8">
       <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.28),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.18),transparent_28%)]" />
-        <div className="relative z-10 p-8 md:p-10">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-5">
+        <div className="relative z-10 p-6 sm:p-8 md:p-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4 sm:gap-5">
               <div className="relative shrink-0">
                 <div className="h-24 w-24 overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg">
                   {profile.photoUrl ? (
@@ -237,7 +237,7 @@ const MyProfile = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
               <StatCard label="Vehicles" value={vehicles.length} tone="border-white/10 bg-white/5 text-white" />
               <StatCard label="Open Bookings" value={activeBookings} tone="border-white/10 bg-white/5 text-white" />
               <StatCard label="Completed" value={completedBookings} tone="border-white/10 bg-white/5 text-white" />
@@ -286,9 +286,9 @@ const MyProfile = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-8 py-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-6 sm:px-8 py-5">
             <p className="text-xs font-semibold text-slate-400">{isDirty ? 'You have unsaved changes' : 'Profile is up to date'}</p>
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-600 disabled:opacity-60">
+            <button type="submit" disabled={saving} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-600 disabled:opacity-60">
               {saving ? 'Saving...' : 'Save Profile'}
             </button>
           </div>

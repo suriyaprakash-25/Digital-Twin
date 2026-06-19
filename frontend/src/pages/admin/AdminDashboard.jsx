@@ -102,9 +102,9 @@ const AdminDashboard = () => {
         <div className="space-y-8">
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 shadow-lg shadow-teal-500/20">
-                        <TrendingUp className="h-4.5 w-4.5 text-white" />
+                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 shadow-lg shadow-teal-500/20 shrink-0">
+                        <TrendingUp className="h-4 w-4 text-white" />
                     </div>
                     Dashboard Overview
                 </h1>
@@ -114,7 +114,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {cards.map((card) => (
                     <StatsCard key={card.title} {...card} />
                 ))}

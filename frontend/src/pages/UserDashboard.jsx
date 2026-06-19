@@ -48,16 +48,16 @@ const UserDashboard = () => {
   }, [headers]);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">User Dashboard</h1>
-          <p className="text-slate-500 font-medium mt-1">Track bookings and notifications</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">User Dashboard</h1>
+          <p className="text-slate-500 font-medium mt-1 text-sm sm:text-base">Track bookings and notifications</p>
         </div>
 
         <Link
           to="/marketplace"
-          className="inline-flex items-center px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors"
+          className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors w-full sm:w-auto"
         >
           Book a Garage Service
         </Link>
@@ -69,7 +69,7 @@ const UserDashboard = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-extrabold text-slate-900">Your Vehicles</h2>

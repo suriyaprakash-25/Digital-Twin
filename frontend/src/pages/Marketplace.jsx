@@ -98,8 +98,8 @@ const Marketplace = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Garage Marketplace</h1>
-        <p className="text-slate-500 font-medium mt-1">Choose a garage service and request a booking</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Garage Marketplace</h1>
+        <p className="text-slate-500 font-medium mt-1 text-sm sm:text-base">Choose a garage service and request a booking</p>
       </div>
 
       {/* Search bar */}
@@ -133,8 +133,8 @@ const Marketplace = () => {
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-semibold text-slate-700">Vehicle</label>
             <select
@@ -184,7 +184,7 @@ const Marketplace = () => {
 
         {filteredGarages.map((g) => (
           <div key={g.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
                 <div>
                 <div className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
                   {g.name}
@@ -218,7 +218,7 @@ const Marketplace = () => {
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(g.services || []).length === 0 ? (
                 <div className="text-slate-500 text-sm">No services listed.</div>
               ) : (

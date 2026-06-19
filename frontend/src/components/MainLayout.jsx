@@ -1,40 +1,67 @@
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
+import MobileBottomNav from './MobileBottomNav';
 import { tryRegisterFcmToken } from '../utils/fcm';
+import { Menu } from 'lucide-react';
 
 const MainLayout = () => {
     const navigate = useNavigate();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
         const authToken = localStorage.getItem('token');
         if (!authToken) return;
+        tryRegisterFcmToken({ authToken, requestPermission: false }).catch(() => {});
+    }, []);
 
-        // Best-effort: if Firebase web config env vars are not provided,
-        // this will no-op with a reason.
-        tryRegisterFcmToken({ authToken, requestPermission: false }).catch(() => {
-            // ignore
-        });
+    // Close sidebar when viewport grows to desktop
+    useEffect(() => {
+        const mq = window.matchMedia('(min-width: 1024px)');
+        const handler = (e) => { if (e.matches) setSidebarOpen(false); };
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
     }, []);
 
     const handleLogout = () => {
         localStorage.clear();
-        window.location.replace("/");
-        
+        window.location.replace('/');
     };
 
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-            <Sidebar onLogout={handleLogout} />
+            <Sidebar
+                onLogout={handleLogout}
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+            />
 
-            <div className="flex-1 flex flex-col relative">
-                {/* Subtle background decoration */}
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-teal-50 rounded-full blur-[100px] opacity-60 pointer-events-none transform translate-x-1/2 -translate-y-1/2"></div>
-                <div className="absolute bottom-0 left-10 w-[400px] h-[400px] bg-teal-50 rounded-full blur-[100px] opacity-60 pointer-events-none transform -translate-y-1/2"></div>
+            <div className="flex-1 flex flex-col relative min-w-0">
+                {/* Decorative blobs */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-teal-50 rounded-full blur-[100px] opacity-60 pointer-events-none transform translate-x-1/2 -translate-y-1/2" />
+                <div className="absolute bottom-0 left-10 w-[400px] h-[400px] bg-teal-50 rounded-full blur-[100px] opacity-60 pointer-events-none transform -translate-y-1/2" />
 
-                <main className="flex-1 overflow-y-auto w-full z-10 p-4 sm:p-8">
+                {/* Mobile top bar */}
+                <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white/90 backdrop-blur-md border-b border-slate-200 z-20 shadow-sm">
+                    <button
+                        onClick={() => setSidebarOpen(true)}
+                        className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                        aria-label="Open menu"
+                    >
+                        <Menu className="h-6 w-6" />
+                    </button>
+                    <div className="flex items-center gap-2.5">
+                        <img src="/logo.jpeg" alt="Driveportz" className="h-8 w-8 rounded-lg object-cover shadow-sm" />
+                        <span className="font-extrabold text-slate-900 text-base tracking-tight">Driveportz</span>
+                    </div>
+                </div>
+
+                <main className="flex-1 overflow-y-auto w-full z-10 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
                     <Outlet />
                 </main>
+
+                {/* Mobile bottom navigation */}
+                <MobileBottomNav />
             </div>
         </div>
     );
