@@ -70,7 +70,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                         className="flex items-center gap-3 flex-1 rounded-lg hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 px-1"
                     >
                         <img
-                            src="/logo.jpeg"
+                            src="/logo-removebg-preview.png"
                             alt="Driveportz logo"
                             className="h-10 w-10 rounded-xl object-cover shadow-md shrink-0"
                         />

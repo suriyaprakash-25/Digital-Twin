@@ -144,7 +144,7 @@ const LandingPage = () => {
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img
-            src="/logo.jpeg"
+            src="/logo-removebg-preview.png"
             alt="Driveportz logo"
             style={{ height: 44, width: 44, borderRadius: 10, objectFit: 'cover', boxShadow: '0 0 22px rgba(13,148,136,.35)' }}
           />
@@ -794,7 +794,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <img
-              src="/logo.jpeg"
+              src="/logo-removebg-preview.png"
               alt="Driveportz logo"
               style={{ height: 32, width: 32, borderRadius: 8, objectFit: 'cover' }}
             />

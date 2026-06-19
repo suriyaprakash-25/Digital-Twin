@@ -45,7 +45,7 @@ const AdminLayout = () => {
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex items-center gap-2.5">
-                            <img src="/logo.jpeg" alt="Driveportz" className="h-8 w-8 rounded-lg object-cover shadow-sm" />
+                            <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-8 w-8 rounded-lg object-cover shadow-sm" />
                             <div>
                                 <span className="font-extrabold text-slate-900 text-sm tracking-tight">Driveportz</span>
                                 <span className="block text-[10px] font-semibold text-teal-600 uppercase tracking-widest">Admin Panel</span>

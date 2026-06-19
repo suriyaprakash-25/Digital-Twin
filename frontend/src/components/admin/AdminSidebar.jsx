@@ -48,7 +48,7 @@ const AdminSidebar = ({ onLogout, isOpen, onClose }) => {
                 <div className="flex items-center justify-between gap-3 p-5 border-b border-slate-100">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                         <img
-                            src="/logo.jpeg"
+                            src="/logo-removebg-preview.png"
                             alt="Driveportz Logo"
                             className="w-10 h-10 rounded-xl object-cover shadow-md shrink-0"
                         />
