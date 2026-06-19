@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Car, Store, UserCircle2 } from 'lucide-react';
+import { LayoutDashboard, Car, Store, UserCircle2, Wrench, PieChart, Building2 } from 'lucide-react';
 
 function normalizeRole(role) {
     const r = String(role || '').trim().toLowerCase();
@@ -16,8 +16,9 @@ const MobileBottomNav = () => {
     const tabs = role === 'GARAGE'
         ? [
             { name: 'Dashboard', href: '/garage-dashboard', icon: LayoutDashboard },
-            { name: 'Marketplace', href: '/marketplace', icon: Store },
-            { name: 'Profile', href: '/garage-profile', icon: UserCircle2 },
+            { name: 'Services', href: '/garage-services', icon: Wrench },
+            { name: 'Analytics', href: '/analytics', icon: PieChart },
+            { name: 'Profile', href: '/garage-profile', icon: Building2 },
         ]
         : [
             { name: 'Dashboard', href: '/user-dashboard', icon: LayoutDashboard },
