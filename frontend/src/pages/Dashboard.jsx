@@ -102,7 +102,7 @@ const Dashboard = () => {
                     trend={upcomingServicesCount > 0 ? "Schedule soon" : "All up to date"}
                 />
                 <DashboardCard
-                    title="System Health"
+                    title="Fleet Vehicle IQ"
                     value={loading ? '-' : `${avgHealth}%`}
                     icon={<Settings className="h-6 w-6 text-emerald-600" />}
                     color={avgHealth >= 85 ? 'emerald' : avgHealth >= 70 ? 'blue' : avgHealth >= 50 ? 'amber' : 'rose'}
@@ -147,12 +147,12 @@ const Dashboard = () => {
                     )}
                 </div>
 
-                {/* Fleet Details with Health Scores */}
+                {/* Fleet Details with IQ Scores */}
                 <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm relative overflow-hidden">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                             <TrendingUp className="h-6 w-6 text-teal-500" />
-                            Fleet Health
+                            Fleet Vehicle IQ
                         </h2>
                     </div>
 

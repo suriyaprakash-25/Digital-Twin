@@ -198,7 +198,7 @@ const ResaleReport = () => {
                             <div className="flex gap-3 text-slate-600 items-start">
                                 <HelpCircle className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
                                 <p className="text-sm font-medium leading-relaxed">
-                                    The <strong>Maintenance Quality</strong> rating is derived from the core Health Engine, evaluating service adherence, severity of repairs, and frequency of maintenance gaps.
+                                    The <strong>Maintenance Quality</strong> rating is derived from the core Vehicle IQ Engine, evaluating service adherence, severity of repairs, and frequency of maintenance gaps.
                                 </p>
                             </div>
                         </div>

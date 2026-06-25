@@ -299,8 +299,8 @@ const LandingPage = () => {
                 icon: <HeartPulse size={26} color="#dc2626" />,
                 bg: '#fff1f2', border: '#fecdd3',
                 tag: 'AI-POWERED', tagColor: '#dc2626',
-                title: 'Live Vehicle Health Score',
-                desc: 'Multi-factor engine evaluates legal validity, maintenance frequency, verified records and behavioral patterns to produce a precise 0–100 health score.',
+                title: 'Live Vehicle IQ Score',
+                desc: 'Multi-factor engine evaluates legal validity, maintenance frequency, verified records and behavioral patterns to produce a precise 0–100 Vehicle IQ score.',
               },
               {
                 icon: <TrendingUp size={26} color="#d97706" />,
@@ -328,7 +328,7 @@ const LandingPage = () => {
                 bg: '#f0fdf4', border: '#bbf7d0',
                 tag: 'DATA INTELLIGENCE', tagColor: '#16a34a',
                 title: 'Fleet Analytics Dashboard',
-                desc: 'Real-time expense trends, category breakdowns, mileage distributions and health scores across your entire fleet — all in one visual dashboard.',
+                desc: 'Real-time expense trends, category breakdowns, mileage distributions and Vehicle IQ scores across your entire fleet — all in one visual dashboard.',
               },
             ].map((f, i) => (
               <div key={f.title} className="card" style={{
@@ -369,7 +369,7 @@ const LandingPage = () => {
             {[
               { n: '01', c: '#14b8a6', t: 'Register Your Vehicle', d: "Add your vehicle's complete digital profile — ownership history, legal documents, chassis & engine numbers, and current odometer reading." },
               { n: '02', c: '#5eead4', t: 'Log Every Service', d: 'Record each visit with parts replaced, costs, and mechanic notes. Our system cross-verifies garage-reported odometer against your records in real time.' },
-              { n: '03', c: '#a78bfa', t: 'Get Full Intelligence', d: "Receive health scores, resale valuations, fraud alerts, and expiry reminders. Your vehicle's complete lifecycle, intelligently managed for you." },
+              { n: '03', c: '#a78bfa', t: 'Get Full Intelligence', d: "Receive Vehicle IQ scores, resale valuations, fraud alerts, and expiry reminders. Your vehicle's complete lifecycle, intelligently managed for you." },
             ].map((s, i) => (
               <div key={s.n} style={{
                 textAlign: 'center', position: 'relative', zIndex: 1,
@@ -396,17 +396,17 @@ const LandingPage = () => {
       </section>
 
       {/* ════════════════════════════════
-           SPOTLIGHT: Health Score
+           SPOTLIGHT: Vehicle IQ Score
       ════════════════════════════════ */}
       <section className="py-16 md:py-28 px-4 md:px-8 bg-slate-50">
         <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
           <div>
-            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#dc2626', letterSpacing: '.12em', textTransform: 'uppercase' }}>HEALTH INTELLIGENCE</span>
+            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#dc2626', letterSpacing: '.12em', textTransform: 'uppercase' }}>VEHICLE IQ INTELLIGENCE</span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-5 tracking-tight leading-tight">
               Know Your Vehicle's True Condition
             </h2>
             <p className="text-sm sm:text-base text-slate-500 leading-relaxed mb-8">
-              Our multi-factor health engine analyses legal document validity, maintenance frequency, verified service records, accident history, and behavioural patterns to compute a precise score — not just a rough estimate.
+              Our multi-factor Vehicle IQ engine analyses legal document validity, maintenance frequency, verified service records, accident history, and behavioural patterns to compute a precise score — not just a rough estimate.
             </p>
             <div className="flex flex-col gap-3">
               {[
@@ -427,7 +427,7 @@ const LandingPage = () => {
           {/* Health visual */}
           <div className="float bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xl max-w-md mx-auto lg:max-w-none w-full">
             <div className="text-center mb-8">
-              <div style={{ fontSize: '.72rem', color: '#94a3b8', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: '.6rem' }}>VEHICLE HEALTH SCORE</div>
+              <div style={{ fontSize: '.72rem', color: '#94a3b8', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: '.6rem' }}>VEHICLE IQ SCORE</div>
               <div className="relative inline-block">
                 <svg viewBox="0 0 200 120" width={200} height={120}>
                   <path d="M 18 105 A 82 82 0 0 1 182 105" fill="none" stroke="#e2e8f0" strokeWidth={13} strokeLinecap="round" />
@@ -555,7 +555,7 @@ const LandingPage = () => {
               {[
                 'Depreciation model: 15% year-1, 10%/year thereafter',
                 'Trust score factors: ownership count, service quality, accidents',
-                '+5% adjustment for excellent health condition',
+                '+5% adjustment for excellent Vehicle IQ score',
                 '–10% penalty for documented accident history',
                 'Risk level classification: Low / Medium / High',
               ].map(item => (
@@ -676,7 +676,7 @@ const LandingPage = () => {
             <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '1.2rem' }}>FLEET ANALYTICS</div>
             {/* KPI cards */}
             <div className="grid grid-cols-3 gap-2 mb-6">
-              {[{ l: 'Total Fleet KM', v: '1,24,820' }, { l: 'Services Logged', v: '38' }, { l: 'Avg Health', v: '89/100' }].map(k => (
+              {[{ l: 'Total Fleet KM', v: '1,24,820' }, { l: 'Services Logged', v: '38' }, { l: 'Avg Vehicle IQ', v: '89/100' }].map(k => (
                 <div key={k.l} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }} className="p-2 sm:p-3 text-center">
                   <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-none">{k.v}</div>
                   <div className="text-[8px] sm:text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-wider leading-tight">{k.l}</div>
@@ -720,14 +720,14 @@ const LandingPage = () => {
               Your Fleet at a Glance — Always
             </h2>
             <p className="text-sm sm:text-base text-slate-500 leading-relaxed mb-8">
-              Real-time dashboards with expense trends, service category breakdowns, per-vehicle mileage distributions and fleet-wide health scores — all rendered in beautiful, interactive charts.
+              Real-time dashboards with expense trends, service category breakdowns, per-vehicle mileage distributions and fleet-wide Vehicle IQ scores — all rendered in beautiful, interactive charts.
             </p>
             <div className="flex flex-col gap-3">
               {[
                 'Monthly expense trend charts with year-over-year view',
                 'Service category donut chart (Periodic / Repair / Major)',
                 'Per-vehicle mileage and usage distribution',
-                'Fleet-wide health score aggregation',
+                'Fleet-wide Vehicle IQ Score aggregation',
                 'Total services logged and cost summaries',
               ].map(item => (
                 <div key={item} className="flex items-start gap-3">

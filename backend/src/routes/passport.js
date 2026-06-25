@@ -287,7 +287,7 @@ router.get('/pdf/:vehicleId', async (req, res) => {
     if (ownerDetails.phone) doc.text(`Phone: ${ownerDetails.phone}`);
     
     doc.moveDown(1.5);
-    doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('Vehicle Health Score', rightColX);
+    doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('Vehicle IQ Score', rightColX);
     doc.fontSize(10).font('Helvetica').fillColor(darkColor);
     doc.moveDown(0.5);
     doc.fontSize(18).font('Helvetica-Bold').fillColor(primaryColor).text(`${healthResult.healthScore} / 100`, { paragraphGap: 3 });

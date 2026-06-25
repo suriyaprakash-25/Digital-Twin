@@ -289,7 +289,7 @@ const Passport = () => {
             
             {/* Section 3: Health Score Widget */}
             <section className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow text-center">
-              <h2 className="text-xs text-slate-450 font-black uppercase tracking-wider mb-6">Vehicle Health Score</h2>
+              <h2 className="text-xs text-slate-450 font-black uppercase tracking-wider mb-6">Vehicle IQ Score</h2>
               
               <div className="relative inline-block mb-6">
                 {/* Score Progress */}
