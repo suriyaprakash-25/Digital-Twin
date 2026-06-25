@@ -132,6 +132,22 @@ router.post('/transfer/accept', requireAuth, async (req, res) => {
       }
     );
 
+    // 1b. Transfer all diagnosis history, bookings, and services of the vehicle to the new owner
+    await db.collection('services').updateMany(
+      { vehicleId: { $in: [transfer.vehicleId, vehicleObjectId] } },
+      { $set: { ownerId: req.user.id, createdBy: req.user.id } }
+    );
+
+    await db.collection('bookings').updateMany(
+      { vehicleId: { $in: [transfer.vehicleId, vehicleObjectId] } },
+      { $set: { userId: req.user.id } }
+    );
+
+    await db.collection('diagnoses').updateMany(
+      { vehicleId: { $in: [transfer.vehicleId, vehicleObjectId] } },
+      { $set: { userId: new ObjectId(req.user.id) } }
+    );
+
     // 2. Terminate the old owner's history timeline
     await db.collection('ownershipHistory').updateOne(
       { vehicleId: transfer.vehicleId, ownerId: transfer.sellerId, toDate: null },

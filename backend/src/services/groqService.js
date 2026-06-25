@@ -58,7 +58,7 @@ Return ONLY valid JSON. Do not include markdown code blocks like \`\`\`json.
           content: prompt
         }
       ],
-      model: 'llama3-8b-8192', // or any other fast groq model like 'mixtral-8x7b-32768'
+      model: 'llama-3.1-8b-instant', // or any other fast groq model like 'gemma2-9b-it'
       temperature: 0.5,
       response_format: { type: 'json_object' }
     });

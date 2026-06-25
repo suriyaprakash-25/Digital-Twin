@@ -96,13 +96,7 @@ const VehicleDoctor = () => {
           <Stethoscope className="w-64 h-64" />
         </div>
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-500/20 text-teal-300 rounded-full text-sm font-medium mb-4 border border-teal-500/30">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-            </span>
-            Powered by Groq AI
-          </div>
+
           <h1 className="text-4xl font-extrabold mb-4">AI Vehicle Doctor</h1>
           <p className="text-teal-100/80 text-lg leading-relaxed">
             Describe your vehicle's symptoms and get an instant AI-powered preliminary diagnosis, repair cost estimate, and recommendations.
