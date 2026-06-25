@@ -10,7 +10,7 @@ const router = express.Router();
 
 function calculateResaleReport(vehicle, services) {
   const purchasePrice = Number.isNaN(parseFloat(vehicle.purchasePrice)) ? 0 : parseFloat(vehicle.purchasePrice);
-  const now = DateTime.utc();
+  const now = DateTime.utc().startOf('day');
 
   let ageYears = 0;
   if (vehicle.manufacturingYear) {
@@ -31,6 +31,7 @@ function calculateResaleReport(vehicle, services) {
   let trustScore = 100;
   const trustFactors = [];
 
+  // 1. Ownership count penalty
   try {
     const owners = parseInt(vehicle.ownershipCount || 1, 10);
     if (owners > 1) {
@@ -42,41 +43,77 @@ function calculateResaleReport(vehicle, services) {
     // ignore
   }
 
+  // 2. Service history details
   let verifiedServicesCount = 0;
   let majorAccidentsCount = 0;
   for (const s of services || []) {
     if (s.verifiedService) verifiedServicesCount += 1;
     const notes = String(s.mechanicNotes || '').toLowerCase();
     const cat = String(s.serviceCategory || '').toLowerCase();
-    if (notes.includes('accident') || notes.includes('crash') || cat.includes('major')) {
+    if (notes.includes('accident') || notes.includes('crash') || cat.includes('major') || cat === 'accidental repair') {
       majorAccidentsCount += 1;
     }
   }
 
+  // 3. Service records verification
   if (verifiedServicesCount > 0) {
     trustScore += Math.min(verifiedServicesCount * 5, 15);
     trustFactors.push({ type: 'positive', reason: `Verified service history (${verifiedServicesCount} records)` });
   }
 
+  // 4. Major accidents penalty
   if (majorAccidentsCount > 0) {
     trustScore -= majorAccidentsCount * 15;
     baseValue *= 0.8;
     trustFactors.push({ type: 'negative', reason: 'Major accident/repair history' });
   }
 
+  // 5. No service records penalty
   if (!services || services.length === 0) {
-    trustScore -= 20;
+    trustScore -= 30;
     trustFactors.push({ type: 'negative', reason: 'No service records available' });
   }
 
+  // 6. Maintenance gaps (if age > 0 and services count is less than ageYears)
+  if (services && services.length > 0 && ageYears > 0 && services.length < ageYears) {
+    trustScore -= 15;
+    trustFactors.push({ type: 'negative', reason: 'Maintenance gaps detected (incomplete service history)' });
+  }
+
+  // 7. Vehicle Health / Condition
   const healthData = calculateVehicleHealth(vehicle, services || []);
   const healthScore = healthData.healthScore ?? 100;
 
   if (healthScore >= 85) {
     baseValue *= 1.05;
+    trustScore += 5;
     trustFactors.push({ type: 'positive', reason: 'Excellent vehicle condition' });
-  } else if (healthScore < 70) {
+  } else if (healthScore >= 70 && healthScore < 85) {
+    trustFactors.push({ type: 'positive', reason: 'Good vehicle condition' });
+  } else if (healthScore >= 50 && healthScore < 70) {
     baseValue *= 0.9;
+    trustScore -= 10;
+    trustFactors.push({ type: 'negative', reason: 'Average vehicle condition' });
+  } else { // healthScore < 50 (Poor)
+    baseValue *= 0.8;
+    trustScore -= 25;
+    trustFactors.push({ type: 'negative', reason: 'Poor vehicle condition' });
+  }
+
+  // 8. Insurance status
+  let isInsuranceValid = false;
+  if (vehicle && vehicle.insuranceExpiry) {
+    const expDate = DateTime.fromISO(vehicle.insuranceExpiry).startOf('day');
+    if (expDate.isValid && expDate >= now.startOf('day')) {
+      isInsuranceValid = true;
+    }
+  }
+
+  if (isInsuranceValid) {
+    trustFactors.push({ type: 'positive', reason: 'Active insurance policy' });
+  } else {
+    trustScore -= 5;
+    trustFactors.push({ type: 'negative', reason: 'Expired or missing insurance' });
   }
 
   trustScore = Math.max(0, Math.min(100, trustScore));
