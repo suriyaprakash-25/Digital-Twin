@@ -116,7 +116,7 @@ const GarageServices = () => {
         </div>
         <button
           onClick={() => setShowForm(v => !v)}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-teal-700 transition-all shadow-md hover:shadow-lg"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition-all shadow-md hover:shadow-lg"
         >
           <Plus className="h-4 w-4" />
           Add Service
@@ -215,7 +215,7 @@ const GarageServices = () => {
             <button
               type="submit"
               disabled={adding}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all"
             >
               <Plus className="h-4 w-4" />
               {adding ? 'Adding…' : 'Add Service'}
@@ -238,7 +238,7 @@ const GarageServices = () => {
           </p>
           <button
             onClick={() => setShowForm(true)}
-            className="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-teal-700 transition-all"
+            className="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition-all"
           >
             <Plus className="h-4 w-4" /> Add First Service
           </button>
@@ -384,7 +384,7 @@ const GarageServices = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all"
                 >
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>

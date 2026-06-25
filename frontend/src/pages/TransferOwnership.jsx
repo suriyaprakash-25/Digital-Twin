@@ -148,7 +148,7 @@ const TransferOwnership = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full sm:w-auto px-8 py-3.5 bg-slate-900 hover:bg-teal-600 hover:text-white text-white font-bold rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 text-sm"
+              className="w-full sm:w-auto px-8 py-3.5 bg-teal-600 hover:bg-teal-700 hover:text-white text-white font-bold rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 text-sm"
             >
               {submitting ? 'Initiating Transfer...' : 'Initiate Transfer'}
             </button>

@@ -59,7 +59,7 @@ const Passport = () => {
           <p className="text-slate-500 text-sm mb-6">{error || 'This passport link is invalid or the vehicle no longer exists.'}</p>
           <Link
             to="/"
-            className="inline-flex items-center px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold shadow-sm transition-all"
+            className="inline-flex items-center px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all"
           >
             Go to Landing Page
           </Link>
@@ -415,7 +415,7 @@ const Passport = () => {
                   </div>
                   <button
                     onClick={handleDownloadQR}
-                    className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 hover:bg-teal-600 text-white rounded-xl text-sm font-bold shadow-sm hover:shadow-md transition-all"
+                    className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold shadow-sm hover:shadow-md transition-all"
                   >
                     <Download className="h-4.5 w-4.5" />
                     Download QR Image

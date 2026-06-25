@@ -217,7 +217,7 @@ const GaragePortal = () => {
                                     <button
                                         type="submit"
                                         disabled={submitting}
-                                        className="w-full bg-slate-900 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                                        className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70"
                                     >
                                         {submitting ? 'Committing Audit to Chain...' : 'Approve & Issue Trust Badge'}
                                         {!submitting && <ShieldCheck className="h-5 w-5" />}

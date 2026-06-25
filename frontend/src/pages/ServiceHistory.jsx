@@ -128,7 +128,7 @@ const ServiceHistory = () => {
                     </p>
                     <Link
                         to="/add-service"
-                        className="inline-flex items-center px-8 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 border border-transparent"
+                        className="inline-flex items-center px-8 py-3.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-all font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 border border-transparent"
                     >
                         <Wrench className="h-5 w-5 mr-2" />
                         Log First Production Record

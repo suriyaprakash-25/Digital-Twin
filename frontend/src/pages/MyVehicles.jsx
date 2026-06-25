@@ -75,7 +75,7 @@ const MyVehicles = () => {
                     </p>
                     <Link
                         to="/add-vehicle"
-                        className="inline-flex items-center px-8 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 border border-transparent"
+                        className="inline-flex items-center px-8 py-3.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-all font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 border border-transparent"
                     >
                         <Plus className="h-5 w-5 mr-2" />
                         Add First Vehicle
@@ -227,7 +227,7 @@ const MyVehicles = () => {
                                 </button>
                                 <button
                                     onClick={() => navigate('/add-service')}
-                                    className="text-sm font-bold text-white transition-all px-4 py-2 bg-slate-900 hover:bg-teal-600 rounded-lg shadow-sm hover:shadow-md"
+                                    className="text-sm font-bold text-white transition-all px-4 py-2 bg-teal-600 hover:bg-teal-700 rounded-lg shadow-sm hover:shadow-md"
                                 >
                                     Add Service
                                 </button>
