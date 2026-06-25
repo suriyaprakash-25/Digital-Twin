@@ -21,7 +21,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
     const userNavigation = [
         { name: 'Dashboard', href: '/user-dashboard', icon: LayoutDashboard },
         { name: 'My Profile', href: '/my-profile', icon: UserCircle2 },
-        { name: 'Marketplace', href: '/marketplace', icon: Store },
+        { name: 'Garages', href: '/marketplace', icon: Store },
         { name: 'AI Doctor', href: '/vehicle-doctor', icon: Stethoscope },
         { name: 'Add Vehicle', href: '/add-vehicle', icon: PlusCircle },
         { name: 'My Vehicles', href: '/my-vehicles', icon: Car },

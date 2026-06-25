@@ -21,7 +21,7 @@ function normalizeRole(role) {
   return String(role || 'USER');
 }
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';
   const parts = authHeader.split(' ');
   const token = parts.length === 2 && parts[0] === 'Bearer' ? parts[1] : null;
@@ -32,9 +32,21 @@ function requireAuth(req, res, next) {
 
   try {
     const payload = jwt.verify(token, config.jwtSecret);
+    const { getDb } = require('../db');
+    const { ObjectId } = require('mongodb');
+    const db = getDb();
+    
+    const user = await db.collection('users').findOne({ _id: new ObjectId(String(payload.sub)) });
+    if (!user) {
+      return res.status(401).json({ msg: 'Missing or invalid token' });
+    }
+
     req.user = {
-      id: payload.sub,
-      role: normalizeRole(payload.role)
+      id: String(user._id),
+      role: normalizeRole(user.role),
+      email: user.email || '',
+      name: user.name || '',
+      phone: user.phone || ''
     };
     return next();
   } catch (e) {

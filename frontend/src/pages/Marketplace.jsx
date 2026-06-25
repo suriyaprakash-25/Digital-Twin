@@ -98,7 +98,7 @@ const Marketplace = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Garage Marketplace</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Garages</h1>
         <p className="text-slate-500 font-medium mt-1 text-sm sm:text-base">Choose a garage service and request a booking</p>
       </div>
 
