@@ -23,7 +23,7 @@ const GarageProfile = () => {
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
   const [profile, setProfile] = useState({ name: '', phone: '', address: '', city: '', description: '' });
-  const [original, setOriginal] = useState(null);
+  const [original, setOriginal] = useState({ name: '', phone: '', address: '', city: '', description: '' });
   const [garageLocation, setGarageLocation] = useState(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(null);
