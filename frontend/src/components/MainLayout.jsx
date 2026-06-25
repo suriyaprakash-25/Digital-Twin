@@ -52,7 +52,7 @@ const MainLayout = () => {
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex items-center gap-2.5">
-                            <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-8 w-8 rounded-lg object-cover shadow-sm" />
+                            <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-11" />
                             <span className="font-extrabold text-slate-900 text-base tracking-tight">Driveportz</span>
                         </div>
                     </div>

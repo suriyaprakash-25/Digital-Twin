@@ -146,7 +146,7 @@ const LandingPage = () => {
           <img
             src="/logo-removebg-preview.png"
             alt="Driveportz logo"
-            style={{ height: 44, width: 44, borderRadius: 10, objectFit: 'cover', boxShadow: '0 0 22px rgba(13,148,136,.35)' }}
+            style={{ height: 72 }}
           />
         </div>
 
@@ -796,7 +796,7 @@ const LandingPage = () => {
             <img
               src="/logo-removebg-preview.png"
               alt="Driveportz logo"
-              style={{ height: 32, width: 32, borderRadius: 8, objectFit: 'cover' }}
+              style={{ height: 56 }}
             />
             <div>
               <span className="font-extrabold text-slate-900 text-sm tracking-tight">Drive<span className="text-teal-600">portz</span></span>

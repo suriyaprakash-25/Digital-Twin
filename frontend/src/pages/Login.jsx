@@ -94,7 +94,7 @@ const Login = () => {
             <div className="max-w-md w-full relative z-10 glass-card p-6 sm:p-10 rounded-3xl">
                 <div className="text-center">
                     <div className="flex flex-col items-center mb-6">
-                        <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-14 sm:h-16 w-14 sm:w-16 rounded-2xl object-cover shadow-lg shadow-teal-500/20 transform rotate-3 hover:rotate-0 transition-transform duration-300" />
+                        <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-20 sm:h-22 transform rotate-3 hover:rotate-0 transition-transform duration-300" />
                     </div>
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                         Welcome Back

@@ -72,7 +72,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                         <img
                             src="/logo-removebg-preview.png"
                             alt="Driveportz logo"
-                            className="h-10 w-10 rounded-xl object-cover shadow-md shrink-0"
+                            className="h-13 shrink-0"
                         />
                         <span className="text-slate-900 font-extrabold text-lg tracking-tight truncate">
                             Driveportz
