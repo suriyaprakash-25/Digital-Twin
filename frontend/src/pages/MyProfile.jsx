@@ -18,9 +18,9 @@ import {
 } from 'lucide-react';
 
 const StatCard = ({ label, value, tone }) => (
-  <div className={`rounded-2xl border p-5 ${tone}`}>
-    <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-70">{label}</p>
-    <p className="mt-2 text-3xl font-black tracking-tight">{value}</p>
+  <div className={`rounded-2xl border p-3.5 sm:p-5 flex flex-col justify-between min-w-0 ${tone}`}>
+    <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-[0.15em] opacity-70 break-words leading-tight">{label}</p>
+    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-black tracking-tight">{value}</p>
   </div>
 );
 
@@ -47,6 +47,7 @@ const MyProfile = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadingLicense, setUploadingLicense] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [photoError, setPhotoError] = useState(false);
 
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
@@ -66,6 +67,7 @@ const MyProfile = () => {
         const nextProfile = profileRes.data;
         setProfile(nextProfile);
         setOriginal(nextProfile);
+        setPhotoError(false);
         setVehicles(Array.isArray(vehiclesRes.data) ? vehiclesRes.data : []);
         setBookings(Array.isArray(bookingsRes.data) ? bookingsRes.data : []);
       } catch (err) {
@@ -151,6 +153,7 @@ const MyProfile = () => {
       });
       setProfile((prev) => ({ ...prev, photoUrl: res.data.photoUrl }));
       setOriginal((prev) => ({ ...prev, photoUrl: res.data.photoUrl }));
+      setPhotoError(false);
       persistUser({ photoUrl: res.data.photoUrl });
       setMessage({ type: 'success', text: 'Profile photo updated.' });
     } catch (err) {
@@ -205,11 +208,16 @@ const MyProfile = () => {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4 sm:gap-5">
               <div className="relative shrink-0">
-                <div className="h-24 w-24 overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg">
-                  {profile.photoUrl ? (
-                    <img src={profile.photoUrl} alt="Profile" className="h-full w-full object-cover" />
+                <div className="h-24 w-24 overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg flex items-center justify-center">
+                  {profile.photoUrl && !photoError ? (
+                    <img 
+                      src={profile.photoUrl} 
+                      alt="Profile" 
+                      className="h-full w-full object-cover" 
+                      onError={() => setPhotoError(true)}
+                    />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-3xl font-black">{initials}</div>
+                    <div className="text-3xl font-black text-white">{initials}</div>
                   )}
                 </div>
                 <button
@@ -237,7 +245,7 @@ const MyProfile = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full lg:w-auto">
               <StatCard label="Vehicles" value={vehicles.length} tone="border-white/10 bg-white/5 text-white" />
               <StatCard label="Open Bookings" value={activeBookings} tone="border-white/10 bg-white/5 text-white" />
               <StatCard label="Completed" value={completedBookings} tone="border-white/10 bg-white/5 text-white" />
