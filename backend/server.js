@@ -25,6 +25,7 @@ const adminRoutes = require('./src/routes/admin');
 const passportRoutes = require('./src/routes/passport');
 const insuranceRoutes = require('./src/routes/insurance');
 const ownershipRoutes = require('./src/routes/ownership');
+const vehicleDoctorRoutes = require('./src/routes/vehicleDoctorRoutes');
 
 const app = express();
 const config = loadConfig();
@@ -96,6 +97,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/passport', passportRoutes);
 app.use('/api/insurance', insuranceRoutes);
 app.use('/api/ownership', ownershipRoutes);
+app.use('/api/vehicle-doctor', vehicleDoctorRoutes);
 
 // Start after DB connects
 (async () => {
@@ -109,3 +111,5 @@ app.use('/api/ownership', ownershipRoutes);
   console.error('Failed to start server:', err);
   process.exit(1);
 });
+
+// Restart trigger for ENV update again with groq

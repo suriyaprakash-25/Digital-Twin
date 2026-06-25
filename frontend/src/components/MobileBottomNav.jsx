@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Car, Store, UserCircle2, Wrench, PieChart, Building2 } from 'lucide-react';
+import { LayoutDashboard, Car, Store, UserCircle2, Wrench, PieChart, Building2, Stethoscope } from 'lucide-react';
 
 function normalizeRole(role) {
     const r = String(role || '').trim().toLowerCase();
@@ -23,7 +23,8 @@ const MobileBottomNav = () => {
         : [
             { name: 'Dashboard', href: '/user-dashboard', icon: LayoutDashboard },
             { name: 'Vehicles', href: '/my-vehicles', icon: Car },
-            { name: 'Marketplace', href: '/marketplace', icon: Store },
+            { name: 'AI Doctor', href: '/vehicle-doctor', icon: Stethoscope },
+            { name: 'Market', href: '/marketplace', icon: Store },
             { name: 'Profile', href: '/my-profile', icon: UserCircle2 },
         ];
 

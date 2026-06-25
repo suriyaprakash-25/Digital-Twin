@@ -22,6 +22,8 @@ import MyProfile from './pages/MyProfile';
 import Passport from './pages/Passport';
 import Insurance from './pages/Insurance';
 import TransferOwnership from './pages/TransferOwnership';
+import VehicleDoctor from './pages/VehicleDoctor';
+import DiagnosisHistory from './pages/DiagnosisHistory';
 
 // Admin
 import AdminLayout from './components/admin/AdminLayout';
@@ -69,6 +71,10 @@ function App() {
           <Route path="/my-profile" element={<MyProfile />} />
           <Route path="/garage-dashboard" element={<GarageDashboard />} />
           <Route path="/marketplace" element={<Marketplace />} />
+
+          {/* AI Vehicle Doctor */}
+          <Route path="/vehicle-doctor" element={<VehicleDoctor />} />
+          <Route path="/vehicle-doctor/history" element={<DiagnosisHistory />} />
 
           {/* Legacy digital twin routes */}
           <Route path="/dashboard" element={<Dashboard />} />
