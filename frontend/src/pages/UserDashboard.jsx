@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Car, Bell, CheckCircle2, XCircle, Info, ChevronRight, Activity, CalendarClock } from 'lucide-react';
 import axios from 'axios';
 
 const UserDashboard = () => {
@@ -121,42 +122,91 @@ const UserDashboard = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-extrabold text-slate-900">Your Vehicles</h2>
-            <Link to="/my-vehicles" className="text-sm font-semibold text-teal-600 hover:text-teal-700">
-              View
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Vehicles Section */}
+        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm relative overflow-hidden group">
+          <div className="relative z-10 flex items-center justify-between mb-6">
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <Car className="w-5 h-5 text-teal-600" />
+              Your Vehicles
+            </h2>
+            <Link to="/my-vehicles" className="text-xs font-bold text-teal-600 hover:text-teal-800 uppercase tracking-wider flex items-center gap-1 transition-colors">
+              View All <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
-          <div className="mt-4 space-y-2">
+
+          <div className="relative z-10 space-y-3">
             {vehicles.length === 0 ? (
-              <div className="text-slate-500 text-sm">No vehicles yet. Add one to book services.</div>
+              <div className="text-slate-400 text-sm py-4">No vehicles yet. Add one to book services.</div>
             ) : (
               vehicles.slice(0, 5).map((v) => (
-                <div key={v.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="text-sm font-semibold text-slate-900">{v.vehicleNumber}</div>
-                  <div className="text-xs font-medium text-slate-500">{[v.brand, v.model].filter(Boolean).join(' ')}</div>
+                <div key={v.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer group/card">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center border border-teal-100">
+                      <Car className="w-5 h-5 text-teal-600 group-hover/card:scale-110 transition-transform" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-900 tracking-wide">{v.vehicleNumber}</div>
+                      <div className="text-xs font-medium text-slate-600 mt-0.5">{[v.brand, v.model].filter(Boolean).join(' ')}</div>
+                    </div>
+                  </div>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse"></div>
                 </div>
               ))
             )}
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-extrabold text-slate-900">Recent Notifications</h2>
+        {/* Notifications Section */}
+        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <Bell className="w-5 h-5 text-teal-600" />
+              Recent Activity
+            </h2>
+            <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center">
+              <Activity className="w-4 h-4 text-teal-600" />
+            </div>
           </div>
-          <div className="mt-4 space-y-2">
+          
+          <div className="space-y-3 max-h-[380px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 pr-2">
             {notifications.length === 0 ? (
-              <div className="text-slate-500 text-sm">No notifications yet.</div>
+              <div className="text-slate-500 text-sm py-8 text-center flex flex-col items-center justify-center">
+                <Bell className="w-8 h-8 text-slate-300 mb-2" />
+                No recent notifications
+              </div>
             ) : (
-              notifications.slice(0, 10).map((n) => (
-                <div key={n.id} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="text-sm font-semibold text-slate-900">{n.title}</div>
-                  <div className="text-sm text-slate-600 mt-0.5">{n.body}</div>
-                </div>
-              ))
+              notifications.slice(0, 10).map((n) => {
+                const isAccepted = n.body.includes('ACCEPTED');
+                const isRejected = n.body.includes('REJECTED');
+                const isCompleted = n.body.includes('COMPLETED');
+                
+                let Icon = Info;
+                let iconColor = 'text-blue-500';
+                let iconBg = 'bg-blue-50 border-blue-100';
+                
+                if (isAccepted || isCompleted) {
+                  Icon = CheckCircle2;
+                  iconColor = 'text-emerald-600';
+                  iconBg = 'bg-emerald-50 border-emerald-100';
+                } else if (isRejected) {
+                  Icon = XCircle;
+                  iconColor = 'text-rose-600';
+                  iconBg = 'bg-rose-50 border-rose-100';
+                }
+
+                return (
+                  <div key={n.id} className="flex gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-300 group cursor-default">
+                    <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center border ${iconBg}`}>
+                      <Icon className={`w-5 h-5 ${iconColor} group-hover:scale-110 transition-transform`} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-900">{n.title}</div>
+                      <div className="text-sm text-slate-600 mt-1 leading-snug">{n.body}</div>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -167,27 +217,32 @@ const UserDashboard = () => {
           <h2 className="text-lg font-extrabold text-slate-900">Your Bookings</h2>
         </div>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3 max-h-[380px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 pr-2">
           {bookings.length === 0 ? (
-            <div className="text-slate-500 text-sm">No bookings yet.</div>
+            <div className="text-slate-500 text-sm py-8 text-center flex flex-col items-center justify-center">
+              <CalendarClock className="w-8 h-8 text-slate-300 mb-2" />
+              No bookings yet.
+            </div>
           ) : (
             bookings.slice(0, 20).map((b) => (
-              <div key={b.id} className="p-4 rounded-2xl border border-slate-200 bg-white">
+              <div key={b.id} className="p-4 rounded-2xl border border-slate-100 hover:border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition-all duration-300 cursor-default group">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-extrabold text-slate-900">
+                  <div className="text-sm font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors">
                     {b.service?.title || 'Service'} • {b.garage?.name || 'Garage'}
                   </div>
-                  <div className="text-xs font-bold px-3 py-1 rounded-full bg-teal-50 text-teal-700">
+                  <div className="text-xs font-bold px-3 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100 shadow-sm">
                     {b.status}
                   </div>
                 </div>
-                <div className="text-sm text-slate-600 mt-1">
-                  Vehicle: <span className="font-semibold">{b.vehicle?.vehicleNumber || '—'}</span>
+                <div className="text-sm text-slate-600 mt-2 flex items-center gap-2">
+                  <span className="text-slate-400">Vehicle:</span>
+                  <span className="font-bold text-slate-800">{b.vehicle?.vehicleNumber || '—'}</span>
                 </div>
-                <div className="text-sm text-slate-600 mt-1">
-                  Scheduled: <span className="font-semibold">{b.scheduledFor ? new Date(b.scheduledFor).toLocaleString() : 'Not set'}</span>
+                <div className="text-sm text-slate-600 mt-1 flex items-center gap-2">
+                  <span className="text-slate-400">Scheduled:</span>
+                  <span className="font-semibold">{b.scheduledFor ? new Date(b.scheduledFor).toLocaleString() : 'Not set'}</span>
                 </div>
-                {b.notes ? <div className="text-sm text-slate-600 mt-2">Notes: {b.notes}</div> : null}
+                {b.notes ? <div className="text-sm text-slate-500 mt-2 bg-white/50 p-2 rounded-lg border border-slate-100 italic">"{b.notes}"</div> : null}
               </div>
             ))
           )}
