@@ -25,8 +25,8 @@ const Insurance = () => {
   const fetchInsuranceData = async () => {
     try {
       const [vRes, iRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/vehicles/myvehicles', headers),
-        axios.get(`http://localhost:5000/api/insurance/${vehicleId}`, headers)
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, headers),
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/insurance/${vehicleId}`, headers)
       ]);
       const currentVehicle = vRes.data.find(v => v.id === vehicleId);
       setVehicle(currentVehicle);
@@ -83,7 +83,7 @@ const Insurance = () => {
     formData.append('document', selectedFile);
 
     try {
-      await axios.post('http://localhost:5000/api/insurance/add', formData, {
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/insurance/add`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

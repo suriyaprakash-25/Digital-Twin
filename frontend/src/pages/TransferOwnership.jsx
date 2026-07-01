@@ -18,7 +18,7 @@ const TransferOwnership = () => {
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
-        const vRes = await axios.get('http://localhost:5000/api/vehicles/myvehicles', headers);
+        const vRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, headers);
         const currentVehicle = vRes.data.find(v => v.id === vehicleId);
         setVehicle(currentVehicle);
       } catch (err) {
@@ -43,7 +43,7 @@ const TransferOwnership = () => {
     setSubmitting(true);
 
     try {
-      await axios.post('http://localhost:5000/api/ownership/transfer', {
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ownership/transfer`, {
         vehicleId,
         buyerEmail: buyerEmail.trim().toLowerCase()
       }, headers);

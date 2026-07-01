@@ -34,7 +34,7 @@ const GarageProfile = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/garages/me', headers)
+    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, headers)
       .then(res => {
         if (res.data?.exists) {
           const p = {
@@ -67,7 +67,7 @@ const GarageProfile = () => {
     formData.append('photo', file);
     setUploadingPhoto(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/garages/photo', formData, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/photo`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       setPhotoUrl(res.data.photoUrl);
@@ -84,7 +84,7 @@ const GarageProfile = () => {
     setSaving(true);
     setMessage({ type: '', text: '' });
     try {
-      await axios.post('http://localhost:5000/api/garages/me', profile, headers);
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, profile, headers);
       setOriginal({ ...profile });
       setMessage({ type: 'success', text: 'Profile saved successfully!' });
     } catch (err) {

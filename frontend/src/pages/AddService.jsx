@@ -44,7 +44,7 @@ const AddService = () => {
         const fetchVehicles = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('http://localhost:5000/api/vehicles/myvehicles', {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setVehicles(res.data);
@@ -198,7 +198,7 @@ const AddService = () => {
                 billPhotoUrls: billPhotos
             };
 
-            await axios.post('http://localhost:5000/api/services/add', submitPayload, {
+            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/services/add`, submitPayload, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'

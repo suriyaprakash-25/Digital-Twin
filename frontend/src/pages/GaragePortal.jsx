@@ -16,7 +16,7 @@ const GaragePortal = () => {
     const fetchPending = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:5000/api/garage/pending', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garage/pending`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPendingServices(res.data);
@@ -46,7 +46,7 @@ const GaragePortal = () => {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`http://localhost:5000/api/garage/verify/${selectedService.id}`, formData, {
+            const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garage/verify/${selectedService.id}`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'

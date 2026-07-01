@@ -42,10 +42,10 @@ const GarageDashboard = () => {
     setError('');
     try {
       const [pRes, sRes, bRes, nRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/garages/me', headers).catch(() => ({ data: { exists: false } })),
-        axios.get('http://localhost:5000/api/garages/me/services', headers).catch(() => ({ data: [] })),
-        axios.get('http://localhost:5000/api/bookings/garage', headers).catch(() => ({ data: [] })),
-        axios.get('http://localhost:5000/api/notifications?limit=20', headers).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, headers).catch(() => ({ data: { exists: false } })),
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me/services`, headers).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/garage`, headers).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications?limit=20`, headers).catch(() => ({ data: [] })),
       ]);
       setProfile(pRes.data?.exists ? pRes.data : null);
       setServices(Array.isArray(sRes.data) ? sRes.data : []);
@@ -62,7 +62,7 @@ const GarageDashboard = () => {
 
   const updateBookingStatus = async (bookingId, status) => {
     try {
-      await axios.patch(`http://localhost:5000/api/bookings/${bookingId}/status`, { status }, headers);
+      await axios.patch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}/status`, { status }, headers);
       setMessage('Booking updated');
       setTimeout(() => setMessage(''), 3000);
       await loadAll();

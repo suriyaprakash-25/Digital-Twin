@@ -15,21 +15,21 @@ const Dashboard = () => {
                 const token = localStorage.getItem('token');
 
                 // Fetch vehicles
-                const vehiclesRes = await axios.get('http://localhost:5000/api/vehicles/myvehicles', {
+                const vehiclesRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const fetchedVehicles = vehiclesRes.data;
                 setVehicles(fetchedVehicles);
 
                 // Fetch reminders
-                const remindersRes = await axios.get('http://localhost:5000/api/reminders', {
+                const remindersRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/reminders`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setReminders(remindersRes.data);
 
                 // Fetch health data for each vehicle
                 const healthPromises = fetchedVehicles.map(v =>
-                    axios.get(`http://localhost:5000/api/health/${v.id}`, { headers: { Authorization: `Bearer ${token}` } })
+                    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/health/${v.id}`, { headers: { Authorization: `Bearer ${token}` } })
                         .catch(() => ({ data: { healthScore: 100 } })) // Fallback on error
                 );
 

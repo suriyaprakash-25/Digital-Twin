@@ -13,7 +13,7 @@ const ResaleReport = () => {
         const fetchReport = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get(`http://localhost:5000/api/resale/${vehicleId}`, {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/resale/${vehicleId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setReport(res.data);

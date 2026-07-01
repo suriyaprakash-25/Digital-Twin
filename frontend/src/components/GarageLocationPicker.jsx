@@ -76,7 +76,7 @@ const GarageLocationPicker = ({ token, initialLocation, readOnly = false, onSave
     setSaving(true);
     try {
       await axios.post(
-        'http://localhost:5000/api/garages/location',
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/location`,
         { latitude: location.latitude, longitude: location.longitude },
         { headers: { Authorization: `Bearer ${token}` } }
       );

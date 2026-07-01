@@ -23,10 +23,10 @@ const UserDashboard = () => {
   const loadData = async () => {
     try {
       const [vRes, bRes, nRes, pRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/vehicles/myvehicles', headers),
-        axios.get('http://localhost:5000/api/bookings/my', headers),
-        axios.get('http://localhost:5000/api/notifications?limit=20', headers),
-        axios.get('http://localhost:5000/api/ownership/pending', headers)
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, headers),
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/my`, headers),
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications?limit=20`, headers),
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ownership/pending`, headers)
       ]);
       setVehicles(Array.isArray(vRes.data) ? vRes.data : []);
       setBookings(Array.isArray(bRes.data) ? bRes.data : []);
@@ -45,7 +45,7 @@ const UserDashboard = () => {
   const handleAcceptTransfer = async (transferId) => {
     setError('');
     try {
-      await axios.post('http://localhost:5000/api/ownership/transfer/accept', { transferId }, headers);
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ownership/transfer/accept`, { transferId }, headers);
       await loadData();
     } catch (err) {
       setError(err.response?.data?.msg || 'Failed to accept transfer.');
@@ -55,7 +55,7 @@ const UserDashboard = () => {
   const handleRejectTransfer = async (transferId) => {
     setError('');
     try {
-      await axios.post('http://localhost:5000/api/ownership/transfer/reject', { transferId }, headers);
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ownership/transfer/reject`, { transferId }, headers);
       await loadData();
     } catch (err) {
       setError(err.response?.data?.msg || 'Failed to reject transfer.');

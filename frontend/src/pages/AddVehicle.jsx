@@ -36,7 +36,7 @@ const AddVehicle = () => {
             if (rcBookFile) submitData.append('rcBook', rcBookFile);
             if (insuranceFile) submitData.append('insuranceDocument', insuranceFile);
 
-            await axios.post('http://localhost:5000/api/vehicles/add', submitData, {
+            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/add`, submitData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'

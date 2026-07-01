@@ -26,8 +26,8 @@ const Analytics = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         const fetches = role === 'GARAGE'
-            ? [axios.get('http://localhost:5000/api/analytics/garage', { headers })]
-            : [axios.get('http://localhost:5000/api/analytics', { headers })];
+            ? [axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/garage`, { headers })]
+            : [axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics`, { headers })];
 
         Promise.all(fetches)
             .then(([res]) => {

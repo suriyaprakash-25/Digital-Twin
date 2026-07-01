@@ -29,7 +29,7 @@ const EmergencyPanel = ({ onClose, onEmergencySent }) => {
       async (position) => {
         try {
           const token = localStorage.getItem('token');
-          const res = await axios.post('http://localhost:5000/api/copilot/emergency', {
+          const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/copilot/emergency`, {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
             category: category,

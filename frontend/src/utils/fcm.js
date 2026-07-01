@@ -66,7 +66,7 @@ export async function tryRegisterFcmToken({ authToken, requestPermission = false
   }
 
   await axios.post(
-    'http://localhost:5000/api/notifications/token',
+    `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications/token`,
     { token, platform: 'web' },
     {
       headers: {

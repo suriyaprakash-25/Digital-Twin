@@ -60,7 +60,7 @@ const AdminAnalytics = () => {
         const fetchAnalytics = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('http://localhost:5000/api/admin/analytics', {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/analytics`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setData(res.data);

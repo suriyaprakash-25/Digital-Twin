@@ -20,7 +20,7 @@ const AdminUsers = () => {
     const fetchUsers = async (p = 1, q = '') => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/admin/users', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users`, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: { page: p, limit: 20, search: q }
             });
@@ -53,7 +53,7 @@ const AdminUsers = () => {
         setExpandedUser(userId);
         setDetailLoading(true);
         try {
-            const res = await axios.get(`http://localhost:5000/api/admin/users/${userId}`, {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUserDetail(res.data);

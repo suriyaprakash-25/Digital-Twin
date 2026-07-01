@@ -15,7 +15,7 @@ const DiagnosisHistory = () => {
     const fetchHistory = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/vehicle-doctor/history', {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicle-doctor/history`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setHistory(res.data);

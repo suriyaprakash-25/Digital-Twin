@@ -13,7 +13,7 @@ const MyVehicles = () => {
     const fetchVehicles = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:5000/api/vehicles/myvehicles', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setVehicles(res.data);
@@ -32,7 +32,7 @@ const MyVehicles = () => {
         if (window.confirm("Are you sure you want to delete this vehicle and all its service history?")) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete(`http://localhost:5000/api/vehicles/${id}`, {
+                await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 fetchVehicles();

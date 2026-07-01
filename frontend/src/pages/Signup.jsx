@@ -25,7 +25,7 @@ const Signup = () => {
         setIsLoading(true);
 
         try {
-            await axios.post('http://localhost:5000/api/auth/signup', formData);
+            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signup`, formData);
             navigate('/login');
         } catch (err) {
             setError(err.response?.data?.msg || 'Failed to create account. Please try again.');
@@ -39,7 +39,7 @@ const Signup = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/google', {
+            const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`, {
                 credential,
                 role: formData.role
             });

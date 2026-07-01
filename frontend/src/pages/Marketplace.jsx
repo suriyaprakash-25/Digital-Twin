@@ -32,8 +32,8 @@ const Marketplace = () => {
       setIsLoading(true);
       try {
         const [mRes, vRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/marketplace'),
-          axios.get('http://localhost:5000/api/vehicles/myvehicles', headers)
+          axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/marketplace`),
+          axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, headers)
         ]);
 
         if (cancelled) return;
@@ -68,7 +68,7 @@ const Marketplace = () => {
 
     try {
       await axios.post(
-        'http://localhost:5000/api/bookings',
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings`,
         {
           garageId,
           serviceId,

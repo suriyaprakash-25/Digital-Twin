@@ -25,14 +25,14 @@ const ServiceHistory = () => {
                 const token = localStorage.getItem('token');
 
                 // Fetch vehicles to get current vehicle details
-                const vRes = await axios.get('http://localhost:5000/api/vehicles/myvehicles', {
+                const vRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const currentVehicle = vRes.data.find(v => v.id === vehicleId);
                 setVehicle(currentVehicle);
 
                 // Fetch services for this vehicle
-                const sRes = await axios.get(`http://localhost:5000/api/services/${vehicleId}`, {
+                const sRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/services/${vehicleId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setServices(sRes.data);
@@ -57,7 +57,7 @@ const ServiceHistory = () => {
         
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/services/${serviceId}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/services/${serviceId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Update UI by filtering out the deleted service

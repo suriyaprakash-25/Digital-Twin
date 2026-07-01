@@ -28,7 +28,7 @@ const EditVehicle = () => {
         const fetchVehicle = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('http://localhost:5000/api/vehicles/myvehicles', {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const vehicle = res.data.find(v => v.id === id);
@@ -74,7 +74,7 @@ const EditVehicle = () => {
             if (rcBookFile) submitData.append('rcBook', rcBookFile);
             if (insuranceFile) submitData.append('insuranceDocument', insuranceFile);
 
-            await axios.put(`http://localhost:5000/api/vehicles/${id}`, submitData, {
+            await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/${id}`, submitData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'

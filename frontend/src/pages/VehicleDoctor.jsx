@@ -21,7 +21,7 @@ const VehicleDoctor = () => {
     const fetchVehicles = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/vehicles/myvehicles', {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setVehicles(res.data);
@@ -72,7 +72,7 @@ const VehicleDoctor = () => {
         formData.append('images', image);
       });
 
-      const res = await axios.post('http://localhost:5000/api/vehicle-doctor/analyze', formData, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicle-doctor/analyze`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

@@ -27,7 +27,7 @@ function VerifyOtp() {
     setError('');
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/verify-otp', { email, otp });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/verify-otp`, { email, otp });
       if (res.data.success) {
         setMessage('OTP verified successfully! Redirecting...');
         // In Phase 3, we will redirect to /reset-password
@@ -48,7 +48,7 @@ function VerifyOtp() {
     setError('');
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/forgot-password', { email });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/forgot-password`, { email });
       if (res.data.success) {
         setMessage('A new OTP has been sent to your email.');
       }

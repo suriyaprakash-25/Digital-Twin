@@ -8,8 +8,8 @@ import { API_BASE_URL } from './utils/config'
 
 // Set up Axios interceptor for dynamic deployment API URL mapping
 axios.interceptors.request.use((config) => {
-  if (config.url && config.url.startsWith('http://localhost:5000')) {
-    config.url = config.url.replace('http://localhost:5000', API_BASE_URL);
+  if (config.url && config.url.startsWith(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}`)) {
+    config.url = config.url.replace(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}`, API_BASE_URL);
   }
   return config;
 }, (error) => {

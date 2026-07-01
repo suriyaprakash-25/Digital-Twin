@@ -30,7 +30,7 @@ const GarageServices = () => {
 
   const load = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/garages/me/services', headers);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me/services`, headers);
       setServices(Array.isArray(res.data) ? res.data : []);
     } catch {
       setServices([]);
@@ -45,7 +45,7 @@ const GarageServices = () => {
     e.preventDefault();
     setAdding(true);
     try {
-      await axios.post('http://localhost:5000/api/garages/me/services', newService, headers);
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me/services`, newService, headers);
       setNewService(empty);
       setShowForm(false);
       flash('success', 'Service added successfully!');
@@ -61,7 +61,7 @@ const GarageServices = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await axios.put(`http://localhost:5000/api/garages/me/services/${editingService.id}`, editingService, headers);
+      await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me/services/${editingService.id}`, editingService, headers);
       setEditingService(null);
       flash('success', 'Service updated successfully!');
       await load();
@@ -76,7 +76,7 @@ const GarageServices = () => {
     if (!window.confirm('Remove this service?')) return;
     setDeleting(id);
     try {
-      await axios.delete(`http://localhost:5000/api/garages/me/services/${id}`, headers);
+      await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me/services/${id}`, headers);
       flash('success', 'Service removed.');
       setServices(s => s.filter(x => x.id !== id));
     } catch (err) {
