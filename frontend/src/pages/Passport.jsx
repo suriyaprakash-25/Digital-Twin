@@ -102,7 +102,7 @@ const Passport = () => {
 
       {/* Top Header */}
       <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between pb-24 lg:pb-8">
           <Link to="/" className="flex items-center gap-3">
             <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-12" />
             <span className="font-extrabold text-slate-900 text-lg tracking-tight">Drive<span className="text-teal-600">portz</span></span>

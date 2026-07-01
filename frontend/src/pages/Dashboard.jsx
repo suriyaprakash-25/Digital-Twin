@@ -61,25 +61,24 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <header className="flex justify-between items-end mb-8 bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
-                {/* Subtle decorative background in header */}
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 lg:pb-8">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
                 <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-teal-50 to-transparent"></div>
                 <div className="relative z-10">
-                    <div className="inline-flex items-center px-3 py-1 bg-teal-50 text-teal-600 rounded-full text-xs font-bold tracking-wide mb-3 border border-teal-100 shadow-sm">
+                    <div className="inline-flex items-center px-3 py-1 bg-teal-50 text-teal-600 rounded-full text-xs font-bold tracking-wide mb-2 border border-teal-100 shadow-sm">
                         Overview Dashboard
                     </div>
-                    <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-                        Welcome back, {user.name}
+                    <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                        Welcome back, {user.name?.split(' ')[0]}
                     </h1>
-                    <p className="text-slate-500 mt-2 font-medium text-lg">
+                    <p className="text-slate-500 mt-1 font-medium text-sm sm:text-lg">
                         Here's the latest status of your digital twin fleet.
                     </p>
                 </div>
             </header>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                 <DashboardCard
                     title="Total Vehicles"
                     value={loading ? '-' : vehicles.length.toString()}
@@ -110,9 +109,9 @@ const Dashboard = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                 {/* Reminders List */}
-                <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm relative overflow-hidden">
+                <div className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-sm relative overflow-hidden">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                             <Activity className="h-6 w-6 text-rose-500" />
@@ -148,7 +147,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Fleet Details with IQ Scores */}
-                <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm relative overflow-hidden">
+                <div className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-sm relative overflow-hidden">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                             <TrendingUp className="h-6 w-6 text-teal-500" />
@@ -223,18 +222,19 @@ const DashboardCard = ({ title, value, icon, color, trend }) => {
     };
 
     return (
-        <div className={`bg-white rounded-3xl p-6 border border-slate-100 relative overflow-hidden hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-lg group cursor-default`}>
-            <div className="flex items-start justify-between mb-6">
-                <div className={`p-3 rounded-2xl border transition-colors ${getColorStyles()}`}>
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-100 relative overflow-hidden hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-lg group cursor-default">
+            <div className="flex items-start justify-between mb-3 sm:mb-6">
+                <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl border transition-colors ${getColorStyles()}`}>
                     {icon}
                 </div>
-                <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                <span className="hidden sm:inline text-xs font-semibold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
                     {trend}
                 </span>
             </div>
             <div>
-                <h3 className="text-slate-500 font-semibold mb-1">{title}</h3>
-                <p className="text-3xl font-extrabold text-slate-900 tracking-tight group-hover:text-teal-600 transition-colors">{value}</p>
+                <h3 className="text-slate-500 font-semibold text-xs sm:text-sm mb-1">{title}</h3>
+                <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight group-hover:text-teal-600 transition-colors">{value}</p>
+                <p className="text-[10px] text-slate-400 mt-1 sm:hidden">{trend}</p>
             </div>
         </div>
     );

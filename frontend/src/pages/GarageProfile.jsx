@@ -8,7 +8,7 @@ import {
 import GarageLocationPicker from '../components/GarageLocationPicker';
 
 const Field = ({ label, icon, children }) => (
-  <div className="space-y-1.5">
+  <div className="space-y-1.5 pb-24 lg:pb-8">
     <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
       {icon}
       {label}

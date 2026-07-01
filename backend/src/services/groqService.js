@@ -3,87 +3,46 @@ const { loadConfig } = require('../config');
 
 const config = loadConfig();
 
-let groq = null;
+let groqClient = null;
 if (config.groqApiKey) {
-  groq = new Groq({ apiKey: config.groqApiKey });
+  groqClient = new Groq({ apiKey: config.groqApiKey });
+  console.log('✅ GROQ AI initialized successfully.');
 } else {
-  console.warn('WARNING: GROQ_API_KEY is not set. AI Vehicle Doctor will fail.');
+  console.warn('WARNING: GROQ_API_KEY is not set. AI features will use fallback.');
 }
 
-async function analyzeVehicleSymptoms(diagnosisInput) {
-  if (!groq) {
-    throw new Error('Groq API key is not configured.');
+/**
+ * General purpose GROQ text generation.
+ * Returns a parsed JSON object if the response is valid JSON, otherwise returns the raw string.
+ */
+async function analyzeWithGroq({ systemInstruction, prompt }) {
+  if (!groqClient) {
+    throw new Error('GROQ API key is not configured.');
   }
 
-  const prompt = `
-You are an experienced automotive diagnostic assistant.
-Analyze the following vehicle information, past services, user-described symptoms, and selected symptom checklists to provide a professional vehicle diagnosis.
+  const chatCompletion = await groqClient.chat.completions.create({
+    messages: [
+      { role: 'system', content: systemInstruction },
+      { role: 'user', content: prompt }
+    ],
+    model: 'llama-3.3-70b-versatile',
+    temperature: 0.7,
+    max_tokens: 2048,
+  });
 
-INPUT DATA:
-Vehicle: ${diagnosisInput.vehicleDetails.brand} ${diagnosisInput.vehicleDetails.model} (${diagnosisInput.vehicleDetails.year})
-Mileage: ${diagnosisInput.vehicleDetails.mileage || 'Unknown'} km
-Vehicle IQ Score: ${diagnosisInput.vehicleIQ || 'Unknown'}/100
+  const responseText = chatCompletion.choices[0]?.message?.content || '';
 
-User Described Symptoms: "${diagnosisInput.symptoms}"
-Selected Symptom Checkboxes: ${diagnosisInput.selectedSymptoms.join(', ') || 'None'}
-
-Last Services:
-${JSON.stringify(diagnosisInput.lastServices, null, 2)}
-
-Provide a structured JSON response matching EXACTLY this format:
-{
-  "possibleCauses": [
-    {
-      "name": "Cause Name",
-      "confidence": 85
-    }
-  ],
-  "urgency": "Low|Medium|High",
-  "estimatedRepairCost": "₹1500 - ₹2500",
-  "recommendedAction": "Clear advice on what to do next",
-  "preventiveTips": [
-    "Tip 1",
-    "Tip 2"
-  ]
-}
-
-Return ONLY valid JSON. Do not include markdown code blocks like \`\`\`json.
-`;
+  // Clean up potential markdown fences
+  let cleanText = responseText.trim();
+  if (cleanText.startsWith('```json')) cleanText = cleanText.substring(7);
+  if (cleanText.startsWith('```')) cleanText = cleanText.substring(3);
+  if (cleanText.endsWith('```')) cleanText = cleanText.substring(0, cleanText.length - 3);
 
   try {
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      model: 'llama-3.1-8b-instant', // or any other fast groq model like 'gemma2-9b-it'
-      temperature: 0.5,
-      response_format: { type: 'json_object' }
-    });
-
-    const responseText = chatCompletion.choices[0]?.message?.content || '';
-    
-    // Clean up potential markdown formatting just in case
-    let cleanJson = responseText.trim();
-    if (cleanJson.startsWith('\`\`\`json')) {
-      cleanJson = cleanJson.substring(7);
-    }
-    if (cleanJson.startsWith('\`\`\`')) {
-      cleanJson = cleanJson.substring(3);
-    }
-    if (cleanJson.endsWith('\`\`\`')) {
-      cleanJson = cleanJson.substring(0, cleanJson.length - 3);
-    }
-
-    return JSON.parse(cleanJson.trim());
-  } catch (error) {
-    console.error('Error in groqService:', error);
-    throw new Error('Failed to analyze symptoms with AI.');
+    return JSON.parse(cleanText.trim());
+  } catch (e) {
+    return cleanText;
   }
 }
 
-module.exports = {
-  analyzeVehicleSymptoms
-};
+module.exports = { analyzeWithGroq };

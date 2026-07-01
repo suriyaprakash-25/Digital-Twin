@@ -7,21 +7,56 @@ let genAI = null;
 if (config.geminiApiKey) {
   genAI = new GoogleGenerativeAI(config.geminiApiKey);
 } else {
-  console.warn('WARNING: GEMINI_API_KEY is not set. AI Vehicle Doctor will fail.');
+  console.warn('WARNING: GEMINI_API_KEY is not set. AI Features will fail.');
 }
 
-async function analyzeVehicleSymptoms(diagnosisInput) {
+async function analyzeWithGemini({ systemInstruction, prompt, imageBase64 }) {
   if (!genAI) {
     throw new Error('Gemini API key is not configured.');
   }
 
-  // The model to use
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ 
+    model: 'gemini-2.0-flash-lite',
+    systemInstruction: systemInstruction 
+  });
 
+  const contentParts = [{ text: prompt }];
+
+  if (imageBase64) {
+    const mimeType = imageBase64.split(';')[0].split(':')[1];
+    const base64Data = imageBase64.split(',')[1];
+    contentParts.push({
+      inlineData: { data: base64Data, mimeType: mimeType }
+    });
+  }
+
+  try {
+    const result = await model.generateContent(contentParts);
+    const responseText = result.response.text();
+    
+    let cleanText = responseText.trim();
+    if (cleanText.startsWith('```json')) cleanText = cleanText.substring(7);
+    if (cleanText.startsWith('```')) cleanText = cleanText.substring(3);
+    if (cleanText.endsWith('```')) cleanText = cleanText.substring(0, cleanText.length - 3);
+
+    try {
+      return JSON.parse(cleanText.trim());
+    } catch (e) {
+      return cleanText;
+    }
+  } catch (error) {
+    console.error('Error in geminiService:', error.message);
+    // Re-throw with a user-friendly message
+    if (error.status === 429) {
+      throw new Error('AI quota exceeded. Please wait a moment and try again.');
+    }
+    throw new Error('Failed to analyze with AI.');
+  }
+}
+
+// Keep the old function for backward compatibility with PRD-1 if needed
+async function analyzeVehicleSymptoms(diagnosisInput) {
   const prompt = `
-You are an experienced automotive diagnostic assistant.
-Analyze the following vehicle information, past services, user-described symptoms, and selected symptom checklists to provide a professional vehicle diagnosis.
-
 INPUT DATA:
 Vehicle: ${diagnosisInput.vehicleDetails.brand} ${diagnosisInput.vehicleDetails.model} (${diagnosisInput.vehicleDetails.year})
 Mileage: ${diagnosisInput.vehicleDetails.mileage || 'Unknown'} km
@@ -49,33 +84,16 @@ Provide a structured JSON response matching EXACTLY this format:
     "Tip 2"
   ]
 }
-
-Return ONLY valid JSON. Do not include markdown code blocks like \`\`\`json.
+Return ONLY valid JSON.
 `;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    
-    // Clean up potential markdown formatting
-    let cleanJson = responseText.trim();
-    if (cleanJson.startsWith('\`\`\`json')) {
-      cleanJson = cleanJson.substring(7);
-    }
-    if (cleanJson.startsWith('\`\`\`')) {
-      cleanJson = cleanJson.substring(3);
-    }
-    if (cleanJson.endsWith('\`\`\`')) {
-      cleanJson = cleanJson.substring(0, cleanJson.length - 3);
-    }
-
-    return JSON.parse(cleanJson.trim());
-  } catch (error) {
-    console.error('Error in geminiService:', error);
-    throw new Error('Failed to analyze symptoms with AI.');
-  }
+  return await analyzeWithGemini({
+    systemInstruction: "You are an experienced automotive diagnostic assistant.",
+    prompt
+  });
 }
 
 module.exports = {
-  analyzeVehicleSymptoms
+  analyzeVehicleSymptoms,
+  analyzeWithGemini
 };

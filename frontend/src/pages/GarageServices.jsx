@@ -96,7 +96,7 @@ const GarageServices = () => {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto pb-16 animate-in fade-in duration-500">
+    <div className="max-w-5xl mx-auto pb-16 animate-in fade-in duration-500 pb-24 lg:pb-8">
       {/* Back */}
       <button
         onClick={() => navigate('/garage-dashboard')}

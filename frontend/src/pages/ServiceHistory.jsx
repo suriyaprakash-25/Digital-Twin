@@ -71,7 +71,7 @@ const ServiceHistory = () => {
     const totalExpense = services.reduce((sum, service) => sum + Number(service.totalCost || 0), 0);
 
     return (
-        <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 lg:pb-8">
             <Link
                 to="/my-vehicles"
                 className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-teal-600 mb-6 transition-colors bg-white px-4 py-2 border border-slate-200 rounded-xl shadow-sm hover:shadow-md"

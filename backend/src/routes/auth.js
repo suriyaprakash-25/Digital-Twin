@@ -8,9 +8,17 @@ const { getDb } = require('../db');
 const { loadConfig } = require('../config');
 const { requireAuth, normalizeRole } = require('../middleware/auth');
 const { upload, removeUploadByUrl } = require('../utils/uploads');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 const config = loadConfig();
+
+// Generic Auth Rate Limiter (e.g. max 20 requests per 15 minutes)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { msg: 'Too many requests from this IP, please try again after 15 minutes' }
+});
 
 router.post('/signup', async (req, res) => {
   const { name, email, password, role } = req.body || {};
@@ -335,6 +343,162 @@ router.post('/google', async (req, res) => {
   } catch (err) {
     console.error('Google Sign In Error:', err.message);
     return res.status(401).json({ msg: 'Google authentication failed', error: err.message });
+  }
+});
+
+// POST /forgot-password - Phase 1 & 4: Send OTP with Limits
+router.post('/forgot-password', authLimiter, async (req, res) => {
+  const { email } = req.body || {};
+
+  if (!email) {
+    return res.status(400).json({ msg: 'Email is required' });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ msg: 'Valid email format required' });
+  }
+
+  try {
+    const db = getDb();
+    const users = db.collection('users');
+
+    const user = await users.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ msg: 'Email not found' });
+    }
+
+    // Phase 4: Maximum 3 OTP requests per hour
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    
+    // Reset window if it's been more than an hour since the last request window started
+    let requestCount = user.otpRequestCount || 0;
+    let requestWindow = user.otpRequestWindow || Date.now();
+
+    if (requestWindow < oneHourAgo) {
+      requestCount = 0;
+      requestWindow = Date.now();
+    }
+
+    if (requestCount >= 3) {
+      return res.status(429).json({ msg: 'Maximum OTP requests reached. Please try again after an hour.' });
+    }
+
+    // Generate random 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Save OTP and increment request count, reset attempts
+    await users.updateOne(
+      { _id: user._id },
+      { 
+        $set: { 
+          otp, 
+          otpExpiry,
+          otpRequestCount: requestCount + 1,
+          otpRequestWindow: requestWindow,
+          otpAttempts: 0 // reset failed attempts on new OTP
+        } 
+      }
+    );
+
+    // Send email
+    const { sendOtpEmail } = require('../services/emailService');
+    await sendOtpEmail(email, otp);
+
+    res.status(200).json({ success: true, message: 'OTP sent to your email.' });
+  } catch (error) {
+    console.error('Error in forgot-password:', error);
+    res.status(500).json({ msg: 'Server error while processing forgot password' });
+  }
+});
+
+// POST /verify-otp - Phase 2 & 4: Verify OTP with Max Attempts
+router.post('/verify-otp', authLimiter, async (req, res) => {
+  const { email, otp } = req.body || {};
+
+  if (!email || !otp) {
+    return res.status(400).json({ msg: 'Email and OTP are required' });
+  }
+
+  try {
+    const db = getDb();
+    const users = db.collection('users');
+
+    const user = await users.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ msg: 'Email not found' });
+    }
+
+    const attempts = user.otpAttempts || 0;
+    if (attempts >= 5) {
+      return res.status(429).json({ msg: 'Maximum OTP attempts reached. Please request a new OTP.' });
+    }
+
+    if (user.otp !== otp) {
+      await users.updateOne({ _id: user._id }, { $inc: { otpAttempts: 1 } });
+      return res.status(400).json({ msg: 'Invalid OTP.' });
+    }
+
+    if (!user.otpExpiry || Date.now() > new Date(user.otpExpiry).getTime()) {
+      return res.status(400).json({ msg: 'OTP expired.' });
+    }
+
+    res.status(200).json({ success: true, msg: 'OTP verified successfully.' });
+  } catch (error) {
+    console.error('Error in verify-otp:', error);
+    res.status(500).json({ msg: 'Server error while verifying OTP' });
+  }
+});
+
+// POST /reset-password - Phase 3 & 4: Reset Password
+router.post('/reset-password', authLimiter, async (req, res) => {
+  const { email, otp, newPassword } = req.body || {};
+
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ msg: 'Email, OTP, and new password are required' });
+  }
+
+  // Password complexity regex: Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  if (!passwordRegex.test(newPassword)) {
+    return res.status(400).json({ 
+      msg: 'Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, one number, and one special character.' 
+    });
+  }
+
+  try {
+    const db = getDb();
+    const users = db.collection('users');
+
+    const user = await users.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ msg: 'Email not found' });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ msg: 'Invalid OTP.' });
+    }
+
+    if (!user.otpExpiry || Date.now() > new Date(user.otpExpiry).getTime()) {
+      return res.status(400).json({ msg: 'OTP expired.' });
+    }
+
+    // OTP is valid. Hash new password and update.
+    const hashedPassword = await bcrypt.hash(String(newPassword), 10);
+
+    await users.updateOne(
+      { _id: user._id },
+      { 
+        $set: { password: hashedPassword },
+        $unset: { otp: "", otpExpiry: "" } 
+      }
+    );
+
+    res.status(200).json({ success: true, message: 'Password updated successfully.' });
+  } catch (error) {
+    console.error('Error in reset-password:', error);
+    res.status(500).json({ msg: 'Server error while resetting password' });
   }
 });
 

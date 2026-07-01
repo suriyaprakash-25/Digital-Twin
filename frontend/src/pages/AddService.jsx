@@ -222,7 +222,7 @@ const AddService = () => {
     };
 
     const renderInputGroup = (label, name, type = "text", icon = <Hash className="h-5 w-5" />, placeholder = "", options = null, extraProps = {}) => (
-        <div className="space-y-2">
+        <div className="space-y-2 pb-24 lg:pb-8">
             <label className="text-sm font-bold text-slate-700">{label}</label>
             <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-teal-500 transition-colors">

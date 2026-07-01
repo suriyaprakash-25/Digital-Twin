@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import MobileBottomNav from './MobileBottomNav';
 import { tryRegisterFcmToken } from '../utils/fcm';
 import { Menu, LogOut } from 'lucide-react';
+import Copilot from './copilot/Copilot';
 
 const MainLayout = () => {
     const navigate = useNavigate();
@@ -66,13 +67,20 @@ const MainLayout = () => {
                     </button>
                 </div>
 
-                <main className="flex-1 overflow-y-auto w-full z-10 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
-                    <Outlet />
-                </main>
+                <div className="flex-1 overflow-auto relative">
+                    <div className="mx-auto h-full p-4 lg:p-8">
+                        <Outlet />
+                    </div>
+                </div>
 
-                {/* Mobile bottom navigation */}
-                <MobileBottomNav />
+                {/* Mobile Bottom Navigation */}
+                <div className="lg:hidden mt-auto border-t border-slate-200">
+                    <MobileBottomNav />
+                </div>
             </div>
+
+            {/* AI Assistant CoPilot */}
+            <Copilot />
         </div>
     );
 };

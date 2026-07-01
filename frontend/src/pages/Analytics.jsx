@@ -63,7 +63,7 @@ const Analytics = () => {
         const { bookingsByMonth, revenueByMonth, statusDistribution, topServices, totalBookings, pendingCount, completedCount, totalRevenue, totalServices } = garageData;
 
         return (
-            <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
+            <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500 pb-24 lg:pb-8">
                 <header className="mb-8 p-5 sm:p-8 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
                     <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-emerald-600/30 to-transparent"></div>
                     <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-4 sm:gap-6">

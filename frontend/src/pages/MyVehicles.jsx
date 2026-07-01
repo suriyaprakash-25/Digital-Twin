@@ -45,7 +45,7 @@ const MyVehicles = () => {
     };
 
     return (
-        <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 lg:pb-8">
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
                 <div>
                     <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">My Vehicles</h1>
@@ -82,7 +82,7 @@ const MyVehicles = () => {
                     </Link>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
                     {vehicles.map((vehicle) => (
                         <div
                             key={vehicle.id}

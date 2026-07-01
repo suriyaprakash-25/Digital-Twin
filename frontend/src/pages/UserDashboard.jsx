@@ -63,7 +63,7 @@ const UserDashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 lg:pb-8">
       {pendingTransfers.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-3xl p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-extrabold text-amber-900 flex items-center gap-2">

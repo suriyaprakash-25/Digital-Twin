@@ -26,6 +26,7 @@ const passportRoutes = require('./src/routes/passport');
 const insuranceRoutes = require('./src/routes/insurance');
 const ownershipRoutes = require('./src/routes/ownership');
 const vehicleDoctorRoutes = require('./src/routes/vehicleDoctorRoutes');
+const copilotRoutes = require('./src/routes/copilotRoutes');
 
 const app = express();
 const config = loadConfig();
@@ -98,6 +99,7 @@ app.use('/api/passport', passportRoutes);
 app.use('/api/insurance', insuranceRoutes);
 app.use('/api/ownership', ownershipRoutes);
 app.use('/api/vehicle-doctor', vehicleDoctorRoutes);
+app.use('/api/copilot', copilotRoutes);
 
 // Start after DB connects
 (async () => {
@@ -112,4 +114,4 @@ app.use('/api/vehicle-doctor', vehicleDoctorRoutes);
   process.exit(1);
 });
 
-// Restart trigger for ENV update again with groq (Updated)
+// Restart trigger for DrivePortz CoPilot PRD-3

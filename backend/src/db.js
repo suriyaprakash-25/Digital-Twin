@@ -30,6 +30,10 @@ async function connectToMongo(config) {
     console.log("📡 Database ping successful");
     console.log("🗄️ Using DB:", db.databaseName);
 
+    // Seed Knowledge Base
+    const { seedKnowledgeBase } = require('./utils/seedKb');
+    await seedKnowledgeBase(db);
+
     return db;
   } catch (err) {
     console.warn("⚠️ Remote MongoDB connection failed, trying local fallback...");
