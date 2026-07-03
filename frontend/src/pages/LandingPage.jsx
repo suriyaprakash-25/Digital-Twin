@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import {
   Shield, TrendingUp, Bell, Store, BarChart3,
   ChevronRight, CheckCircle, ArrowRight, Car,
@@ -126,8 +127,13 @@ const LandingPage = () => {
   `;
 
   return (
-    <div style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
+    <>
       <style>{css}</style>
+      <SEO 
+        title="Smart Vehicle Digital Twin & Service Tracker" 
+        description="DrivePortz creates a living digital twin of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance." 
+      />
+      <div style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
 
       {/* ════════════════════════════════
            NAVBAR
