@@ -221,11 +221,11 @@ const AddService = () => {
         }
     };
 
-    const renderInputGroup = (label, name, type = "text", icon = <Hash className="h-5 w-5" />, placeholder = "", options = null, extraProps = {}) => (
-        <div className="space-y-2 pb-24 lg:pb-8">
-            <label className="text-sm font-bold text-slate-700">{label}</label>
+    const renderInputGroup = (label, name, type = "text", icon = <Hash className="h-4 w-4 md:h-5 md:w-5" />, placeholder = "", options = null, extraProps = {}) => (
+        <div className="space-y-1 md:space-y-1.5 pb-1 md:pb-2">
+            <label className="text-xs md:text-sm font-bold text-slate-700">{label}</label>
             <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-teal-500 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-teal-500 transition-colors">
                     {icon}
                 </div>
                 {options ? (
@@ -234,7 +234,7 @@ const AddService = () => {
                         value={formData[name]}
                         onChange={handleChange}
                         {...extraProps}
-                        className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium hover:border-slate-300 shadow-sm appearance-none cursor-pointer"
+                        className="block w-full pl-9 md:pl-11 pr-3 md:pr-4 py-2 md:py-3 border border-slate-200 rounded-xl text-xs md:text-sm text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium hover:border-slate-300 shadow-sm appearance-none cursor-pointer"
                     >
                         {options.map(opt => (
                             <option key={opt.value || opt} value={opt.value || opt}>
@@ -250,7 +250,7 @@ const AddService = () => {
                         value={formData[name]}
                         onChange={handleChange}
                         {...extraProps}
-                        className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium hover:border-slate-300 shadow-sm"
+                        className="block w-full pl-9 md:pl-11 pr-3 md:pr-4 py-2 md:py-3 border border-slate-200 rounded-xl text-xs md:text-sm text-slate-900 bg-slate-50 focus:bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium hover:border-slate-300 shadow-sm"
                     />
                 )}
             </div>
@@ -258,161 +258,162 @@ const AddService = () => {
     );
 
     return (
-        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <header className="mb-8">
-                <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-                    <Wrench className="h-8 w-8 text-teal-600" />
+        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 lg:pb-8">
+            <header className="mb-3 md:mb-8">
+                <h1 className="text-xl md:text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2 md:gap-3">
+                    <Wrench className="h-5 w-5 md:h-8 md:w-8 text-teal-600" />
                     Log Service Entry
                 </h1>
-                <p className="text-slate-500 mt-2 font-medium text-lg">Create a highly structured, production-grade maintenance record.</p>
+                <p className="text-slate-500 mt-0.5 font-medium text-xs md:text-base">Create a highly structured, production-grade maintenance record.</p>
             </header>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-8">
                 {status.message && (
-                    <div className={`p-4 rounded-xl flex items-center gap-3 text-sm font-semibold shadow-sm ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+                    <div className={`p-3 md:p-4 rounded-xl flex items-center gap-3 text-xs md:text-sm font-semibold shadow-sm ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
                         }`}>
-                        {status.type === 'success' && <CheckCircle className="h-5 w-5" />}
+                        {status.type === 'success' && <CheckCircle className="h-4.5 w-4.5 md:h-5 md:w-5" />}
                         {status.message}
                     </div>
                 )}
 
                 {/* Core Service Info */}
-                <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="bg-teal-50 px-8 py-5 border-b border-teal-100 flex items-center gap-3">
-                        <div className="p-2 bg-teal-100 rounded-lg text-teal-600"><ClipboardList /></div>
-                        <h2 className="text-xl font-bold text-slate-800">Core Information</h2>
+                <div className="bg-white border border-slate-100 rounded-2xl md:rounded-3xl shadow-sm overflow-hidden">
+                    <div className="bg-teal-50 px-4 py-2.5 md:px-8 md:py-5 border-b border-teal-100 flex items-center gap-2.5">
+                        <div className="p-1 md:p-1.5 bg-teal-100 rounded-lg text-teal-600"><ClipboardList className="h-4 w-4 md:h-5 md:w-5" /></div>
+                        <h2 className="text-sm md:text-xl font-bold text-slate-800">Core Information</h2>
                     </div>
-                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {renderInputGroup("Select Vehicle *", "vehicleId", "text", <Car className="h-5 w-5" />, "",
+                    <div className="p-3 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6">
+                        {renderInputGroup("Select Vehicle *", "vehicleId", "text", <Car className="h-4 w-4 md:h-5 md:w-5" />, "",
                             vehicles.map(v => ({ value: v.id, label: `${v.vehicleNumber} - ${v.brand || ''} ${v.model}` })),
                             { required: true }
                         )}
-                        {renderInputGroup("Service Date *", "serviceDate", "date", <Calendar className="h-5 w-5" />, "", null, { required: true })}
-                        {renderInputGroup("Current Odometer (km) *", "odometerKm", "number", <Hash className="h-5 w-5" />, "e.g. 45000", null, { required: true, min: 0 })}
+                        {renderInputGroup("Service Date *", "serviceDate", "date", <Calendar className="h-4 w-4 md:h-5 md:w-5" />, "", null, { required: true })}
+                        {renderInputGroup("Current Odometer (km) *", "odometerKm", "number", <Hash className="h-4 w-4 md:h-5 md:w-5" />, "e.g. 45000", null, { required: true, min: 0 })}
 
-                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {renderInputGroup("Service Category *", "serviceCategory", "text", <ClipboardList className="h-5 w-5" />, "", ["Periodic Maintenance", "Unscheduled Repair", "Accidental Repair", "Inspection/Checkup", "Modification"], { required: true })}
-                            {renderInputGroup("Specific Service Title *", "serviceType", "text", <Wrench className="h-5 w-5" />, "e.g. 40,000km Major Service", null, { required: true })}
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6">
+                            {renderInputGroup("Service Category *", "serviceCategory", "text", <ClipboardList className="h-4 w-4 md:h-5 md:w-5" />, "", ["Periodic Maintenance", "Unscheduled Repair", "Accidental Repair", "Inspection/Checkup", "Modification"], { required: true })}
+                            {renderInputGroup("Specific Service Title *", "serviceType", "text", <Wrench className="h-4 w-4 md:h-5 md:w-5" />, "e.g. 40,000km Major Service", null, { required: true })}
                         </div>
                     </div>
                 </div>
 
                 {/* Detailed Work & Parts */}
-                <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="bg-teal-50 px-8 py-5 border-b border-teal-100 flex items-center gap-3">
-                        <div className="p-2 bg-teal-100 rounded-lg text-teal-600"><Wrench /></div>
-                        <h2 className="text-xl font-bold text-slate-800 flex-1">Work Performed & Parts</h2>
-                        <span className="bg-white px-4 py-1.5 rounded-full text-teal-700 font-black shadow-sm flex items-center gap-2">
-                            <IndianRupee className="h-4 w-4" /> {calculateTotalCost().toLocaleString()} Total
+                <div className="bg-white border border-slate-100 rounded-2xl md:rounded-3xl shadow-sm overflow-hidden">
+                    <div className="bg-teal-50 px-4 py-2.5 md:px-8 md:py-5 border-b border-teal-100 flex items-center gap-2.5">
+                        <div className="p-1 md:p-1.5 bg-teal-100 rounded-lg text-teal-600"><Wrench className="h-4 w-4 md:h-5 md:w-5" /></div>
+                        <h2 className="text-sm md:text-xl font-bold text-slate-800 flex-1">Work Performed & Parts</h2>
+                        <span className="bg-white px-2 py-1 sm:px-4 sm:py-1.5 rounded-full text-teal-700 text-xs sm:text-sm font-black shadow-sm flex items-center gap-1 sm:gap-2">
+                            <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4" /> {calculateTotalCost().toLocaleString()} Total
                         </span>
                     </div>
 
-                    <div className="p-8 space-y-8">
+                    <div className="p-3 md:p-8 space-y-4 md:space-y-8">
                         {/* Parts Array */}
                         <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <label className="text-sm font-bold text-slate-700">Parts Replaced / Materials Used</label>
-                                <button type="button" onClick={addPartRow} className="text-sm text-teal-600 bg-teal-50 hover:bg-teal-100 px-4 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-colors">
-                                    <Plus className="h-4 w-4" /> Add Part
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                                <label className="text-xs md:text-sm font-bold text-slate-700">Parts Replaced / Materials Used</label>
+                                <button type="button" onClick={addPartRow} className="text-2xs sm:text-sm text-teal-600 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 md:px-4 md:py-2 rounded-lg font-bold flex items-center gap-1 transition-colors self-end sm:self-auto shadow-sm">
+                                    <Plus className="h-3 w-3 md:h-4 md:w-4" /> Add Part
                                 </button>
                             </div>
 
                             {partsReplaced.length === 0 ? (
-                                <div className="text-center py-6 bg-slate-50 border border-slate-200 border-dashed rounded-xl text-slate-500 font-medium text-sm">
+                                <div className="text-center py-4 md:py-6 bg-slate-50 border border-slate-200 border-dashed rounded-xl text-slate-500 font-medium text-xs md:text-sm">
                                     No parts documented. Click "Add Part" to record specific replacements.
                                 </div>
                             ) : (
-                                <div className="space-y-3">
+                                <div className="space-y-2 md:space-y-3">
                                     {partsReplaced.map((part, index) => (
-                                        <div key={index} className="flex gap-4 items-center animate-in fade-in zoom-in duration-200">
+                                        <div key={index} className="flex flex-col md:flex-row gap-2 md:gap-4 items-stretch md:items-center p-3 md:p-0 bg-slate-50 md:bg-transparent border border-slate-100 md:border-none rounded-xl md:rounded-2xl animate-in fade-in zoom-in duration-200">
                                             <input
                                                 type="text"
                                                 placeholder="Part Name (e.g. Battery)"
                                                 value={part.partName}
                                                 onChange={(e) => updatePartData(index, 'partName', e.target.value)}
-                                                className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                                                className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-xs md:text-sm shadow-sm"
                                             />
-                                            <input
-                                                type="text"
-                                                placeholder="Brand (e.g. Amaron)"
-                                                value={part.brand || ''}
-                                                onChange={(e) => updatePartData(index, 'brand', e.target.value)}
-                                                className="w-48 px-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
-                                            />
-                                            <div className="relative w-36">
-                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><IndianRupee className="h-4 w-4 text-slate-400" /></div>
+                                            <div className="flex gap-2">
                                                 <input
-                                                    type="number"
-                                                    placeholder="Cost"
-                                                    value={part.cost}
-                                                    onChange={(e) => updatePartData(index, 'cost', e.target.value)}
-                                                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                                                    type="text"
+                                                    placeholder="Brand (e.g. Amaron)"
+                                                    value={part.brand || ''}
+                                                    onChange={(e) => updatePartData(index, 'brand', e.target.value)}
+                                                    className="w-1/2 md:w-48 px-3 py-2 border border-slate-200 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-xs md:text-sm shadow-sm"
                                                 />
+                                                <div className="relative w-1/2 md:w-36">
+                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><IndianRupee className="h-3.5 w-3.5 text-slate-400" /></div>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="Cost"
+                                                        value={part.cost}
+                                                        onChange={(e) => updatePartData(index, 'cost', e.target.value)}
+                                                        className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-xs md:text-sm shadow-sm"
+                                                    />
+                                                </div>
+                                                <button type="button" onClick={() => removePartRow(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors md:hidden">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
                                             </div>
-                                            <button type="button" onClick={() => removePartRow(index)} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors">
-                                                <Trash2 className="h-5 w-5" />
+                                            <button type="button" onClick={() => removePartRow(index)} className="hidden md:block p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                                <Trash2 className="h-4 w-4" />
                                             </button>
                                         </div>
                                     ))}
-                                    <div className="text-right text-sm font-bold text-slate-600 pt-2">
+                                    <div className="text-right text-xs md:text-sm font-bold text-slate-600 pt-1">
                                         Parts Subtotal: ₹{calculateTotalPartsCost().toLocaleString()}
                                     </div>
                                 </div>
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-100">
-                            {renderInputGroup("Labor Charges (₹)", "laborCost", "number", <IndianRupee className="h-5 w-5" />, "0", null, { min: 0 })}
-                            {renderInputGroup("Warranty Included (Months)", "warrantyMonths", "number", <Shield className="h-5 w-5" />, "e.g. 6", null, { min: 0 })}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 pt-4 border-t border-slate-100">
+                            {renderInputGroup("Labor Charges (₹)", "laborCost", "number", <IndianRupee className="h-4 w-4 md:h-5 md:w-5" />, "0", null, { min: 0 })}
+                            {renderInputGroup("Warranty Included (Months)", "warrantyMonths", "number", <Shield className="h-4 w-4 md:h-5 md:w-5" />, "e.g. 6", null, { min: 0 })}
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700">Mechanic Notes / Observations</label>
+                        <div className="space-y-1.5">
+                            <label className="text-xs md:text-sm font-bold text-slate-700">Mechanic Notes / Observations</label>
                             <textarea
                                 name="mechanicNotes"
                                 value={formData.mechanicNotes}
                                 onChange={handleChange}
                                 placeholder="Any specific issues found, fluids topped up, or advisories for the owner..."
-                                className="block w-full p-4 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium hover:border-slate-300 shadow-sm min-h-32"
+                                className="block w-full p-3 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium hover:border-slate-300 shadow-sm min-h-24 text-xs md:text-sm"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Provider Information */}
-                <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="bg-emerald-50 px-8 py-5 border-b border-emerald-100 flex items-center gap-3">
-                        <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600"><Building /></div>
-                        <h2 className="text-xl font-bold text-slate-800">Service Provider</h2>
+                <div className="bg-white border border-slate-100 rounded-2xl md:rounded-3xl shadow-sm overflow-hidden">
+                    <div className="bg-emerald-50 px-4 py-2.5 md:px-8 md:py-5 border-b border-emerald-100 flex items-center gap-2.5">
+                        <div className="p-1 md:p-1.5 bg-emerald-100 rounded-lg text-emerald-600"><Building className="h-4 w-4 md:h-5 md:w-5" /></div>
+                        <h2 className="text-sm md:text-xl font-bold text-slate-800">Service Provider</h2>
                     </div>
-                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {renderInputGroup("Garage / Workshop Name", "garageName", "text", <Building className="h-5 w-5" />, "e.g. Authorized Honda Service")}
-                        {renderInputGroup("Location City", "location", "text", <MapPin className="h-5 w-5" />, "e.g. Pune")}
+                    <div className="p-3 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6">
+                        {renderInputGroup("Garage / Workshop Name", "garageName", "text", <Building className="h-4 w-4 md:h-5 md:w-5" />, "e.g. Authorized Honda Service")}
+                        {renderInputGroup("Location City", "location", "text", <MapPin className="h-4 w-4 md:h-5 md:w-5" />, "e.g. Pune")}
 
-                        <div className="md:col-span-2 flex justify-between gap-8 pt-4 border-t border-slate-100">
-                            <div className="w-1/2">
-                                {renderInputGroup("Next Recommended Km", "recommendedKm", "number", <Hash className="h-5 w-5" />, "e.g. 55000")}
-                            </div>
-                            <div className="w-1/2">
-                                {renderInputGroup("Next Recommended Date", "recommendedDate", "date", <Calendar className="h-5 w-5" />)}
-                            </div>
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6 pt-3 border-t border-slate-100">
+                            {renderInputGroup("Next Recommended Km", "recommendedKm", "number", <Hash className="h-4 w-4 md:h-5 md:w-5" />, "e.g. 55000")}
+                            {renderInputGroup("Next Recommended Date", "recommendedDate", "date", <Calendar className="h-4 w-4 md:h-5 md:w-5" />)}
                         </div>
                     </div>
                 </div>
 
                 {/* Service Bill Photos */}
-                <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="bg-violet-50 px-8 py-5 border-b border-violet-100 flex items-center gap-3">
-                        <div className="p-2 bg-violet-100 rounded-lg text-violet-600"><Receipt /></div>
-                        <h2 className="text-xl font-bold text-slate-800">Service Bill Photos</h2>
+                <div className="bg-white border border-slate-100 rounded-2xl md:rounded-3xl shadow-sm overflow-hidden">
+                    <div className="bg-violet-50 px-4 py-2.5 md:px-8 md:py-5 border-b border-violet-100 flex items-center gap-2.5">
+                        <div className="p-1 md:p-1.5 bg-violet-100 rounded-lg text-violet-600"><Receipt className="h-4 w-4 md:h-5 md:w-5" /></div>
+                        <h2 className="text-sm md:text-xl font-bold text-slate-800">Service Bill Photos</h2>
                         {billPhotos.length > 0 && (
-                            <span className="ml-2 text-xs font-bold text-violet-700 bg-violet-100 px-2.5 py-1 rounded-full border border-violet-200">
+                            <span className="ml-2 text-[10px] sm:text-xs font-bold text-violet-700 bg-violet-100 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-violet-200">
                                 {billPhotos.length} photo{billPhotos.length > 1 ? 's' : ''}
                             </span>
                         )}
-                        <span className="ml-auto text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">Optional</span>
+                        <span className="ml-auto text-[10px] sm:text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">Optional</span>
                     </div>
-                    <div className="p-8">
+                    <div className="p-3 md:p-8">
                         {/* Hidden file input */}
                         <input
                             ref={billPhotoInputRef}
@@ -424,34 +425,34 @@ const AddService = () => {
 
                         {billPhotos.length === 0 ? (
                             /* ── No photos yet: show two upload options ── */
-                            <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex flex-col sm:flex-row gap-3">
                                 <button
                                     type="button"
                                     onClick={openCamera}
-                                    className="flex-1 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-violet-200 rounded-2xl py-10 bg-violet-50 hover:bg-violet-100 hover:border-violet-400 transition-all group cursor-pointer"
+                                    className="flex-1 flex flex-col items-center justify-center gap-2 md:gap-3 border-2 border-dashed border-violet-200 rounded-2xl py-6 md:py-10 bg-violet-50 hover:bg-violet-100 hover:border-violet-400 transition-all group cursor-pointer"
                                 >
-                                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-violet-100 group-hover:scale-105 transition-transform">
-                                        <Camera className="h-8 w-8 text-violet-500" />
+                                    <div className="p-3 md:p-4 bg-white rounded-2xl shadow-sm border border-violet-100 group-hover:scale-105 transition-transform">
+                                        <Camera className="h-6 w-6 md:h-8 md:w-8 text-violet-500" />
                                     </div>
-                                    <span className="text-sm font-bold text-violet-700">Take Photo</span>
-                                    <span className="text-xs text-slate-400 font-medium">Open camera</span>
+                                    <span className="text-xs md:text-sm font-bold text-violet-700">Take Photo</span>
+                                    <span className="text-[10px] md:text-xs text-slate-400 font-medium">Open camera</span>
                                 </button>
 
                                 <button
                                     type="button"
                                     onClick={() => billPhotoInputRef.current?.click()}
-                                    className="flex-1 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-200 rounded-2xl py-10 bg-slate-50 hover:bg-slate-100 hover:border-slate-400 transition-all group cursor-pointer"
+                                    className="flex-1 flex flex-col items-center justify-center gap-2 md:gap-3 border-2 border-dashed border-slate-200 rounded-2xl py-6 md:py-10 bg-slate-50 hover:bg-slate-100 hover:border-slate-400 transition-all group cursor-pointer"
                                 >
-                                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 group-hover:scale-105 transition-transform">
-                                        <FolderOpen className="h-8 w-8 text-slate-400" />
+                                    <div className="p-3 md:p-4 bg-white rounded-2xl shadow-sm border border-slate-100 group-hover:scale-105 transition-transform">
+                                        <FolderOpen className="h-6 w-6 md:h-8 md:w-8 text-slate-400" />
                                     </div>
-                                    <span className="text-sm font-bold text-slate-600">Choose File</span>
-                                    <span className="text-xs text-slate-400 font-medium">Browse gallery / files</span>
+                                    <span className="text-xs md:text-sm font-bold text-slate-600">Choose File</span>
+                                    <span className="text-[10px] md:text-xs text-slate-400 font-medium">Browse gallery / files</span>
                                 </button>
                             </div>
                         ) : (
                             /* ── Photos grid + add more card ── */
-                            <div className="space-y-4">
+                            <div className="space-y-3 md:space-y-4">
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                     {billPhotos.map((src, idx) => (
                                         <div key={idx} className="relative group rounded-xl overflow-hidden border-2 border-violet-100 shadow-sm aspect-square bg-slate-900 animate-in fade-in zoom-in duration-200">
@@ -479,30 +480,30 @@ const AddService = () => {
                                     <button
                                         type="button"
                                         onClick={openCamera}
-                                        className="aspect-square flex flex-col items-center justify-center gap-2 border-2 border-dashed border-violet-200 rounded-xl bg-violet-50 hover:bg-violet-100 hover:border-violet-400 transition-all group cursor-pointer"
+                                        className="aspect-square flex flex-col items-center justify-center gap-1.5 md:gap-2 border-2 border-dashed border-violet-200 rounded-xl bg-violet-50 hover:bg-violet-100 hover:border-violet-400 transition-all group cursor-pointer"
                                     >
-                                        <div className="p-2.5 bg-white rounded-xl shadow-sm border border-violet-100 group-hover:scale-105 transition-transform">
-                                            <Camera className="h-5 w-5 text-violet-500" />
+                                        <div className="p-2 bg-white rounded-xl shadow-sm border border-violet-100 group-hover:scale-105 transition-transform">
+                                            <Camera className="h-4.5 w-4.5 md:h-5 md:w-5 text-violet-500" />
                                         </div>
-                                        <span className="text-xs font-bold text-violet-600">Take Photo</span>
+                                        <span className="text-[10px] md:text-xs font-bold text-violet-600">Take Photo</span>
                                     </button>
 
                                     {/* Add more — file */}
                                     <button
                                         type="button"
                                         onClick={() => billPhotoInputRef.current?.click()}
-                                        className="aspect-square flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 hover:border-slate-400 transition-all group cursor-pointer"
+                                        className="aspect-square flex flex-col items-center justify-center gap-1.5 md:gap-2 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 hover:border-slate-400 transition-all group cursor-pointer"
                                     >
-                                        <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:scale-105 transition-transform">
-                                            <Plus className="h-5 w-5 text-slate-400" />
+                                        <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:scale-105 transition-transform">
+                                            <Plus className="h-4.5 w-4.5 md:h-5 md:w-5 text-slate-400" />
                                         </div>
-                                        <span className="text-xs font-bold text-slate-500">Add Photo</span>
+                                        <span className="text-[10px] md:text-xs font-bold text-slate-500">Add Photo</span>
                                     </button>
                                 </div>
 
-                                <div className="flex items-center gap-2 text-xs text-slate-400 font-medium pt-1">
+                                <div className="flex items-center gap-2 text-2xs md:text-xs text-slate-400 font-medium pt-0.5">
                                     <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
-                                    {billPhotos.length} photo{billPhotos.length > 1 ? 's' : ''} attached · hover a photo to remove it
+                                    {billPhotos.length} photo{billPhotos.length > 1 ? 's' : ''} attached · tap/hover photo to remove
                                 </div>
                             </div>
                         )}
@@ -584,18 +585,18 @@ const AddService = () => {
                 )}
 
                 {/* Form Actions */}
-                <div className="pt-4 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
-                        <Info className="h-4 w-4 text-teal-500" />
+                <div className="pt-2 md:pt-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4">
+                    <div className="flex items-center gap-1.5 text-2xs md:text-sm text-slate-500 bg-slate-50 px-3 py-1.5 md:px-4 md:py-2 rounded-xl border border-slate-200">
+                        <Info className="h-3.5 w-3.5 md:h-4 md:w-4 text-teal-500 shrink-0" />
                         Odometer logic limits and integrity checks will apply.
                     </div>
                     <button
                         type="submit"
                         disabled={isLoading || vehicles.length === 0}
-                        className="w-full md:w-auto px-8 py-4 border border-transparent text-sm font-bold rounded-xl text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all shadow-md hover:shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full md:w-auto px-5 py-3 md:px-8 md:py-4 border border-transparent text-xs md:text-sm font-bold rounded-xl text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all shadow-md hover:shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {isLoading ? 'Processing...' : (
-                            <><ClipboardList className="h-5 w-5" /> Submit Service Record</>
+                            <><ClipboardList className="h-4 w-4 md:h-5 md:w-5" /> Submit Service Record</>
                         )}
                     </button>
                 </div>

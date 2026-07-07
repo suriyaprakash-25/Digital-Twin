@@ -131,7 +131,7 @@ const LandingPage = () => {
       <style>{css}</style>
       <SEO 
         title="Smart Vehicle Digital Twin & Service Tracker" 
-        description="DrivePortz creates a living digital twin of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance." 
+        description="Create a living digital twin of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance." 
       />
       <div style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
 
@@ -151,7 +151,7 @@ const LandingPage = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img
             src="/logo-removebg-preview.png"
-            alt="Driveportz logo"
+            alt="Logo"
             style={{ height: 72 }}
           />
         </div>
@@ -239,7 +239,7 @@ const LandingPage = () => {
           {/* Right Side: Illustration */}
           <div className="w-full md:w-1/2 bg-surface-container-low flex items-center justify-center p-6 md:p-10 border-t md:border-l md:border-t-0 border-outline-variant">
             <div className="relative w-full aspect-[1.79]">
-              <img alt="Driveportz Garage Scene" className="w-full h-full object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk4bG_vORRaC8TqJQ2YDu4CTj1TluAhujbKRLmbilwg4F2zUHl63eYWwHkv4znCgknFRNEvdYVTWZKSlT4VNsROIXA3T89oudaVPZV19d5ugjnnr8VIfvSuN-7Siy3GXSlGtwoeYEfvWqGIHz_w9YytM2h3s_SnpHnkrI6gQDnzr7Wss7oLVQvSx7P6Uj15fzhXQVZ58ulN90baB2k1nMhV1Oh77E5j_02-2wIxGDhSKfnSev4tDwT-psdmWMGJ2qzsbSphImQxs"/>
+              <img alt="Garage Scene" className="w-full h-full object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk4bG_vORRaC8TqJQ2YDu4CTj1TluAhujbKRLmbilwg4F2zUHl63eYWwHkv4znCgknFRNEvdYVTWZKSlT4VNsROIXA3T89oudaVPZV19d5ugjnnr8VIfvSuN-7Siy3GXSlGtwoeYEfvWqGIHz_w9YytM2h3s_SnpHnkrI6gQDnzr7Wss7oLVQvSx7P6Uj15fzhXQVZ58ulN90baB2k1nMhV1Oh77E5j_02-2wIxGDhSKfnSev4tDwT-psdmWMGJ2qzsbSphImQxs"/>
               {/* Decorative Floating Data Nodes (Vector Style) */}
               <div className="absolute top-4 right-4 sm:top-8 sm:right-8 py-2 px-3 canvas-card rounded-lg flex items-center gap-2 animate-bounce">
                 <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>analytics</span>
@@ -637,7 +637,7 @@ const LandingPage = () => {
             Grow Your Workshop Online
           </h2>
           <p className="text-sm sm:text-base text-slate-500 max-w-[540px] mx-auto mb-12 leading-relaxed">
-            Join Driveportz as a verified partner. Manage bookings, verify service claims, and build lasting trust with thousands of vehicle owners.
+            Join our platform as a verified partner. Manage bookings, verify service claims, and build lasting trust with thousands of vehicle owners.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -763,7 +763,7 @@ const LandingPage = () => {
                 Start Protecting Your <span className="shimmer-text">Vehicle Today</span>
               </h2>
               <p className="text-sm sm:text-base text-slate-500 max-w-md mx-auto mb-10 leading-relaxed font-body-lg">
-                Join thousands of vehicle owners who trust Driveportz to track, protect, and maximise the value of their vehicles.
+                Join thousands of vehicle owners who trust our platform to track, protect, and maximise the value of their vehicles.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Link to="/signup" className="glow-cta w-full sm:w-auto justify-center" style={{
@@ -801,15 +801,11 @@ const LandingPage = () => {
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <img
               src="/logo-removebg-preview.png"
-              alt="Driveportz logo"
+              alt="Logo"
               style={{ height: 56 }}
             />
-            <div>
-              <span className="font-extrabold text-slate-900 text-sm tracking-tight">Drive<span className="text-teal-600">portz</span></span>
-              <span className="block text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Mobility Digital Twin Platform</span>
-            </div>
           </div>
-          <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 Driveportz. All rights reserved.</div>
+          <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 Digital Twin. All rights reserved.</div>
           <div className="flex gap-6 justify-center">
             {[['Log in', '/login'], ['Sign up', '/signup']].map(([label, to]) => (
               <Link key={to} to={to} style={{ fontSize: '.82rem', color: '#94a3b8', textDecoration: 'none', transition: 'color .2s' }}

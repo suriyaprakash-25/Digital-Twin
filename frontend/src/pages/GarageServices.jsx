@@ -96,7 +96,7 @@ const GarageServices = () => {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto pb-16 animate-in fade-in duration-500 pb-24 lg:pb-8">
+    <div className="max-w-5xl mx-auto animate-in fade-in duration-500 pb-12 lg:pb-8">
       {/* Back */}
       <button
         onClick={() => navigate('/garage-dashboard')}
@@ -107,16 +107,16 @@ const GarageServices = () => {
       </button>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-8">
+      <div className="flex items-start justify-between gap-4 mb-4 md:mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Your Services</h1>
-          <p className="text-slate-500 font-medium mt-1">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Your Services</h1>
+          <p className="text-slate-500 font-medium mt-1 text-xs md:text-sm">
             {services.length} service{services.length !== 1 ? 's' : ''} listed in the marketplace
           </p>
         </div>
         <button
           onClick={() => setShowForm(v => !v)}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition-all shadow-md hover:shadow-lg"
+          className="inline-flex items-center gap-2 px-3.5 py-2 md:px-5 md:py-3 rounded-xl bg-teal-600 text-white text-xs md:text-sm font-bold hover:bg-teal-700 transition-all shadow-md hover:shadow-lg"
         >
           <Plus className="h-4 w-4" />
           Add Service
@@ -141,44 +141,44 @@ const GarageServices = () => {
       {showForm && (
         <form
           onSubmit={handleAdd}
-          className="bg-white border border-teal-100 rounded-3xl shadow-md overflow-hidden mb-8"
+          className="bg-white border border-teal-100 rounded-2xl md:rounded-3xl shadow-md overflow-hidden mb-8"
         >
-          <div className="px-8 py-5 bg-teal-50 border-b border-teal-100 flex items-center gap-3">
-            <div className="p-2 bg-teal-100 rounded-xl text-teal-600"><Wrench className="h-5 w-5" /></div>
+          <div className="px-4 py-3 md:px-8 md:py-5 bg-teal-50 border-b border-teal-100 flex items-center gap-3">
+            <div className="p-1.5 bg-teal-100 rounded-xl text-teal-600"><Wrench className="h-4 w-4 md:h-5 md:w-5" /></div>
             <div>
-              <h2 className="text-base font-extrabold text-slate-900">New Service</h2>
-              <p className="text-xs text-slate-500 mt-0.5">This will be shown to customers in the marketplace</p>
+              <h2 className="text-sm md:text-base font-extrabold text-slate-900">New Service</h2>
+              <p className="text-[10px] md:text-xs text-slate-500 mt-0.5">This will be shown to customers in the marketplace</p>
             </div>
           </div>
-          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <Tag className="h-4 w-4 text-slate-400" /> Service Title *
+              <label className="text-xs md:text-sm font-bold text-slate-700 flex items-center gap-2">
+                <Tag className="h-3.5 w-3.5 text-slate-400" /> Service Title *
               </label>
               <input
                 value={newService.title}
                 onChange={e => setNewService(s => ({ ...s, title: e.target.value }))}
                 placeholder="e.g. Full Car Service"
                 required
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <Wrench className="h-4 w-4 text-slate-400" /> Description
+              <label className="text-xs md:text-sm font-bold text-slate-700 flex items-center gap-2">
+                <Wrench className="h-3.5 w-3.5 text-slate-400" /> Description
               </label>
               <input
                 value={newService.description}
                 onChange={e => setNewService(s => ({ ...s, description: e.target.value }))}
                 placeholder="What's included?"
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <IndianRupee className="h-4 w-4 text-slate-400" /> Price (₹)
+              <label className="text-xs md:text-sm font-bold text-slate-700 flex items-center gap-2">
+                <IndianRupee className="h-3.5 w-3.5 text-slate-400" /> Price (₹)
               </label>
               <input
                 type="number"
@@ -186,13 +186,13 @@ const GarageServices = () => {
                 value={newService.price}
                 onChange={e => setNewService(s => ({ ...s, price: e.target.value }))}
                 placeholder="e.g. 2500"
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-slate-400" /> Duration (minutes)
+              <label className="text-xs md:text-sm font-bold text-slate-700 flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5 text-slate-400" /> Duration (minutes)
               </label>
               <input
                 type="number"
@@ -200,24 +200,24 @@ const GarageServices = () => {
                 value={newService.durationMins}
                 onChange={e => setNewService(s => ({ ...s, durationMins: e.target.value }))}
                 placeholder="e.g. 120"
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
               />
             </div>
           </div>
-          <div className="px-8 py-5 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
+          <div className="px-4 py-3 md:px-8 md:py-5 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2 md:gap-3">
             <button
               type="button"
               onClick={() => { setShowForm(false); setNewService(empty); }}
-              className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-100 transition-all"
+              className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-xs md:text-sm font-semibold hover:bg-slate-100 transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={adding}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 md:px-6 md:py-2.5 rounded-xl bg-teal-600 text-white text-xs md:text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" />
               {adding ? 'Adding…' : 'Add Service'}
             </button>
           </div>
@@ -343,7 +343,7 @@ const GarageServices = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                       <IndianRupee className="h-4 w-4 text-slate-400" /> Price (₹)

@@ -18,15 +18,15 @@ import {
 } from 'lucide-react';
 
 const StatCard = ({ label, value, tone }) => (
-  <div className={`rounded-2xl border p-3.5 sm:p-5 flex flex-col justify-between min-w-0 ${tone}`}>
-    <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-[0.15em] opacity-70 break-words leading-tight">{label}</p>
-    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-black tracking-tight">{value}</p>
+  <div className={`rounded-xl md:rounded-2xl border p-2 md:p-4 flex flex-col justify-between min-w-0 ${tone}`}>
+    <p className="text-[9px] md:text-xs font-bold uppercase tracking-wider md:tracking-[0.15em] opacity-70 break-words leading-tight">{label}</p>
+    <p className="mt-1 md:mt-2 text-xl md:text-3xl font-black tracking-tight">{value}</p>
   </div>
 );
 
 const Field = ({ label, icon, children }) => (
-  <div className="space-y-2 pb-24 lg:pb-8">
-    <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+  <div className="space-y-1.5 pb-1 lg:pb-2">
+    <label className="text-xs md:text-sm font-bold text-slate-700 flex items-center gap-2">
       {icon}
       {label}
     </label>
@@ -201,14 +201,14 @@ const MyProfile = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto pb-14 animate-in fade-in duration-500 space-y-8">
-      <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-2xl">
+    <div className="max-w-6xl mx-auto pb-12 lg:pb-8 animate-in fade-in duration-500 space-y-4 md:space-y-8">
+      <section className="relative overflow-hidden rounded-2xl md:rounded-[2rem] bg-slate-950 text-white shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.28),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.18),transparent_28%)]" />
-        <div className="relative z-10 p-6 sm:p-8 md:p-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-4 sm:gap-5">
+        <div className="relative z-10 p-4 sm:p-6 md:p-10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3 sm:gap-5">
               <div className="relative shrink-0">
-                <div className="h-24 w-24 overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg flex items-center justify-center">
+                <div className="h-16 w-16 md:h-24 md:w-24 overflow-hidden rounded-2xl md:rounded-3xl border border-white/15 bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg flex items-center justify-center">
                   {profile.photoUrl && !photoError ? (
                     <img 
                       src={profile.photoUrl} 
@@ -217,30 +217,30 @@ const MyProfile = () => {
                       onError={() => setPhotoError(true)}
                     />
                   ) : (
-                    <div className="text-3xl font-black text-white">{initials}</div>
+                    <div className="text-xl md:text-3xl font-black text-white">{initials}</div>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="absolute -bottom-2 -right-2 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white text-slate-900 shadow-md transition hover:bg-slate-100 disabled:opacity-60"
+                  className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-xl border border-white/20 bg-white text-slate-900 shadow-md transition hover:bg-slate-100 disabled:opacity-60"
                   title="Upload profile photo"
                 >
-                  {uploading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" /> : <Camera className="h-4 w-4" />}
+                  {uploading ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" /> : <Camera className="h-3.5 w-3.5 md:h-4 md:w-4" />}
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
               </div>
 
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-teal-400/30 bg-teal-500/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-teal-200">
-                  <Shield className="h-3.5 w-3.5" /> {profile.role === 'GARAGE' ? 'Garage Partner' : 'Member Profile'}
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/30 bg-teal-500/15 px-2.5 py-0.5 md:px-3 md:py-1 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-teal-200">
+                  <Shield className="h-3 w-3 md:h-3.5 md:w-3.5" /> {profile.role === 'GARAGE' ? 'Garage Partner' : 'Member Profile'}
                 </div>
-                <h1 className="mt-3 text-4xl font-black tracking-tight">{profile.name || 'Your Profile'}</h1>
-                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-300">
-                  <span className="inline-flex items-center gap-2"><Mail className="h-4 w-4" /> {profile.email}</span>
-                  {profile.city ? <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4" /> {profile.city}</span> : null}
-                  <span className="inline-flex items-center gap-2"><User className="h-4 w-4" /> Joined {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'Recently'}</span>
+                <h1 className="mt-2 text-xl md:text-4xl font-black tracking-tight">{profile.name || 'Your Profile'}</h1>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-xs md:text-sm text-slate-300">
+                  <span className="inline-flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 md:h-4 md:w-4" /> {profile.email}</span>
+                  {profile.city ? <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" /> {profile.city}</span> : null}
+                  <span className="inline-flex items-center gap-1.5"><User className="h-3.5 w-3.5 md:h-4 md:w-4" /> Joined {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'Recently'}</span>
                 </div>
               </div>
             </div>
@@ -263,82 +263,82 @@ const MyProfile = () => {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.3fr_0.7fr]">
-        <form onSubmit={handleSave} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 bg-slate-50 px-8 py-5">
-            <h2 className="text-xl font-black tracking-tight text-slate-900">Profile Details</h2>
-            <p className="mt-1 text-sm font-medium text-slate-500">Keep your contact details current so service updates and bookings stay reliable.</p>
+      <div className="grid grid-cols-1 gap-4 md:gap-8 xl:grid-cols-[1.3fr_0.7fr]">
+        <form onSubmit={handleSave} className="overflow-hidden rounded-2xl md:rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 md:px-8 md:py-5">
+            <h2 className="text-base md:text-xl font-black tracking-tight text-slate-900">Profile Details</h2>
+            <p className="mt-1 text-xs md:text-sm font-medium text-slate-500">Keep your contact details current so service updates and bookings stay reliable.</p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 p-8 md:grid-cols-2">
-            <Field label="Full Name" icon={<User className="h-4 w-4 text-slate-400" />}>
-              <input value={profile.name} onChange={(e) => setProfile((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+          <div className="grid grid-cols-1 gap-3 p-4 md:gap-6 md:p-8 md:grid-cols-2">
+            <Field label="Full Name" icon={<User className="h-3.5 w-3.5 text-slate-400" />}>
+              <input value={profile.name} onChange={(e) => setProfile((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
             </Field>
 
-            <Field label="Email Address" icon={<Mail className="h-4 w-4 text-slate-400" />}>
-              <input type="email" value={profile.email} onChange={(e) => setProfile((prev) => ({ ...prev, email: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+            <Field label="Email Address" icon={<Mail className="h-3.5 w-3.5 text-slate-400" />}>
+              <input type="email" value={profile.email} onChange={(e) => setProfile((prev) => ({ ...prev, email: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
             </Field>
 
-            <Field label="Phone Number" icon={<Phone className="h-4 w-4 text-slate-400" />}>
-              <input value={profile.phone} onChange={(e) => setProfile((prev) => ({ ...prev, phone: e.target.value }))} placeholder="e.g. 9876543210" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+            <Field label="Phone Number" icon={<Phone className="h-3.5 w-3.5 text-slate-400" />}>
+              <input value={profile.phone} onChange={(e) => setProfile((prev) => ({ ...prev, phone: e.target.value }))} placeholder="e.g. 9876543210" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
             </Field>
 
-            <Field label="City" icon={<MapPin className="h-4 w-4 text-slate-400" />}>
-              <input value={profile.city} onChange={(e) => setProfile((prev) => ({ ...prev, city: e.target.value }))} placeholder="Your city" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+            <Field label="City" icon={<MapPin className="h-3.5 w-3.5 text-slate-400" />}>
+              <input value={profile.city} onChange={(e) => setProfile((prev) => ({ ...prev, city: e.target.value }))} placeholder="Your city" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
             </Field>
 
             <div className="md:col-span-2">
-              <Field label="About You" icon={<PencilLine className="h-4 w-4 text-slate-400" />}>
-                <textarea value={profile.bio} onChange={(e) => setProfile((prev) => ({ ...prev, bio: e.target.value }))} rows={5} placeholder="Tell us a little about your driving habits, vehicle interests, or what you use Driveportz for." className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+              <Field label="About You" icon={<PencilLine className="h-3.5 w-3.5 text-slate-400" />}>
+                <textarea value={profile.bio} onChange={(e) => setProfile((prev) => ({ ...prev, bio: e.target.value }))} rows={5} placeholder="Tell us a little about your driving habits, vehicle interests, or what you use the platform for." className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
               </Field>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-6 sm:px-8 py-5">
-            <p className="text-xs font-semibold text-slate-400">{isDirty ? 'You have unsaved changes' : 'Profile is up to date'}</p>
-            <button type="submit" disabled={saving} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-700 disabled:opacity-60">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:px-8 sm:py-5">
+            <p className="text-[10px] md:text-xs font-semibold text-slate-400">{isDirty ? 'You have unsaved changes' : 'Profile is up to date'}</p>
+            <button type="submit" disabled={saving} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 md:px-5 md:py-3 text-xs md:text-sm font-bold text-white transition hover:bg-teal-700 disabled:opacity-60">
               {saving ? 'Saving...' : 'Save Profile'}
             </button>
           </div>
         </form>
 
-        <div className="space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-black text-slate-900">Account Snapshot</h3>
-            <div className="mt-5 space-y-4 text-sm">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Role</p>
-                <p className="mt-1 text-base font-bold text-slate-900">{profile.role === 'GARAGE' ? 'Garage Partner' : 'Vehicle Owner'}</p>
+        <div className="space-y-4 md:space-y-6">
+          <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+            <h3 className="text-base md:text-lg font-black text-slate-900">Account Snapshot</h3>
+            <div className="mt-4 md:mt-5 space-y-3 md:space-y-4 text-xs md:text-sm">
+              <div className="rounded-2xl bg-slate-50 p-3 md:p-4">
+                <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Role</p>
+                <p className="mt-1 text-sm md:text-base font-bold text-slate-900">{profile.role === 'GARAGE' ? 'Garage Partner' : 'Vehicle Owner'}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
+              <div className="rounded-2xl bg-slate-50 p-3 md:p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Driving License</p>
-                    <p className="mt-1 text-base font-bold text-slate-900">
+                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Driving License</p>
+                    <p className="mt-1 text-sm md:text-base font-bold text-slate-900">
                       {profile.licenseDocumentUrl ? 'Document uploaded' : 'No license uploaded yet'}
                     </p>
                   </div>
-                  <FileBadge2 className="h-5 w-5 text-teal-500" />
+                  <FileBadge2 className="h-4 w-4 md:h-5 md:w-5 text-teal-500" />
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => licenseInputRef.current?.click()}
                     disabled={uploadingLicense}
-                    className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-teal-700 disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-3 py-1.5 md:px-3.5 md:py-2 text-[10px] md:text-xs font-bold text-white transition hover:bg-teal-700 disabled:opacity-60"
                   >
                     {uploadingLicense ? 'Uploading...' : 'Upload License'}
-                    <Upload className="h-3.5 w-3.5" />
+                    <Upload className="h-3 w-3 md:h-3.5 md:w-3.5" />
                   </button>
                   {profile.licenseDocumentUrl ? (
                     <a
                       href={profile.licenseDocumentUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-3.5 py-2 text-xs font-bold text-teal-700 transition hover:bg-teal-100"
+                      className="inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-3 py-1.5 md:px-3.5 md:py-2 text-[10px] md:text-xs font-bold text-teal-700 transition hover:bg-teal-100"
                     >
                       View License
-                      <ArrowRight className="h-3.5 w-3.5" />
+                      <ArrowRight className="h-3 w-3 md:h-3.5 md:w-3.5" />
                     </a>
                   ) : null}
                 </div>
@@ -353,15 +353,15 @@ const MyProfile = () => {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-black text-slate-900">Quick Actions</h3>
-            <div className="mt-5 space-y-3">
-              <Link to="/add-vehicle" className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-4 text-sm font-bold text-slate-700 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700">
-                <span className="inline-flex items-center gap-3"><Car className="h-4 w-4" /> Register another vehicle</span>
+          <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+            <h3 className="text-base md:text-lg font-black text-slate-900">Quick Actions</h3>
+            <div className="mt-4 md:mt-5 space-y-2 md:space-y-3">
+              <Link to="/add-vehicle" className="flex items-center justify-between rounded-xl md:rounded-2xl border border-slate-200 px-3 py-3 md:px-4 md:py-4 text-xs md:text-sm font-bold text-slate-700 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700">
+                <span className="inline-flex items-center gap-2 md:gap-3"><Car className="h-4 w-4" /> Register another vehicle</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/marketplace" className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-4 text-sm font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
-                <span className="inline-flex items-center gap-3"><Wrench className="h-4 w-4" /> Browse garage marketplace</span>
+              <Link to="/marketplace" className="flex items-center justify-between rounded-xl md:rounded-2xl border border-slate-200 px-3 py-3 md:px-4 md:py-4 text-xs md:text-sm font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
+                <span className="inline-flex items-center gap-2 md:gap-3"><Wrench className="h-4 w-4" /> Browse garage marketplace</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

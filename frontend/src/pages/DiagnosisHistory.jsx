@@ -29,17 +29,17 @@ const DiagnosisHistory = () => {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in-up">
+    <div className="max-w-4xl mx-auto space-y-4 md:space-y-8 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
           <button 
             onClick={() => navigate('/vehicle-doctor')}
-            className="p-2 bg-white hover:bg-slate-50 text-slate-600 rounded-full border border-slate-200 transition-colors"
+            className="p-1.5 md:p-2 bg-white hover:bg-slate-50 text-slate-600 rounded-full border border-slate-200 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
           </button>
-          <h1 className="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
-            <FileText className="w-8 h-8 text-teal-600" />
+          <h1 className="text-xl md:text-3xl font-extrabold text-slate-900 flex items-center gap-2.5">
+            <FileText className="w-6 h-6 md:w-8 md:h-8 text-teal-600" />
             Diagnosis History
           </h1>
         </div>
@@ -70,26 +70,26 @@ const DiagnosisHistory = () => {
             return (
               <div key={record._id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all">
                 <div 
-                  className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                  className="p-3.5 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4 cursor-pointer hover:bg-slate-50 transition-colors"
                   onClick={() => setSelectedDiagnosis(isSelected ? null : record)}
                 >
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <Car className="w-4 h-4 text-slate-400" />
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-sm md:text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <Car className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-400" />
                         {record.vehicleDetails ? `${record.vehicleDetails.brand} ${record.vehicleDetails.model}` : 'Unknown Vehicle'}
                       </span>
                       <UrgencyBadge level={record.aiResponse?.urgency} />
                     </div>
-                    <div className="text-sm text-slate-500 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" />
+                    <div className="text-xs md:text-sm text-slate-500 flex items-center gap-1.5">
+                      <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5" />
                       {new Date(record.createdAt).toLocaleDateString('en-US', { 
                         year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
                       })}
                     </div>
                   </div>
                   
-                  <div className="text-sm text-slate-600 truncate max-w-sm">
+                  <div className="text-xs md:text-sm text-slate-600 truncate max-w-sm">
                     {record.symptoms || (record.selectedSymptoms && record.selectedSymptoms.join(', '))}
                   </div>
                 </div>

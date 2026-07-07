@@ -61,7 +61,7 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 lg:pb-8">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 lg:pb-8">
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
                 <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-teal-50 to-transparent"></div>
                 <div className="relative z-10">

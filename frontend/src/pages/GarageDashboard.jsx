@@ -123,7 +123,7 @@ const GarageDashboard = () => {
     : 'G';
 
   return (
-    <div className="space-y-8 pb-12 pb-24 lg:pb-8">
+    <div className="space-y-8 pb-12 lg:pb-8">
 
       {/* Hero header */}
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-5 sm:p-8 shadow-2xl">

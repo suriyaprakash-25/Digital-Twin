@@ -12,7 +12,7 @@ const Header = ({ onClose }) => {
           <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
         </div>
         <div>
-          <h2 className="text-sm font-bold text-slate-800 leading-tight">DrivePortz CoPilot</h2>
+          <h2 className="text-sm font-bold text-slate-800 leading-tight">AI CoPilot</h2>
           <p className="text-xs text-slate-500 font-medium">Your Intelligent Mobility Companion</p>
         </div>
       </div>

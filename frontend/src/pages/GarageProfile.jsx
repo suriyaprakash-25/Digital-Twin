@@ -8,8 +8,8 @@ import {
 import GarageLocationPicker from '../components/GarageLocationPicker';
 
 const Field = ({ label, icon, children }) => (
-  <div className="space-y-1.5 pb-24 lg:pb-8">
-    <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+  <div className="space-y-1.5 pb-1 lg:pb-2">
+    <label className="text-xs md:text-sm font-bold text-slate-700 flex items-center gap-2">
       {icon}
       {label}
     </label>
@@ -107,7 +107,7 @@ const GarageProfile = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-16 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto pb-12 lg:pb-8 animate-in fade-in duration-500">
       {/* Back */}
       <button
         onClick={() => navigate('/garage-dashboard')}
@@ -118,10 +118,10 @@ const GarageProfile = () => {
       </button>
 
       {/* Hero banner */}
-      <div className="relative rounded-3xl overflow-hidden mb-8 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-8 shadow-2xl">
+      <div className="relative rounded-2xl md:rounded-3xl overflow-hidden mb-4 md:mb-8 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-4 md:p-8 shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.25),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(16,185,129,0.15),transparent_60%)]" />
-        <div className="relative z-10 flex items-center gap-6">
+        <div className="relative z-10 flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 md:gap-6">
           {/* Avatar with photo upload */}
           <div className="relative flex-shrink-0">
             <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg">
@@ -150,15 +150,15 @@ const GarageProfile = () => {
             />
           </div>
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-500/20 text-teal-300 rounded-full text-xs font-bold tracking-wide border border-teal-500/30 mb-2">
-              <Store className="h-3.5 w-3.5" /> Garage Partner
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 md:px-3 md:py-1 bg-teal-500/20 text-teal-300 rounded-full text-[10px] md:text-xs font-bold tracking-wide border border-teal-500/30 mb-1.5">
+              <Store className="h-3 w-3 md:h-3.5 md:w-3.5" /> Garage Partner
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-xl md:text-3xl font-extrabold text-white tracking-tight">
               {profile.name || 'Your Garage'}
             </h1>
             {profile.city && (
-              <p className="text-slate-400 mt-1 flex items-center gap-1.5 text-sm font-medium">
-                <Navigation className="h-3.5 w-3.5" /> {profile.city}
+              <p className="text-slate-400 mt-1 flex items-center justify-center sm:justify-start gap-1.5 text-xs md:text-sm font-medium">
+                <Navigation className="h-3 w-3 md:h-3.5 md:w-3.5" /> {profile.city}
               </p>
             )}
           </div>
@@ -180,121 +180,121 @@ const GarageProfile = () => {
       )}
 
       {/* Form card */}
-      <form onSubmit={handleSave} className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-        <div className="px-8 py-5 border-b border-slate-100 flex items-center gap-3 bg-slate-50">
-          <div className="p-2 bg-teal-100 rounded-xl text-teal-600"><Building2 className="h-5 w-5" /></div>
+      <form onSubmit={handleSave} className="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm overflow-hidden">
+        <div className="px-4 py-3 md:px-8 md:py-5 border-b border-slate-100 flex items-center gap-3 bg-slate-50">
+          <div className="p-1.5 bg-teal-100 rounded-xl text-teal-600"><Building2 className="h-4 w-4 md:h-5 md:w-5" /></div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Garage Information</h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">This info appears in the marketplace listing</p>
+            <h2 className="text-sm md:text-lg font-extrabold text-slate-900">Garage Information</h2>
+            <p className="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">This info appears in the marketplace listing</p>
           </div>
         </div>
 
-        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Field label="Garage Name" icon={<Building2 className="h-4 w-4 text-slate-400" />}>
+        <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+          <Field label="Garage Name" icon={<Building2 className="h-3.5 w-3.5 text-slate-400" />}>
             <input
               value={profile.name}
               onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
               placeholder="e.g. Sharma Auto Works"
               required
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </Field>
 
-          <Field label="Phone Number" icon={<Phone className="h-4 w-4 text-slate-400" />}>
+          <Field label="Phone Number" icon={<Phone className="h-3.5 w-3.5 text-slate-400" />}>
             <input
               value={profile.phone}
               onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
               placeholder="e.g. 9876543210"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </Field>
 
-          <Field label="City" icon={<MapPin className="h-4 w-4 text-slate-400" />}>
+          <Field label="City" icon={<MapPin className="h-3.5 w-3.5 text-slate-400" />}>
             <input
               value={profile.city}
               onChange={e => setProfile(p => ({ ...p, city: e.target.value }))}
               placeholder="e.g. Bengaluru"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </Field>
 
-          <Field label="Full Address" icon={<MapPin className="h-4 w-4 text-slate-400" />}>
+          <Field label="Full Address" icon={<MapPin className="h-3.5 w-3.5 text-slate-400" />}>
             <input
               value={profile.address}
               onChange={e => setProfile(p => ({ ...p, address: e.target.value }))}
               placeholder="Street, Area, Landmark"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </Field>
 
           <div className="md:col-span-2">
-            <Field label="About Your Garage" icon={<FileText className="h-4 w-4 text-slate-400" />}>
+            <Field label="About Your Garage" icon={<FileText className="h-3.5 w-3.5 text-slate-400" />}>
               <textarea
                 value={profile.description}
                 onChange={e => setProfile(p => ({ ...p, description: e.target.value }))}
                 placeholder="Tell customers what makes your garage special — specialisations, certifications, experience..."
                 rows={4}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all resize-none"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all resize-none"
               />
             </Field>
           </div>
         </div>
 
-        <div className="px-8 py-5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-          <p className="text-xs text-slate-400 font-medium">
+        <div className="px-4 py-3 md:px-8 md:py-5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+          <p className="text-[10px] md:text-xs text-slate-400 font-medium">
             {isDirty ? 'You have unsaved changes' : 'All changes saved'}
           </p>
           <button
             type="submit"
             disabled={saving || !isDirty}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+            className="inline-flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-xl bg-teal-600 text-white text-xs md:text-sm font-bold hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
           >
-            <Save className="h-4 w-4" />
+            <Save className="h-3.5 w-3.5 md:h-4 md:w-4" />
             {saving ? 'Saving…' : 'Save Profile'}
           </button>
         </div>
       </form>
 
       {/* Location picker card */}
-      <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden mt-6">
-        <div className="px-8 py-5 flex items-center justify-between bg-slate-50 border-b border-slate-100">
+      <div className="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm overflow-hidden mt-6">
+        <div className="px-4 py-3 md:px-8 md:py-5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-50 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-teal-100 rounded-xl text-teal-600"><MapPin className="h-5 w-5" /></div>
+            <div className="p-1.5 bg-teal-100 rounded-xl text-teal-600"><MapPin className="h-4 w-4 md:h-5 md:w-5" /></div>
             <div>
-              <h2 className="text-lg font-extrabold text-slate-900">Garage Location</h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
+              <h2 className="text-sm md:text-lg font-extrabold text-slate-900">Garage Location</h2>
+              <p className="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">
                 {garageLocation
                   ? `Pinned: ${garageLocation.latitude.toFixed(5)}, ${garageLocation.longitude.toFixed(5)}`
                   : 'No location set yet'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-end">
             {garageLocation && !showLocationPicker && (
               <a
                 href={`https://www.google.com/maps?q=${garageLocation.latitude},${garageLocation.longitude}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-all"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 md:px-3 md:py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-[10px] md:text-xs font-bold hover:bg-emerald-100 transition-all"
               >
-                <Navigation className="h-3.5 w-3.5" /> View on Maps
+                <Navigation className="h-3 w-3 md:h-3.5 md:w-3.5" /> View on Maps
               </a>
             )}
             {showLocationPicker ? (
               <button
                 type="button"
                 onClick={() => setShowLocationPicker(false)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 md:px-3 md:py-2 rounded-xl border border-slate-200 bg-white text-slate-650 text-[10px] md:text-xs font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
               >
-                <X className="h-3.5 w-3.5" /> Close Map
+                <X className="h-3 w-3 md:h-3.5 md:w-3.5" /> Close Map
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => setShowLocationPicker(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition-all shadow-sm"
+                className="inline-flex items-center gap-1 px-3 py-2 md:px-4 md:py-2.5 rounded-xl bg-teal-600 text-white text-xs md:text-sm font-bold hover:bg-teal-700 transition-all shadow-sm"
               >
-                <MapPin className="h-4 w-4" />
+                <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
                 {garageLocation ? 'Edit Location' : 'Add Garage Location'}
               </button>
             )}
@@ -302,7 +302,7 @@ const GarageProfile = () => {
         </div>
 
         {showLocationPicker && (
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             <GarageLocationPicker
               token={token}
               initialLocation={garageLocation}

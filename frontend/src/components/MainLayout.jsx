@@ -1,7 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
-import MobileBottomNav from './MobileBottomNav';
 import { tryRegisterFcmToken } from '../utils/fcm';
 import { Menu, LogOut } from 'lucide-react';
 import Copilot from './copilot/Copilot';
@@ -43,40 +42,30 @@ const MainLayout = () => {
                 <div className="absolute bottom-0 left-10 w-[400px] h-[400px] bg-teal-50 rounded-full blur-[100px] opacity-60 pointer-events-none transform -translate-y-1/2" />
 
                 {/* Mobile top bar */}
-                <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white/90 backdrop-blur-md border-b border-slate-200 z-20 shadow-sm">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setSidebarOpen(true)}
-                            className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                            aria-label="Open menu"
-                        >
-                            <Menu className="h-6 w-6" />
-                        </button>
-                        <div className="flex items-center gap-2.5">
-                            <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-11" />
-                            <span className="font-extrabold text-slate-900 text-base tracking-tight">Driveportz</span>
-                        </div>
-                    </div>
+                <div className="lg:hidden flex items-center justify-between h-16 px-4 bg-white/90 backdrop-blur-md border-b border-slate-200 z-20 shadow-sm">
+                    <button
+                        onClick={() => setSidebarOpen(true)}
+                        className="p-1.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                        aria-label="Open menu"
+                    >
+                        <Menu className="h-5.5 w-5.5" />
+                    </button>
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors border border-slate-100/80 bg-slate-50/50"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors border border-slate-100/80 bg-slate-50/50"
                         aria-label="Logout"
                     >
-                        <LogOut className="h-4 w-4" />
-                        <span className="text-xs font-bold">Logout</span>
+                        <LogOut className="h-3.5 w-3.5" />
+                        <span className="text-[10px] font-bold">Logout</span>
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-auto relative">
-                    <div className="mx-auto h-full p-4 lg:p-8">
+                    <div className="mx-auto h-full p-3 md:p-6 lg:p-8">
                         <Outlet />
                     </div>
                 </div>
 
-                {/* Mobile Bottom Navigation */}
-                <div className="lg:hidden mt-auto border-t border-slate-200">
-                    <MobileBottomNav />
-                </div>
             </div>
 
             {/* AI Assistant CoPilot */}

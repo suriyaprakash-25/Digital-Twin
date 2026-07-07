@@ -100,16 +100,16 @@ const Passport = () => {
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-teal-50 rounded-full blur-[100px] opacity-60 pointer-events-none transform translate-x-1/3 -translate-y-1/3 z-0" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-50 rounded-full blur-[100px] opacity-60 pointer-events-none transform -translate-x-1/3 translate-y-1/3 z-0" />
 
-      {/* Top Header */}
       <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between pb-24 lg:pb-8">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-12" />
-            <span className="font-extrabold text-slate-900 text-lg tracking-tight">Drive<span className="text-teal-600">portz</span></span>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-center">
+          <Link to="/" className="flex items-center justify-center z-10">
+            <img src="/logo-removebg-preview.png" alt="Logo" style={{ height: '48px' }} />
           </Link>
-          <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100 flex items-center gap-1.5 shadow-sm">
-            <Sparkles className="h-3.5 w-3.5" /> Official Digital Twin
-          </span>
+          <div className="absolute right-4 sm:right-6 lg:right-8 flex items-center">
+            <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100 flex items-center gap-1.5 shadow-sm">
+              <Sparkles className="h-3.5 w-3.5" /> Official Digital Twin
+            </span>
+          </div>
         </div>
       </header>
 

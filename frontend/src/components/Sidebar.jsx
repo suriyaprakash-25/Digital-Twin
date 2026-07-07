@@ -63,26 +63,24 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                 `}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-white/50 backdrop-blur-sm">
+                <div className="relative flex items-center justify-center p-5 border-b border-slate-100 bg-white/50 backdrop-blur-sm">
                     <Link
                         to={dashboardHref}
                         onClick={handleNavClick}
                         aria-label="Go to dashboard"
-                        className="flex items-center gap-3 flex-1 rounded-lg hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 px-1"
+                        className="flex items-center justify-center rounded-lg hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 px-1"
                     >
                         <img
                             src="/logo-removebg-preview.png"
-                            alt="Driveportz logo"
-                            className="h-13 shrink-0"
+                            alt="Digital Twin logo"
+                            style={{ height: '72px' }}
+                            className="shrink-0"
                         />
-                        <span className="text-slate-900 font-extrabold text-lg tracking-tight truncate">
-                            Driveportz
-                        </span>
                     </Link>
                     {/* Close button (mobile only) */}
                     <button
                         onClick={onClose}
-                        className="lg:hidden ml-2 p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                        className="absolute right-5 lg:hidden p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                         aria-label="Close menu"
                     >
                         <X className="h-5 w-5" />

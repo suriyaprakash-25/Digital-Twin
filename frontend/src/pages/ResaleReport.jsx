@@ -38,7 +38,7 @@ const ResaleReport = () => {
 
     if (error || !report) {
         return (
-            <div className="max-w-4xl mx-auto text-center mt-20 p-8 bg-red-50 rounded-3xl border border-red-100 pb-24 lg:pb-8">
+            <div className="max-w-4xl mx-auto text-center mt-20 p-8 bg-red-50 rounded-3xl border border-red-100 pb-12 lg:pb-8">
                 <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-red-700">{error}</h2>
                 <Link to="/my-vehicles" className="text-teal-600 font-semibold mt-4 inline-block hover:underline">

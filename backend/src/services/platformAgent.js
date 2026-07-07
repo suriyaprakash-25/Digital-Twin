@@ -1,6 +1,6 @@
 /**
  * Platform Agent
- * Handles questions specifically about how to use the DrivePortz platform features.
+ * Handles questions specifically about how to use the Digital Twin platform features.
  * In PRD-1, this delegates entirely to the KnowledgeBaseAgent.
  */
 

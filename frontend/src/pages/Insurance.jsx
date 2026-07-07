@@ -130,7 +130,7 @@ const Insurance = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 pb-24 lg:pb-8">
+    <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 lg:pb-8">
       <Link
         to="/my-vehicles"
         className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-teal-600 mb-6 transition-colors bg-white px-4 py-2 border border-slate-200 rounded-xl shadow-sm hover:shadow-md"
@@ -139,14 +139,14 @@ const Insurance = () => {
         Back to Fleet
       </Link>
 
-      <header className="mb-8">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-          <ShieldCheck className="h-8 w-8 text-teal-600" />
+      <header className="mb-4 md:mb-8">
+        <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+          <ShieldCheck className="h-6 w-6 md:h-8 md:w-8 text-teal-600" />
           Insurance Management
         </h1>
         {vehicle && (
-          <p className="text-slate-500 mt-2 font-medium text-lg">
-            Manage policies for {vehicle.brand} {vehicle.model} • <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-sm text-slate-700">{vehicle.vehicleNumber}</span>
+          <p className="text-slate-500 mt-1 font-medium text-xs md:text-lg">
+            Manage policies for {vehicle.brand} {vehicle.model} • <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-xs text-slate-700">{vehicle.vehicleNumber}</span>
           </p>
         )}
       </header>
@@ -160,65 +160,65 @@ const Insurance = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 items-start">
         {/* Left Form: Add Insurance */}
-        <div className="lg:col-span-1 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900 mb-6 pb-2 border-b border-slate-100 flex items-center gap-2">
-            <Plus className="h-5 w-5 text-teal-600" /> Add New Policy
+        <div className="lg:col-span-1 bg-white border border-slate-200 rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm">
+          <h2 className="text-base md:text-xl font-bold text-slate-900 mb-4 md:mb-6 pb-2 border-b border-slate-100 flex items-center gap-2">
+            <Plus className="h-4 w-4 md:h-5 md:w-5 text-teal-600" /> Add New Policy
           </h2>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Insurance Provider</label>
+          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Insurance Provider</label>
               <input
                 type="text"
                 placeholder="e.g. HDFC Ergo, ICICI Lombard"
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
                 required
-                className="block w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm font-medium"
+                className="block w-full px-3 py-2 md:px-4 md:py-2.5 border border-slate-200 rounded-xl text-xs md:text-sm text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm font-medium"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Policy Number</label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Policy Number</label>
               <input
                 type="text"
                 placeholder="Enter Policy Reference ID"
                 value={policyNumber}
                 onChange={(e) => setPolicyNumber(e.target.value)}
                 required
-                className="block w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm font-medium"
+                className="block w-full px-3 py-2 md:px-4 md:py-2.5 border border-slate-200 rounded-xl text-xs md:text-sm text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm font-medium"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   required
-                  className="block w-full px-3 py-3 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm font-medium text-sm"
+                  className="block w-full px-2 py-2 md:px-3 md:py-2.5 border border-slate-200 rounded-xl text-xs md:text-sm text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm font-medium"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Expiry Date</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Expiry Date</label>
                 <input
                   type="date"
                   value={expiryDate}
                   onChange={(e) => setExpiryDate(e.target.value)}
                   required
-                  className="block w-full px-3 py-3 border border-slate-200 rounded-xl text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm font-medium text-sm"
+                  className="block w-full px-2 py-2 md:px-3 md:py-2.5 border border-slate-200 rounded-xl text-xs md:text-sm text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm font-medium"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Upload Policy PDF</label>
-              <div className="border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-4 bg-slate-50 hover:bg-white transition-all text-center relative group cursor-pointer">
+            <div className="space-y-1.5">
+              <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Upload Policy PDF</label>
+              <div className="border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-3 md:p-4 bg-slate-50 hover:bg-white transition-all text-center relative group cursor-pointer">
                 <input
                   type="file"
                   accept="application/pdf"
@@ -226,12 +226,12 @@ const Insurance = () => {
                   required
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 />
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <FileUp className="h-8 w-8 text-slate-400 group-hover:text-teal-600 transition-colors" />
-                  <span className="text-sm font-bold text-slate-650 truncate max-w-full">
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  <FileUp className="h-6 w-6 md:h-8 md:w-8 text-slate-400 group-hover:text-teal-600 transition-colors" />
+                  <span className="text-xs md:text-sm font-bold text-slate-650 truncate max-w-full">
                     {selectedFile ? selectedFile.name : 'Choose PDF document'}
                   </span>
-                  <span className="text-xs text-slate-400">PDF up to 10MB</span>
+                  <span className="text-[10px] md:text-xs text-slate-400">PDF up to 10MB</span>
                 </div>
               </div>
             </div>
@@ -239,17 +239,17 @@ const Insurance = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+              className="w-full py-2.5 md:py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 text-xs md:text-sm"
             >
-              {submitting ? 'Uploading PDF...' : <><Upload className="h-4.5 w-4.5" /> Save Policy</>}
+              {submitting ? 'Uploading PDF...' : <><Upload className="h-4 w-4 md:h-4.5 md:w-4.5" /> Save Policy</>}
             </button>
           </form>
         </div>
 
         {/* Right timeline: Policies History */}
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 pb-2 border-b border-slate-200 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-teal-600" /> Coverage History
+          <h2 className="text-base md:text-xl font-bold text-slate-900 pb-2 border-b border-slate-200 flex items-center gap-2">
+            <FileText className="h-4 w-4 md:h-5 md:w-5 text-teal-600" /> Coverage History
           </h2>
 
           {policies.length === 0 ? (
@@ -267,7 +267,7 @@ const Insurance = () => {
                 return (
                   <div
                     key={policy._id}
-                    className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-teal-100"
+                    className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-teal-100"
                   >
                     <div className="space-y-1.5 flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2.5">

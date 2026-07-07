@@ -94,13 +94,13 @@ const Login = () => {
             <div className="max-w-md w-full relative z-10 glass-card p-6 sm:p-10 rounded-3xl">
                 <div className="text-center">
                     <div className="flex flex-col items-center mb-6">
-                        <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-20 sm:h-22 transform rotate-3 hover:rotate-0 transition-transform duration-300" />
+                        <img src="/logo-removebg-preview.png" alt="Logo" className="h-20 sm:h-22 transform rotate-3 hover:rotate-0 transition-transform duration-300" />
                     </div>
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                         Welcome Back
                     </h2>
                     <p className="mt-2 text-sm text-slate-500 font-medium">
-                        Sign in to your Driveportz account
+                        Sign in to your account
                     </p>
                 </div>
 

@@ -33,7 +33,7 @@ router.get('/:vehicleId', async (req, res) => {
     // Verify / generate QR Code (data URL)
     let qrCodeUrl = vehicle.qrCodeUrl;
     if (!qrCodeUrl) {
-      const passportUrl = `https://driveportz.in/passport/${vehicleId}`;
+      const passportUrl = `https://digitaltwin.in/passport/${vehicleId}`;
       try {
         qrCodeUrl = await generateQRCode(passportUrl);
         await db.collection('vehicles').updateOne(
@@ -254,7 +254,7 @@ router.get('/pdf/:vehicleId', async (req, res) => {
     const darkColor = '#0f172a'; // Slate-900
 
     // Header Title
-    doc.fillColor(primaryColor).fontSize(24).font('Helvetica-Bold').text('Driveportz Digital Passport', { align: 'center' });
+    doc.fillColor(primaryColor).fontSize(24).font('Helvetica-Bold').text('Digital Twin Passport', { align: 'center' });
     doc.fillColor(darkColor).fontSize(10).font('Helvetica').text(`Generated on ${new Date().toLocaleDateString()} • Verified Digital Twin Report`, { align: 'center', paragraphGap: 20 });
 
     doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(50, doc.y).lineTo(562, doc.y).stroke();

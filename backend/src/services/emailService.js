@@ -29,10 +29,10 @@ async function sendOtpEmail(toEmail, otp) {
     from: config.smtp.fromEmail,
     to: toEmail,
     subject: 'Password Reset Request',
-    text: `DrivePortz\n\nPassword Reset Request\n\nHello,\n\nWe received a request to reset your password.\n\nYour OTP is:\n\n${otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email.\n\nDrivePortz Team`,
+    text: `Digital Twin\n\nPassword Reset Request\n\nHello,\n\nWe received a request to reset your password.\n\nYour OTP is:\n\n${otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email.\n\nDigital Twin Team`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-        <h2 style="color: #0d9488; margin-bottom: 0;">DrivePortz</h2>
+        <h2 style="color: #0d9488; margin-bottom: 0;">Digital Twin</h2>
         <h3 style="margin-top: 5px; color: #475569;">Password Reset Request</h3>
         <p>Hello,</p>
         <p>We received a request to reset your password.</p>
@@ -42,7 +42,7 @@ async function sendOtpEmail(toEmail, otp) {
         </div>
         <p>This OTP is valid for 10 minutes.</p>
         <p>If you did not request this, please ignore this email.</p>
-        <p>DrivePortz Team</p>
+        <p>Digital Twin Team</p>
       </div>
     `,
   };

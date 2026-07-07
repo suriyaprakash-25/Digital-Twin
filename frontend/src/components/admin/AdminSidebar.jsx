@@ -45,26 +45,19 @@ const AdminSidebar = ({ onLogout, isOpen, onClose }) => {
                 `}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between gap-3 p-5 border-b border-slate-100">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative flex items-center justify-center p-5 border-b border-slate-100 bg-white/50 backdrop-blur-sm">
+                    <div className="flex items-center justify-center">
                         <img
                             src="/logo-removebg-preview.png"
-                            alt="Driveportz Logo"
-                            className="h-13 shrink-0"
+                            alt="Logo"
+                            style={{ height: '72px' }}
+                            className="shrink-0"
                         />
-                        <div className="min-w-0">
-                            <span className="text-slate-900 font-extrabold text-lg tracking-tight block leading-tight truncate">
-                                Drive<span className="text-teal-600">portz</span>
-                            </span>
-                            <span className="text-teal-600 text-[11px] font-semibold uppercase tracking-widest">
-                                Admin Panel
-                            </span>
-                        </div>
                     </div>
                     {/* Close button (mobile only) */}
                     <button
                         onClick={onClose}
-                        className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+                        className="absolute right-5 lg:hidden p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                         aria-label="Close menu"
                     >
                         <X className="h-5 w-5" />

@@ -7,7 +7,7 @@ const FloatingButton = ({ onClick, isOpen }) => {
       {/* Tooltip */}
       {!isOpen && (
         <div className="absolute bottom-full right-1/2 translate-x-1/2 mb-3 px-3 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-lg shadow-slate-900/10">
-          Ask DrivePortz CoPilot
+          Ask AI CoPilot
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
         </div>
       )}

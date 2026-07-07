@@ -47,7 +47,7 @@ const ChatInput = ({ onSendMessage, isLoading }) => {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={imageBase64 ? "Add a description..." : "Ask anything about DrivePortz..."}
+          placeholder={imageBase64 ? "Add a description..." : "Ask anything about your vehicle..."}
           disabled={isLoading}
           className="w-full max-h-[120px] bg-transparent text-sm text-slate-800 placeholder-slate-400 border-0 focus:ring-0 resize-none py-3 px-2 outline-none disabled:opacity-50"
           rows={1}

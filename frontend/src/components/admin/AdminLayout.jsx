@@ -34,24 +34,14 @@ const AdminLayout = () => {
                 <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[100px] opacity-30 pointer-events-none transform -translate-x-1/4 translate-y-1/4"
                     style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 68%)' }} />
 
-                {/* Mobile top bar */}
-                <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white/90 backdrop-blur-md border-b border-slate-200 z-20 shadow-sm">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setSidebarOpen(true)}
-                            className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                            aria-label="Open menu"
-                        >
-                            <Menu className="h-6 w-6" />
-                        </button>
-                        <div className="flex items-center gap-2.5">
-                            <img src="/logo-removebg-preview.png" alt="Driveportz" className="h-11" />
-                            <div>
-                                <span className="font-extrabold text-slate-900 text-sm tracking-tight">Driveportz</span>
-                                <span className="block text-[10px] font-semibold text-teal-600 uppercase tracking-widest">Admin Panel</span>
-                            </div>
-                        </div>
-                    </div>
+                <div className="lg:hidden flex items-center justify-between h-16 px-4 bg-white/90 backdrop-blur-md border-b border-slate-200 z-20 shadow-sm">
+                    <button
+                        onClick={() => setSidebarOpen(true)}
+                        className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                        aria-label="Open menu"
+                    >
+                        <Menu className="h-6 w-6" />
+                    </button>
                     <button
                         onClick={handleLogout}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors border border-slate-100/80 bg-slate-50/50"

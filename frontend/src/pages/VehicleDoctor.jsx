@@ -89,7 +89,7 @@ const VehicleDoctor = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in-up pb-24 lg:pb-8">
+    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in-up pb-12 lg:pb-8">
       {/* Header Area */}
       <div className="bg-gradient-to-r from-teal-900 to-slate-900 rounded-3xl p-8 md:p-12 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row items-center justify-between">
         <div className="absolute top-0 right-0 opacity-10 pointer-events-none transform translate-x-1/4 -translate-y-1/4">

@@ -71,7 +71,7 @@ const ServiceHistory = () => {
     const totalExpense = services.reduce((sum, service) => sum + Number(service.totalCost || 0), 0);
 
     return (
-        <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 lg:pb-8">
+        <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 lg:pb-8">
             <Link
                 to="/my-vehicles"
                 className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-teal-600 mb-6 transition-colors bg-white px-4 py-2 border border-slate-200 rounded-xl shadow-sm hover:shadow-md"
@@ -80,22 +80,22 @@ const ServiceHistory = () => {
                 Back to Fleet
             </Link>
 
-            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4 bg-white border border-slate-100 p-8 rounded-3xl shadow-sm relative overflow-hidden">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-10 gap-4 bg-white border border-slate-100 p-4 md:p-8 rounded-2xl md:rounded-3xl shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none transform translate-x-1/4 -translate-y-1/4">
                     <History className="h-64 w-64 text-slate-900" />
                 </div>
 
                 <div className="relative z-10">
-                    <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3 mb-2">
+                    <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3 mb-2">
                         Production Service History
                     </h1>
                     {vehicle && (
                         <div className="flex flex-wrap items-center gap-3 mt-2">
-                            <p className="text-teal-700 font-bold bg-teal-50 inline-block px-4 py-1.5 rounded-full border border-teal-100 text-sm shadow-sm">
+                            <p className="text-teal-700 font-bold bg-teal-50 inline-block px-3 py-1.5 rounded-full border border-teal-100 text-xs md:text-sm shadow-sm">
                                 {vehicle.brand} {vehicle.model} • <span className="font-mono">{vehicle.vehicleNumber}</span>
                             </p>
                             {services.length > 0 && (
-                                <p className="text-emerald-700 font-bold bg-emerald-50 inline-flex items-center px-4 py-1.5 rounded-full border border-emerald-100 text-sm shadow-sm whitespace-nowrap">
+                                <p className="text-emerald-700 font-bold bg-emerald-50 inline-flex items-center px-3 py-1.5 rounded-full border border-emerald-100 text-xs md:text-sm shadow-sm whitespace-nowrap">
                                     Total Expense: <IndianRupee className="h-3.5 w-3.5 ml-1 mr-0.5 shrink-0" />
                                     {totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
@@ -106,9 +106,9 @@ const ServiceHistory = () => {
 
                 <Link
                     to="/add-service"
-                    className="relative z-10 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
+                    className="relative z-10 px-4 py-2 md:px-6 md:py-3 bg-amber-500 hover:bg-amber-600 text-white text-xs md:text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
                 >
-                    <Wrench className="h-5 w-5" />
+                    <Wrench className="h-4 w-4 md:h-5 md:w-5" />
                     Log New Service
                 </Link>
             </header>
@@ -148,39 +148,37 @@ const ServiceHistory = () => {
                                     <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-sm">
                                         <Wrench className="h-6 w-6" />
                                     </div>
-                                </div>
-
-                                {/* Card Container */}
-                                <div className="w-[calc(100%-6rem)] md:w-[calc(50%-4rem)] bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden relative">
+                                </div>                                 {/* Card Container */}
+                                <div className="w-[calc(100%-6rem)] md:w-[calc(50%-4rem)] bg-white rounded-2xl md:rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden relative">
 
                                     {/* Data Integrity Warning Tab */}
                                     {service.abnormalKmJump && (
-                                        <div className="bg-red-50 px-6 py-2 border-b border-red-100 flex items-center gap-2">
-                                            <AlertTriangle className="h-4 w-4 text-red-600" />
-                                            <span className="text-xs font-bold text-red-700">Data Integrity Flag: Abnormal Odometer Jump Detected</span>
+                                        <div className="bg-red-50 px-4 py-2 border-b border-red-100 flex items-center gap-2">
+                                            <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
+                                            <span className="text-[10px] md:text-xs font-bold text-red-700">Data Integrity Flag: Abnormal Odometer Jump Detected</span>
                                         </div>
                                     )}
 
-                                    <div className="p-6 cursor-pointer" onClick={() => toggleExpand(service.id)}>
+                                    <div className="p-4 md:p-6 cursor-pointer" onClick={() => toggleExpand(service.id)}>
                                         <div className="flex flex-col xl:flex-row justify-between xl:items-start mb-4 gap-2">
                                             <div>
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-100 uppercase tracking-wide">
+                                                <div className="flex items-center gap-1.5 mb-1">
+                                                    <span className="text-[10px] md:text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-amber-100 uppercase tracking-wide">
                                                         {service.serviceCategory}
                                                     </span>
                                                     {service.verifiedService && (
-                                                        <span className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
-                                                            <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verified
+                                                        <span className="flex items-center text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-emerald-100">
+                                                            <CheckCircle className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1" /> Verified
                                                         </span>
                                                     )}
                                                 </div>
-                                                <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-amber-600 transition-colors tracking-tight mt-1">
+                                                <h3 className="text-base md:text-xl font-extrabold text-slate-900 group-hover:text-amber-600 transition-colors tracking-tight mt-1">
                                                     {service.serviceType}
                                                 </h3>
                                             </div>
                                             <div className="flex flex-col items-end gap-2 relative">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full whitespace-nowrap self-start border border-slate-200 shadow-sm">
+                                                    <span className="text-xs md:text-sm font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap self-start border border-slate-200 shadow-sm">
                                                         {new Date(service.serviceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </span>
                                                     
@@ -232,28 +230,26 @@ const ServiceHistory = () => {
                                                     <span className="text-sm font-bold text-slate-700 truncate max-w-[150px]">{service.garageName}</span>
                                                 </div>
                                             )}
-                                        </div>
-
-                                        <div className="pt-5 border-t border-slate-100 flex items-center justify-between gap-3">
+                                        </div>                                         <div className="pt-5 border-t border-slate-100 flex items-center justify-between gap-3">
                                             <div className="flex items-center gap-3 flex-wrap">
-                                                <div className="text-slate-400 font-bold flex items-center gap-1.5 text-sm hover:text-slate-600 transition-colors">
+                                                <div className="text-slate-400 font-bold flex items-center gap-1.5 text-xs md:text-sm hover:text-slate-600 transition-colors">
                                                     {isExpanded ? <><ChevronUp className="h-4 w-4" /> Hide Details</> : <><ChevronDown className="h-4 w-4" /> View Full Report</>}
                                                 </div>
                                                 {service.billPhotoUrls && service.billPhotoUrls.length > 0 && (
                                                     <button
                                                         type="button"
                                                         onClick={(e) => { e.stopPropagation(); setLightboxUrl(service.billPhotoUrls[0]); }}
-                                                        className="flex items-center gap-1.5 text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 hover:border-violet-400 px-3 py-1.5 rounded-lg transition-all"
+                                                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] md:text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 hover:border-violet-400 transition-all"
                                                     >
-                                                        <Receipt className="h-3.5 w-3.5" />
+                                                        <Receipt className="h-3 w-3 md:h-3.5 md:w-3.5" />
                                                         View Bill{service.billPhotoUrls.length > 1 ? ` (${service.billPhotoUrls.length})` : ''}
                                                     </button>
                                                 )}
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Total Cost</span>
-                                                <span className="text-2xl font-black text-slate-900 flex items-center tracking-tight">
-                                                    <IndianRupee className="h-5 w-5 mr-0.5 text-slate-400" />
+                                                <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Total Cost</span>
+                                                <span className="text-lg md:text-2xl font-black text-slate-900 flex items-center tracking-tight">
+                                                    <IndianRupee className="h-4 w-4 md:h-5 md:w-5 mr-0.5 text-slate-400" />
                                                     {Number(service.totalCost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </span>
                                             </div>
@@ -262,7 +258,7 @@ const ServiceHistory = () => {
 
                                     {/* Expanded Details Section */}
                                     {isExpanded && (
-                                        <div className="px-6 pb-6 bg-slate-50 border-t border-slate-200 animate-in slide-in-from-top-2 duration-200">
+                                        <div className="px-4 pb-4 md:px-6 md:pb-6 bg-slate-50 border-t border-slate-200 animate-in slide-in-from-top-2 duration-200">
 
                                             {/* Parts Table */}
                                             {service.partsReplaced && service.partsReplaced.length > 0 && (

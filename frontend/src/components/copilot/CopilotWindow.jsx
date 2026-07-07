@@ -99,7 +99,7 @@ const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessag
                 </div>
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 leading-tight">DrivePortz CoPilot</h3>
+                <h3 className="font-bold text-slate-800 leading-tight">AI CoPilot</h3>
                 <p className="text-xs text-slate-500 font-medium">Your Intelligent Mobility Companion</p>
               </div>
             </div>
@@ -130,7 +130,7 @@ const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessag
                     Hello {typeof userName === 'string' && userName ? userName.split(' ')[0] : 'there'} 👋
                   </h3>
                   <p className="text-sm text-slate-500">
-                    {showHome ? 'What would you like to do?' : 'Welcome back to DrivePortz. How can I help you today?'}
+                    {showHome ? 'What would you like to do?' : 'Welcome back to your Digital Twin. How can I help you today?'}
                   </p>
                 </div>
                 <div className="flex-1">
