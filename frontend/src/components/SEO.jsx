@@ -1,9 +1,9 @@
 import { Helmet } from 'react-helmet-async';
 
 const SEO = ({ title, description, type = 'website', image = '/og-image.jpg' }) => {
-  const siteTitle = 'DrivePortz - Smart Vehicle Digital Twin';
+  const siteTitle = 'Driveportz - Smart Vehicle Digital Twin';
   const fullTitle = title ? `${title} | ${siteTitle}` : siteTitle;
-  const defaultDesc = 'Manage your vehicles, track service history, get predictive maintenance alerts, and book top garages instantly with DrivePortz.';
+  const defaultDesc = 'Manage your vehicles, track service history, get predictive maintenance alerts, and book top garages instantly with Driveportz.';
   const finalDescription = description || defaultDesc;
 
   return (

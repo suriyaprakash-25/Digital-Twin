@@ -130,7 +130,7 @@ const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessag
                     Hello {typeof userName === 'string' && userName ? userName.split(' ')[0] : 'there'} 👋
                   </h3>
                   <p className="text-sm text-slate-500">
-                    {showHome ? 'What would you like to do?' : 'Welcome back to your Digital Twin. How can I help you today?'}
+                    {showHome ? 'What would you like to do?' : 'Welcome back to your Driveportz. How can I help you today?'}
                   </p>
                 </div>
                 <div className="flex-1">

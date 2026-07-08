@@ -72,7 +72,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                     >
                         <img
                             src="/logo-removebg-preview.png"
-                            alt="Digital Twin logo"
+                            alt="Driveportz logo"
                             style={{ height: '72px' }}
                             className="shrink-0"
                         />

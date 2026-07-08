@@ -147,7 +147,7 @@ const EditVehicle = () => {
                 <h1 className="text-xl md:text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2 md:gap-3">
                     <Car className="h-5 w-5 md:h-8 md:w-8 text-teal-600" /> Edit Vehicle
                 </h1>
-                <p className="text-slate-555 mt-0.5 font-medium text-xs md:text-lg">Update your digital twin's production-grade lifecycle tracking data.</p>
+                <p className="text-slate-555 mt-0.5 font-medium text-xs md:text-lg">Update your driveportz's production-grade lifecycle tracking data.</p>
             </header>
 
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-8">

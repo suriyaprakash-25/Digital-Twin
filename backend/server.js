@@ -47,7 +47,7 @@ app.use('/uploads', express.static(uploadsDir));
 
 // Root
 app.get('/', (req, res) => {
-  res.send('Mobility Digital Twin API is running!');
+  res.send('Mobility Driveportz API is running!');
 });
 
 // Simple status endpoint to confirm DB connectivity

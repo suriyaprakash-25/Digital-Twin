@@ -82,7 +82,7 @@ function App() {
           <Route path="/vehicle-doctor" element={<VehicleDoctor />} />
           <Route path="/vehicle-doctor/history" element={<DiagnosisHistory />} />
 
-          {/* Legacy digital twin routes */}
+          {/* Legacy driveportz routes */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/add-vehicle" element={<AddVehicle />} />
           <Route path="/edit-vehicle/:id" element={<EditVehicle />} />

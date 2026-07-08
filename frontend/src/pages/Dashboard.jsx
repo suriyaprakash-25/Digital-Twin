@@ -72,7 +72,7 @@ const Dashboard = () => {
                         Welcome back, {user.name?.split(' ')[0]}
                     </h1>
                     <p className="text-slate-500 mt-1 font-medium text-sm sm:text-lg">
-                        Here's the latest status of your digital twin fleet.
+                        Here's the latest status of your driveportz fleet.
                     </p>
                 </div>
             </header>

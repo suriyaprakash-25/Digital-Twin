@@ -107,7 +107,7 @@ const Passport = () => {
           </Link>
           <div className="absolute right-4 sm:right-6 lg:right-8 flex items-center">
             <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100 flex items-center gap-1.5 shadow-sm">
-              <Sparkles className="h-3.5 w-3.5" /> Official Digital Twin
+              <Sparkles className="h-3.5 w-3.5" /> Official Driveportz
             </span>
           </div>
         </div>

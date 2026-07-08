@@ -90,7 +90,7 @@ const TransferOwnership = () => {
         </h1>
         {vehicle && (
           <p className="text-slate-500 mt-1 md:mt-2 font-medium text-sm md:text-lg">
-            Transfer digital twin of {vehicle.brand} {vehicle.model} • <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs md:text-sm text-slate-700">{vehicle.vehicleNumber}</span>
+            Transfer driveportz of {vehicle.brand} {vehicle.model} • <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs md:text-sm text-slate-700">{vehicle.vehicleNumber}</span>
           </p>
         )}
       </header>
@@ -113,7 +113,7 @@ const TransferOwnership = () => {
               Initiating a transfer does not immediately move the vehicle. The designated buyer must log into their account and **Accept** the transfer request.
             </p>
             <p className="text-[10px] md:text-xs text-amber-700">
-              Once accepted, you will lose writing access to this vehicle's digital twin, and ownership history is logged permanently.
+              Once accepted, you will lose writing access to this vehicle's driveportz, and ownership history is logged permanently.
             </p>
           </div>
         </div>

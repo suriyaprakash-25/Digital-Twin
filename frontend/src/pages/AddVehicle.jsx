@@ -91,7 +91,7 @@ const AddVehicle = () => {
         <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 lg:pb-8">
             <header className="mb-3 md:mb-8">
                 <h1 className="text-xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Register Vehicle</h1>
-                <p className="text-slate-550 mt-0.5 font-medium text-xs md:text-base">Create a comprehensive digital twin with production-grade lifecycle tracking.</p>
+                <p className="text-slate-550 mt-0.5 font-medium text-xs md:text-base">Create a comprehensive driveportz with production-grade lifecycle tracking.</p>
             </header>
 
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-8">

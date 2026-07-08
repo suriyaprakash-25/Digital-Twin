@@ -49,7 +49,7 @@ const MyVehicles = () => {
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-8 gap-3">
                 <div>
                     <h1 className="text-xl md:text-4xl font-extrabold text-slate-900 tracking-tight">My Vehicles</h1>
-                    <p className="text-slate-500 mt-0.5 md:mt-2 font-medium text-xs md:text-lg">Manage and view details of your registered digital twins.</p>
+                    <p className="text-slate-500 mt-0.5 md:mt-2 font-medium text-xs md:text-lg">Manage and view details of your registered driveportz.</p>
                 </div>
                 <Link
                     to="/add-vehicle"
@@ -71,7 +71,7 @@ const MyVehicles = () => {
                     </div>
                     <h3 className="text-lg md:text-2xl font-extrabold text-slate-900 mb-2">No Vehicles Found</h3>
                     <p className="text-slate-500 mb-6 max-w-md mx-auto font-medium text-xs md:text-lg">
-                        You haven't registered any vehicles yet. Start building your digital twin fleet by adding your first vehicle.
+                        You haven't registered any vehicles yet. Start building your driveportz fleet by adding your first vehicle.
                     </p>
                     <Link
                         to="/add-vehicle"

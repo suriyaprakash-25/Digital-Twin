@@ -100,7 +100,7 @@ const Marketplace = () => {
     <>
       <SEO 
         title="Find Top-Rated Auto Repair Garages" 
-        description="Search, compare, and book trusted auto repair garages near you. Read reviews and get instant service quotes on Digital Twin Marketplace." 
+        description="Search, compare, and book trusted auto repair garages near you. Read reviews and get instant service quotes on Driveportz Marketplace." 
       />
       <div className="space-y-6 sm:space-y-8 pb-12 lg:pb-8">
         <div>

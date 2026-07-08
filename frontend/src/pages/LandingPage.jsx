@@ -130,8 +130,8 @@ const LandingPage = () => {
     <>
       <style>{css}</style>
       <SEO 
-        title="Smart Vehicle Digital Twin & Service Tracker" 
-        description="Create a living digital twin of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance." 
+        title="Smart Vehicle Driveportz & Service Tracker" 
+        description="Create a living driveportz of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance." 
       />
       <div style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
 
@@ -140,7 +140,7 @@ const LandingPage = () => {
       ════════════════════════════════ */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999,
-        height: 96, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: 112, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: scrolled ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.8)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(226,232,240,.8)',
@@ -148,11 +148,14 @@ const LandingPage = () => {
         transition: 'all .35s ease',
       }} className="px-4 sm:px-10">
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+        >
           <img
             src="/logo-removebg-preview.png"
             alt="Logo"
-            style={{ height: 60 }}
+            style={{ height: 72 }}
           />
         </div>
 
@@ -190,7 +193,7 @@ const LandingPage = () => {
       {/* ════════════════════════════════
            HERO
       ════════════════════════════════ */}
-      <main className="pt-24 md:pt-32 pb-12 px-4 md:px-8 max-w-container-max mx-auto min-h-screen flex items-center">
+      <main className="pt-28 md:pt-36 pb-12 px-4 md:px-8 max-w-container-max mx-auto min-h-screen flex items-center">
         {/* Hero Section Canvas – Parallax wrapper */}
         <div
           className="w-full"
@@ -798,7 +801,7 @@ const LandingPage = () => {
       ════════════════════════════════ */}
       <footer className="border-t border-slate-200 py-10 px-4 md:px-10 bg-white">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
-          <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 Digital Twin. All rights reserved.</div>
+          <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 Driveportz. All rights reserved.</div>
           <div className="flex gap-6 justify-center">
             {[['Log in', '/login'], ['Sign up', '/signup']].map(([label, to]) => (
               <Link key={to} to={to} style={{ fontSize: '.82rem', color: '#94a3b8', textDecoration: 'none', transition: 'color .2s' }}

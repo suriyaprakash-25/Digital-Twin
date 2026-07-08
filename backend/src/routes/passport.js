@@ -254,8 +254,8 @@ router.get('/pdf/:vehicleId', async (req, res) => {
     const darkColor = '#0f172a'; // Slate-900
 
     // Header Title
-    doc.fillColor(primaryColor).fontSize(24).font('Helvetica-Bold').text('Digital Twin Passport', { align: 'center' });
-    doc.fillColor(darkColor).fontSize(10).font('Helvetica').text(`Generated on ${new Date().toLocaleDateString()} • Verified Digital Twin Report`, { align: 'center', paragraphGap: 20 });
+    doc.fillColor(primaryColor).fontSize(24).font('Helvetica-Bold').text('Driveportz Passport', { align: 'center' });
+    doc.fillColor(darkColor).fontSize(10).font('Helvetica').text(`Generated on ${new Date().toLocaleDateString()} • Verified Driveportz Report`, { align: 'center', paragraphGap: 20 });
 
     doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(50, doc.y).lineTo(562, doc.y).stroke();
     doc.moveDown(1.5);

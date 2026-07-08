@@ -91,7 +91,7 @@ const GaragePortal = () => {
                         </div>
                         <h1 className="text-4xl font-extrabold tracking-tight">Service Verification & Audit</h1>
                         <p className="text-slate-400 mt-2 font-medium text-lg max-w-2xl">
-                            Verify client service claims, issue Trust Badges, and flag mileage tampering directly in the digital twin blockchain-equivalent record.
+                            Verify client service claims, issue Trust Badges, and flag mileage tampering directly in the driveportz blockchain-equivalent record.
                         </p>
                     </div>
                 </div>
