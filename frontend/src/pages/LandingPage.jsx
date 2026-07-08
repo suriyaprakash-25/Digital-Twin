@@ -140,7 +140,7 @@ const LandingPage = () => {
       ════════════════════════════════ */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999,
-        height: 80, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: 96, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: scrolled ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.8)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(226,232,240,.8)',
@@ -152,7 +152,7 @@ const LandingPage = () => {
           <img
             src="/logo-removebg-preview.png"
             alt="Logo"
-            style={{ height: 48 }}
+            style={{ height: 60 }}
           />
         </div>
 
@@ -190,7 +190,7 @@ const LandingPage = () => {
       {/* ════════════════════════════════
            HERO
       ════════════════════════════════ */}
-      <main className="pt-20 md:pt-28 pb-12 px-4 md:px-8 max-w-container-max mx-auto min-h-screen flex items-center">
+      <main className="pt-24 md:pt-32 pb-12 px-4 md:px-8 max-w-container-max mx-auto min-h-screen flex items-center">
         {/* Hero Section Canvas – Parallax wrapper */}
         <div
           className="w-full"
