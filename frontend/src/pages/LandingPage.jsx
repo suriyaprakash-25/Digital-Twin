@@ -140,7 +140,7 @@ const LandingPage = () => {
       ════════════════════════════════ */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999,
-        height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: 80, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: scrolled ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.8)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(226,232,240,.8)',
@@ -152,7 +152,7 @@ const LandingPage = () => {
           <img
             src="/logo-removebg-preview.png"
             alt="Logo"
-            style={{ height: 72 }}
+            style={{ height: 48 }}
           />
         </div>
 
@@ -798,13 +798,6 @@ const LandingPage = () => {
       ════════════════════════════════ */}
       <footer className="border-t border-slate-200 py-10 px-4 md:px-10 bg-white">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <img
-              src="/logo-removebg-preview.png"
-              alt="Logo"
-              style={{ height: 56 }}
-            />
-          </div>
           <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 Digital Twin. All rights reserved.</div>
           <div className="flex gap-6 justify-center">
             {[['Log in', '/login'], ['Sign up', '/signup']].map(([label, to]) => (
