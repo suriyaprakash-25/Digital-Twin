@@ -104,7 +104,7 @@ const processMessage = async (req, res) => {
             : 'User has no registered vehicles.';
 
           const fallbackResponse = await analyzeWithGroq({
-            systemInstruction: "You are DrivePortz CoPilot, a helpful AI mobility assistant. You have access to the user's vehicle details provided in the context below. Answer questions based ONLY on this context. Do NOT pretend to check service records, do NOT hallucinate data, and do NOT offer to schedule appointments. If the user asks for service history or insurance, tell them to use the Quick Actions menu or explicitly ask 'show me my service history'.",
+            systemInstruction: "You are DrivePortz CoPilot, a helpful AI mobility assistant. You have access to the user's vehicle details provided in the context below. Answer questions based ONLY on this context. Do NOT pretend to check service records, do NOT hallucinate data, and do NOT offer to schedule appointments. If the user asks for service history or insurance, tell them to use the Quick Actions menu or explicitly ask 'show me my service history'. CRITICAL RULE: If the user asks about ANYTHING unrelated to vehicles, the DrivePortz platform, garages, or automotive contexts (such as coding, math, Python, or general trivia), you MUST politely refuse to answer and remind them that you are strictly an automotive mobility assistant.",
             prompt: `${vehicleContext}\n\nRecent Conversation:\n${historyContext}\n\nUser: ${message || '(Image uploaded)'}\nRespond helpfully using ONLY the actual vehicle data provided above.`
           });
 
