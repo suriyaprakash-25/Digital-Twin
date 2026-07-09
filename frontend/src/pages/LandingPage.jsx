@@ -193,7 +193,7 @@ const LandingPage = () => {
       {/* ════════════════════════════════
            HERO
       ════════════════════════════════ */}
-      <main className="pt-20 md:pt-24 pb-12 px-4 md:px-8 max-w-container-max mx-auto min-h-screen flex items-center">
+      <main className="pt-20 md:pt-24 pb-12 px-4 md:px-8 max-w-container-max mx-auto">
         {/* Hero Section Canvas – Parallax wrapper */}
         <div
           className="w-full"
@@ -215,7 +215,7 @@ const LandingPage = () => {
           }}
         >
           {/* Left Side: Content */}
-          <div className="w-full md:w-1/2 p-6 sm:p-12 md:p-16 lg:p-24 flex flex-col justify-center">
+          <div className="w-full md:w-1/2 p-6 pb-2 sm:p-12 sm:pb-4 md:p-16 lg:p-24 flex flex-col justify-center">
             <div className="max-w-xl">
               <span className="text-primary font-label-md text-xs sm:text-sm uppercase tracking-widest mb-4 block">Precision Engineering</span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-slate-900 mb-6 font-display">Your Vehicle's Digital Brain</h1>
@@ -240,7 +240,7 @@ const LandingPage = () => {
             </div>
           </div>
           {/* Right Side: Illustration */}
-          <div className="w-full md:w-1/2 bg-surface-container-low flex items-center justify-center p-6 md:p-10 border-t md:border-l md:border-t-0 border-outline-variant">
+          <div className="w-full md:w-1/2 bg-surface-container-low flex items-center justify-center p-6 pt-2 md:p-10 border-t md:border-l md:border-t-0 border-outline-variant">
             <div className="relative w-full aspect-[1.79]">
               <img alt="Garage Scene" className="w-full h-full object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk4bG_vORRaC8TqJQ2YDu4CTj1TluAhujbKRLmbilwg4F2zUHl63eYWwHkv4znCgknFRNEvdYVTWZKSlT4VNsROIXA3T89oudaVPZV19d5ugjnnr8VIfvSuN-7Siy3GXSlGtwoeYEfvWqGIHz_w9YytM2h3s_SnpHnkrI6gQDnzr7Wss7oLVQvSx7P6Uj15fzhXQVZ58ulN90baB2k1nMhV1Oh77E5j_02-2wIxGDhSKfnSev4tDwT-psdmWMGJ2qzsbSphImQxs"/>
               {/* Decorative Floating Data Nodes (Vector Style) */}
