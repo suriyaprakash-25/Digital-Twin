@@ -97,15 +97,38 @@ const processMessage = async (req, res) => {
 
           let historyContext = recentHistory.reverse().map(h => `User: ${h.message}\nAssistant: ${h.response}`).join('\n');
 
-          // Fetch user's vehicles to inject as context (prevents hallucination)
-          const userVehicles = await db.collection('vehicles').find({ ownerId: userId, isArchived: { $ne: true } }).toArray();
-          const vehicleContext = userVehicles.length > 0
-            ? `User's Registered Vehicles:\n${userVehicles.map((v, i) => `${i + 1}. ${v.brand} ${v.model} (${v.manufacturingYear}), Mileage: ${v.currentOdometerKm || 'N/A'} km`).join('\n')}`
-            : 'User has no registered vehicles.';
+          // Determine user role to inject appropriate context
+          const user = await db.collection('users').findOne({ _id: new ObjId(userId) });
+          const role = user?.role || 'USER';
+          
+          let roleContext = '';
+          if (role === 'GARAGE') {
+             const garage = await db.collection('garages').findOne({ ownerUserId: String(userId) });
+             if (garage) {
+                 const bookings = await db.collection('bookings').find({ garageId: garage._id }).toArray();
+                 const requested = bookings.filter(b => b.status === 'REQUESTED').length;
+                 const completed = bookings.filter(b => b.status === 'COMPLETED').length;
+                 const inProgress = bookings.filter(b => b.status === 'IN_PROGRESS' || b.status === 'ACCEPTED').length;
+                 roleContext = `User is a GARAGE PARTNER. Garage Name: ${garage.name}. Total Booking Requests: ${bookings.length}. Pending/Requested: ${requested}. In Progress/Accepted: ${inProgress}. Completed: ${completed}.`;
+             } else {
+                 roleContext = 'User is a Garage Partner but has not set up their Garage Profile yet.';
+             }
+          } else if (role === 'ADMIN') {
+             const totalUsers = await db.collection('users').countDocuments();
+             const totalGarages = await db.collection('garages').countDocuments();
+             const totalVehicles = await db.collection('vehicles').countDocuments();
+             const totalBookings = await db.collection('bookings').countDocuments();
+             roleContext = `User is a Platform ADMIN. Platform stats: Total Users: ${totalUsers}, Total Garages: ${totalGarages}, Total Vehicles: ${totalVehicles}, Total Bookings Platform-wide: ${totalBookings}.`;
+          } else {
+             const userVehicles = await db.collection('vehicles').find({ ownerId: userId, isArchived: { $ne: true } }).toArray();
+             roleContext = userVehicles.length > 0
+               ? `User's Registered Vehicles:\n${userVehicles.map((v, i) => `${i + 1}. ${v.brand} ${v.model} (${v.manufacturingYear}), Mileage: ${v.currentOdometerKm || 'N/A'} km`).join('\n')}`
+               : 'User is a vehicle owner with no registered vehicles.';
+          }
 
           const fallbackResponse = await analyzeWithGroq({
-            systemInstruction: "You are DrivePortz CoPilot, a helpful AI mobility assistant. You have access to the user's vehicle details provided in the context below. Answer questions based ONLY on this context. Do NOT pretend to check service records, do NOT hallucinate data, and do NOT offer to schedule appointments. If the user asks for service history or insurance, tell them to use the Quick Actions menu or explicitly ask 'show me my service history'. CRITICAL RULE: If the user asks about ANYTHING unrelated to vehicles, the DrivePortz platform, garages, or automotive contexts (such as coding, math, Python, or general trivia), you MUST politely refuse to answer and remind them that you are strictly an automotive mobility assistant.",
-            prompt: `${vehicleContext}\n\nRecent Conversation:\n${historyContext}\n\nUser: ${message || '(Image uploaded)'}\nRespond helpfully using ONLY the actual vehicle data provided above.`
+            systemInstruction: "You are DrivePortz CoPilot, a helpful AI mobility assistant. You have access to the user's role and data provided in the context below. Answer questions based ONLY on this context. Do NOT pretend to check records you don't have, do NOT hallucinate data. If the user asks for service history or insurance, tell them to use the Quick Actions menu. CRITICAL RULE: If the user asks about ANYTHING unrelated to vehicles, the DrivePortz platform, garages, their role, or automotive contexts (such as coding, math, Python, or general trivia), you MUST politely refuse to answer and remind them that you are strictly an automotive mobility assistant.",
+            prompt: `[CONTEXT START]\n${roleContext}\n[CONTEXT END]\n\nRecent Conversation:\n${historyContext}\n\nUser: ${message || '(Image uploaded)'}\nRespond helpfully using ONLY the actual data provided above.`
           });
 
           aiResponse = { text: typeof fallbackResponse === 'string' ? fallbackResponse : JSON.stringify(fallbackResponse) };
