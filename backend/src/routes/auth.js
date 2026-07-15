@@ -21,10 +21,14 @@ const authLimiter = rateLimit({
 });
 
 router.post('/signup', async (req, res) => {
-  const { name, email, password, role } = req.body || {};
+  const { name, email, password, role, termsAccepted, privacyAccepted } = req.body || {};
 
   if (!name || !email || !password) {
     return res.status(400).json({ msg: 'All fields are required' });
+  }
+
+  if (termsAccepted !== true || privacyAccepted !== true) {
+    return res.status(400).json({ msg: 'You must accept the Terms & Conditions and Privacy Policy before registration.' });
   }
 
   const db = getDb();
@@ -44,7 +48,12 @@ router.post('/signup', async (req, res) => {
     email,
     password: hashedPassword,
     role: normalizedRole,
-    createdAt: new Date()
+    createdAt: new Date(),
+    termsAccepted: true,
+    privacyAccepted: true,
+    termsAcceptedAt: new Date(),
+    privacyAcceptedAt: new Date(),
+    termsVersionAccepted: "v1.0"
   };
 
   try {
@@ -248,7 +257,7 @@ router.post('/me/license', requireAuth, upload.single('license'), async (req, re
 });
 
 router.post('/google', async (req, res) => {
-  const { credential, role } = req.body || {};
+  const { credential, role, termsAccepted, privacyAccepted } = req.body || {};
   if (!credential) {
     return res.status(400).json({ msg: 'Google credential token is required' });
   }
@@ -298,6 +307,10 @@ router.post('/google', async (req, res) => {
     let isNewUser = false;
 
     if (!user) {
+      if (termsAccepted !== true || privacyAccepted !== true) {
+        return res.status(400).json({ msg: 'You must accept the Terms & Conditions and Privacy Policy before registration.' });
+      }
+
       isNewUser = true;
       const normalizedRole = normalizeRole(role || 'USER');
       const randomPassword = await bcrypt.hash(Math.random().toString(36).slice(-10), 10);
@@ -307,7 +320,12 @@ router.post('/google', async (req, res) => {
         password: randomPassword,
         role: normalizedRole,
         photoUrl,
-        createdAt: new Date()
+        createdAt: new Date(),
+        termsAccepted: true,
+        privacyAccepted: true,
+        termsAcceptedAt: new Date(),
+        privacyAcceptedAt: new Date(),
+        termsVersionAccepted: "v1.0"
       };
       const result = await users.insertOne(user);
       user._id = result.insertedId;

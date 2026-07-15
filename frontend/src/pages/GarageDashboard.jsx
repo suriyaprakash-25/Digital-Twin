@@ -149,6 +149,14 @@ const GarageDashboard = () => {
               </div>
             </div>
 
+            {/* Smart Availability Button */}
+            <Link
+              to="/garage-availability"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-bold rounded-xl transition-colors border border-indigo-500/30 text-sm shadow-sm"
+            >
+              <Clock className="h-4 w-4" />
+              Smart Availability
+            </Link>
           </div>
 
           {/* Stats */}

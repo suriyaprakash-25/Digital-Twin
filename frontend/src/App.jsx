@@ -27,6 +27,7 @@ import Insurance from './pages/Insurance';
 import TransferOwnership from './pages/TransferOwnership';
 import VehicleDoctor from './pages/VehicleDoctor';
 import DiagnosisHistory from './pages/DiagnosisHistory';
+import GarageAvailability from './pages/GarageAvailability';
 
 // Admin
 import AdminLayout from './components/admin/AdminLayout';
@@ -95,6 +96,7 @@ function App() {
           <Route path="/garage-portal" element={<GaragePortal />} />
           <Route path="/garage-profile" element={<GarageProfile />} />
           <Route path="/garage-services" element={<GarageServices />} />
+          <Route path="/garage-availability" element={<GarageAvailability />} />
           <Route path="/analytics" element={<Analytics />} />
         </Route>
       </Routes>

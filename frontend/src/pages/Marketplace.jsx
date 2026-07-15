@@ -13,6 +13,7 @@ const Marketplace = () => {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL'); // ALL, AVAILABLE, BUSY, CLOSED
 
   const token = localStorage.getItem('token');
 
@@ -53,8 +54,13 @@ const Marketplace = () => {
     }
 
     load();
+
+    // 30-second polling for real-time availability updates
+    const intervalId = setInterval(load, 30000);
+
     return () => {
       cancelled = true;
+      clearInterval(intervalId);
     };
   }, [headers]);
 
@@ -87,14 +93,33 @@ const Marketplace = () => {
   };
 
   const filteredGarages = useMemo(() => {
+    let result = garages;
+    
+    // 1. Filter by Status
+    if (statusFilter !== 'ALL') {
+      result = result.filter(g => g.currentStatus === statusFilter);
+    }
+
+    // 2. Filter by Search Query
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return garages;
-    return garages.filter(g =>
-      (g.name || '').toLowerCase().includes(q) ||
-      (g.city || '').toLowerCase().includes(q) ||
-      (g.address || '').toLowerCase().includes(q)
-    );
-  }, [garages, searchQuery]);
+    if (q) {
+      result = result.filter(g =>
+        (g.name || '').toLowerCase().includes(q) ||
+        (g.city || '').toLowerCase().includes(q) ||
+        (g.address || '').toLowerCase().includes(q)
+      );
+    }
+
+    // 3. Sort: AVAILABLE -> BUSY -> CLOSED
+    const statusWeight = { 'AVAILABLE': 1, 'BUSY': 2, 'CLOSED': 3 };
+    result.sort((a, b) => {
+      const weightA = statusWeight[a.currentStatus] || 4;
+      const weightB = statusWeight[b.currentStatus] || 4;
+      return weightA - weightB;
+    });
+
+    return result;
+  }, [garages, searchQuery, statusFilter]);
 
   return (
     <>
@@ -126,6 +151,25 @@ const Marketplace = () => {
             <X className="h-4 w-4" />
           </button>
         )}
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {['ALL', 'AVAILABLE', 'BUSY', 'CLOSED'].map(status => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all border ${
+              statusFilter === status 
+                ? 'bg-slate-900 text-white border-slate-900' 
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            {status === 'ALL' ? 'All Garages' : 
+             status === 'AVAILABLE' ? '🟢 Open Now' : 
+             status === 'BUSY' ? '🟡 Busy' : '⚫ Closed'}
+          </button>
+        ))}
       </div>
 
       {error && (
@@ -192,7 +236,7 @@ const Marketplace = () => {
           <div key={g.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
                 <div>
-                <div className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                <div className="text-lg font-extrabold text-slate-900 flex flex-wrap items-center gap-2">
                   {g.name}
                   {g.verified && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold">
@@ -200,6 +244,17 @@ const Marketplace = () => {
                       Verified
                     </span>
                   )}
+                  {/* Status Badge */}
+                  <div className={`px-2 py-0.5 rounded-full flex items-center gap-1.5 text-xs font-bold border ml-1
+                    ${g.currentStatus === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                      g.currentStatus === 'BUSY' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                      'bg-slate-50 text-slate-600 border-slate-200'}`}
+                  >
+                    {g.currentStatus === 'AVAILABLE' && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>}
+                    {g.currentStatus === 'BUSY' && <span className="h-2 w-2 rounded-full bg-amber-500"></span>}
+                    {g.currentStatus === 'CLOSED' && <span className="h-2 w-2 rounded-full bg-slate-400"></span>}
+                    {g.currentStatus === 'AVAILABLE' ? 'Open Now' : g.currentStatus === 'BUSY' ? 'Busy' : 'Closed'}
+                  </div>
                 </div>
                 <div className="text-sm text-slate-600 mt-1">{[g.address, g.city].filter(Boolean).join(', ')}</div>
                 {g.phone ? <div className="text-sm text-slate-600 mt-1">Phone: {g.phone}</div> : null}
@@ -234,18 +289,26 @@ const Marketplace = () => {
                       <div>
                         <div className="text-sm font-extrabold text-slate-900">{s.title}</div>
                         {s.description ? <div className="text-sm text-slate-600 mt-1">{s.description}</div> : null}
-                        <div className="text-xs text-slate-500 mt-2">
-                          {s.price !== null && s.price !== undefined ? `₹${s.price}` : 'Price: —'}
-                          {s.durationMins ? ` • ${s.durationMins} mins` : ''}
+                        <div className="text-xs text-slate-500 mt-2 flex flex-col gap-1">
+                          <div>
+                            {s.price !== null && s.price !== undefined ? `₹${s.price}` : 'Price: —'}
+                            {s.durationMins ? ` • ${s.durationMins} mins` : ''}
+                          </div>
+                          {g.currentStatus === 'BUSY' && <span className="text-amber-600 font-semibold text-[10px]">Garage is busy, expect delays</span>}
                         </div>
                       </div>
 
                       <button
                         onClick={() => requestBooking({ garageId: g.id, serviceId: s.id })}
-                        disabled={vehicles.length === 0}
-                        className="px-4 py-2 rounded-xl bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={vehicles.length === 0 || g.currentStatus === 'CLOSED'}
+                        title={g.currentStatus === 'CLOSED' ? 'Garage is currently closed' : ''}
+                        className={`px-4 py-2 rounded-xl text-white text-sm font-semibold transition-all ${
+                          g.currentStatus === 'CLOSED' 
+                            ? 'bg-slate-300 cursor-not-allowed' 
+                            : 'bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                        }`}
                       >
-                        Request
+                        {g.currentStatus === 'CLOSED' ? 'Closed' : 'Request'}
                       </button>
                     </div>
                   </div>

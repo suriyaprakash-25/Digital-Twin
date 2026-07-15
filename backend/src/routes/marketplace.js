@@ -2,6 +2,7 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 
 const { getDb } = require('../db');
+const { calculateCurrentStatus } = require('../services/availabilityService');
 
 const router = express.Router();
 
@@ -51,7 +52,11 @@ router.get('/', async (req, res) => {
       photoUrl: g.photoUrl || null,
       createdAt: g.createdAt,
       garageLocation: g.garageLocation || null,
-      services: servicesByGarage.get(String(g._id)) || []
+      services: servicesByGarage.get(String(g._id)) || [],
+      availabilityMode: g.availabilityMode || 'AUTO',
+      manualStatus: g.manualStatus || 'CLOSED',
+      currentStatus: calculateCurrentStatus(g),
+      businessHours: g.businessHours || null
     }));
 
     return res.status(200).json(payload);
@@ -89,7 +94,11 @@ router.get('/garages/:garageId', async (req, res) => {
         description: s.description,
         price: s.price,
         durationMins: s.durationMins
-      }))
+      })),
+      availabilityMode: garage.availabilityMode || 'AUTO',
+      manualStatus: garage.manualStatus || 'CLOSED',
+      currentStatus: calculateCurrentStatus(garage),
+      businessHours: garage.businessHours || null
     });
   } catch (e) {
     return res.status(500).json({ msg: 'Error loading garage', error: String(e && e.message ? e.message : e) });

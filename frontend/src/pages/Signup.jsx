@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Lock, Mail, User, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Lock, Mail, User, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 import GoogleSignInButton from '../components/GoogleSignInButton';
+import TermsConditionsModal from '../components/TermsConditionsModal';
+import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -11,6 +13,12 @@ const Signup = () => {
         password: '',
         role: 'vehicle_owner'
     });
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [privacyAccepted, setPrivacyAccepted] = useState(false);
+    
+    const [showTermsModal, setShowTermsModal] = useState(false);
+    const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
@@ -22,10 +30,20 @@ const Signup = () => {
     const handleSignup = async (e) => {
         e.preventDefault();
         setError('');
+        
+        if (!termsAccepted || !privacyAccepted) {
+            setError('You must accept the Terms & Conditions and Privacy Policy before creating an account.');
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signup`, formData);
+            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signup`, {
+                ...formData,
+                termsAccepted,
+                privacyAccepted
+            });
             navigate('/login');
         } catch (err) {
             setError(err.response?.data?.msg || 'Failed to create account. Please try again.');
@@ -36,12 +54,20 @@ const Signup = () => {
 
     const handleGoogleSignup = async (credential) => {
         setError('');
+        
+        if (!termsAccepted || !privacyAccepted) {
+            setError('You must accept the Terms & Conditions and Privacy Policy before creating an account.');
+            return;
+        }
+
         setIsLoading(true);
 
         try {
             const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`, {
                 credential,
-                role: formData.role
+                role: formData.role,
+                termsAccepted,
+                privacyAccepted
             });
 
             localStorage.setItem('token', response.data.token);
@@ -152,10 +178,46 @@ const Signup = () => {
                         </div>
                     </div>
 
+                    {/* Acceptance Checkbox */}
+                    <div className="flex items-start gap-3 px-1">
+                        <div className="flex items-center h-5">
+                            <input
+                                id="legal-acceptance"
+                                type="checkbox"
+                                checked={termsAccepted && privacyAccepted}
+                                onChange={(e) => {
+                                    const isChecked = e.target.checked;
+                                    setTermsAccepted(isChecked);
+                                    setPrivacyAccepted(isChecked);
+                                    if (isChecked) setError('');
+                                }}
+                                className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                            />
+                        </div>
+                        <label htmlFor="legal-acceptance" className="text-sm text-slate-600 leading-snug">
+                            I agree to the{' '}
+                            <button 
+                                type="button" 
+                                onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}
+                                className="font-bold text-slate-800 hover:text-emerald-600 transition-colors underline decoration-slate-300 hover:decoration-emerald-500 underline-offset-2"
+                            >
+                                Terms & Conditions
+                            </button>{' '}
+                            and{' '}
+                            <button 
+                                type="button" 
+                                onClick={(e) => { e.preventDefault(); setShowPrivacyModal(true); }}
+                                className="font-bold text-slate-800 hover:text-emerald-600 transition-colors underline decoration-slate-300 hover:decoration-emerald-500 underline-offset-2"
+                            >
+                                Privacy Policy
+                            </button>.
+                        </label>
+                    </div>
+
                     <div className="pt-2">
                         <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isLoading || (!termsAccepted || !privacyAccepted)}
                             className="group relative w-full flex justify-center items-center py-3.5 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-600 transition-all shadow-md hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <span className="flex-1 text-center">
@@ -171,8 +233,17 @@ const Signup = () => {
                         <div className="flex-grow border-t border-slate-200"></div>
                     </div>
 
-                    <div className="w-full">
-                        <GoogleSignInButton onSuccess={handleGoogleSignup} onError={handleGoogleError} text="signup_with" />
+                    <div className="w-full relative">
+                        {(!termsAccepted || !privacyAccepted) && (
+                            <div 
+                                className="absolute inset-0 z-10 cursor-not-allowed"
+                                onClick={() => setError('You must accept the Terms & Conditions and Privacy Policy before creating an account.')}
+                                title="Please accept the terms before using Google Sign Up"
+                            />
+                        )}
+                        <div className={(!termsAccepted || !privacyAccepted) ? 'opacity-50 pointer-events-none' : ''}>
+                            <GoogleSignInButton onSuccess={handleGoogleSignup} onError={handleGoogleError} text="signup_with" />
+                        </div>
                     </div>
 
                     <div className="text-center text-sm text-slate-500 font-medium">
@@ -183,6 +254,26 @@ const Signup = () => {
                     </div>
                 </form>
             </div>
+
+            <TermsConditionsModal 
+                isOpen={showTermsModal} 
+                onClose={() => setShowTermsModal(false)}
+                onAccept={() => {
+                    setTermsAccepted(true);
+                    if (privacyAccepted) setError('');
+                    setShowTermsModal(false);
+                }}
+            />
+
+            <PrivacyPolicyModal 
+                isOpen={showPrivacyModal} 
+                onClose={() => setShowPrivacyModal(false)}
+                onAccept={() => {
+                    setPrivacyAccepted(true);
+                    if (termsAccepted) setError('');
+                    setShowPrivacyModal(false);
+                }}
+            />
         </div>
     );
 };

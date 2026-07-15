@@ -27,6 +27,7 @@ const insuranceRoutes = require('./src/routes/insurance');
 const ownershipRoutes = require('./src/routes/ownership');
 const vehicleDoctorRoutes = require('./src/routes/vehicleDoctorRoutes');
 const copilotRoutes = require('./src/routes/copilotRoutes');
+const garageAvailabilityRoutes = require('./src/routes/garageAvailabilityRoutes');
 
 const app = express();
 const config = loadConfig();
@@ -87,6 +88,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/resale', resaleRoutes);
 app.use('/api/garage', garageRoutes);
+app.use('/api/garage/availability', garageAvailabilityRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 // Marketplace + two-sided garage workflows

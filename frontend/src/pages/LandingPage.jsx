@@ -2,10 +2,11 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import {
-  Shield, TrendingUp, Bell, Store, BarChart3,
-  ChevronRight, CheckCircle, ArrowRight, Car,
-  Zap, Globe, Users, Award, HeartPulse,
+  ArrowRight, ShieldCheck, Zap, Activity, Clock, FileText, ChevronRight, CheckCircle2, Layout, Database, Wrench, Menu, X, Globe, Smartphone, ArrowUpRight, Facebook, Instagram, Twitter, Linkedin,
+  Shield, TrendingUp, Bell, Store, BarChart3, CheckCircle, Car, Users, Award, HeartPulse
 } from 'lucide-react';
+import TermsConditionsModal from '../components/TermsConditionsModal';
+import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 
 /* ── Animated counter hook ────────────────────────────── */
 function useCounter(end, duration = 2000, active = false) {
@@ -45,6 +46,9 @@ function useVisible(threshold = 0.25) {
 const LandingPage = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [statsRef, statsVisible] = useVisible(0.3);
   const [featRef, featVisible] = useVisible(0.1);
   const [howRef, howVisible] = useVisible(0.2);
@@ -799,19 +803,68 @@ const LandingPage = () => {
       {/* ════════════════════════════════
            FOOTER
       ════════════════════════════════ */}
-      <footer className="border-t border-slate-200 py-10 px-4 md:px-10 bg-white">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
-          <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 Driveportz. All rights reserved.</div>
-          <div className="flex gap-6 justify-center">
-            {[['Log in', '/login'], ['Sign up', '/signup']].map(([label, to]) => (
-              <Link key={to} to={to} style={{ fontSize: '.82rem', color: '#94a3b8', textDecoration: 'none', transition: 'color .2s' }}
-                onMouseEnter={e => e.target.style.color = '#0d9488'} onMouseLeave={e => e.target.style.color = '#94a3b8'}>
-                {label}
-              </Link>
-            ))}
+      <footer className="border-t border-slate-800 py-12 px-4 md:px-10 bg-slate-900 text-slate-300">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <img src="/logo-removebg-preview.png" alt="DrivePortz Logo" className="h-10" />
+              <span className="text-xl font-bold text-white tracking-tight">DrivePortz</span>
+            </div>
+            <p className="text-sm text-slate-400 leading-relaxed mb-6">
+              The next-generation mobility digital twin platform. Track, protect, and maximise the value of your vehicles with AI-driven intelligence.
+            </p>
+            <div style={{ fontSize: '.8rem', color: '#64748b' }}>© 2026 DrivePortz. All rights reserved.</div>
+          </div>
+          
+          <div>
+            <h4 className="text-white font-bold mb-6 tracking-wide text-sm">PLATFORM</h4>
+            <ul className="space-y-4">
+              <li><Link to="/login" className="text-sm text-slate-400 hover:text-teal-400 transition-colors">Log In</Link></li>
+              <li><Link to="/signup" className="text-sm text-slate-400 hover:text-teal-400 transition-colors">Sign Up</Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <div className="space-y-4 mb-10">
+              <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-sm text-slate-300 hover:text-white transition-colors block text-left font-medium">Terms And conditions</button>
+              <button onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="text-sm text-slate-300 hover:text-white transition-colors block text-left font-medium">Privacy Policy</button>
+            </div>
+            
+            <h4 className="text-white font-bold mb-4 text-sm uppercase tracking-wide">FOLLOW US</h4>
+            <div className="flex gap-3">
+              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
+                <Facebook size={16} className="fill-current" />
+              </a>
+              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
+                <Instagram size={16} />
+              </a>
+              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
+                <Twitter size={16} className="fill-current" />
+              </a>
+              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
+                <Linkedin size={16} className="fill-current" />
+              </a>
+              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
+                <Globe size={16} />
+              </a>
+            </div>
           </div>
         </div>
       </footer>
+      
+      <TermsConditionsModal 
+        isOpen={showTerms} 
+        onClose={() => setShowTerms(false)} 
+        onAccept={() => {}} 
+        readOnly={true} 
+      />
+      
+      <PrivacyPolicyModal 
+        isOpen={showPrivacy} 
+        onClose={() => setShowPrivacy(false)} 
+        onAccept={() => {}} 
+        readOnly={true} 
+      />
     </div>
   </>
 );
