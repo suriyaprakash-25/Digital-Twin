@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import {
-  ArrowRight, ShieldCheck, Zap, Activity, Clock, FileText, ChevronRight, CheckCircle2, Layout, Database, Wrench, Menu, X, Globe, Smartphone, ArrowUpRight, Facebook, Instagram, Twitter, Linkedin,
+  ArrowRight, ShieldCheck, Zap, Activity, Clock, FileText, ChevronRight, CheckCircle2, Layout, Database, Wrench, Menu, X, Globe, Smartphone, ArrowUpRight, Facebook, Instagram, Twitter, Linkedin, MessageCircle,
   Shield, TrendingUp, Bell, Store, BarChart3, CheckCircle, Car, Users, Award, HeartPulse
 } from 'lucide-react';
 import TermsConditionsModal from '../components/TermsConditionsModal';
@@ -803,49 +803,40 @@ const LandingPage = () => {
       {/* ════════════════════════════════
            FOOTER
       ════════════════════════════════ */}
-      <footer className="border-t border-slate-800 py-12 px-4 md:px-10 bg-slate-900 text-slate-300">
+      <footer className="border-t border-slate-200 py-12 px-4 md:px-10 bg-white text-slate-600">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <img src="/logo-removebg-preview.png" alt="DrivePortz Logo" className="h-10" />
-              <span className="text-xl font-bold text-white tracking-tight">DrivePortz</span>
+            <div className="flex items-center mb-1">
+              <img src="/logo-removebg-preview.png" alt="DrivePortz Logo" style={{ height: 86, marginBottom: '-15px' }} />
             </div>
-            <p className="text-sm text-slate-400 leading-relaxed mb-6">
+            <p className="text-sm text-slate-500 leading-relaxed mb-6">
               The next-generation mobility digital twin platform. Track, protect, and maximise the value of your vehicles with AI-driven intelligence.
             </p>
-            <div style={{ fontSize: '.8rem', color: '#64748b' }}>© 2026 DrivePortz. All rights reserved.</div>
+            <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 DrivePortz. All rights reserved.</div>
           </div>
           
           <div>
-            <h4 className="text-white font-bold mb-6 tracking-wide text-sm">PLATFORM</h4>
+            <h4 className="text-slate-900 font-bold mb-6 tracking-wide text-sm">PLATFORM</h4>
             <ul className="space-y-4">
-              <li><Link to="/login" className="text-sm text-slate-400 hover:text-teal-400 transition-colors">Log In</Link></li>
-              <li><Link to="/signup" className="text-sm text-slate-400 hover:text-teal-400 transition-colors">Sign Up</Link></li>
+              <li><Link to="/login" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">Log In</Link></li>
+              <li><Link to="/signup" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">Sign Up</Link></li>
             </ul>
           </div>
           
           <div>
             <div className="space-y-4 mb-10">
-              <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-sm text-slate-300 hover:text-white transition-colors block text-left font-medium">Terms And conditions</button>
-              <button onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="text-sm text-slate-300 hover:text-white transition-colors block text-left font-medium">Privacy Policy</button>
+              <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Terms And conditions</button>
+              <button onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Privacy Policy</button>
+              <Link to="/about" className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">About Us</Link>
             </div>
             
-            <h4 className="text-white font-bold mb-4 text-sm uppercase tracking-wide">FOLLOW US</h4>
+            <h4 className="text-slate-900 font-bold mb-4 text-sm uppercase tracking-wide">FOLLOW US</h4>
             <div className="flex gap-3">
-              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
-                <Facebook size={16} className="fill-current" />
-              </a>
-              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
+              <a href="https://www.instagram.com/driveportz?utm_source=qr&igsh=cTl1NWFyNTRiampo" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
                 <Instagram size={16} />
               </a>
-              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
-                <Twitter size={16} className="fill-current" />
-              </a>
-              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
-                <Linkedin size={16} className="fill-current" />
-              </a>
-              <a href="#" className="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-900 hover:bg-slate-200 transition-colors">
-                <Globe size={16} />
+              <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
+                <MessageCircle size={16} />
               </a>
             </div>
           </div>
