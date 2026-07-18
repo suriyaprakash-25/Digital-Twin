@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import TermsConditionsModal from '../components/TermsConditionsModal';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
+import AboutUsModal from '../components/AboutUsModal';
 
 /* ── Animated counter hook ────────────────────────────── */
 function useCounter(end, duration = 2000, active = false) {
@@ -49,6 +50,7 @@ const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [statsRef, statsVisible] = useVisible(0.3);
   const [featRef, featVisible] = useVisible(0.1);
   const [howRef, howVisible] = useVisible(0.2);
@@ -800,9 +802,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ════════════════════════════════
-           FOOTER
-      ════════════════════════════════ */}
       <footer className="border-t border-slate-200 py-12 px-4 md:px-10 bg-white text-slate-600">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
@@ -812,7 +811,6 @@ const LandingPage = () => {
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
               The next-generation mobility digital twin platform. Track, protect, and maximise the value of your vehicles with AI-driven intelligence.
             </p>
-            <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 DrivePortz. All rights reserved.</div>
           </div>
           
           <div>
@@ -825,9 +823,9 @@ const LandingPage = () => {
           
           <div>
             <div className="space-y-4 mb-10">
-              <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Terms And conditions</button>
+              <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Partner Terms and Conditions</button>
               <button onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Privacy Policy</button>
-              <Link to="/about" className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">About Us</Link>
+              <button onClick={(e) => { e.preventDefault(); setShowAbout(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">About Us</button>
             </div>
             
             <h4 className="text-slate-900 font-bold mb-4 text-sm uppercase tracking-wide">FOLLOW US</h4>
@@ -840,6 +838,11 @@ const LandingPage = () => {
               </a>
             </div>
           </div>
+        </div>
+        
+        {/* Bottom copyright section */}
+        <div className="max-w-7xl mx-auto border-t border-slate-200 mt-10 pt-6 text-center md:text-left">
+          <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 DrivePortz. All rights reserved.</div>
         </div>
       </footer>
       
@@ -855,6 +858,11 @@ const LandingPage = () => {
         onClose={() => setShowPrivacy(false)} 
         onAccept={() => {}} 
         readOnly={true} 
+      />
+      
+      <AboutUsModal 
+        isOpen={showAbout} 
+        onClose={() => setShowAbout(false)} 
       />
     </div>
   </>
