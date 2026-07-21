@@ -189,11 +189,10 @@ const GarageDashboard = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {[
               { label: 'Total Services',  value: services.length,  icon: <Wrench className="h-5 w-5 text-teal-400" />,        bg: 'bg-teal-500/10' },
-              { label: 'Pending',         value: pendingCount,      icon: <Clock className="h-5 w-5 text-amber-400" />,        bg: 'bg-amber-500/10' },
-              { label: 'In Progress',     value: inProgressCount,   icon: <Loader2 className="h-5 w-5 text-violet-400" />,     bg: 'bg-violet-500/10' },
+              { label: 'In Progress',     value: inProgressCount,   icon: <Wrench className="h-5 w-5 text-violet-400" />,      bg: 'bg-violet-500/10' },
               { label: 'Completed',       value: completedCount,    icon: <TrendingUp className="h-5 w-5 text-emerald-400" />, bg: 'bg-emerald-500/10' },
             ].map(s => (
               <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl p-4">
