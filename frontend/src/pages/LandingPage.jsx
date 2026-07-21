@@ -173,15 +173,8 @@ const LandingPage = () => {
         </div>
 
         {/* Auth CTAs */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Link to="/login" style={{
-            color: '#374151', fontWeight: 505, fontSize: '.82rem',
-            padding: '.4rem 1rem', borderRadius: 8, textDecoration: 'none',
-            border: '1px solid #e2e8f0', transition: 'all .2s', background: '#fff',
-          }}
-            className="sm:px-4 sm:py-2 sm:text-sm"
-            onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
             Log in
           </Link>
           <Link to="/signup" style={{
@@ -223,17 +216,17 @@ const LandingPage = () => {
           {/* Left Side: Content */}
           <div className="w-full md:w-1/2 p-6 pb-2 sm:p-12 sm:pb-4 md:p-16 lg:p-24 flex flex-col justify-center">
             <div className="max-w-xl">
-              <span className="text-primary font-label-md text-xs sm:text-sm uppercase tracking-widest mb-4 block">Precision Engineering</span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-slate-900 mb-6 font-display">Your Vehicle's Digital Brain</h1>
+              <span className="text-primary font-label-md text-xs sm:text-sm uppercase tracking-widest mb-4 block">Intelligent Ownership</span>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-slate-900 mb-6 font-display">Track, Protect, and Maximize Your Vehicle's Value</h1>
               <p className="text-sm sm:text-base md:text-lg text-on-surface-variant mb-8 leading-relaxed font-body-lg">
-                The definitive operating system for automotive management. Experience surgical efficiency in vehicle diagnostics, garage workflow, and real-time telemetry analytics.
+                The definitive platform for vehicle owners. Get intelligent insights, manage maintenance, and track your vehicle's health in real-time.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   to="/signup"
                   className="bg-primary-container text-on-primary-fixed flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-label-md text-label-md hover:opacity-90 transition-all active:scale-95"
                 >
-                  Start for Free
+                  Get Started
                   <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
                 </Link>
                 <button
@@ -263,27 +256,7 @@ const LandingPage = () => {
         </div>
       </main>
 
-      {/* ════════════════════════════════
-           STATS BAR
-      ════════════════════════════════ */}
-      <div ref={statsRef} className="border-y border-slate-200 py-10 md:py-14 px-4 md:px-8 bg-white">
-        <div className="max-w-[1100px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-6 text-center">
-          {[
-            { val: c1.toLocaleString() + '+', label: 'Vehicles Tracked', icon: <Car size={20} color="#0d9488" />, color: '#0d9488' },
-            { val: c2.toLocaleString() + '+', label: 'Verified Garages', icon: <Store size={20} color="#14b8a6" />, color: '#14b8a6' },
-            { val: c3 + '%', label: 'Health Accuracy', icon: <Award size={20} color="#0f766e" />, color: '#0f766e' },
-            { val: '₹' + c4 + 'Cr+', label: 'Fraud Prevented', icon: <Shield size={20} color="#d97706" />, color: '#d97706' },
-          ].map(s => (
-            <div key={s.label} className="flex flex-col items-center">
-              <div style={{ width: 50, height: 50, borderRadius: 13, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, border: `1px solid ${s.color}22` }}>
-                {s.icon}
-              </div>
-              <div className="text-3xl md:text-[2.1rem] font-black tracking-tight text-slate-900 leading-none">{s.val}</div>
-              <div style={{ fontSize: '.82rem', color: '#64748b', marginTop: 6, fontWeight: 500 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+
 
       {/* ════════════════════════════════
            FEATURES
@@ -342,8 +315,8 @@ const LandingPage = () => {
                 icon: <BarChart3 size={26} color="#0d9488" />,
                 bg: '#f0fdfa', border: '#99f6e4',
                 tag: 'DATA INTELLIGENCE', tagColor: '#0d9488',
-                title: 'Fleet Analytics Dashboard',
-                desc: 'Real-time expense trends, category breakdowns, mileage distributions and Vehicle IQ scores across your entire fleet — all in one visual dashboard.',
+                title: 'Personal Vehicle Analytics',
+                desc: 'Real-time expense trends, category breakdowns, mileage distributions and Vehicle IQ scores for your car — all in one visual dashboard.',
               },
             ].map((f, i) => (
               <div key={f.title} className="card" style={{

@@ -26,7 +26,34 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- SEO Pre-rendering Content (Visually hidden for screen readers and bots) -->
+      <div style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;">
+        <h1>Driveportz - Track, Protect, and Maximize Your Vehicle's Value</h1>
+        <p>The definitive platform for vehicle owners. Get intelligent insights, manage maintenance, and track your vehicle's health in real-time.</p>
+        <h2>Everything Your Vehicle Needs</h2>
+        <p>Fraud-Proof Service History, Live Vehicle IQ Score, Intelligent Resale Valuation, Smart Legal Reminders, Verified Garage Marketplace, and Personal Vehicle Analytics.</p>
+        <h2>How It Works</h2>
+        <ul>
+          <li>Register Your Vehicle: Add your vehicle's complete digital profile.</li>
+          <li>Log Every Service: Record each visit with parts replaced and costs.</li>
+          <li>Get Full Intelligence: Receive Vehicle IQ scores, resale valuations, fraud alerts, and expiry reminders.</li>
+        </ul>
+      </div>
+      <!-- User-facing Loading State -->
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #ffffff; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; font-weight: 600; font-size: 1.2rem;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+          <img src="/logo-removebg-preview.png" alt="Driveportz Loading" style="height: 60px; animation: pulse 2s infinite;" />
+          Loading Driveportz...
+        </div>
+        <style>
+          @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .7; transform: scale(0.95); }
+          }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
