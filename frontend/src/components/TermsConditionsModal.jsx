@@ -4,42 +4,36 @@ import { X } from 'lucide-react';
 const TermsConditionsModal = ({ isOpen, onClose, onAccept, readOnly = false }) => {
   if (!isOpen) return null;
 
-  // Format today's date
-  const effectiveDate = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }).format(new Date());
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal Content */}
       <div className="relative w-full max-w-[700px] bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[80vh] border border-slate-200/50">
-        
+
         {/* Sticky Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white/80 backdrop-blur-md z-10">
           <div className="flex items-center gap-3">
-            <img 
-              src="/logo-removebg-preview.png" 
-              alt="DrivePortz Logo" 
-              style={{ height: '44px', objectFit: 'contain' }} 
+            <img
+              src="/logo-removebg-preview.png"
+              alt="DrivePortz Logo"
+              style={{ height: '44px', objectFit: 'contain' }}
             />
             <div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                 DrivePortz Terms & Conditions
               </h2>
               <p className="text-sm font-medium text-slate-500 mt-1">
-                Effective Date: {effectiveDate}
+                Effective Date: July 19, 2026
               </p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
           >
@@ -285,53 +279,13 @@ const TermsConditionsModal = ({ isOpen, onClose, onAccept, readOnly = false }) =
         </div>
 
         {/* Sticky Footer */}
-        <div className="flex-shrink-0 px-6 py-5 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4 z-10">
-          {readOnly ? (
-            <div className="flex w-full justify-end">
-              <button 
-                onClick={onClose}
-                className="px-6 py-2.5 rounded-xl font-bold text-white bg-slate-900 hover:bg-slate-800 transition-colors w-full sm:w-auto shadow-sm"
-              >
-                Close
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <input 
-                  type="checkbox" 
-                  id="modal-terms-checkbox"
-                  className="w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      onAccept();
-                    }
-                  }}
-                />
-                <label htmlFor="modal-terms-checkbox" className="text-sm font-semibold text-slate-700 cursor-pointer">
-                  I have read and understood the Partner Terms & Conditions.
-                </label>
-              </div>
-              
-              <div className="flex items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0 justify-end">
-                <button 
-                  onClick={onClose}
-                  className="px-5 py-2.5 rounded-xl font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors w-full sm:w-auto"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => {
-                    document.getElementById('modal-terms-checkbox').checked = true;
-                    onAccept();
-                  }}
-                  className="px-5 py-2.5 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors w-full sm:w-auto"
-                >
-                  Accept
-                </button>
-              </div>
-            </>
-          )}
+        <div className="flex-shrink-0 px-6 py-4 border-t border-slate-100 bg-slate-50/80 backdrop-blur-md rounded-b-2xl md:rounded-b-3xl">
+          <button
+            onClick={onClose}
+            className="w-full bg-slate-200 text-slate-800 font-bold py-3 px-4 rounded-xl hover:bg-slate-300 transition-colors"
+          >
+            Close
+          </button>
         </div>
 
       </div>

@@ -201,7 +201,7 @@ const Signup = () => {
                                 onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}
                                 className="font-bold text-slate-800 hover:text-emerald-600 transition-colors underline decoration-slate-300 hover:decoration-emerald-500 underline-offset-2"
                             >
-                                Partner Terms & Conditions
+                                Terms & Conditions
                             </button>{' '}
                             and{' '}
                             <button 
@@ -237,7 +237,7 @@ const Signup = () => {
                         {(!termsAccepted || !privacyAccepted) && (
                             <div 
                                 className="absolute inset-0 z-10 cursor-not-allowed"
-                                onClick={() => setError('You must accept the Partner Terms & Conditions and Privacy Policy before creating an account.')}
+                                onClick={() => setError('You must accept the Terms & Conditions and Privacy Policy before creating an account.')}
                                 title="Please accept the terms before using Google Sign Up"
                             />
                         )}

@@ -8,6 +8,7 @@ import {
 import TermsConditionsModal from '../components/TermsConditionsModal';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import AboutUsModal from '../components/AboutUsModal';
+import PartnerTermsModal from '../components/PartnerTermsModal';
 
 /* ── Animated counter hook ────────────────────────────── */
 function useCounter(end, duration = 2000, active = false) {
@@ -49,6 +50,7 @@ const LandingPage = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showPartnerTerms, setShowPartnerTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [statsRef, statsVisible] = useVisible(0.3);
@@ -796,7 +798,8 @@ const LandingPage = () => {
           
           <div>
             <div className="space-y-4 mb-10">
-              <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Partner Terms and Conditions</button>
+              <button onClick={(e) => { e.preventDefault(); setShowPartnerTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Partner Terms and Conditions</button>
+              <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Terms and Conditions</button>
               <button onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Privacy Policy</button>
               <button onClick={(e) => { e.preventDefault(); setShowAbout(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">About Us</button>
             </div>
@@ -824,6 +827,11 @@ const LandingPage = () => {
         onClose={() => setShowTerms(false)} 
         onAccept={() => {}} 
         readOnly={true} 
+      />
+      
+      <PartnerTermsModal 
+        isOpen={showPartnerTerms} 
+        onClose={() => setShowPartnerTerms(false)} 
       />
       
       <PrivacyPolicyModal 
