@@ -22,8 +22,8 @@ const GarageProfile = () => {
   const token = localStorage.getItem('token');
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
-  const [profile, setProfile] = useState({ name: '', phone: '', address: '', city: '', description: '' });
-  const [original, setOriginal] = useState({ name: '', phone: '', address: '', city: '', description: '' });
+  const [profile, setProfile] = useState({ name: '', phone: '', address: '', city: '', description: '', maxCapacity: 20 });
+  const [original, setOriginal] = useState({ name: '', phone: '', address: '', city: '', description: '', maxCapacity: 20 });
   const [garageLocation, setGarageLocation] = useState(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(null);
@@ -42,7 +42,8 @@ const GarageProfile = () => {
             phone: res.data.phone || '',
             address: res.data.address || '',
             city: res.data.city || '',
-            description: res.data.description || ''
+            description: res.data.description || '',
+            maxCapacity: res.data.maxCapacity !== undefined ? res.data.maxCapacity : 20
           };
           setProfile(p);
           setOriginal(p);
@@ -223,6 +224,18 @@ const GarageProfile = () => {
               value={profile.address}
               onChange={e => setProfile(p => ({ ...p, address: e.target.value }))}
               placeholder="Street, Area, Landmark"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+            />
+          </Field>
+
+          <Field label="Maximum Capacity (Vehicle Limit)" icon={<Building2 className="h-3.5 w-3.5 text-slate-400" />}>
+            <input
+              type="number"
+              value={profile.maxCapacity}
+              onChange={e => setProfile(p => ({ ...p, maxCapacity: Math.max(1, parseInt(e.target.value, 10) || 0) }))}
+              placeholder="e.g. 20"
+              required
+              min="1"
               className="w-full border border-slate-200 rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </Field>

@@ -26,6 +26,7 @@ router.get('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
       address: garage.address,
       city: garage.city,
       description: garage.description,
+      maxCapacity: garage.maxCapacity !== undefined ? garage.maxCapacity : 20,
       isActive: Boolean(garage.isActive !== false),
       createdAt: garage.createdAt,
       garageLocation: garage.garageLocation || null,
@@ -40,7 +41,7 @@ router.post('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
   const db = getDb();
   const garages = db.collection('garages');
 
-  const { name, phone, address, city, description } = req.body || {};
+  const { name, phone, address, city, description, maxCapacity } = req.body || {};
 
   if (!name) {
     return res.status(400).json({ msg: 'Garage name is required' });
@@ -53,6 +54,7 @@ router.post('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
       address: address ? String(address) : '',
       city: city ? String(city) : '',
       description: description ? String(description) : '',
+      maxCapacity: maxCapacity !== undefined ? Number(maxCapacity) : 20,
       ownerUserId: String(req.user.id),
       isActive: true,
       updatedAt: new Date()
@@ -73,6 +75,32 @@ router.post('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
     return res.status(201).json({ msg: 'Garage profile created', id: String(result.insertedId) });
   } catch (e) {
     return res.status(500).json({ msg: 'Error saving garage profile', error: String(e && e.message ? e.message : e) });
+  }
+});
+
+router.patch('/me/capacity', requireAuth, requireRole('GARAGE'), async (req, res) => {
+  const db = getDb();
+  const garages = db.collection('garages');
+  const { maxCapacity } = req.body || {};
+
+  const capacity = Number(maxCapacity);
+  if (Number.isNaN(capacity) || capacity < 1) {
+    return res.status(400).json({ msg: 'Capacity must be a positive number' });
+  }
+
+  try {
+    const result = await garages.findOneAndUpdate(
+      { ownerUserId: String(req.user.id) },
+      { $set: { maxCapacity: capacity, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+    const updated = result?.value || result;
+    if (!updated) {
+      return res.status(404).json({ msg: 'Garage profile not found' });
+    }
+    return res.status(200).json({ msg: 'Capacity updated successfully', maxCapacity: updated.maxCapacity });
+  } catch (e) {
+    return res.status(500).json({ msg: 'Error updating capacity', error: String(e && e.message ? e.message : e) });
   }
 });
 

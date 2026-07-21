@@ -15,6 +15,7 @@ function normalizeRole(role) {
 }
 
 const statusMeta = {
+  REQUESTED:   { label: 'Pending',     color: 'bg-amber-100 text-amber-700',    icon: <Clock className="h-3.5 w-3.5" /> },
   PENDING:     { label: 'Pending',     color: 'bg-amber-100 text-amber-700',    icon: <Clock className="h-3.5 w-3.5" /> },
   ACCEPTED:    { label: 'Accepted',    color: 'bg-teal-100 text-teal-700',      icon: <CheckCircle className="h-3.5 w-3.5" /> },
   IN_PROGRESS: { label: 'In Progress', color: 'bg-violet-100 text-violet-700',  icon: <Loader2 className="h-3.5 w-3.5" /> },
@@ -36,7 +37,16 @@ const GarageDashboard = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  const [inputCapacity, setInputCapacity] = useState(20);
+  const [updatingCapacity, setUpdatingCapacity] = useState(false);
+
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
+
+  useEffect(() => {
+    if (profile?.maxCapacity !== undefined) {
+      setInputCapacity(profile.maxCapacity);
+    }
+  }, [profile]);
 
   const loadAll = useCallback(async () => {
     setError('');
@@ -68,6 +78,25 @@ const GarageDashboard = () => {
       await loadAll();
     } catch (e) {
       setError(e.response?.data?.msg || 'Failed to update booking');
+    }
+  };
+
+  const handleUpdateCapacity = async () => {
+    if (inputCapacity < 1) return;
+    setUpdatingCapacity(true);
+    try {
+      const res = await axios.patch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me/capacity`,
+        { maxCapacity: inputCapacity },
+        headers
+      );
+      setProfile(p => ({ ...p, maxCapacity: res.data.maxCapacity }));
+      setMessage('Capacity limit updated successfully');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (e) {
+      setError(e.response?.data?.msg || 'Failed to update capacity limit');
+    } finally {
+      setUpdatingCapacity(false);
     }
   };
 
@@ -114,8 +143,8 @@ const GarageDashboard = () => {
     );
   }
 
-  const pendingCount = bookings.filter(b => b.status === 'PENDING').length;
-  const inProgressCount = bookings.filter(b => b.status === 'IN_PROGRESS').length;
+  const pendingCount = bookings.filter(b => b.status === 'PENDING' || b.status === 'REQUESTED').length;
+  const inProgressCount = bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length;
   const completedCount = bookings.filter(b => b.status === 'COMPLETED').length;
 
   const initials = profile?.name
@@ -188,6 +217,124 @@ const GarageDashboard = () => {
           <CheckCircle className="h-4 w-4" /> {message}
         </div>
       )}
+
+      {/* Capacity & Vehicles In Progress Control Center */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Capacity Management Card */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between lg:col-span-1">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-indigo-50 text-indigo-650 rounded-xl">
+                <Store className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Capacity & Shop Floor</h3>
+                <p className="text-xs text-slate-500 font-semibold">Manage active vehicle limits</p>
+              </div>
+            </div>
+
+            {/* Occupancy stats */}
+            <div className="space-y-2 mt-4">
+              <div className="flex justify-between text-sm font-bold text-slate-700">
+                <span>Occupancy</span>
+                <span>{bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length} / {profile?.maxCapacity !== undefined ? profile.maxCapacity : 20} slots</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 rounded-full ${
+                    Math.min(100, Math.round((bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length / (profile?.maxCapacity !== undefined ? profile.maxCapacity : 20)) * 100)) >= 90 
+                      ? 'bg-rose-500' 
+                      : Math.min(100, Math.round((bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length / (profile?.maxCapacity !== undefined ? profile.maxCapacity : 20)) * 100)) >= 75 
+                        ? 'bg-amber-500' 
+                        : 'bg-teal-500'
+                  }`}
+                  style={{ width: `${Math.min(100, Math.round((bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length / (profile?.maxCapacity !== undefined ? profile.maxCapacity : 20)) * 100))}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-slate-400 font-semibold mt-1">
+                {(profile?.maxCapacity !== undefined ? profile.maxCapacity : 20) - bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length} available slots out of {profile?.maxCapacity !== undefined ? profile.maxCapacity : 20} total limit.
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Edit Capacity Form */}
+          <div className="border-t border-slate-100 pt-4 mt-6">
+            <label className="block text-xs font-bold text-slate-700 mb-2">Adjust Capacity Limit</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="1"
+                value={inputCapacity}
+                onChange={(e) => setInputCapacity(Math.max(1, parseInt(e.target.value, 10) || 0))}
+                className="w-20 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-950 bg-slate-55 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-center"
+              />
+              <button
+                onClick={handleUpdateCapacity}
+                disabled={updatingCapacity || inputCapacity === (profile?.maxCapacity !== undefined ? profile.maxCapacity : 20)}
+                className="flex-1 bg-slate-900 text-white font-bold rounded-xl px-4 py-2 text-xs hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {updatingCapacity ? 'Saving…' : 'Update Limit'}
+              </button>
+            </div>
+          </div>
+        </div>        {/* Vehicles Currently in Progress Card */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden lg:col-span-2 flex flex-col">
+          <div className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-violet-100 text-violet-650 rounded-xl">
+                <Wrench className="h-5 w-5 text-violet-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Vehicles Currently In Progress</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Vehicles on the shop floor being serviced</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 bg-violet-100 text-violet-700 rounded-full text-xs font-bold">
+              {bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length} active
+            </span>
+          </div>
+
+          <div className="divide-y divide-slate-100 flex-1 overflow-y-auto max-h-[220px]">
+            {bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center h-full">
+                <Wrench className="h-10 w-10 text-slate-200 mb-2" />
+                <p className="text-slate-400 font-medium text-xs">No vehicles currently in progress.</p>
+              </div>
+            ) : (
+              bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').map(b => (
+                <div key={b.id} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
+                  <div>
+                    <div className="text-sm font-extrabold text-slate-900">
+                      {b.vehicle?.brand} {b.vehicle?.model} &bull; <span className="font-mono text-xs text-indigo-650">{b.vehicle?.vehicleNumber}</span>
+                    </div>
+                    <div className="text-xs text-slate-500 font-semibold mt-0.5">
+                      Service: {b.service?.title} | Status: <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${b.status === 'IN_PROGRESS' ? 'bg-violet-100 text-violet-700' : 'bg-teal-100 text-teal-700'}`}>{b.status === 'IN_PROGRESS' ? 'In Progress' : 'Accepted'}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {b.status === 'ACCEPTED' && (
+                      <button
+                        onClick={() => updateBookingStatus(b.id, 'IN_PROGRESS')}
+                        className="px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 text-xs font-bold hover:bg-violet-100 border border-violet-200 transition-colors"
+                      >
+                        Start Service
+                      </button>
+                    )}
+                    <button
+                      onClick={() => updateBookingStatus(b.id, 'COMPLETED')}
+                      className="px-3.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                    >
+                      Mark Completed
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+      </div>
 
       {/* Booking requests */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">

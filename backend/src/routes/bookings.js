@@ -48,6 +48,17 @@ router.post('/', requireAuth, requireRole('USER'), async (req, res) => {
     if (!service) return res.status(404).json({ msg: 'Service not found' });
     if (!vehicle) return res.status(404).json({ msg: 'Vehicle not found' });
 
+    // Enforce capacity check
+    const activeBookingsCount = await bookings.countDocuments({
+      garageId: garage._id,
+      status: { $in: ['ACCEPTED', 'IN_PROGRESS'] }
+    });
+    const maxCapacity = garage.maxCapacity !== undefined ? garage.maxCapacity : 20;
+
+    if (activeBookingsCount >= maxCapacity) {
+      return res.status(400).json({ msg: 'This garage has reached its maximum capacity. No slots available at this time.' });
+    }
+
     const timeline = [{ status: 'REQUESTED', at: new Date(), by: 'USER' }];
 
     const doc = {

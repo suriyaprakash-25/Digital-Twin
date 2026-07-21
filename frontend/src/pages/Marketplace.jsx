@@ -255,6 +255,19 @@ const Marketplace = () => {
                     {g.currentStatus === 'CLOSED' && <span className="h-2 w-2 rounded-full bg-slate-400"></span>}
                     {g.currentStatus === 'AVAILABLE' ? 'Open Now' : g.currentStatus === 'BUSY' ? 'Busy' : 'Closed'}
                   </div>
+
+                  {/* Slots Available Badge */}
+                  <div className={`px-2 py-0.5 rounded-full text-xs font-bold border ml-1
+                    ${(g.maxCapacity - g.activeBookingsCount) <= 0 
+                      ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                      : (g.maxCapacity - g.activeBookingsCount) <= 5
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-teal-50 text-teal-700 border-teal-200'}`}
+                  >
+                    {(g.maxCapacity - g.activeBookingsCount) <= 0 
+                      ? '🚫 Full (0 slots left)' 
+                      : `Slots: ${g.maxCapacity - g.activeBookingsCount} / ${g.maxCapacity} remaining`}
+                  </div>
                 </div>
                 <div className="text-sm text-slate-600 mt-1">{[g.address, g.city].filter(Boolean).join(', ')}</div>
                 {g.phone ? <div className="text-sm text-slate-600 mt-1">Phone: {g.phone}</div> : null}
@@ -300,15 +313,25 @@ const Marketplace = () => {
 
                       <button
                         onClick={() => requestBooking({ garageId: g.id, serviceId: s.id })}
-                        disabled={vehicles.length === 0 || g.currentStatus === 'CLOSED'}
-                        title={g.currentStatus === 'CLOSED' ? 'Garage is currently closed' : ''}
-                        className={`px-4 py-2 rounded-xl text-white text-sm font-semibold transition-all ${
+                        disabled={vehicles.length === 0 || g.currentStatus === 'CLOSED' || (g.maxCapacity - g.activeBookingsCount) <= 0}
+                        title={
                           g.currentStatus === 'CLOSED' 
-                            ? 'bg-slate-300 cursor-not-allowed' 
+                            ? 'Garage is currently closed' 
+                            : (g.maxCapacity - g.activeBookingsCount) <= 0 
+                              ? 'Garage is at full capacity' 
+                              : ''
+                        }
+                        className={`px-4 py-2 rounded-xl text-white text-sm font-semibold transition-all ${
+                          g.currentStatus === 'CLOSED' || (g.maxCapacity - g.activeBookingsCount) <= 0
+                            ? 'bg-slate-350 cursor-not-allowed text-slate-500' 
                             : 'bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed'
                         }`}
                       >
-                        {g.currentStatus === 'CLOSED' ? 'Closed' : 'Request'}
+                        {g.currentStatus === 'CLOSED' 
+                          ? 'Closed' 
+                          : (g.maxCapacity - g.activeBookingsCount) <= 0 
+                            ? 'Full' 
+                            : 'Request'}
                       </button>
                     </div>
                   </div>

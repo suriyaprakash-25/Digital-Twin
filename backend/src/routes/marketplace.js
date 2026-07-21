@@ -25,6 +25,17 @@ router.get('/', async (req, res) => {
       .sort({ createdAt: -1 })
       .toArray();
 
+    // Aggregate active bookings counts for all listed garages
+    const activeBookings = await db.collection('bookings').aggregate([
+      { $match: { garageId: { $in: garageIds }, status: { $in: ['ACCEPTED', 'IN_PROGRESS'] } } },
+      { $group: { _id: '$garageId', count: { $sum: 1 } } }
+    ]).toArray();
+
+    const activeCountsMap = new Map();
+    for (const item of activeBookings) {
+      activeCountsMap.set(String(item._id), item.count);
+    }
+
     const servicesByGarage = new Map();
     for (const s of services) {
       const key = String(s.garageId);
@@ -56,7 +67,9 @@ router.get('/', async (req, res) => {
       availabilityMode: g.availabilityMode || 'AUTO',
       manualStatus: g.manualStatus || 'CLOSED',
       currentStatus: calculateCurrentStatus(g),
-      businessHours: g.businessHours || null
+      businessHours: g.businessHours || null,
+      maxCapacity: g.maxCapacity !== undefined ? g.maxCapacity : 20,
+      activeBookingsCount: activeCountsMap.get(String(g._id)) || 0
     }));
 
     return res.status(200).json(payload);
@@ -81,6 +94,11 @@ router.get('/garages/:garageId', async (req, res) => {
       .sort({ createdAt: -1 })
       .toArray();
 
+    const activeBookingsCount = await db.collection('bookings').countDocuments({
+      garageId: garage._id,
+      status: { $in: ['ACCEPTED', 'IN_PROGRESS'] }
+    });
+
     return res.status(200).json({
       id: String(garage._id),
       name: garage.name,
@@ -98,7 +116,9 @@ router.get('/garages/:garageId', async (req, res) => {
       availabilityMode: garage.availabilityMode || 'AUTO',
       manualStatus: garage.manualStatus || 'CLOSED',
       currentStatus: calculateCurrentStatus(garage),
-      businessHours: garage.businessHours || null
+      businessHours: garage.businessHours || null,
+      maxCapacity: garage.maxCapacity !== undefined ? garage.maxCapacity : 20,
+      activeBookingsCount
     });
   } catch (e) {
     return res.status(500).json({ msg: 'Error loading garage', error: String(e && e.message ? e.message : e) });
