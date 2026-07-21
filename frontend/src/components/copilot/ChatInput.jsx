@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import ImageUploader from './AIDoctor/ImageUploader';
-
+import { FEATURES } from '../../config/features';
 const ChatInput = ({ onSendMessage, isLoading }) => {
   const [message, setMessage] = useState('');
   const textareaRef = useRef(null);
@@ -38,11 +38,13 @@ const ChatInput = ({ onSendMessage, isLoading }) => {
         onSubmit={handleSubmit}
         className="relative flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400 transition-all p-1"
       >
-        <ImageUploader 
-          selectedImage={imageBase64} 
-          onImageSelect={setImageBase64} 
-          onClear={() => setImageBase64(null)} 
-        />
+        {FEATURES.AI_DOCTOR && (
+          <ImageUploader 
+            selectedImage={imageBase64} 
+            onImageSelect={setImageBase64} 
+            onClear={() => setImageBase64(null)} 
+          />
+        )}
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}

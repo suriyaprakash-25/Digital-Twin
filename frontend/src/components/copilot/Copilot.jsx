@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import FloatingButton from './FloatingButton';
 import CopilotWindow from './CopilotWindow';
+import { FEATURES } from '../../config/features';
 
 const Copilot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,6 +60,22 @@ const Copilot = () => {
 
     const token = localStorage.getItem('token');
     if (!token) return;
+
+    if (!FEATURES.AI_DOCTOR && text) {
+      const lowerText = text.toLowerCase();
+      if (lowerText.includes('ai doctor') || lowerText.includes('diagnos')) {
+        const userMsg = { text: text || '[Image Attached]', isUser: true, timestamp: new Date(), hasImage: !!imageBase64 };
+        setMessages(prev => [...prev, userMsg]);
+        
+        const aiMsg = { 
+          text: "This feature is currently under development and will be available in a future update.",
+          isUser: false, 
+          timestamp: new Date() 
+        };
+        setTimeout(() => setMessages(prev => [...prev, aiMsg]), 400);
+        return;
+      }
+    }
 
     const userMsg = { text: text || '[Image Attached]', isUser: true, timestamp: new Date(), hasImage: !!imageBase64 };
     setMessages(prev => [...prev, userMsg]);

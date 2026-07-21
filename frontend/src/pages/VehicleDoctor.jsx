@@ -5,6 +5,7 @@ import VehicleSelector from '../components/vehicle-doctor/VehicleSelector';
 import SymptomsChecklist from '../components/vehicle-doctor/SymptomsChecklist';
 import DiagnosisCard from '../components/vehicle-doctor/DiagnosisCard';
 import { useNavigate } from 'react-router-dom';
+import { FEATURES } from '../config/features';
 
 const VehicleDoctor = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -16,6 +17,28 @@ const VehicleDoctor = () => {
   const [diagnosisResult, setDiagnosisResult] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  if (!FEATURES.AI_DOCTOR) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="text-3xl">🚧</span>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">Feature Coming Soon</h2>
+          <p className="text-slate-600 mb-8 leading-relaxed">
+            AI Vehicle Doctor is currently under development. We're improving this feature and it will be available in a future update.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-colors shadow-sm"
+          >
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const fetchVehicles = async () => {

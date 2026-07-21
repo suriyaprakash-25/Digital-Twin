@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope } from 'lucide-react';
+import { FEATURES } from '../config/features';
 
 function normalizeRole(role) {
     const r = String(role || '').trim().toLowerCase();
@@ -22,7 +23,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         { name: 'Dashboard', href: '/user-dashboard', icon: LayoutDashboard },
         { name: 'My Profile', href: '/my-profile', icon: UserCircle2 },
         { name: 'Garages', href: '/marketplace', icon: Store },
-        { name: 'AI Doctor', href: '/vehicle-doctor', icon: Stethoscope },
+        ...(FEATURES.AI_DOCTOR ? [{ name: 'AI Doctor', href: '/vehicle-doctor', icon: Stethoscope }] : []),
         { name: 'Add Vehicle', href: '/add-vehicle', icon: PlusCircle },
         { name: 'My Vehicles', href: '/my-vehicles', icon: Car },
         { name: 'Add Service', href: '/add-service', icon: Wrench },
