@@ -106,6 +106,16 @@ router.post('/', requireAuth, requireRole('USER'), async (req, res) => {
       });
     }
 
+    // Notify requesting user
+    await notifyUser(String(req.user.id), {
+      title: 'Booking requested',
+      body: `Your booking request for ${service.title} at ${garage.name} has been sent.`,
+      data: {
+        type: 'BOOKING_REQUEST',
+        bookingId: String(result.insertedId)
+      }
+    });
+
     return res.status(201).json({ msg: 'Booking requested', id: String(result.insertedId) });
   } catch (e) {
     return res.status(500).json({ msg: 'Error creating booking', error: String(e && e.message ? e.message : e) });

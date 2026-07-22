@@ -29,6 +29,8 @@ import VehicleDoctor from './pages/VehicleDoctor';
 import DiagnosisHistory from './pages/DiagnosisHistory';
 import GarageAvailability from './pages/GarageAvailability';
 
+import { ToastProvider } from './context/ToastContext';
+
 // Admin
 import AdminLayout from './components/admin/AdminLayout';
 import AdminRoute from './components/admin/AdminRoute';
@@ -40,8 +42,9 @@ import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 function App() {
   return (
-    <Router>
-      <Routes>
+    <ToastProvider>
+      <Router>
+        <Routes>
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
@@ -101,6 +104,7 @@ function App() {
         </Route>
       </Routes>
     </Router>
+    </ToastProvider>
   );
 }
 

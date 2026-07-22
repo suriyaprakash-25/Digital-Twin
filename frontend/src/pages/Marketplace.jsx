@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { MapPin, Navigation, Search, X, ShieldCheck } from 'lucide-react';
 import SEO from '../components/SEO';
+import { useToast } from '../context/ToastContext';
 
 const Marketplace = () => {
+  const { showToast } = useToast();
   const [garages, setGarages] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
@@ -64,12 +66,12 @@ const Marketplace = () => {
     };
   }, [headers]);
 
-  const requestBooking = async ({ garageId, serviceId }) => {
+  const requestBooking = async ({ garageId, serviceId, serviceTitle, garageName }) => {
     setError('');
     setMessage('');
 
     if (!selectedVehicleId) {
-      setError('Please add/select a vehicle first.');
+      showToast('Please add/select a vehicle first.', 'warning');
       return;
     }
 
@@ -86,9 +88,9 @@ const Marketplace = () => {
         headers
       );
 
-      setMessage('Booking requested. The garage will respond soon.');
+      showToast(`Booking requested for ${serviceTitle || 'service'}! The garage will respond soon.`, 'success');
     } catch (e) {
-      setError(e.response?.data?.msg || 'Failed to request booking');
+      showToast(e.response?.data?.msg || 'Failed to request booking', 'error');
     }
   };
 
@@ -312,7 +314,7 @@ const Marketplace = () => {
                       </div>
 
                       <button
-                        onClick={() => requestBooking({ garageId: g.id, serviceId: s.id })}
+                        onClick={() => requestBooking({ garageId: g.id, serviceId: s.id, serviceTitle: s.title, garageName: g.name })}
                         disabled={vehicles.length === 0 || g.currentStatus === 'CLOSED' || (g.maxCapacity - g.activeBookingsCount) <= 0}
                         title={
                           g.currentStatus === 'CLOSED' 
