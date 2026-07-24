@@ -28,6 +28,8 @@ import TransferOwnership from './pages/TransferOwnership';
 import VehicleDoctor from './pages/VehicleDoctor';
 import DiagnosisHistory from './pages/DiagnosisHistory';
 import GarageAvailability from './pages/GarageAvailability';
+import FleetsPage from './pages/FleetsPage';
+import GaragePartnersPage from './pages/GaragePartnersPage';
 
 import { ToastProvider } from './context/ToastContext';
 
@@ -52,6 +54,8 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOtp />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/fleets" element={<FleetsPage />} />
+        <Route path="/garage-partners" element={<GaragePartnersPage />} />
         <Route path="/passport/:vehicleId" element={<Passport />} />
 
         {/* Admin routes */}

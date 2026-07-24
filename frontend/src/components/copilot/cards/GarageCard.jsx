@@ -33,7 +33,7 @@ const GarageCard = ({ data }) => {
 
           <div className="mt-4 flex gap-2">
             <button className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold py-2 rounded-lg transition-colors">
-              Book Appointment
+              Request
             </button>
           </div>
         </div>

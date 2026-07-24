@@ -169,9 +169,11 @@ const LandingPage = () => {
 
         {/* Nav links */}
         <div className="hidden md:flex gap-6 lg:gap-9 items-center">
-          {[['features', 'Features'], ['how-it-works', 'How It Works'], ['for-garages', 'For Garages'], ['analytics', 'Analytics']].map(([id, label]) => (
+          {[['features', 'Features'], ['how-it-works', 'How It Works']].map(([id, label]) => (
             <button key={id} onClick={scrollTo(id)} className="nav-a" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{label}</button>
           ))}
+          <Link to="/fleets" className="nav-a">For Fleets</Link>
+          <Link to="/garage-partners" className="nav-a">For Garages</Link>
         </div>
 
         {/* Auth CTAs */}
@@ -231,12 +233,6 @@ const LandingPage = () => {
                   Get Started
                   <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
                 </Link>
-                <button
-                  onClick={scrollTo('features')}
-                  className="border border-on-secondary-fixed text-on-secondary-fixed flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-label-md text-label-md hover:bg-surface-container-low transition-all text-center"
-                >
-                  Explore Features
-                </button>
               </div>
             </div>
           </div>
@@ -244,14 +240,6 @@ const LandingPage = () => {
           <div className="w-full md:w-1/2 bg-surface-container-low flex items-center justify-center p-6 pt-2 md:p-10 border-t md:border-l md:border-t-0 border-outline-variant">
             <div className="relative w-full aspect-[1.79]">
               <img alt="Garage Scene" className="w-full h-full object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk4bG_vORRaC8TqJQ2YDu4CTj1TluAhujbKRLmbilwg4F2zUHl63eYWwHkv4znCgknFRNEvdYVTWZKSlT4VNsROIXA3T89oudaVPZV19d5ugjnnr8VIfvSuN-7Siy3GXSlGtwoeYEfvWqGIHz_w9YytM2h3s_SnpHnkrI6gQDnzr7Wss7oLVQvSx7P6Uj15fzhXQVZ58ulN90baB2k1nMhV1Oh77E5j_02-2wIxGDhSKfnSev4tDwT-psdmWMGJ2qzsbSphImQxs"/>
-              {/* Decorative Floating Data Nodes (Vector Style) */}
-              <div className="absolute top-4 right-4 sm:top-8 sm:right-8 py-2 px-3 canvas-card rounded-lg flex items-center gap-2 animate-bounce">
-                <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>analytics</span>
-                <div>
-                  <p className="text-[9px] uppercase font-bold text-outline leading-tight">Real-time Data</p>
-                  <p className="font-bold text-[12px] text-on-surface leading-tight">98.2% Accurate</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -611,124 +599,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ════════════════════════════════
-           FOR GARAGES
-      ════════════════════════════════ */}
-      <section id="for-garages" className="py-16 md:py-28 px-4 md:px-8 bg-teal-50/50">
-        <div className="max-w-[1100px] mx-auto text-center">
-          <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#14b8a6', letterSpacing: '.12em', textTransform: 'uppercase' }}>FOR GARAGE PARTNERS</span>
-          <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', marginBottom: '1rem', color: '#0f172a' }}>
-            Grow Your Workshop Online
-          </h2>
-          <p className="text-sm sm:text-base text-slate-500 max-w-[540px] mx-auto mb-12 leading-relaxed">
-            Join our platform as a verified partner. Manage bookings, verify service claims, and build lasting trust with thousands of vehicle owners.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { icon: <Globe size={28} color="#5eead4" />, title: 'Online Presence', desc: 'Create a verified garage profile with services, pricing, and availability. Get discovered by thousands of vehicle owners in your area.' },
-              { icon: <Users size={28} color="#14b8a6" />, title: 'Booking Management', desc: 'Accept and track service bookings in real time with a full status timeline — from request through completion.' },
-              { icon: <Award size={28} color="#a78bfa" />, title: 'Trust Certification', desc: 'Earn verification badges by cross-validating service records. Higher trust ratings attract premium customers and repeat business.' },
-            ].map(item => (
-              <div key={item.title} className="card" style={{ padding: '2rem', textAlign: 'left' }}>
-                <div style={{ width: 56, height: 56, borderRadius: 15, background: '#f0fdfa', border: '1px solid #99f6e4', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                  {item.icon}
-                </div>
-                <h3 style={{ fontSize: '1.08rem', fontWeight: 700, marginBottom: '.7rem', color: '#0f172a' }}>{item.title}</h3>
-                <p style={{ fontSize: '.88rem', color: '#64748b', lineHeight: 1.72 }}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
 
-          <div style={{ marginTop: '2.8rem' }}>
-            <Link to="/signup" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: '#0d9488', border: '1px solid #0d9488',
-              color: '#fff', fontWeight: 700, fontSize: '.97rem',
-              padding: '.85rem 2.4rem', borderRadius: 12, textDecoration: 'none',
-              transition: 'all .2s', boxShadow: '0 4px 20px rgba(13,148,136,.3)',
-            }}
-              className="w-full sm:w-auto justify-center"
-              onMouseEnter={e => { e.currentTarget.style.background = '#0f766e'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(13,148,136,.4)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#0d9488'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(13,148,136,.3)'; }}>
-              Register Your Garage <ArrowRight size={17} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════
-           ANALYTICS SECTION
-      ════════════════════════════════ */}
-      <section id="analytics" className="py-16 md:py-28 px-4 md:px-8 bg-white">
-        <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-          {/* Analytics visual */}
-          <div className="float bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-xl order-2 lg:order-1 max-w-md mx-auto lg:max-w-none w-full">
-            <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '1.2rem' }}>FLEET ANALYTICS</div>
-            {/* KPI cards */}
-            <div className="grid grid-cols-3 gap-2 mb-6">
-              {[{ l: 'Total Fleet KM', v: '1,24,820' }, { l: 'Services Logged', v: '38' }, { l: 'Avg Vehicle IQ', v: '89/100' }].map(k => (
-                <div key={k.l} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12 }} className="p-2 sm:p-3 text-center">
-                  <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-none">{k.v}</div>
-                  <div className="text-[8px] sm:text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-wider leading-tight">{k.l}</div>
-                </div>
-              ))}
-            </div>
-            {/* Bar chart mock */}
-            <div className="mb-4 w-full overflow-hidden">
-              <div style={{ fontSize: '.72rem', color: '#94a3b8', marginBottom: '.6rem' }}>Monthly Expense Trend (₹)</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 80 }}>
-                {[35, 55, 42, 68, 80, 62, 90, 74, 58, 88, 76, 95].map((h, i) => (
-                  <div key={i} style={{ flex: 1, background: `linear-gradient(to top,#0d9488,#5eead4)`, borderRadius: '4px 4px 0 0', height: h + '%', opacity: i === 11 ? 1 : 0.5 + i * 0.04 }} />
-                ))}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].map(m => (
-                  <span key={m} style={{ flex: 1, textAlign: 'center', fontSize: '.58rem', color: '#cbd5e1' }}>{m}</span>
-                ))}
-              </div>
-            </div>
-            {/* Category donut placeholder */}
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              {[
-                { c: '#0d9488', l: 'Periodic Maintenance', pct: '42%' },
-                { c: '#14b8a6', l: 'Repairs', pct: '28%' },
-                { c: '#0f766e', l: 'Major Service', pct: '18%' },
-                { c: '#d97706', l: 'Breakdown', pct: '12%' },
-              ].map(cat => (
-                <div key={cat.l} className="flex items-center gap-1.5 min-w-0">
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.c, flexShrink: 0 }} />
-                  <span style={{ fontSize: '.68rem', color: '#64748b' }} className="truncate">{cat.l}</span>
-                  <span style={{ fontSize: '.68rem', color: cat.c, fontWeight: 700, marginLeft: 'auto' }} className="shrink-0">{cat.pct}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#16a34a', letterSpacing: '.12em', textTransform: 'uppercase' }}>FLEET ANALYTICS</span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-5 tracking-tight leading-tight">
-              Your Fleet at a Glance — Always
-            </h2>
-            <p className="text-sm sm:text-base text-slate-500 leading-relaxed mb-8">
-              Real-time dashboards with expense trends, service category breakdowns, per-vehicle mileage distributions and fleet-wide Vehicle IQ scores — all rendered in beautiful, interactive charts.
-            </p>
-            <div className="flex flex-col gap-3">
-              {[
-                'Monthly expense trend charts with year-over-year view',
-                'Service category donut chart (Periodic / Repair / Major)',
-                'Per-vehicle mileage and usage distribution',
-                'Fleet-wide Vehicle IQ Score aggregation',
-                'Total services logged and cost summaries',
-              ].map(item => (
-                <div key={item} className="flex items-start gap-3">
-                  <Zap size={14} color="#16a34a" className="shrink-0 mt-1" />
-                  <span className="text-sm text-slate-700 leading-relaxed">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ════════════════════════════════
            FINAL CTA
@@ -747,29 +618,19 @@ const LandingPage = () => {
                 Start Protecting Your <span className="shimmer-text">Vehicle Today</span>
               </h2>
               <p className="text-sm sm:text-base text-slate-500 max-w-md mx-auto mb-10 leading-relaxed font-body-lg">
-                Join thousands of vehicle owners who trust our platform to track, protect, and maximise the value of their vehicles.
+                Join DrivePortz to track, protect, and maximise the value of your vehicle.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <div className="flex flex-col gap-4 justify-center items-center">
                 <Link to="/signup" className="glow-cta w-full sm:w-auto justify-center" style={{
                   background: 'linear-gradient(135deg,#0d9488,#0f766e)',
                   color: '#fff', fontWeight: 700, fontSize: '1rem',
                   padding: '.95rem 2.6rem', borderRadius: 12, textDecoration: 'none',
                   display: 'flex', alignItems: 'center', gap: 8,
                 }}>
-                  Create Free Account <ArrowRight size={17} />
+                  Get Started <ArrowRight size={17} />
                 </Link>
-                <Link to="/login" style={{
-                  background: '#fff', color: '#374151',
-                  fontWeight: 600, fontSize: '1rem',
-                  padding: '.95rem 2.6rem', borderRadius: 12, textDecoration: 'none',
-                  border: '1px solid #e2e8f0',
-                  transition: 'background .2s',
-                  boxShadow: '0 1px 4px rgba(0,0,0,.06)',
-                }}
-                  className="w-full sm:w-auto justify-center flex"
-                  onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}>
-                  Sign In
+                <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+                  Already have an account? Sign In
                 </Link>
               </div>
             </div>
@@ -791,6 +652,8 @@ const LandingPage = () => {
           <div>
             <h4 className="text-slate-900 font-bold mb-6 tracking-wide text-sm">PLATFORM</h4>
             <ul className="space-y-4">
+              <li><Link to="/fleets" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">For Fleets</Link></li>
+              <li><Link to="/garage-partners" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">For Garages</Link></li>
               <li><Link to="/login" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">Log In</Link></li>
               <li><Link to="/signup" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">Sign Up</Link></li>
             </ul>
