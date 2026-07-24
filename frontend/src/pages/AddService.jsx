@@ -5,6 +5,7 @@ import { Wrench, CheckCircle, Calendar, Hash, IndianRupee, MapPin, Building, Plu
 
 const AddService = () => {
     const [vehicles, setVehicles] = useState([]);
+    const [isGarage, setIsGarage] = useState(false);
     const [formData, setFormData] = useState({
         // Core
         vehicleId: '',
@@ -41,22 +42,55 @@ const AddService = () => {
     const streamRef = useRef(null);
 
     useEffect(() => {
-        const fetchVehicles = async () => {
+        const fetchVehiclesAndGarage = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, {
+                const userRaw = localStorage.getItem('user');
+                const user = userRaw ? JSON.parse(userRaw) : null;
+                const checkGarage = user && (user.role === 'GARAGE' || user.role === 'garage' || user.role === 'service_center' || user.role === 'servicecenter');
+                setIsGarage(!!checkGarage);
+
+                const endpoint = checkGarage ? '/api/vehicles/all' : '/api/vehicles/myvehicles';
+                const vRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${endpoint}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setVehicles(res.data);
-                if (res.data.length > 0) {
-                    setFormData(prev => ({ ...prev, vehicleId: res.data[0].id }));
+                setVehicles(vRes.data);
+                
+                let selectedVehicleId = '';
+                if (vRes.data.length > 0) {
+                    selectedVehicleId = vRes.data[0].id;
                 }
+
+                let garageDetails = {};
+                if (checkGarage) {
+                    try {
+                        const gRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        if (gRes.data && gRes.data.exists) {
+                            garageDetails = {
+                                garageName: gRes.data.name || '',
+                                location: gRes.data.city || ''
+                            };
+                        }
+                    } catch (gErr) {
+                        console.error('Error fetching garage details:', gErr);
+                    }
+                }
+
+                setFormData(prev => ({
+                    ...prev,
+                    vehicleId: selectedVehicleId,
+                    ...garageDetails
+                }));
+
             } catch (err) {
                 console.error('Error fetching vehicles:', err);
-                setStatus({ type: 'error', message: 'Failed to load your vehicles.' });
+                setStatus({ type: 'error', message: 'Failed to load vehicles.' });
             }
         };
-        fetchVehicles();
+
+        fetchVehiclesAndGarage();
     }, []);
 
     const handleChange = (e) => {
@@ -208,7 +242,11 @@ const AddService = () => {
             setStatus({ type: 'success', message: 'Production-grade service logged successfully!' });
 
             setTimeout(() => {
-                navigate(`/service-history/${formData.vehicleId}`);
+                if (isGarage) {
+                    navigate('/garage-dashboard');
+                } else {
+                    navigate(`/service-history/${formData.vehicleId}`);
+                }
             }, 1500);
 
         } catch (err) {
@@ -284,7 +322,7 @@ const AddService = () => {
                     </div>
                     <div className="p-3 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6">
                         {renderInputGroup("Select Vehicle *", "vehicleId", "text", <Car className="h-4 w-4 md:h-5 md:w-5" />, "",
-                            vehicles.map(v => ({ value: v.id, label: `${v.vehicleNumber} - ${v.brand || ''} ${v.model}` })),
+                            vehicles.map(v => ({ value: v.id, label: v.vehicleNumber ? `${v.vehicleNumber} - ${v.brand || ''} ${v.model} (${v.ownerName || 'No Owner'})` : `${v.brand || ''} ${v.model}` })),
                             { required: true }
                         )}
                         {renderInputGroup("Service Date *", "serviceDate", "date", <Calendar className="h-4 w-4 md:h-5 md:w-5" />, "", null, { required: true })}

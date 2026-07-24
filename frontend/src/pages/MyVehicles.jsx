@@ -217,19 +217,13 @@ const MyVehicles = () => {
                                 )}
                             </div>
 
-                            <div className="px-4 py-3 md:px-8 md:py-5 bg-slate-50/80 border-t border-slate-100 flex justify-between items-center mt-auto">
+                            <div className="px-4 py-3 md:px-8 md:py-5 bg-slate-50/80 border-t border-slate-100 flex justify-center items-center mt-auto">
                                 <button
                                     onClick={() => navigate(`/service-history/${vehicle.id}`)}
-                                    className="text-xs md:text-sm font-bold text-slate-655 hover:text-teal-600 flex items-center gap-1.5 transition-colors"
+                                    className="w-full text-center text-xs md:text-sm font-bold text-teal-700 hover:text-white transition-all py-2.5 px-4 bg-teal-50 hover:bg-teal-600 border border-teal-200 hover:border-teal-600 rounded-xl flex items-center justify-center gap-2 shadow-sm"
                                 >
                                     <History className="h-4 w-4 md:h-4.5 md:w-4.5" />
-                                    View History
-                                </button>
-                                <button
-                                    onClick={() => navigate('/add-service')}
-                                    className="text-xs md:text-sm font-bold text-white transition-all px-3 py-1.5 md:px-4 md:py-2 bg-teal-600 hover:bg-teal-700 rounded-lg shadow-sm hover:shadow-md"
-                                >
-                                    Add Service
+                                    View Service History & Bills
                                 </button>
                             </div>
                         </div>

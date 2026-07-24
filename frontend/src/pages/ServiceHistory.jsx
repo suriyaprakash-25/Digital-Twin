@@ -12,6 +12,10 @@ const ServiceHistory = () => {
     const [lightboxUrl, setLightboxUrl] = useState(null);
     const [activeMenuId, setActiveMenuId] = useState(null);
 
+    const userRaw = localStorage.getItem('user');
+    const user = userRaw ? JSON.parse(userRaw) : null;
+    const isGarage = user && (user.role === 'GARAGE' || user.role === 'garage' || user.role === 'service_center' || user.role === 'servicecenter');
+
     // Close menu when clicking outside
     useEffect(() => {
         const handleClickOutside = () => setActiveMenuId(null);
@@ -24,12 +28,11 @@ const ServiceHistory = () => {
             try {
                 const token = localStorage.getItem('token');
 
-                // Fetch vehicles to get current vehicle details
-                const vRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, {
+                // Fetch vehicle directly by ID
+                const vRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/${vehicleId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                const currentVehicle = vRes.data.find(v => v.id === vehicleId);
-                setVehicle(currentVehicle);
+                setVehicle(vRes.data);
 
                 // Fetch services for this vehicle
                 const sRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/services/${vehicleId}`, {
@@ -73,11 +76,11 @@ const ServiceHistory = () => {
     return (
         <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 lg:pb-8">
             <Link
-                to="/my-vehicles"
+                to={isGarage ? "/garage-dashboard" : "/my-vehicles"}
                 className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-teal-600 mb-6 transition-colors bg-white px-4 py-2 border border-slate-200 rounded-xl shadow-sm hover:shadow-md"
             >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Fleet
+                {isGarage ? "Back to Dashboard" : "Back to Fleet"}
             </Link>
 
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-10 gap-4 bg-white border border-slate-100 p-4 md:p-8 rounded-2xl md:rounded-3xl shadow-sm relative overflow-hidden">
@@ -103,14 +106,6 @@ const ServiceHistory = () => {
                         </div>
                     )}
                 </div>
-
-                <Link
-                    to="/add-service"
-                    className="relative z-10 px-4 py-2 md:px-6 md:py-3 bg-amber-500 hover:bg-amber-600 text-white text-xs md:text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
-                >
-                    <Wrench className="h-4 w-4 md:h-5 md:w-5" />
-                    Log New Service
-                </Link>
             </header>
 
             {loading ? (
@@ -123,16 +118,9 @@ const ServiceHistory = () => {
                         <Wrench className="h-12 w-12 text-amber-400" />
                     </div>
                     <h3 className="text-2xl font-extrabold text-slate-900 mb-3">No Operational Records</h3>
-                    <p className="text-slate-500 mb-8 max-w-md mx-auto font-medium text-lg">
-                        There are no production-grade service maintenance logs for this vehicle. Begin building out the service twin now.
+                    <p className="text-slate-500 max-w-md mx-auto font-medium text-lg">
+                        There are no production-grade service maintenance logs for this vehicle. When a partner garage performs service, the records will appear here on your timeline.
                     </p>
-                    <Link
-                        to="/add-service"
-                        className="inline-flex items-center px-8 py-3.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-all font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 border border-transparent"
-                    >
-                        <Wrench className="h-5 w-5 mr-2" />
-                        Log First Production Record
-                    </Link>
                 </div>
             ) : (
                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-10 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
@@ -183,35 +171,39 @@ const ServiceHistory = () => {
                                                     </span>
                                                     
                                                     {/* 3-Dot Menu Button */}
-                                                    <button 
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setActiveMenuId(activeMenuId === service.id ? null : service.id);
-                                                        }}
-                                                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors self-start"
-                                                    >
-                                                        <MoreVertical className="h-5 w-5" />
-                                                    </button>
-                                                </div>
+                                                    {isGarage && (
+                                                        <>
+                                                            <button 
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setActiveMenuId(activeMenuId === service.id ? null : service.id);
+                                                                }}
+                                                                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors self-start"
+                                                            >
+                                                                <MoreVertical className="h-5 w-5" />
+                                                            </button>
 
-                                                {/* Dropdown Menu */}
-                                                {activeMenuId === service.id && (
-                                                    <div className="absolute top-10 right-0 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setActiveMenuId(null);
-                                                                handleDeleteService(service.id);
-                                                            }}
-                                                            className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center gap-2 transition-colors"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                            Delete Record
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                            {/* Dropdown Menu */}
+                                                            {activeMenuId === service.id && (
+                                                                <div className="absolute top-10 right-0 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setActiveMenuId(null);
+                                                                            handleDeleteService(service.id);
+                                                                        }}
+                                                                        className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center gap-2 transition-colors"
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                        Delete Record
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 

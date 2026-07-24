@@ -30,7 +30,6 @@ router.post('/add', requireAuth, async (req, res) => {
   const services = db.collection('services');
   const vehicles = db.collection('vehicles');
 
-  const ownerId = req.user.id;
   let vehicleObjectId;
   try {
     vehicleObjectId = new ObjectId(vehicleId);
@@ -38,9 +37,13 @@ router.post('/add', requireAuth, async (req, res) => {
     return res.status(400).json({ msg: 'Invalid vehicle ID' });
   }
 
-  const vehicle = await vehicles.findOne({ _id: vehicleObjectId, ownerId });
+  const vehicle = await vehicles.findOne({ _id: vehicleObjectId, isArchived: { $ne: true } });
   if (!vehicle) {
     return res.status(404).json({ msg: 'Vehicle not found or unauthorized' });
+  }
+
+  if (req.user.role !== 'GARAGE' && req.user.role !== 'ADMIN' && String(vehicle.ownerId) !== req.user.id) {
+    return res.status(403).json({ msg: 'Unauthorized to add service to this vehicle' });
   }
 
   const last = await services
@@ -71,6 +74,8 @@ router.post('/add', requireAuth, async (req, res) => {
   const laborCostNum = Number.isNaN(parseFloat(data.laborCost)) ? 0.0 : parseFloat(data.laborCost);
   const totalCost = totalPartsCost + laborCostNum;
 
+  const isGarage = req.user.role === 'GARAGE';
+
   const newService = {
     vehicleId,
     serviceDate,
@@ -86,7 +91,7 @@ router.post('/add', requireAuth, async (req, res) => {
 
     garageName: data.garageName,
     location: data.location,
-    verifiedService: data.verifiedService === true,
+    verifiedService: isGarage ? true : (data.verifiedService === true),
 
     recommendedKm: data.recommendedKm,
     recommendedDate: data.recommendedDate,
@@ -95,16 +100,19 @@ router.post('/add', requireAuth, async (req, res) => {
 
     abnormalKmJump: flaggedAbnormalJump,
     confidenceScore: flaggedAbnormalJump ? 80 : 100,
-    ownerId,
-    createdBy: ownerId,
+    ownerId: String(vehicle.ownerId),
+    createdBy: req.user.id,
     role: req.user.role || 'Vehicle Owner',
-    verificationStatus: 'Pending',
+    verificationStatus: isGarage ? 'Verified' : 'Pending',
     isArchived: false,
     createdAt: new Date()
   };
 
   try {
     await services.insertOne(newService);
+    if (odometerKm > (vehicle.currentOdometerKm || 0)) {
+      await vehicles.updateOne({ _id: vehicleObjectId }, { $set: { currentOdometerKm: odometerKm } });
+    }
     return res.status(201).json({ msg: 'Service record added successfully' });
   } catch (e) {
     return res.status(500).json({ msg: 'Error adding service record', error: String(e && e.message ? e.message : e) });
@@ -117,7 +125,6 @@ router.get('/:vehicle_id', requireAuth, async (req, res) => {
   const services = db.collection('services');
   const vehicles = db.collection('vehicles');
 
-  const ownerId = req.user.id;
   let vehicleObjectId;
   try {
     vehicleObjectId = new ObjectId(vehicleId);
@@ -125,10 +132,15 @@ router.get('/:vehicle_id', requireAuth, async (req, res) => {
     return res.status(400).json({ msg: 'Invalid vehicle ID' });
   }
 
-  const vehicle = await vehicles.findOne({ _id: vehicleObjectId, ownerId });
+  const vehicle = await vehicles.findOne({ _id: vehicleObjectId, isArchived: { $ne: true } });
   if (!vehicle) {
-    return res.status(404).json({ msg: 'Vehicle not found or unauthorized' });
+    return res.status(404).json({ msg: 'Vehicle not found' });
   }
+
+  if (req.user.role !== 'GARAGE' && req.user.role !== 'ADMIN' && String(vehicle.ownerId) !== req.user.id) {
+    return res.status(403).json({ msg: 'Unauthorized to view service history for this vehicle' });
+  }
+
 
   const cursor = services
     .find({ vehicleId, isArchived: { $ne: true } })

@@ -174,6 +174,119 @@ router.get('/myvehicles', requireAuth, async (req, res) => {
   return res.status(200).json(results);
 });
 
+router.get('/all', requireAuth, async (req, res) => {
+  const db = getDb();
+  const vehicles = db.collection('vehicles');
+
+  if (req.user.role !== 'GARAGE' && req.user.role !== 'ADMIN') {
+    return res.status(403).json({ msg: 'Forbidden' });
+  }
+
+  const cursor = vehicles.find({ isArchived: { $ne: true } });
+  const results = [];
+
+  for await (const v of cursor) {
+    results.push({
+      id: String(v._id),
+      vehicleNumber: v.vehicleNumber,
+      brand: v.brand,
+      model: v.model,
+      variant: v.variant,
+      vehicleType: v.vehicleType,
+      year: v.manufacturingYear || v.year,
+      fuelType: v.fuelType,
+      color: v.color,
+      registrationDate: v.registrationDate,
+      registeredRTO: v.registeredRTO,
+      ownerName: v.ownerName,
+      phone: v.phone,
+      ownershipCount: v.ownershipCount,
+      purchaseDate: v.purchaseDate,
+      purchasePrice: v.purchasePrice,
+      insuranceProvider: v.insuranceProvider,
+      insuranceExpiry: v.insuranceExpiry,
+      pucExpiry: v.pucExpiry,
+      rcExpiry: v.rcExpiry,
+      roadTaxValidTill: v.roadTaxValidTill,
+      fitnessExpiry: v.fitnessExpiry,
+      chassisNumber: v.chassisNumber,
+      engineNumber: v.engineNumber,
+      currentOdometerKm: v.currentOdometerKm,
+      averageMonthlyKm: v.averageMonthlyKm,
+      ownerId: v.ownerId,
+      rcBookUrl: v.rcBookUrl,
+      insuranceDocumentUrl: v.insuranceDocumentUrl,
+      verificationStatus: v.verificationStatus || 'Pending',
+      isArchived: v.isArchived || false,
+      createdAt: v.createdAt ? new Date(v.createdAt).toISOString() : null
+    });
+  }
+
+  return res.status(200).json(results);
+});
+
+router.get('/:vehicle_id', requireAuth, async (req, res) => {
+  const vehicleId = req.params.vehicle_id;
+  let objectId;
+  try {
+    objectId = new ObjectId(vehicleId);
+  } catch (e) {
+    return res.status(400).json({ msg: 'Invalid vehicle ID' });
+  }
+
+  const db = getDb();
+  const vehicles = db.collection('vehicles');
+
+  try {
+    const vehicle = await vehicles.findOne({ _id: objectId, isArchived: { $ne: true } });
+    if (!vehicle) {
+      return res.status(404).json({ msg: 'Vehicle not found' });
+    }
+
+    if (req.user.role !== 'GARAGE' && req.user.role !== 'ADMIN' && String(vehicle.ownerId) !== req.user.id) {
+      return res.status(403).json({ msg: 'Unauthorized' });
+    }
+
+    return res.status(200).json({
+      id: String(vehicle._id),
+      vehicleNumber: vehicle.vehicleNumber,
+      brand: vehicle.brand,
+      model: vehicle.model,
+      variant: vehicle.variant,
+      vehicleType: vehicle.vehicleType,
+      year: vehicle.manufacturingYear || vehicle.year,
+      fuelType: vehicle.fuelType,
+      color: vehicle.color,
+      registrationDate: vehicle.registrationDate,
+      registeredRTO: vehicle.registeredRTO,
+      ownerName: vehicle.ownerName,
+      phone: vehicle.phone,
+      ownershipCount: vehicle.ownershipCount,
+      purchaseDate: vehicle.purchaseDate,
+      purchasePrice: vehicle.purchasePrice,
+      insuranceProvider: vehicle.insuranceProvider,
+      insuranceExpiry: vehicle.insuranceExpiry,
+      pucExpiry: vehicle.pucExpiry,
+      rcExpiry: vehicle.rcExpiry,
+      roadTaxValidTill: vehicle.roadTaxValidTill,
+      fitnessExpiry: vehicle.fitnessExpiry,
+      chassisNumber: vehicle.chassisNumber,
+      engineNumber: vehicle.engineNumber,
+      currentOdometerKm: vehicle.currentOdometerKm,
+      averageMonthlyKm: vehicle.averageMonthlyKm,
+      ownerId: vehicle.ownerId,
+      rcBookUrl: vehicle.rcBookUrl,
+      insuranceDocumentUrl: vehicle.insuranceDocumentUrl,
+      verificationStatus: vehicle.verificationStatus || 'Pending',
+      isArchived: vehicle.isArchived || false,
+      createdAt: vehicle.createdAt ? new Date(vehicle.createdAt).toISOString() : null
+    });
+  } catch (e) {
+    return res.status(500).json({ msg: 'Error getting vehicle details', error: String(e && e.message ? e.message : e) });
+  }
+});
+
+
 router.put('/:vehicle_id', requireAuth, upload.fields([{ name: 'rcBook', maxCount: 1 }, { name: 'insuranceDocument', maxCount: 1 }]), async (req, res) => {
   const vehicleId = req.params.vehicle_id;
   const rcBookFile = req.files && req.files.rcBook ? req.files.rcBook[0] : null;
