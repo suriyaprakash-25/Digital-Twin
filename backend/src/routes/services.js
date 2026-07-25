@@ -119,6 +119,164 @@ router.post('/add', requireAuth, async (req, res) => {
   }
 });
 
+// GET all services for a garage
+router.get('/garage/all', requireAuth, async (req, res) => {
+  if (req.user.role !== 'GARAGE') {
+    return res.status(403).json({ msg: 'Unauthorized: Only garages can access this endpoint' });
+  }
+
+  const { page = 1, limit = 10, search = '', category = 'ALL', sortBy = 'date', sortOrder = 'desc' } = req.query;
+  const pageNum = parseInt(page, 10);
+  const limitNum = parseInt(limit, 10);
+  const skip = (pageNum - 1) * limitNum;
+
+  const db = getDb();
+  const services = db.collection('services');
+
+  // Match condition for the garage
+  const matchCondition = {
+    createdBy: req.user.id,
+    isArchived: { $ne: true }
+  };
+
+  if (category !== 'ALL') {
+    matchCondition.serviceCategory = category;
+  }
+
+  // Build aggregation pipeline
+  const pipeline = [
+    { $match: matchCondition },
+    {
+      $addFields: {
+        vehicleObjectId: { $toObjectId: "$vehicleId" }
+      }
+    },
+    {
+      $lookup: {
+        from: 'vehicles',
+        localField: 'vehicleObjectId',
+        foreignField: '_id',
+        as: 'vehicleDetails'
+      }
+    },
+    {
+      $unwind: { path: "$vehicleDetails", preserveNullAndEmptyArrays: true }
+    },
+    {
+      $addFields: {
+        ownerObjectId: { $toObjectId: "$ownerId" }
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'ownerObjectId',
+        foreignField: '_id',
+        as: 'ownerDetails'
+      }
+    },
+    {
+      $unwind: { path: "$ownerDetails", preserveNullAndEmptyArrays: true }
+    }
+  ];
+
+  // Search filter
+  if (search.trim() !== '') {
+    const s = search.trim();
+    // Use regex for case-insensitive search
+    const regex = new RegExp(s, 'i');
+    pipeline.push({
+      $match: {
+        $or: [
+          { 'vehicleDetails.registrationNumber': regex },
+          { 'ownerDetails.name': regex },
+          { 'ownerDetails.email': regex },
+          { serviceType: regex }
+        ]
+      }
+    });
+  }
+
+  // Sorting
+  let sortObj = {};
+  const order = sortOrder === 'asc' ? 1 : -1;
+  if (sortBy === 'cost') {
+    sortObj = { totalCost: order };
+  } else {
+    // default date
+    sortObj = { serviceDate: order };
+  }
+  pipeline.push({ $sort: sortObj });
+
+  // Facet for total count and paginated data
+  pipeline.push({
+    $facet: {
+      metadata: [{ $count: "total" }],
+      data: [{ $skip: skip }, { $limit: limitNum }]
+    }
+  });
+
+  try {
+    const result = await services.aggregate(pipeline).toArray();
+    
+    // Also get overall stats for this garage
+    const statsPipeline = [
+      { $match: { createdBy: req.user.id, isArchived: { $ne: true } } },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalCost" },
+          totalServices: { $sum: 1 }
+        }
+      }
+    ];
+    const statsResult = await services.aggregate(statsPipeline).toArray();
+    
+    const totalCount = result[0].metadata.length > 0 ? result[0].metadata[0].total : 0;
+    const servicesData = result[0].data.map(s => ({
+      id: String(s._id),
+      vehicleId: s.vehicleId,
+      serviceDate: s.serviceDate,
+      odometerKm: s.odometerKm || s.mileage,
+      serviceCategory: s.serviceCategory || 'Periodic Maintenance',
+      serviceType: s.serviceType,
+      partsReplaced: s.partsReplaced || [],
+      laborCost: s.laborCost || 0,
+      totalCost: s.totalCost || s.cost,
+      warrantyMonths: s.warrantyMonths,
+      mechanicNotes: s.mechanicNotes,
+      verificationStatus: s.verificationStatus || 'Pending',
+      createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : null,
+      vehicle: s.vehicleDetails ? {
+        make: s.vehicleDetails.make,
+        model: s.vehicleDetails.model,
+        registrationNumber: s.vehicleDetails.registrationNumber,
+        year: s.vehicleDetails.year
+      } : null,
+      customer: s.ownerDetails ? {
+        name: s.ownerDetails.name,
+        email: s.ownerDetails.email
+      } : null,
+      billPhotoUrls: Array.isArray(s.billPhotoUrls) ? s.billPhotoUrls : (s.billPhotoUrl ? [s.billPhotoUrl] : []),
+    }));
+
+    const stats = statsResult.length > 0 ? statsResult[0] : { totalRevenue: 0, totalServices: 0 };
+
+    return res.status(200).json({
+      services: servicesData,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limitNum),
+      currentPage: pageNum,
+      stats: {
+        totalRevenue: stats.totalRevenue,
+        totalServices: stats.totalServices
+      }
+    });
+  } catch (e) {
+    return res.status(500).json({ msg: 'Error fetching garage services', error: String(e && e.message ? e.message : e) });
+  }
+});
+
 router.get('/:vehicle_id', requireAuth, async (req, res) => {
   const vehicleId = req.params.vehicle_id;
   const db = getDb();
