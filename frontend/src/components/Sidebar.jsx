@@ -33,7 +33,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         { name: 'Dashboard', href: '/garage-dashboard', icon: LayoutDashboard },
         { name: 'Garage Profile', href: '/garage-profile', icon: Building2 },
         { name: 'Your Services', href: '/garage-services', icon: Wrench },
-        { name: 'Add Service', href: '/add-service', icon: Wrench },
+        { name: 'Add Service', href: '/add-service', icon: PlusCircle },
         { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];
 
