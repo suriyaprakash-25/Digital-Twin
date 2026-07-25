@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Filter, Calendar, Info, MapPin, IndianRupee, Shield, Tool, ArrowLeft, ArrowRight, X } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
+import { Search, Filter, Calendar, Info, MapPin, IndianRupee, Shield, Wrench, ArrowLeft, ArrowRight, X } from 'lucide-react';
 
 const GarageServicesHistory = () => {
   const [services, setServices] = useState([]);
@@ -114,7 +113,7 @@ const GarageServicesHistory = () => {
             {/* Service Summary */}
             <div className="border border-slate-100 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-4">
-                <Tool size={18} className="text-teal-600" />
+                <Wrench size={18} className="text-teal-600" />
                 <h4 className="font-bold text-slate-800">{service.serviceType || 'General Service'}</h4>
                 <span className="ml-auto text-xs font-semibold px-2 py-1 rounded-md bg-teal-50 text-teal-700 border border-teal-100">
                   {service.serviceCategory}
@@ -183,7 +182,7 @@ const GarageServicesHistory = () => {
   };
 
   return (
-    <DashboardLayout>
+    <>
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Header & Stats */}
@@ -366,7 +365,7 @@ const GarageServicesHistory = () => {
       {selectedService && (
         <ServiceModal service={selectedService} onClose={() => setSelectedService(null)} />
       )}
-    </DashboardLayout>
+    </>
   );
 };
 

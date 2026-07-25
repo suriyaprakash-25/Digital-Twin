@@ -30,7 +30,6 @@ import DiagnosisHistory from './pages/DiagnosisHistory';
 import GarageAvailability from './pages/GarageAvailability';
 import FleetsPage from './pages/FleetsPage';
 import GaragePartnersPage from './pages/GaragePartnersPage';
-import GarageServices from './pages/GarageServices';
 import GarageServicesHistory from './pages/GarageServicesHistory';
 
 import { ToastProvider } from './context/ToastContext';
