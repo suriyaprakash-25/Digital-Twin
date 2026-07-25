@@ -2,8 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Wrench, CheckCircle, Calendar, Hash, IndianRupee, MapPin, Building, Plus, Trash2, ClipboardList, Shield, Info, Car, Camera, X, Receipt, FolderOpen, SwitchCamera } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 const AddService = () => {
+    const { showToast } = useToast();
     const [vehicles, setVehicles] = useState([]);
     const [isGarage, setIsGarage] = useState(false);
     const [formData, setFormData] = useState({
@@ -240,6 +242,7 @@ const AddService = () => {
             });
 
             setStatus({ type: 'success', message: 'Production-grade service logged successfully!' });
+            showToast('Service logged successfully!', 'success');
 
             setTimeout(() => {
                 if (isGarage) {
