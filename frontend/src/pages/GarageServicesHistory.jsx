@@ -250,9 +250,11 @@ const GarageServicesHistory = () => {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table & Mobile Stacked Cards Container */}
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          
+          {/* Desktop Table View (md+) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
                 <tr>
@@ -332,6 +334,56 @@ const GarageServicesHistory = () => {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Stacked Cards View (<md) */}
+          <div className="block md:hidden divide-y divide-slate-100">
+            {loading ? (
+              <div className="p-8 text-center text-slate-500">
+                <div className="inline-block animate-spin w-6 h-6 border-2 border-slate-300 border-t-teal-600 rounded-full mb-2"></div>
+                <p className="text-xs font-semibold">Loading services...</p>
+              </div>
+            ) : services.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-xs font-semibold">
+                {search ? 'No services matched your search.' : 'No services logged yet.'}
+              </div>
+            ) : (
+              services.map(service => (
+                <div key={service.id} className="p-4 space-y-3 hover:bg-slate-50/80 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400">{new Date(service.serviceDate).toLocaleDateString()}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-100">{service.serviceCategory}</span>
+                  </div>
+
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-900">{service.serviceType || 'General Service'}</h4>
+                      {service.vehicle && (
+                        <div className="text-xs text-slate-600 mt-0.5">
+                          <span className="font-mono bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-bold">{service.vehicle.registrationNumber}</span>
+                          <span className="ml-1.5">{service.vehicle.make} {service.vehicle.model}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-black text-teal-700">₹{parseFloat(service.totalCost).toLocaleString()}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                    <div className="text-slate-500 truncate max-w-[180px]">
+                      Customer: <span className="font-bold text-slate-700">{service.customer?.name || 'Owner'}</span>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedService(service)}
+                      className="font-bold text-teal-600 hover:underline text-xs"
+                    >
+                      View Details &rarr;
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
           
           {/* Pagination */}

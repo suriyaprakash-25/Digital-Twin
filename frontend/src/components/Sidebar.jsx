@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope, ClipboardList, HelpCircle, Headphones, Info } from 'lucide-react';
 import { FEATURES } from '../config/features';
 
 function normalizeRole(role) {
@@ -118,6 +118,31 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                             </Link>
                         );
                     })}
+                </div>
+
+                {/* Secondary items (Help, Support, Version) */}
+                <div className="p-4 border-t border-slate-100 bg-slate-50/30 space-y-1">
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Support & Info</div>
+                    <a
+                        href="mailto:support@driveportz.com"
+                        className="flex items-center px-3 py-2 text-xs font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                    >
+                        <Headphones className="h-4 w-4 mr-2.5 text-teal-600" />
+                        Partner Support
+                    </a>
+                    <a
+                        href="https://driveportz.com/help"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center px-3 py-2 text-xs font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                    >
+                        <HelpCircle className="h-4 w-4 mr-2.5 text-slate-400" />
+                        Help &amp; FAQs
+                    </a>
+                    <div className="flex items-center justify-between px-3 pt-2 text-[11px] font-semibold text-slate-400">
+                        <span className="flex items-center gap-1"><Info className="h-3 w-3" /> DrivePortz Partner</span>
+                        <span className="font-mono bg-slate-200/60 px-1.5 py-0.5 rounded text-[10px]">v2.4.0</span>
+                    </div>
                 </div>
 
                 {/* Logout */}

@@ -86,6 +86,11 @@ router.post('/', requireAuth, requireRole('USER'), async (req, res) => {
           vehicleNumber: vehicle.vehicleNumber,
           brand: vehicle.brand,
           model: vehicle.model
+        },
+        user: {
+          name: req.user.name || 'Vehicle Owner',
+          phone: req.user.phone || '',
+          email: req.user.email || ''
         }
       },
       createdAt: new Date(),
@@ -168,19 +173,49 @@ router.get('/garage', requireAuth, requireRole('GARAGE'), async (req, res) => {
       .limit(200)
       .toArray();
 
+    // Fetch user profile details for bookings lacking full snapshot user info
+    const usersCol = db.collection('users');
+    const userIds = [...new Set(docs.map(b => b.userId).filter(Boolean))];
+    const userObjectIds = userIds.map(id => {
+      try { return new ObjectId(id); } catch { return null; }
+    }).filter(Boolean);
+    
+    const userDocs = await usersCol.find({
+      $or: [
+        { _id: { $in: userObjectIds } },
+        { uid: { $in: userIds } }
+      ]
+    }).toArray();
+
+    const userMap = new Map();
+    userDocs.forEach(u => {
+      if (u._id) userMap.set(String(u._id), u);
+      if (u.uid) userMap.set(String(u.uid), u);
+    });
+
     return res.status(200).json(
-      docs.map((b) => ({
-        id: String(b._id),
-        status: b.status,
-        scheduledFor: b.scheduledFor,
-        notes: b.notes,
-        timeline: b.timeline || [],
-        createdAt: b.createdAt,
-        userId: b.userId,
-        garage: b.snapshots && b.snapshots.garage,
-        service: b.snapshots && b.snapshots.service,
-        vehicle: b.snapshots && b.snapshots.vehicle
-      }))
+      docs.map((b) => {
+        const matchedUser = userMap.get(String(b.userId));
+        const customer = (b.snapshots && b.snapshots.user) || {
+          name: matchedUser?.name || 'Customer',
+          phone: matchedUser?.phone || '',
+          email: matchedUser?.email || ''
+        };
+
+        return {
+          id: String(b._id),
+          status: b.status,
+          scheduledFor: b.scheduledFor,
+          notes: b.notes,
+          timeline: b.timeline || [],
+          createdAt: b.createdAt,
+          userId: b.userId,
+          customer,
+          garage: b.snapshots && b.snapshots.garage,
+          service: b.snapshots && b.snapshots.service,
+          vehicle: b.snapshots && b.snapshots.vehicle
+        };
+      })
     );
   } catch (e) {
     return res.status(500).json({ msg: 'Error loading garage bookings', error: String(e && e.message ? e.message : e) });

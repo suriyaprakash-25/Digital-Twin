@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Bell, Store, Wrench,
+  Bell, Store, Wrench, Phone, MessageSquare, Filter,
   CalendarCheck, Clock, CheckCircle, XCircle, Loader2,
-  TrendingUp, AlertTriangle
+  TrendingUp, AlertTriangle, PlayCircle, CheckCircle2, User, Car
 } from 'lucide-react';
 
 function normalizeRole(role) {
@@ -39,6 +39,7 @@ const GarageDashboard = () => {
 
   const [inputCapacity, setInputCapacity] = useState(20);
   const [updatingCapacity, setUpdatingCapacity] = useState(false);
+  const [bookingTab, setBookingTab] = useState('ALL');
 
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
@@ -188,17 +189,17 @@ const GarageDashboard = () => {
             </Link>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          {/* Stats - Responsive 3-col tight row */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {[
-              { label: 'Total Services',  value: services.length,  icon: <Wrench className="h-5 w-5 text-teal-400" />,        bg: 'bg-teal-500/10' },
-              { label: 'In Progress',     value: inProgressCount,   icon: <Wrench className="h-5 w-5 text-violet-400" />,      bg: 'bg-violet-500/10' },
-              { label: 'Completed',       value: completedCount,    icon: <TrendingUp className="h-5 w-5 text-emerald-400" />, bg: 'bg-emerald-500/10' },
+              { label: 'Total Services',  value: services.length,  icon: <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-teal-400" />,        bg: 'bg-teal-500/10' },
+              { label: 'In Progress',     value: inProgressCount,   icon: <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-violet-400 text-violet-400" />, bg: 'bg-violet-500/10' },
+              { label: 'Completed',       value: completedCount,    icon: <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />, bg: 'bg-emerald-500/10' },
             ].map(s => (
-              <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>{s.icon}</div>
-                <div className="text-2xl font-black text-white">{s.value}</div>
-                <div className="text-xs text-slate-400 font-semibold mt-0.5">{s.label}</div>
+              <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl p-2.5 sm:p-4 text-center sm:text-left">
+                <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl ${s.bg} flex items-center justify-center mx-auto sm:mx-0 mb-1.5 sm:mb-3`}>{s.icon}</div>
+                <div className="text-lg sm:text-2xl font-black text-white">{s.value}</div>
+                <div className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 truncate">{s.label}</div>
               </div>
             ))}
           </div>
@@ -335,9 +336,9 @@ const GarageDashboard = () => {
 
       </div>
 
-      {/* Booking requests */}
+      {/* Booking requests section with Filter Tabs & State-dependent Actions */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-teal-100 rounded-xl text-teal-600"><CalendarCheck className="h-5 w-5" /></div>
             <div>
@@ -345,57 +346,153 @@ const GarageDashboard = () => {
               <p className="text-xs text-slate-500 font-medium mt-0.5">{bookings.length} total bookings</p>
             </div>
           </div>
-          {pendingCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">
-              <Clock className="h-3 w-3" /> {pendingCount} pending
-            </span>
-          )}
+          
+          {/* Filter Tabs */}
+          <div className="flex items-center bg-slate-200/70 p-1 rounded-xl gap-1 text-xs font-bold">
+            {[
+              { key: 'ALL', label: 'All' },
+              { key: 'TODAY', label: 'Today' },
+              { key: 'UPCOMING', label: 'Upcoming' },
+              { key: 'OVERDUE', label: 'Overdue' },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setBookingTab(tab.key)}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  bookingTab === tab.key
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="divide-y divide-slate-100">
-          {bookings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <CalendarCheck className="h-12 w-12 text-slate-200 mb-3" />
-              <p className="text-slate-500 font-medium text-sm">No bookings yet.</p>
-            </div>
-          ) : (
-            bookings.slice(0, 20).map(b => {
+          {(() => {
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const filteredBookings = bookings.filter(b => {
+              const bDateStr = b.scheduledFor ? new Date(b.scheduledFor).toISOString().split('T')[0] : '';
+              if (bookingTab === 'TODAY') return bDateStr === todayStr;
+              if (bookingTab === 'UPCOMING') return bDateStr > todayStr;
+              if (bookingTab === 'OVERDUE') {
+                return (b.status === 'PENDING' || b.status === 'REQUESTED') && (bDateStr < todayStr || (!bDateStr && new Date() - new Date(b.createdAt) > 86400000));
+              }
+              return true;
+            });
+
+            if (filteredBookings.length === 0) {
+              return (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <CalendarCheck className="h-12 w-12 text-slate-200 mb-3" />
+                  <p className="text-slate-500 font-medium text-sm">No bookings found for &quot;{bookingTab.toLowerCase()}&quot; filter.</p>
+                </div>
+              );
+            }
+
+            return filteredBookings.map(b => {
               const meta = statusMeta[b.status] || { label: b.status, color: 'bg-slate-100 text-slate-600', icon: null };
+              const cleanPhone = b.customer?.phone ? String(b.customer.phone).replace(/\D/g, '') : '';
+
               return (
                 <div key={b.id} className="p-5 hover:bg-slate-50 transition-colors">
                   <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                    <div>
-                      <div className="text-sm font-extrabold text-slate-900">
-                        {b.service?.title || 'Service'} &nbsp;&bull;&nbsp;
-                        <span className="font-semibold text-slate-600">{b.vehicle?.vehicleNumber || 'Vehicle'}</span>
+                    <div className="space-y-1">
+                      <div className="text-sm font-extrabold text-slate-900 flex flex-wrap items-center gap-2">
+                        <span>{b.service?.title || 'General Service'}</span>
+                        <span className="text-slate-300">&bull;</span>
+                        <span className="font-semibold text-slate-700">{b.vehicle?.brand} {b.vehicle?.model}</span>
+                        <span className="font-mono text-xs px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded font-bold">{b.vehicle?.vehicleNumber || 'Reg: N/A'}</span>
                       </div>
-                      <div className="text-xs text-slate-500 mt-1 font-medium">
-                        Scheduled: {b.scheduledFor ? new Date(b.scheduledFor).toLocaleString() : 'Not set'}
+
+                      {/* Customer Info & Tap-to-Call / WhatsApp */}
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 pt-1 font-medium">
+                        <span className="flex items-center gap-1 font-bold text-slate-800">
+                          <User className="h-3.5 w-3.5 text-teal-600" /> {b.customer?.name || 'Customer'}
+                        </span>
+                        {b.customer?.phone && (
+                          <a
+                            href={`tel:${b.customer.phone}`}
+                            className="inline-flex items-center gap-1 text-teal-600 font-bold hover:underline"
+                          >
+                            <Phone className="h-3 w-3" /> {b.customer.phone}
+                          </a>
+                        )}
+                        {cleanPhone && (
+                          <a
+                            href={`https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(`Hi ${b.customer?.name || 'Customer'}, regarding your booking for ${b.service?.title || 'service'} at ${profile?.name || 'our garage'}...`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-emerald-600 font-bold hover:underline"
+                          >
+                            <MessageSquare className="h-3 w-3" /> WhatsApp
+                          </a>
+                        )}
                       </div>
-                      {b.notes && <div className="text-xs text-slate-400 mt-1">Notes: {b.notes}</div>}
+
+                      <div className="text-xs text-slate-500 font-medium pt-0.5">
+                        Scheduled: <span className="font-bold text-slate-700">{b.scheduledFor ? new Date(b.scheduledFor).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Not set'}</span>
+                      </div>
+                      {b.notes && <div className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100 max-w-lg mt-1">Notes: {b.notes}</div>}
                     </div>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${meta.color}`}>
+
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${meta.color}`}>
                       {meta.icon} {meta.label}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => updateBookingStatus(b.id, 'ACCEPTED')}
-                      className="px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 text-xs font-bold hover:bg-teal-100 transition-colors">Accept</button>
-                    <button onClick={() => updateBookingStatus(b.id, 'IN_PROGRESS')}
-                      className="px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 text-xs font-bold hover:bg-violet-100 transition-colors">In Progress</button>
-                    <button onClick={() => updateBookingStatus(b.id, 'COMPLETED')}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-colors">Completed</button>
-                    <button onClick={() => updateBookingStatus(b.id, 'REJECTED')}
-                      className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors">Reject</button>
+
+                  {/* Context-aware Single Next Action Button */}
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100/60 mt-3">
+                    {(b.status === 'PENDING' || b.status === 'REQUESTED') && (
+                      <>
+                        <button
+                          onClick={() => updateBookingStatus(b.id, 'ACCEPTED')}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-700 transition-colors shadow-sm"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" /> Accept Booking
+                        </button>
+                        <button
+                          onClick={() => updateBookingStatus(b.id, 'REJECTED')}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 border border-red-200 transition-colors"
+                        >
+                          <XCircle className="h-3.5 w-3.5" /> Reject
+                        </button>
+                      </>
+                    )}
+
+                    {b.status === 'ACCEPTED' && (
+                      <button
+                        onClick={() => updateBookingStatus(b.id, 'IN_PROGRESS')}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 text-white text-xs font-bold hover:bg-violet-700 transition-colors shadow-sm"
+                      >
+                        <PlayCircle className="h-3.5 w-3.5" /> Start Job
+                      </button>
+                    )}
+
+                    {b.status === 'IN_PROGRESS' && (
+                      <button
+                        onClick={() => updateBookingStatus(b.id, 'COMPLETED')}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Mark Complete
+                      </button>
+                    )}
+
+                    {(b.status === 'COMPLETED' || b.status === 'REJECTED') && (
+                      <span className="text-xs font-bold text-slate-400 italic">No further action needed</span>
+                    )}
                   </div>
                 </div>
               );
-            })
-          )}
+            });
+          })()}
         </div>
       </div>
 
-      {/* Notifications */}
+      {/* Notifications - Deduped Feed */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center gap-3">
           <div className="p-2 bg-amber-100 rounded-xl text-amber-600"><Bell className="h-5 w-5" /></div>
@@ -405,19 +502,32 @@ const GarageDashboard = () => {
           </div>
         </div>
         <div className="divide-y divide-slate-100">
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Bell className="h-10 w-10 text-slate-200 mb-3" />
-              <p className="text-slate-500 font-medium text-sm">No notifications yet.</p>
-            </div>
-          ) : (
-            notifications.slice(0, 8).map(n => (
+          {(() => {
+            // Dedupe notifications by title + body
+            const seen = new Set();
+            const deduped = notifications.filter(n => {
+              const key = `${n.title}|${n.body}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+
+            if (deduped.length === 0) {
+              return (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Bell className="h-10 w-10 text-slate-200 mb-3" />
+                  <p className="text-slate-500 font-medium text-sm">No notifications yet.</p>
+                </div>
+              );
+            }
+
+            return deduped.slice(0, 8).map(n => (
               <div key={n.id} className="px-6 py-4 hover:bg-slate-50 transition-colors">
                 <div className="text-sm font-bold text-slate-900">{n.title}</div>
                 {n.body && <div className="text-sm text-slate-500 mt-0.5">{n.body}</div>}
               </div>
-            ))
-          )}
+            ));
+          })()}
         </div>
       </div>
     </div>

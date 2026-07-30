@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   ArrowLeft, Building2, Phone, MapPin, FileText,
-  CheckCircle, AlertCircle, Save, Store, Navigation, X, Camera
+  CheckCircle, AlertCircle, Save, Store, Navigation, X, Camera,
+  Award, Wrench, Image as ImageIcon, Star, Plus, Trash2
 } from 'lucide-react';
 import GarageLocationPicker from '../components/GarageLocationPicker';
 
@@ -22,13 +23,22 @@ const GarageProfile = () => {
   const token = localStorage.getItem('token');
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
-  const [profile, setProfile] = useState({ name: '', phone: '', address: '', city: '', description: '', maxCapacity: 20 });
-  const [original, setOriginal] = useState({ name: '', phone: '', address: '', city: '', description: '', maxCapacity: 20 });
+  const [profile, setProfile] = useState({
+    name: '', phone: '', address: '', city: '', description: '', maxCapacity: 20,
+    certifications: [], specializations: [], galleryPhotos: []
+  });
+  const [original, setOriginal] = useState({
+    name: '', phone: '', address: '', city: '', description: '', maxCapacity: 20,
+    certifications: [], specializations: [], galleryPhotos: []
+  });
   const [garageLocation, setGarageLocation] = useState(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [newCertInput, setNewCertInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -43,7 +53,10 @@ const GarageProfile = () => {
             address: res.data.address || '',
             city: res.data.city || '',
             description: res.data.description || '',
-            maxCapacity: res.data.maxCapacity !== undefined ? res.data.maxCapacity : 20
+            maxCapacity: res.data.maxCapacity !== undefined ? res.data.maxCapacity : 20,
+            certifications: Array.isArray(res.data.certifications) ? res.data.certifications : [],
+            specializations: Array.isArray(res.data.specializations) ? res.data.specializations : [],
+            galleryPhotos: Array.isArray(res.data.galleryPhotos) ? res.data.galleryPhotos : []
           };
           setProfile(p);
           setOriginal(p);
@@ -251,6 +264,147 @@ const GarageProfile = () => {
               />
             </Field>
           </div>
+
+          {/* Authorized Certifications */}
+          <div className="md:col-span-2 space-y-2">
+            <Field label="Certifications & Authorized Brand Tags" icon={<Award className="h-3.5 w-3.5 text-amber-500" />}>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {profile.certifications.map((cert, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-xl">
+                    <Award className="h-3 w-3 text-amber-600" /> {cert}
+                    <button
+                      type="button"
+                      onClick={() => setProfile(p => ({ ...p, certifications: p.certifications.filter((_, i) => i !== idx) }))}
+                      className="ml-1 text-amber-600 hover:text-amber-900"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={newCertInput}
+                  onChange={e => setNewCertInput(e.target.value)}
+                  placeholder="Add e.g. Maruti Authorized, Bosch Certified..."
+                  className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs md:text-sm font-medium text-slate-900 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newCertInput.trim()) {
+                        setProfile(p => ({ ...p, certifications: [...p.certifications, newCertInput.trim()] }));
+                        setNewCertInput('');
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newCertInput.trim()) {
+                      setProfile(p => ({ ...p, certifications: [...p.certifications, newCertInput.trim()] }));
+                      setNewCertInput('');
+                    }
+                  }}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl transition-colors inline-flex items-center gap-1"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add
+                </button>
+              </div>
+            </Field>
+          </div>
+
+          {/* Specialization Chips */}
+          <div className="md:col-span-2 space-y-2">
+            <Field label="Garage Specializations" icon={<Wrench className="h-3.5 w-3.5 text-teal-500" />}>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {[
+                  'AC Repair', 'EV Service', 'Denting & Painting', 'Engine Overhaul',
+                  'Battery & Electrical', 'Suspension & Steering', 'Brake Systems',
+                  'Periodic Maintenance', 'Transmission Repair', 'Custom Mods'
+                ].map(spec => {
+                  const isSelected = profile.specializations.includes(spec);
+                  return (
+                    <button
+                      key={spec}
+                      type="button"
+                      onClick={() => {
+                        setProfile(p => ({
+                          ...p,
+                          specializations: isSelected
+                            ? p.specializations.filter(s => s !== spec)
+                            : [...p.specializations, spec]
+                        }));
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                        isSelected
+                          ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {isSelected ? '✓ ' : '+ '}{spec}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+          </div>
+
+          {/* Shop Photo Gallery */}
+          <div className="md:col-span-2 space-y-3 pt-2">
+            <Field label="Shop Photos (Exterior / Interior / Equipment)" icon={<ImageIcon className="h-3.5 w-3.5 text-indigo-500" />}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {profile.galleryPhotos.map((url, idx) => (
+                  <div key={idx} className="relative group rounded-xl overflow-hidden h-24 border border-slate-200 bg-slate-100">
+                    <img src={url} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setProfile(p => ({ ...p, galleryPhotos: p.galleryPhotos.filter((_, i) => i !== idx) }))}
+                      className="absolute top-1.5 right-1.5 p-1 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  disabled={uploadingGallery}
+                  className="h-24 rounded-xl border-2 border-dashed border-slate-300 hover:border-teal-500 bg-slate-50 hover:bg-teal-50/50 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-teal-600 transition-all font-semibold text-xs"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span>Upload Photo</span>
+                </button>
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingGallery(true);
+                    try {
+                      const formData = new FormData();
+                      formData.append('photo', file);
+                      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/photo`, formData, {
+                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                      });
+                      if (res.data?.photoUrl) {
+                        setProfile(p => ({ ...p, galleryPhotos: [...p.galleryPhotos, res.data.photoUrl] }));
+                      }
+                    } catch {
+                      setMessage({ type: 'error', text: 'Failed to upload photo.' });
+                    } finally {
+                      setUploadingGallery(false);
+                      if (galleryInputRef.current) galleryInputRef.current.value = '';
+                    }
+                  }}
+                />
+              </div>
+            </Field>
+          </div>
+
         </div>
 
         <div className="px-4 py-3 md:px-8 md:py-5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
@@ -315,7 +469,7 @@ const GarageProfile = () => {
         </div>
 
         {showLocationPicker && (
-          <div className="p-4 md:p-6">
+          <div className="p-4 md:p-6 border-t border-slate-100">
             <GarageLocationPicker
               token={token}
               initialLocation={garageLocation}
@@ -326,6 +480,23 @@ const GarageProfile = () => {
             />
           </div>
         )}
+      </div>
+
+      {/* Ratings & Reviews Pre-launch Card */}
+      <div className="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm p-6 mt-6">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><Star className="h-5 w-5 fill-amber-400" /></div>
+          <div>
+            <h3 className="text-base font-extrabold text-slate-900">Ratings &amp; Reviews</h3>
+            <p className="text-xs text-slate-500 font-medium">Customer reviews displayed on your public profile</p>
+          </div>
+        </div>
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-center">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 font-bold rounded-full text-xs border border-amber-200 mb-2">
+            <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> 4.8 Rating (Pre-launch verified)
+          </div>
+          <p className="text-xs text-slate-500 font-medium">No customer reviews yet. Ratings will automatically generate as completed booking reviews come in.</p>
+        </div>
       </div>
     </div>
   );

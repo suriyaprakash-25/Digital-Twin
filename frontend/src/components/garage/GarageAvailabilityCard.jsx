@@ -13,6 +13,7 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
   const [availabilityMode, setAvailabilityMode] = useState('AUTO');
   const [manualStatus, setManualStatus] = useState('CLOSED');
   const [currentStatus, setCurrentStatus] = useState('CLOSED');
+  const [currentTime, setCurrentTime] = useState('');
   
   // Default business hours state
   const [businessHours, setBusinessHours] = useState(
@@ -37,6 +38,7 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
       setAvailabilityMode(data.availabilityMode || 'AUTO');
       setManualStatus(data.manualStatus || 'CLOSED');
       setCurrentStatus(data.currentStatus || 'CLOSED');
+      if (data.currentTime) setCurrentTime(data.currentTime);
       if (data.businessHours) {
         setBusinessHours(data.businessHours);
       }
@@ -63,6 +65,7 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
       });
       
       setCurrentStatus(res.data.currentStatus);
+      if (res.data.currentTime) setCurrentTime(res.data.currentTime);
       setSuccess('Availability updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -99,16 +102,21 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
           </div>
         </div>
         
-        {/* Status Badge */}
-        <div className={`px-4 py-1.5 rounded-full flex items-center gap-2 font-bold text-sm border
-          ${currentStatus === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-            currentStatus === 'BUSY' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-            'bg-slate-50 text-slate-600 border-slate-200'}`}
-        >
-          {currentStatus === 'AVAILABLE' && <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span>}
-          {currentStatus === 'BUSY' && <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>}
-          {currentStatus === 'CLOSED' && <span className="h-2.5 w-2.5 rounded-full bg-slate-400"></span>}
-          {currentStatus === 'AVAILABLE' ? 'Open Now' : currentStatus === 'BUSY' ? 'Busy' : 'Closed'}
+        {/* Status Badge & Current Time Indicator */}
+        <div className="text-right">
+          <div className={`px-4 py-1.5 rounded-full inline-flex items-center gap-2 font-bold text-sm border
+            ${currentStatus === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+              currentStatus === 'BUSY' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+              'bg-slate-50 text-slate-600 border-slate-200'}`}
+          >
+            {currentStatus === 'AVAILABLE' && <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span>}
+            {currentStatus === 'BUSY' && <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>}
+            {currentStatus === 'CLOSED' && <span className="h-2.5 w-2.5 rounded-full bg-slate-400"></span>}
+            {currentStatus === 'AVAILABLE' ? 'Open Now' : currentStatus === 'BUSY' ? 'Busy' : 'Closed'}
+          </div>
+          <div className="text-[11px] text-slate-400 font-semibold mt-1 flex items-center justify-end gap-1">
+            <Clock className="h-3 w-3" /> Current time: {currentTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
         </div>
       </div>
 

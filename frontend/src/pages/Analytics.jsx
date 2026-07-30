@@ -13,6 +13,7 @@ const Analytics = () => {
     const [garageData, setGarageData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState('USER');
+    const [dateRange, setDateRange] = useState('all');
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
     const [yAxisWidth, setYAxisWidth] = useState(window.innerWidth < 640 ? 80 : 150);
@@ -38,18 +39,19 @@ const Analytics = () => {
         const token = localStorage.getItem('token');
         const headers = { Authorization: `Bearer ${token}` };
 
-        const fetches = role === 'GARAGE'
-            ? [axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/garage`, { headers })]
-            : [axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics`, { headers })];
+        setLoading(true);
+        const url = role === 'GARAGE'
+            ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/garage?days=${dateRange}`
+            : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics`;
 
-        Promise.all(fetches)
-            .then(([res]) => {
+        axios.get(url, { headers })
+            .then((res) => {
                 if (role === 'GARAGE') setGarageData(res.data);
                 else setData(res.data);
             })
             .catch((err) => console.error('Error fetching analytics:', err))
             .finally(() => setLoading(false));
-    }, []);
+    }, [dateRange]);
 
     if (loading) {
         return (
@@ -84,7 +86,7 @@ const Analytics = () => {
             <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 animate-in fade-in duration-500 pb-12 lg:pb-8">
                 <header className="mb-3 sm:mb-8 p-3.5 md:p-8 bg-slate-900 rounded-xl md:rounded-3xl text-white shadow-xl relative overflow-hidden">
                     <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-emerald-600/30 to-transparent"></div>
-                    <div className="relative z-10 flex flex-col lg:flex-row justify-between lg:items-center gap-3">
+                    <div className="relative z-10 flex flex-col lg:flex-row justify-between lg:items-center gap-4">
                         <div>
                             <div className="inline-flex items-center gap-1 px-2 py-0.5 md:px-3 md:py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-3xs md:text-xs font-bold tracking-wide border border-emerald-500/30 mb-1.5">
                                 <TrendingUp className="h-3 w-3" /> Garage Performance Analytics
@@ -94,22 +96,46 @@ const Analytics = () => {
                                 Track bookings, revenue trends, and service performance across your garage operations.
                             </p>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 md:gap-4">
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 md:p-4 rounded-lg md:rounded-2xl text-center min-w-[70px] md:min-w-[110px]">
-                                <p className="text-teal-300 text-3xs md:text-xs font-bold uppercase tracking-wider mb-0.5">Bookings</p>
-                                <p className="text-xs md:text-2xl font-black">{totalBookings}</p>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                            {/* Date Range Selector */}
+                            <div className="flex items-center bg-white/10 backdrop-blur-md border border-white/20 p-1 rounded-xl gap-1 text-xs font-bold">
+                                {[
+                                    { key: '7', label: '7 Days' },
+                                    { key: '30', label: '30 Days' },
+                                    { key: '90', label: '90 Days' },
+                                    { key: 'all', label: 'All Time' },
+                                ].map(r => (
+                                    <button
+                                        key={r.key}
+                                        onClick={() => setDateRange(r.key)}
+                                        className={`px-2.5 py-1 rounded-lg transition-all ${
+                                            dateRange === r.key
+                                                ? 'bg-teal-500 text-slate-950 shadow-sm'
+                                                : 'text-slate-300 hover:text-white'
+                                        }`}
+                                    >
+                                        {r.label}
+                                    </button>
+                                ))}
                             </div>
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 md:p-4 rounded-lg md:rounded-2xl text-center min-w-[70px] md:min-w-[110px]">
-                                <p className="text-emerald-300 text-3xs md:text-xs font-bold uppercase tracking-wider mb-0.5">Completed</p>
-                                <p className="text-xs md:text-2xl font-black">{completedCount}</p>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 md:p-4 rounded-lg md:rounded-2xl text-center min-w-[70px] md:min-w-[110px]">
-                                <p className="text-amber-300 text-3xs md:text-xs font-bold uppercase tracking-wider mb-0.5">Revenue</p>
-                                <p className="text-xs md:text-2xl font-black">₹{(totalRevenue / 1000).toFixed(1)}k</p>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 md:p-4 rounded-lg md:rounded-2xl text-center min-w-[70px] md:min-w-[110px]">
-                                <p className="text-purple-300 text-3xs md:text-xs font-bold uppercase tracking-wider mb-0.5">Services</p>
-                                <p className="text-xs md:text-2xl font-black">{totalServices}</p>
+
+                            <div className="flex flex-wrap gap-1.5 md:gap-4">
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 md:p-4 rounded-lg md:rounded-2xl text-center min-w-[70px] md:min-w-[110px]">
+                                    <p className="text-teal-300 text-3xs md:text-xs font-bold uppercase tracking-wider mb-0.5">Bookings</p>
+                                    <p className="text-xs md:text-2xl font-black">{totalBookings}</p>
+                                </div>
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 md:p-4 rounded-lg md:rounded-2xl text-center min-w-[70px] md:min-w-[110px]">
+                                    <p className="text-emerald-300 text-3xs md:text-xs font-bold uppercase tracking-wider mb-0.5">Completed</p>
+                                    <p className="text-xs md:text-2xl font-black">{completedCount}</p>
+                                </div>
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 md:p-4 rounded-lg md:rounded-2xl text-center min-w-[70px] md:min-w-[110px]">
+                                    <p className="text-amber-300 text-3xs md:text-xs font-bold uppercase tracking-wider mb-0.5">Revenue</p>
+                                    <p className="text-xs md:text-2xl font-black">₹{(totalRevenue / 1000).toFixed(1)}k</p>
+                                </div>
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 md:p-4 rounded-lg md:rounded-2xl text-center min-w-[70px] md:min-w-[110px]">
+                                    <p className="text-purple-300 text-3xs md:text-xs font-bold uppercase tracking-wider mb-0.5">Services</p>
+                                    <p className="text-xs md:text-2xl font-black">{totalServices}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -202,26 +228,32 @@ const Analytics = () => {
                             Booking Status Distribution
                         </h3>
                         {statusDistribution.length === 0 ? (
-                            <p className="text-slate-500 italic text-center py-6 text-2xs md:text-sm">No status data available.</p>
+                            <p className="text-slate-500 italic text-center py-6 text-2xs md:text-sm">No status data available for selected period.</p>
                         ) : (
-                            <div className="w-full h-[200px] sm:h-[300px]">
+                            <div className="w-full h-[220px] sm:h-[320px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
                                             data={statusDistribution}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={isMobile ? 40 : 80}
-                                            outerRadius={isMobile ? 65 : 120}
+                                            innerRadius={isMobile ? 35 : 70}
+                                            outerRadius={isMobile ? 60 : 110}
                                             paddingAngle={5}
                                             dataKey="value"
+                                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                            labelLine={false}
                                         >
                                             {statusDistribution.map((_, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
                                         <RechartsTooltip
-                                            formatter={(value, name) => [`${value} Bookings`, name]}
+                                            formatter={(value, name) => {
+                                                const total = statusDistribution.reduce((acc, curr) => acc + curr.value, 0);
+                                                const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                                return [`${value} Bookings (${pct}%)`, name];
+                                            }}
                                             contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: isMobile ? '11px' : '13px' }}
                                         />
                                         <Legend iconType="circle" verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: isMobile ? '10px' : '12px' }} />

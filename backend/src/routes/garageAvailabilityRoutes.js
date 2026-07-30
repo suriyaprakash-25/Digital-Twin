@@ -2,7 +2,7 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
-const { calculateCurrentStatus } = require('../services/availabilityService');
+const { calculateCurrentStatus, getCurrentTimeString } = require('../services/availabilityService');
 
 const router = express.Router();
 
@@ -45,6 +45,7 @@ router.patch('/', requireAuth, requireRole('GARAGE'), async (req, res) => {
       availabilityMode: updatedGarage.availabilityMode,
       manualStatus: updatedGarage.manualStatus,
       currentStatus,
+      currentTime: getCurrentTimeString(),
       businessHours: updatedGarage.businessHours,
       statusUpdatedAt: updatedGarage.statusUpdatedAt
     });
@@ -74,6 +75,7 @@ router.get('/:garageId', async (req, res) => {
       availabilityMode: garage.availabilityMode || 'AUTO',
       manualStatus: garage.manualStatus || 'CLOSED',
       currentStatus,
+      currentTime: getCurrentTimeString(),
       businessHours: garage.businessHours || null,
       statusUpdatedAt: garage.statusUpdatedAt || null
     });

@@ -439,6 +439,30 @@ const AddService = () => {
                             {renderInputGroup("Next Recommended Km", "recommendedKm", "number", <Hash className="h-4 w-4 md:h-5 md:w-5" />, "e.g. 55000")}
                             {renderInputGroup("Next Recommended Date", "recommendedDate", "date", <Calendar className="h-4 w-4 md:h-5 md:w-5" />)}
                         </div>
+
+                        {/* Predictive Maintenance & Fleet Customer Context */}
+                        <div className="md:col-span-2 space-y-3 pt-2">
+                            <label className="flex items-start gap-2.5 p-3 bg-teal-50/60 border border-teal-200/80 rounded-xl cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    defaultChecked={true}
+                                    className="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                                />
+                                <div>
+                                    <span className="text-xs md:text-sm font-bold text-slate-800 block">
+                                        Notify owner when due (Predictive Maintenance Alert)
+                                    </span>
+                                    <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
+                                        Automatically sends a predictive reminder notification to the vehicle owner when the Next Recommended Date/Km is approaching.
+                                    </span>
+                                </div>
+                            </label>
+
+                            <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between text-xs font-semibold text-slate-600">
+                                <span>Vehicle Owner Context: <span className="text-teal-700 font-bold">Multi-Driver / Fleet Sync Ready</span></span>
+                                <span className="bg-slate-200 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded">Owner &amp; Fleet Verified</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

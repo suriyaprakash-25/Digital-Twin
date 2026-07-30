@@ -99,8 +99,23 @@ router.get('/garage', requireAuth, requireRole('GARAGE'), async (req, res) => {
       return res.status(400).json({ msg: 'Create your garage profile first' });
     }
 
+    const { days } = req.query || {};
+    let cutoffDate = null;
+    if (days && days !== 'all') {
+      const d = parseInt(days, 10);
+      if (!Number.isNaN(d) && d > 0) {
+        cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - d);
+      }
+    }
+
+    const bookingQuery = { garageId: garage._id };
+    if (cutoffDate) {
+      bookingQuery.createdAt = { $gte: cutoffDate };
+    }
+
     const [bookings, services] = await Promise.all([
-      bookingsCol.find({ garageId: garage._id }).toArray(),
+      bookingsCol.find(bookingQuery).toArray(),
       garageServicesCol.find({ garageId: garage._id }).toArray()
     ]);
 

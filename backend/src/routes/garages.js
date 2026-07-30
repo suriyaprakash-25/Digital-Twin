@@ -30,7 +30,12 @@ router.get('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
       isActive: Boolean(garage.isActive !== false),
       createdAt: garage.createdAt,
       garageLocation: garage.garageLocation || null,
-      photoUrl: garage.photoUrl || null
+      photoUrl: garage.photoUrl || null,
+      galleryPhotos: Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : [],
+      certifications: Array.isArray(garage.certifications) ? garage.certifications : [],
+      specializations: Array.isArray(garage.specializations) ? garage.specializations : [],
+      rating: garage.rating || 4.8,
+      reviewCount: garage.reviewCount || 0
     });
   } catch (e) {
     return res.status(500).json({ msg: 'Error loading garage profile', error: String(e && e.message ? e.message : e) });
@@ -41,7 +46,7 @@ router.post('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
   const db = getDb();
   const garages = db.collection('garages');
 
-  const { name, phone, address, city, description, maxCapacity } = req.body || {};
+  const { name, phone, address, city, description, maxCapacity, certifications, specializations, galleryPhotos } = req.body || {};
 
   if (!name) {
     return res.status(400).json({ msg: 'Garage name is required' });
@@ -55,6 +60,9 @@ router.post('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
       city: city ? String(city) : '',
       description: description ? String(description) : '',
       maxCapacity: maxCapacity !== undefined ? Number(maxCapacity) : 20,
+      certifications: Array.isArray(certifications) ? certifications : [],
+      specializations: Array.isArray(specializations) ? specializations : [],
+      galleryPhotos: Array.isArray(galleryPhotos) ? galleryPhotos : [],
       ownerUserId: String(req.user.id),
       isActive: true,
       updatedAt: new Date()
@@ -127,6 +135,11 @@ router.get('/me/services', requireAuth, requireRole('GARAGE'), async (req, res) 
         description: s.description,
         price: s.price,
         durationMins: s.durationMins,
+        category: s.category || 'General Service',
+        photoUrl: s.photoUrl || null,
+        whatsIncluded: Array.isArray(s.whatsIncluded) ? s.whatsIncluded : [],
+        bundledItems: Array.isArray(s.bundledItems) ? s.bundledItems : [],
+        isPackage: Boolean(s.isPackage),
         isActive: Boolean(s.isActive !== false)
       }))
     );
@@ -140,7 +153,7 @@ router.post('/me/services', requireAuth, requireRole('GARAGE'), async (req, res)
   const garages = db.collection('garages');
   const garageServices = db.collection('garageServices');
 
-  const { title, description, price, durationMins } = req.body || {};
+  const { title, description, price, durationMins, category, photoUrl, whatsIncluded, bundledItems, isPackage } = req.body || {};
   if (!title) {
     return res.status(400).json({ msg: 'Service title is required' });
   }
@@ -157,6 +170,11 @@ router.post('/me/services', requireAuth, requireRole('GARAGE'), async (req, res)
       description: description ? String(description) : '',
       price: price !== undefined && price !== null && String(price).trim() !== '' ? Number(price) : null,
       durationMins: durationMins !== undefined && durationMins !== null && String(durationMins).trim() !== '' ? Number(durationMins) : null,
+      category: category ? String(category) : 'General Service',
+      photoUrl: photoUrl ? String(photoUrl) : null,
+      whatsIncluded: Array.isArray(whatsIncluded) ? whatsIncluded : [],
+      bundledItems: Array.isArray(bundledItems) ? bundledItems : [],
+      isPackage: Boolean(isPackage),
       isActive: true,
       isArchived: false,
       createdAt: new Date(),
@@ -175,7 +193,7 @@ router.put('/me/services/:serviceId', requireAuth, requireRole('GARAGE'), async 
   const garages = db.collection('garages');
   const garageServices = db.collection('garageServices');
 
-  const { title, description, price, durationMins, isActive } = req.body || {};
+  const { title, description, price, durationMins, category, photoUrl, whatsIncluded, bundledItems, isPackage, isActive } = req.body || {};
 
   try {
     const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
@@ -190,6 +208,11 @@ router.put('/me/services/:serviceId', requireAuth, requireRole('GARAGE'), async 
     if (description !== undefined) update.description = String(description);
     if (price !== undefined) update.price = String(price).trim() === '' ? null : Number(price);
     if (durationMins !== undefined) update.durationMins = String(durationMins).trim() === '' ? null : Number(durationMins);
+    if (category !== undefined) update.category = String(category);
+    if (photoUrl !== undefined) update.photoUrl = photoUrl ? String(photoUrl) : null;
+    if (whatsIncluded !== undefined) update.whatsIncluded = Array.isArray(whatsIncluded) ? whatsIncluded : [];
+    if (bundledItems !== undefined) update.bundledItems = Array.isArray(bundledItems) ? bundledItems : [];
+    if (isPackage !== undefined) update.isPackage = Boolean(isPackage);
     if (isActive !== undefined) update.isActive = Boolean(isActive);
 
     const result = await garageServices.updateOne(

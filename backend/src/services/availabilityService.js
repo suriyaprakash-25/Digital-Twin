@@ -2,6 +2,11 @@ const luxon = require('luxon'); // luxon is installed in the project
 
 const DAYS_MAP = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+const DEFAULT_HOURS = DAYS_MAP.reduce((acc, day) => ({
+  ...acc,
+  [day]: { isOpen: true, openTime: '09:00', closeTime: '19:00' }
+}), {});
+
 /**
  * Calculates the current real-time availability status of a garage.
  * @param {Object} garage The garage document from the database
@@ -14,28 +19,28 @@ const calculateCurrentStatus = (garage) => {
     return garage.manualStatus || 'CLOSED';
   }
 
-  // AUTO Mode: Calculate based on business hours
-  if (!garage.businessHours) {
-    return 'CLOSED'; // Default to closed if no hours configured
+  // AUTO Mode: Use configured business hours or fallback to default 09:00-19:00 open hours
+  const hoursConfig = (garage.businessHours && Object.keys(garage.businessHours).length > 0)
+    ? garage.businessHours
+    : DEFAULT_HOURS;
+
+  let now;
+  try {
+    now = luxon.DateTime.now().setZone('Asia/Kolkata');
+  } catch {
+    now = luxon.DateTime.now();
   }
 
-  // Using Asia/Kolkata (IST) as the primary timezone for evaluation 
-  // (adjust to target market timezone if needed)
-  const now = luxon.DateTime.now().setZone('Asia/Kolkata');
   const currentDayName = DAYS_MAP[now.weekday === 7 ? 0 : now.weekday]; 
-  
-  const todayHours = garage.businessHours[currentDayName];
+  const todayHours = hoursConfig[currentDayName];
   
   if (!todayHours || !todayHours.isOpen || !todayHours.openTime || !todayHours.closeTime) {
     return 'CLOSED';
   }
 
   // Parse open/close times (assuming HH:mm format, e.g., "09:00", "19:00")
-  const openTimeStr = todayHours.openTime;
-  const closeTimeStr = todayHours.closeTime;
-
-  const [openH, openM] = openTimeStr.split(':').map(Number);
-  const [closeH, closeM] = closeTimeStr.split(':').map(Number);
+  const [openH, openM] = String(todayHours.openTime).split(':').map(Number);
+  const [closeH, closeM] = String(todayHours.closeTime).split(':').map(Number);
 
   const openDateTime = now.set({ hour: openH, minute: openM, second: 0, millisecond: 0 });
   const closeDateTime = now.set({ hour: closeH, minute: closeM, second: 0, millisecond: 0 });
@@ -47,6 +52,15 @@ const calculateCurrentStatus = (garage) => {
   return 'CLOSED';
 };
 
+const getCurrentTimeString = () => {
+  try {
+    return luxon.DateTime.now().setZone('Asia/Kolkata').toFormat('EEE, dd LLL yyyy, hh:mm a (Z)');
+  } catch {
+    return new Date().toLocaleString();
+  }
+};
+
 module.exports = {
-  calculateCurrentStatus
+  calculateCurrentStatus,
+  getCurrentTimeString
 };
