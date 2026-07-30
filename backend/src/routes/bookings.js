@@ -132,8 +132,12 @@ router.get('/my', requireAuth, requireRole('USER'), async (req, res) => {
   const bookings = db.collection('bookings');
 
   try {
+    const userIdStr = String(req.user.id);
+    let userIdObj = null;
+    try { userIdObj = new ObjectId(userIdStr); } catch {}
+
     const docs = await bookings
-      .find({ userId: String(req.user.id) })
+      .find({ userId: { $in: [userIdStr, req.user.id, userIdObj].filter(Boolean) } })
       .sort({ createdAt: -1 })
       .limit(100)
       .toArray();

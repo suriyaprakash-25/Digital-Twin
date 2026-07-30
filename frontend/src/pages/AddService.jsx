@@ -333,7 +333,7 @@ const AddService = () => {
 
                         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6">
                             {renderInputGroup("Service Category *", "serviceCategory", "text", <ClipboardList className="h-4 w-4 md:h-5 md:w-5" />, "", ["Periodic Maintenance", "Unscheduled Repair", "Accidental Repair", "Inspection/Checkup", "Modification"], { required: true })}
-                            {renderInputGroup("Specific Service Title *", "serviceType", "text", <Wrench className="h-4 w-4 md:h-5 md:w-5" />, "e.g. 40,000km Major Service", null, { required: true })}
+                            {renderInputGroup("Specific Service Title *", "serviceType", "text", <Wrench className="h-4 w-4 md:h-5 md:w-5" />, "e.g. Oil & Filter Change, Brake Service", null, { required: true })}
                         </div>
                     </div>
                 </div>

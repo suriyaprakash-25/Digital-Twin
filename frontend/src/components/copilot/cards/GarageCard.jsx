@@ -12,11 +12,17 @@ const GarageCard = ({ data }) => {
                 <h4 className="font-bold text-slate-800">{garage.name}</h4>
                 {garage.isVerified && <ShieldCheck className="w-4 h-4 text-blue-500" title="Verified Garage" />}
               </div>
-              <div className="flex items-center gap-1 text-xs text-amber-500 font-medium mb-2">
-                <Star className="w-3.5 h-3.5 fill-current" />
-                <span>{garage.rating || 4.5}</span>
-                <span className="text-slate-400 font-normal">({garage.reviews || 0} reviews)</span>
-              </div>
+              {garage.reviewCount > 0 || garage.reviews > 0 ? (
+                <div className="flex items-center gap-1 text-xs text-amber-500 font-medium mb-2">
+                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <span>{garage.rating}</span>
+                  <span className="text-slate-400 font-normal">({garage.reviewCount || garage.reviews} reviews)</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1 text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full mb-2">
+                  <Star className="w-3 h-3 text-teal-600" /> New Partner
+                </div>
+              )}
             </div>
           </div>
           

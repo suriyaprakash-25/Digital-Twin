@@ -154,7 +154,7 @@ const GarageServicesHistory = () => {
                     )}
                     <tr className="border-t border-slate-200 bg-slate-50">
                       <td className="px-4 py-3 font-bold text-slate-800">Total</td>
-                      <td className="px-4 py-3 text-right font-bold text-teal-700 text-base">₹{parseFloat(service.totalCost).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-bold text-teal-700 text-base">₹{(parseFloat(service.totalCost) || 0).toLocaleString()}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -319,7 +319,7 @@ const GarageServicesHistory = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-slate-700">
-                        ₹{parseFloat(service.totalCost).toLocaleString()}
+                        ₹{(parseFloat(service.totalCost) || 0).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <button 
@@ -366,7 +366,7 @@ const GarageServicesHistory = () => {
                       )}
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-black text-teal-700">₹{parseFloat(service.totalCost).toLocaleString()}</div>
+                      <div className="text-sm font-black text-teal-700">₹{(parseFloat(service.totalCost) || 0).toLocaleString()}</div>
                     </div>
                   </div>
 

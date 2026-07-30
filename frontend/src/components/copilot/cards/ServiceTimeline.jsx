@@ -17,7 +17,11 @@ const ServiceTimeline = ({ data }) => {
             </div>
             <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.5rem)] p-3 rounded-lg border border-slate-100 bg-slate-50 shadow-sm">
               <div className="flex items-center justify-between mb-1">
-                <span className="font-bold text-sm text-slate-800">{service.serviceType || 'Maintenance'}</span>
+                <span className="font-bold text-sm text-slate-800">
+                  {/^\d+$/.test(String(service.serviceType || '').trim())
+                    ? `Periodic Service (${Number(service.serviceType).toLocaleString()} km)`
+                    : service.serviceType || 'Maintenance'}
+                </span>
                 <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 flex items-center gap-1">
                   <Clock className="w-3 h-3" /> {new Date(service.serviceDate).toLocaleDateString()}
                 </span>
@@ -27,7 +31,7 @@ const ServiceTimeline = ({ data }) => {
               </p>
               <div className="flex justify-between items-center pt-2 border-t border-slate-200">
                 <span className="text-[10px] text-slate-400">Cost</span>
-                <span className="text-xs font-bold text-slate-700">₹{service.totalCost || '0'}</span>
+                <span className="text-xs font-bold text-slate-700">₹{(parseFloat(service.totalCost) || 0).toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>

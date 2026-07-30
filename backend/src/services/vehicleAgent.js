@@ -25,7 +25,12 @@ class VehicleAgent {
 
   async _handleVehicleSummary(userId) {
     const db = getDb();
-    const vehicles = await db.collection('vehicles').find({ ownerId: userId, isArchived: { $ne: true } }).toArray();
+    const userIdStr = String(userId);
+    let userIdObj = null;
+    try { userIdObj = new ObjectId(userIdStr); } catch {}
+    const ownerQuery = { $in: [userIdStr, userId, userIdObj].filter(Boolean) };
+
+    const vehicles = await db.collection('vehicles').find({ ownerId: ownerQuery, isArchived: { $ne: true } }).toArray();
     
     if (vehicles.length === 0) {
       return {
@@ -43,7 +48,12 @@ class VehicleAgent {
 
   async _handleServiceQuery(userId, text, activeVehicleId) {
     const db = getDb();
-    const vehicles = await db.collection('vehicles').find({ ownerId: userId }).toArray();
+    const userIdStr = String(userId);
+    let userIdObj = null;
+    try { userIdObj = new ObjectId(userIdStr); } catch {}
+    const ownerQuery = { $in: [userIdStr, userId, userIdObj].filter(Boolean) };
+
+    const vehicles = await db.collection('vehicles').find({ ownerId: ownerQuery }).toArray();
     
     if (vehicles.length === 0) {
       return { text: "You don't have any vehicles registered yet.", type: "text" };

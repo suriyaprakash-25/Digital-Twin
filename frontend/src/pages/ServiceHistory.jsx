@@ -71,7 +71,7 @@ const ServiceHistory = () => {
         }
     };
 
-    const totalExpense = services.reduce((sum, service) => sum + Number(service.totalCost || 0), 0);
+    const totalExpense = services.reduce((sum, service) => sum + (parseFloat(service.totalCost) || 0), 0);
 
     return (
         <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 lg:pb-8">
@@ -161,7 +161,9 @@ const ServiceHistory = () => {
                                                     )}
                                                 </div>
                                                 <h3 className="text-base md:text-xl font-extrabold text-slate-900 group-hover:text-amber-600 transition-colors tracking-tight mt-1">
-                                                    {service.serviceType}
+                                                    {/^\d+$/.test(String(service.serviceType || '').trim())
+                                                        ? `Periodic Service (${Number(service.serviceType).toLocaleString()} km)`
+                                                        : service.serviceType || 'General Maintenance'}
                                                 </h3>
                                             </div>
                                             <div className="flex flex-col items-end gap-2 relative">
@@ -242,7 +244,7 @@ const ServiceHistory = () => {
                                                 <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Total Cost</span>
                                                 <span className="text-lg md:text-2xl font-black text-slate-900 flex items-center tracking-tight">
                                                     <IndianRupee className="h-4 w-4 md:h-5 md:w-5 mr-0.5 text-slate-400" />
-                                                    {Number(service.totalCost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    {(parseFloat(service.totalCost) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </span>
                                             </div>
                                         </div>

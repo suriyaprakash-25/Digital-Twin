@@ -116,6 +116,26 @@ const UserDashboard = () => {
         </Link>
       </div>
 
+      {/* Synchronized Stat Cards */}
+      <div className="grid grid-cols-3 gap-2 md:gap-4">
+        <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-xl md:rounded-2xl p-3 md:p-4 text-emerald-900">
+          <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-emerald-700">Vehicles</p>
+          <p className="text-lg md:text-3xl font-black mt-1">{vehicles.length}</p>
+        </div>
+        <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl md:rounded-2xl p-3 md:p-4 text-amber-900">
+          <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-amber-700">Open Bookings</p>
+          <p className="text-lg md:text-3xl font-black mt-1">
+            {bookings.filter(b => b.status === 'PENDING' || b.status === 'REQUESTED' || b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length}
+          </p>
+        </div>
+        <div className="bg-blue-50/80 border border-blue-200/80 rounded-xl md:rounded-2xl p-3 md:p-4 text-blue-900">
+          <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-blue-700">Completed</p>
+          <p className="text-lg md:text-3xl font-black mt-1">
+            {bookings.filter(b => b.status === 'COMPLETED').length}
+          </p>
+        </div>
+      </div>
+
       {error && (
         <div className="bg-red-50 border border-red-100 text-red-600 p-3 rounded-xl text-xs md:text-sm font-medium">
           {error}

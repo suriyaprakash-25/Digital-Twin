@@ -270,6 +270,19 @@ const Marketplace = () => {
                       ? '🚫 Full (0 slots left)' 
                       : `Slots: ${g.maxCapacity - g.activeBookingsCount} / ${g.maxCapacity} remaining`}
                   </div>
+
+                  {/* Rating or New Partner Badge */}
+                  <div className="ml-1">
+                    {g.reviewCount > 0 ? (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                        ★ {g.rating} ({g.reviewCount} reviews)
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 inline-flex items-center gap-1">
+                        ★ New Partner
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-sm text-slate-600 mt-1">{[g.address, g.city].filter(Boolean).join(', ')}</div>
                 {g.phone ? <div className="text-sm text-slate-600 mt-1">Phone: {g.phone}</div> : null}

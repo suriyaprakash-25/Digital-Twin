@@ -124,7 +124,7 @@ const Passport = () => {
               Vehicle Passport
             </h1>
             <p className="text-slate-500 mt-1.5 font-medium text-sm sm:text-base">
-              Verified blockchain-grade digital footprint & telemetry twin for {vehicle.brand} {vehicle.model}.
+              Tamper-evident digital service log &amp; verified vehicle passport for {vehicle.brand} {vehicle.model}.
             </p>
           </div>
           <a
@@ -263,7 +263,11 @@ const Passport = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Service Type</span>
-                            <span className="text-sm font-extrabold text-slate-800">{service.serviceType}</span>
+                            <span className="text-sm font-extrabold text-slate-800">
+                              {/^\d+$/.test(String(service.serviceType || '').trim())
+                                ? `Periodic Service (${Number(service.serviceType).toLocaleString()} km)`
+                                : service.serviceType || 'General Maintenance'}
+                            </span>
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Workshop / Garage</span>
@@ -273,7 +277,7 @@ const Passport = () => {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Cost</span>
-                            <span className="text-sm font-black text-teal-600">₹{service.totalCost?.toLocaleString() || '0'}</span>
+                            <span className="text-sm font-black text-teal-600">₹{(parseFloat(service.totalCost) || 0).toLocaleString('en-IN')}</span>
                           </div>
                         </div>
                       </div>

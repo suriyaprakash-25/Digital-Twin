@@ -131,7 +131,14 @@ router.get('/myvehicles', requireAuth, async (req, res) => {
   const db = getDb();
   const vehicles = db.collection('vehicles');
 
-  const cursor = vehicles.find({ ownerId: req.user.id, isArchived: { $ne: true } });
+  const userIdStr = String(req.user.id);
+  let userIdObj = null;
+  try { userIdObj = new ObjectId(userIdStr); } catch {}
+
+  const cursor = vehicles.find({
+    ownerId: { $in: [userIdStr, req.user.id, userIdObj].filter(Boolean) },
+    isArchived: { $ne: true }
+  });
   const results = [];
 
   for await (const v of cursor) {
