@@ -225,13 +225,20 @@ const LandingPage = () => {
               <p className="text-sm sm:text-base md:text-lg text-on-surface-variant mb-8 leading-relaxed font-body-lg">
                 The definitive platform for vehicle owners. Get intelligent insights, manage maintenance, and track your vehicle's health in real-time.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Link
                   to="/signup"
-                  className="bg-primary-container text-on-primary-fixed flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-label-md text-label-md hover:opacity-90 transition-all active:scale-95"
+                  className="bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm md:text-base shadow-md hover:shadow-lg transition-all active:scale-95"
                 >
                   Get Started
-                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                  <ArrowRight size={18} />
+                </Link>
+                <Link
+                  to="/marketplace"
+                  className="bg-white border border-slate-300 hover:border-teal-500 text-slate-700 hover:text-teal-700 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm md:text-base transition-all shadow-sm"
+                >
+                  <Wrench size={18} className="text-teal-600" />
+                  Book a Service
                 </Link>
               </div>
             </div>
@@ -645,7 +652,7 @@ const LandingPage = () => {
               <img src="/logo-removebg-preview.png" alt="DrivePortz Logo" style={{ height: 86, marginBottom: '-15px' }} />
             </div>
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
-              The next-generation mobility digital twin platform. Track, protect, and maximise the value of your vehicles with AI-driven intelligence.
+              Track, protect, and maximize the true value of your vehicle with AI-driven intelligence.
             </p>
           </div>
           

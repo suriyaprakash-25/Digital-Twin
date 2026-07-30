@@ -170,7 +170,7 @@ const FleetsPage = () => {
                 <img src="/logo-removebg-preview.png" alt="DrivePortz Logo" style={{ height: 86, marginBottom: '-15px' }} />
               </div>
               <p className="text-sm text-slate-500 leading-relaxed mb-6">
-                The next-generation mobility digital twin platform.
+                Manage, monitor, and optimize your entire vehicle fleet with AI-driven intelligence.
               </p>
             </div>
             

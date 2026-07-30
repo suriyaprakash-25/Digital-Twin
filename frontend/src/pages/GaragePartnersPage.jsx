@@ -121,7 +121,7 @@ const GaragePartnersPage = () => {
                 <img src="/logo-removebg-preview.png" alt="DrivePortz Logo" style={{ height: 86, marginBottom: '-15px' }} />
               </div>
               <p className="text-sm text-slate-500 leading-relaxed mb-6">
-                The next-generation mobility digital twin platform.
+                Grow your workshop business online, manage bookings, and gain verified partner trust.
               </p>
             </div>
             
