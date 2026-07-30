@@ -235,10 +235,17 @@ const Marketplace = () => {
         ) : null}
 
         {filteredGarages.map((g) => (
-          <div key={g.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div
+            key={g.id}
+            onClick={(e) => {
+              if (e.target.closest('button') || e.target.closest('a')) return;
+              navigate(`/garages/${g.id}`);
+            }}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm cursor-pointer hover:border-teal-400 hover:shadow-md transition-all group"
+          >
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
                 <div>
-                <div className="text-lg font-extrabold text-slate-900 flex flex-wrap items-center gap-2">
+                <div className="text-lg font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors flex flex-wrap items-center gap-2">
                   {g.name}
                   {g.verified && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold">

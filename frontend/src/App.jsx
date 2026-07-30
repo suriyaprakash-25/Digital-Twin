@@ -31,6 +31,8 @@ import GarageAvailability from './pages/GarageAvailability';
 import FleetsPage from './pages/FleetsPage';
 import GaragePartnersPage from './pages/GaragePartnersPage';
 import GarageServicesHistory from './pages/GarageServicesHistory';
+import GarageDetails from './pages/GarageDetails';
+import GarageReviewsPage from './pages/GarageReviewsPage';
 
 import { ToastProvider } from './context/ToastContext';
 
@@ -106,6 +108,8 @@ function App() {
           <Route path="/garage-services" element={<GarageServices />} />
           <Route path="/garage-services-history" element={<GarageServicesHistory />} />
           <Route path="/garage-availability" element={<GarageAvailability />} />
+          <Route path="/garages/:garageId" element={<GarageDetails />} />
+          <Route path="/garage/reviews" element={<GarageReviewsPage />} />
           <Route path="/analytics" element={<Analytics />} />
         </Route>
       </Routes>

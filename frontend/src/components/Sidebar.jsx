@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope, ClipboardList, HelpCircle, Headphones, Info } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope, ClipboardList, HelpCircle, Headphones, Info, Star } from 'lucide-react';
 import { FEATURES } from '../config/features';
 
 function normalizeRole(role) {
@@ -33,6 +33,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         { name: 'Dashboard', href: '/garage-dashboard', icon: LayoutDashboard },
         { name: 'Garage Profile', href: '/garage-profile', icon: Building2 },
         { name: 'Your Services', href: '/garage-services', icon: Wrench },
+        { name: 'Customer Reviews', href: '/garage/reviews', icon: Star },
         { name: 'Service History', href: '/garage-services-history', icon: ClipboardList },
         { name: 'Add Service', href: '/add-service', icon: PlusCircle },
         { name: 'Analytics', href: '/analytics', icon: PieChart },
