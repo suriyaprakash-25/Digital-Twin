@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, Search, SlidersHorizontal, Wrench, ShieldCheck, Star, Images, Info, MessageSquare, AlertCircle } from 'lucide-react';
 import GarageHeader from '../components/garage/GarageHeader';
