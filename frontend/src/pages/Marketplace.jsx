@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MapPin, Navigation, Search, X, ShieldCheck } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useToast } from '../context/ToastContext';
 
 const Marketplace = () => {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [garages, setGarages] = useState([]);
   const [vehicles, setVehicles] = useState([]);

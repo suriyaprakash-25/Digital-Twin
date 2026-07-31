@@ -1,11 +1,20 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, Phone, Star, ShieldCheck } from 'lucide-react';
 
 const GarageCard = ({ data }) => {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col gap-3 w-full">
       {data.map((garage) => (
-        <div key={garage._id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+        <div
+          key={garage._id || garage.id}
+          onClick={(e) => {
+            if (e.target.closest('button')) return;
+            navigate(`/garages/${garage._id || garage.id}`);
+          }}
+          className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-teal-400 group"
+        >
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -38,8 +47,11 @@ const GarageCard = ({ data }) => {
           </div>
 
           <div className="mt-4 flex gap-2">
-            <button className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold py-2 rounded-lg transition-colors">
-              Request
+            <button
+              onClick={() => navigate(`/garages/${garage._id || garage.id}`)}
+              className="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-2 rounded-lg transition-colors shadow-xs"
+            >
+              View Garage &amp; Book
             </button>
           </div>
         </div>
