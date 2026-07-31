@@ -35,6 +35,7 @@ const GarageProfile = () => {
   const [garageLocation, setGarageLocation] = useState(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(null);
+  const [photoLoadError, setPhotoLoadError] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef(null);
   const galleryInputRef = useRef(null);
@@ -81,11 +82,16 @@ const GarageProfile = () => {
     const formData = new FormData();
     formData.append('photo', file);
     setUploadingPhoto(true);
+    setMessage({ type: '', text: '' });
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/photo`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
-      setPhotoUrl(res.data.photoUrl);
+      if (res.data?.photoUrl) {
+        setPhotoUrl(res.data.photoUrl);
+        setPhotoLoadError(false);
+        setMessage({ type: 'success', text: 'Garage logo photo uploaded successfully!' });
+      }
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.msg || 'Failed to upload photo.' });
     } finally {
@@ -140,10 +146,16 @@ const GarageProfile = () => {
           {/* Avatar with photo upload */}
           <div className="relative flex-shrink-0">
             <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg">
-              {photoUrl
-                ? <img src={getPhotoUrl(photoUrl)} alt="Garage" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                : <div className="w-full h-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-black">{initials}</div>
-              }
+              {photoUrl && !photoLoadError ? (
+                <img
+                  src={getPhotoUrl(photoUrl)}
+                  alt="Garage"
+                  className="w-full h-full object-cover"
+                  onError={() => setPhotoLoadError(true)}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-black">{initials}</div>
+              )}
             </div>
             <button
               type="button"

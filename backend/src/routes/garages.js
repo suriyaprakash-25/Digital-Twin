@@ -271,17 +271,32 @@ router.post('/photo', requireAuth, requireRole('GARAGE'), upload.single('photo')
   const garages = db.collection('garages');
 
   try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
+    let garage = await garages.findOne({
+      $or: [
+        { ownerUserId: String(req.user.id) },
+        { ownerUserId: req.user.id }
+      ]
+    });
+
+    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
     if (!garage) {
-      fs.unlinkSync(req.file.path);
-      return res.status(400).json({ msg: 'Create your garage profile first' });
+      const newGarage = {
+        ownerUserId: String(req.user.id),
+        name: 'My Garage',
+        photoUrl,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      await garages.insertOne(newGarage);
+      return res.status(200).json({ msg: 'Photo uploaded', photoUrl });
     }
 
     if (garage.photoUrl) {
       removeUploadByUrl(garage.photoUrl);
     }
 
-    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     await garages.updateOne({ _id: garage._id }, { $set: { photoUrl, updatedAt: new Date() } });
 
     return res.status(200).json({ msg: 'Photo uploaded', photoUrl });
@@ -301,13 +316,28 @@ router.post('/gallery', requireAuth, requireRole('GARAGE'), upload.array('photos
   const garages = db.collection('garages');
 
   try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
-    if (!garage) {
-      files.forEach(f => fs.unlinkSync(f.path));
-      return res.status(400).json({ msg: 'Create your garage profile first' });
-    }
+    let garage = await garages.findOne({
+      $or: [
+        { ownerUserId: String(req.user.id) },
+        { ownerUserId: req.user.id }
+      ]
+    });
 
     const newPhotoUrls = files.map(f => `${req.protocol}://${req.get('host')}/uploads/${f.filename}`);
+
+    if (!garage) {
+      const newGarage = {
+        ownerUserId: String(req.user.id),
+        name: 'My Garage',
+        galleryPhotos: newPhotoUrls,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      await garages.insertOne(newGarage);
+      return res.status(200).json({ msg: 'Photos uploaded successfully', photoUrls: newPhotoUrls, galleryPhotos: newPhotoUrls });
+    }
+
     const updatedGallery = [...(Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []), ...newPhotoUrls];
 
     await garages.updateOne({ _id: garage._id }, { $set: { galleryPhotos: updatedGallery, updatedAt: new Date() } });
