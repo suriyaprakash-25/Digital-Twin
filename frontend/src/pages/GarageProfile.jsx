@@ -141,7 +141,7 @@ const GarageProfile = () => {
           <div className="relative flex-shrink-0">
             <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg">
               {photoUrl
-                ? <img src={getPhotoUrl(photoUrl)} alt="Garage" className="w-full h-full object-cover" />
+                ? <img src={getPhotoUrl(photoUrl)} alt="Garage" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                 : <div className="w-full h-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-black">{initials}</div>
               }
             </div>
@@ -357,11 +357,28 @@ const GarageProfile = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {profile.galleryPhotos.map((url, idx) => (
                   <div key={idx} className="relative group rounded-xl overflow-hidden h-24 border border-slate-200 bg-slate-100">
-                    <img src={getPhotoUrl(url)} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                    <img
+                      src={getPhotoUrl(url)}
+                      alt={`Gallery ${idx}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.parentElement.style.display = 'none';
+                      }}
+                    />
                     <button
                       type="button"
-                      onClick={() => setProfile(p => ({ ...p, galleryPhotos: p.galleryPhotos.filter((_, i) => i !== idx) }))}
+                      onClick={async () => {
+                        const targetUrl = url;
+                        setProfile(p => ({ ...p, galleryPhotos: p.galleryPhotos.filter((_, i) => i !== idx) }));
+                        try {
+                          await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/gallery`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                            data: { photoUrl: targetUrl }
+                          });
+                        } catch (err) {}
+                      }}
                       className="absolute top-1.5 right-1.5 p-1 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                      title="Delete photo"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -373,29 +390,38 @@ const GarageProfile = () => {
                   disabled={uploadingGallery}
                   className="h-24 rounded-xl border-2 border-dashed border-slate-300 hover:border-teal-500 bg-slate-50 hover:bg-teal-50/50 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-teal-600 transition-all font-semibold text-xs"
                 >
-                  <Plus className="h-5 w-5" />
-                  <span>Upload Photo</span>
+                  {uploadingGallery ? (
+                    <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="h-5 w-5" />
+                      <span>Upload Photos</span>
+                    </>
+                  )}
                 </button>
                 <input
                   ref={galleryInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
+                    const files = Array.from(e.target.files || []);
+                    if (files.length === 0) return;
                     setUploadingGallery(true);
                     try {
                       const formData = new FormData();
-                      formData.append('photo', file);
-                      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/photo`, formData, {
+                      files.forEach(f => formData.append('photos', f));
+                      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/gallery`, formData, {
                         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                       });
-                      if (res.data?.photoUrl) {
-                        setProfile(p => ({ ...p, galleryPhotos: [...p.galleryPhotos, res.data.photoUrl] }));
+                      if (Array.isArray(res.data?.galleryPhotos)) {
+                        setProfile(p => ({ ...p, galleryPhotos: res.data.galleryPhotos }));
+                        setOriginal(o => ({ ...o, galleryPhotos: res.data.galleryPhotos }));
+                        setMessage({ type: 'success', text: `${files.length} photo(s) uploaded & saved!` });
                       }
-                    } catch {
-                      setMessage({ type: 'error', text: 'Failed to upload photo.' });
+                    } catch (err) {
+                      setMessage({ type: 'error', text: err.response?.data?.msg || 'Failed to upload photo(s).' });
                     } finally {
                       setUploadingGallery(false);
                       if (galleryInputRef.current) galleryInputRef.current.value = '';

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { MapPin, Navigation, Search, X, ShieldCheck } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useToast } from '../context/ToastContext';
+import { getPhotoUrl } from '../utils/imageUrl';
 
 const Marketplace = () => {
   const navigate = useNavigate();
@@ -246,57 +247,73 @@ const Marketplace = () => {
             className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm cursor-pointer hover:border-teal-400 hover:shadow-md transition-all group"
           >
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
-                <div>
-                <div className="text-lg font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors flex flex-wrap items-center gap-2">
-                  {g.name}
-                  {g.verified && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold">
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                      Verified
-                    </span>
+              <div className="flex items-start gap-3">
+                {/* Garage Photo / Avatar */}
+                <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                  {g.photoUrl || (Array.isArray(g.galleryPhotos) && g.galleryPhotos.length > 0) ? (
+                    <img
+                      src={getPhotoUrl(g.photoUrl || g.galleryPhotos[0])}
+                      alt={g.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <span className="font-black text-teal-700 text-lg">{g.name?.slice(0, 2).toUpperCase()}</span>
                   )}
-                  {/* Status Badge */}
-                  <div className={`px-2 py-0.5 rounded-full flex items-center gap-1.5 text-xs font-bold border ml-1
-                    ${g.currentStatus === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                      g.currentStatus === 'BUSY' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-                      'bg-slate-50 text-slate-600 border-slate-200'}`}
-                  >
-                    {g.currentStatus === 'AVAILABLE' && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>}
-                    {g.currentStatus === 'BUSY' && <span className="h-2 w-2 rounded-full bg-amber-500"></span>}
-                    {g.currentStatus === 'CLOSED' && <span className="h-2 w-2 rounded-full bg-slate-400"></span>}
-                    {g.currentStatus === 'AVAILABLE' ? 'Open Now' : g.currentStatus === 'BUSY' ? 'Busy' : 'Closed'}
-                  </div>
-
-                  {/* Slots Available Badge */}
-                  <div className={`px-2 py-0.5 rounded-full text-xs font-bold border ml-1
-                    ${(g.maxCapacity - g.activeBookingsCount) <= 0 
-                      ? 'bg-rose-50 text-rose-700 border-rose-200' 
-                      : (g.maxCapacity - g.activeBookingsCount) <= 5
-                        ? 'bg-amber-50 text-amber-700 border-amber-200'
-                        : 'bg-teal-50 text-teal-700 border-teal-200'}`}
-                  >
-                    {(g.maxCapacity - g.activeBookingsCount) <= 0 
-                      ? '🚫 Full (0 slots left)' 
-                      : `Slots: ${g.maxCapacity - g.activeBookingsCount} / ${g.maxCapacity} remaining`}
-                  </div>
-
-                  {/* Rating or New Partner Badge */}
-                  <div className="ml-1">
-                    {g.reviewCount > 0 ? (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
-                        ★ {g.rating} ({g.reviewCount} reviews)
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 inline-flex items-center gap-1">
-                        ★ New Partner
+                </div>
+                <div>
+                  <div className="text-lg font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors flex flex-wrap items-center gap-2">
+                    {g.name}
+                    {g.verified && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Verified
                       </span>
                     )}
+                    {/* Status Badge */}
+                    <div className={`px-2 py-0.5 rounded-full flex items-center gap-1.5 text-xs font-bold border ml-1
+                      ${g.currentStatus === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                        g.currentStatus === 'BUSY' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                        'bg-slate-50 text-slate-600 border-slate-200'}`}
+                    >
+                      {g.currentStatus === 'AVAILABLE' && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>}
+                      {g.currentStatus === 'BUSY' && <span className="h-2 w-2 rounded-full bg-amber-500"></span>}
+                      {g.currentStatus === 'CLOSED' && <span className="h-2 w-2 rounded-full bg-slate-400"></span>}
+                      {g.currentStatus === 'AVAILABLE' ? 'Open Now' : g.currentStatus === 'BUSY' ? 'Busy' : 'Closed'}
+                    </div>
+
+                    {/* Slots Available Badge */}
+                    <div className={`px-2 py-0.5 rounded-full text-xs font-bold border ml-1
+                      ${(g.maxCapacity - g.activeBookingsCount) <= 0 
+                        ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                        : (g.maxCapacity - g.activeBookingsCount) <= 5
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-teal-50 text-teal-700 border-teal-200'}`}
+                    >
+                      {(g.maxCapacity - g.activeBookingsCount) <= 0 
+                        ? '🚫 Full (0 slots left)' 
+                        : `Slots: ${g.maxCapacity - g.activeBookingsCount} / ${g.maxCapacity} remaining`}
+                    </div>
+
+                    {/* Rating or New Partner Badge */}
+                    <div className="ml-1">
+                      {g.reviewCount > 0 ? (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                          ★ {g.rating} ({g.reviewCount} reviews)
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 inline-flex items-center gap-1">
+                          ★ New Partner
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <div className="text-sm text-slate-600 mt-1">{[g.address, g.city].filter(Boolean).join(', ')}</div>
+                  {g.phone ? <div className="text-sm text-slate-600 mt-1">Phone: {g.phone}</div> : null}
+                  {g.description ? <div className="text-sm text-slate-600 mt-2">{g.description}</div> : null}
                 </div>
-                <div className="text-sm text-slate-600 mt-1">{[g.address, g.city].filter(Boolean).join(', ')}</div>
-                {g.phone ? <div className="text-sm text-slate-600 mt-1">Phone: {g.phone}</div> : null}
-                {g.description ? <div className="text-sm text-slate-600 mt-2">{g.description}</div> : null}
               </div>
+
               <div>
                 {g.garageLocation?.latitude && g.garageLocation?.longitude ? (
                   <a

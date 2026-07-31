@@ -290,6 +290,57 @@ router.post('/photo', requireAuth, requireRole('GARAGE'), upload.single('photo')
   }
 });
 
+// POST /api/garages/gallery — garage owner uploads gallery photos
+router.post('/gallery', requireAuth, requireRole('GARAGE'), upload.array('photos', 10), async (req, res) => {
+  const files = req.files || (req.file ? [req.file] : []);
+  if (!files || files.length === 0) {
+    return res.status(400).json({ msg: 'No photos uploaded' });
+  }
+
+  const db = getDb();
+  const garages = db.collection('garages');
+
+  try {
+    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
+    if (!garage) {
+      files.forEach(f => fs.unlinkSync(f.path));
+      return res.status(400).json({ msg: 'Create your garage profile first' });
+    }
+
+    const newPhotoUrls = files.map(f => `${req.protocol}://${req.get('host')}/uploads/${f.filename}`);
+    const updatedGallery = [...(Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []), ...newPhotoUrls];
+
+    await garages.updateOne({ _id: garage._id }, { $set: { galleryPhotos: updatedGallery, updatedAt: new Date() } });
+
+    return res.status(200).json({ msg: 'Photos uploaded successfully', photoUrls: newPhotoUrls, galleryPhotos: updatedGallery });
+  } catch (e) {
+    return res.status(500).json({ msg: 'Error uploading gallery photos', error: String(e && e.message ? e.message : e) });
+  }
+});
+
+// DELETE /api/garages/gallery — remove photo from garage gallery
+router.delete('/gallery', requireAuth, requireRole('GARAGE'), async (req, res) => {
+  const db = getDb();
+  const garages = db.collection('garages');
+  const { photoUrl } = req.body || {};
+
+  if (!photoUrl) return res.status(400).json({ msg: 'Photo URL is required' });
+
+  try {
+    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
+    if (!garage) return res.status(404).json({ msg: 'Garage profile not found' });
+
+    const updatedGallery = (Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []).filter(u => u !== photoUrl);
+    removeUploadByUrl(photoUrl);
+
+    await garages.updateOne({ _id: garage._id }, { $set: { galleryPhotos: updatedGallery, updatedAt: new Date() } });
+
+    return res.status(200).json({ msg: 'Photo removed', galleryPhotos: updatedGallery });
+  } catch (e) {
+    return res.status(500).json({ msg: 'Error deleting gallery photo', error: String(e && e.message ? e.message : e) });
+  }
+});
+
 // POST /api/garages/location — garage owner saves their map coordinates
 router.post('/location', requireAuth, requireRole('GARAGE'), async (req, res) => {
   const db = getDb();
