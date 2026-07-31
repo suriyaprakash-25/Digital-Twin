@@ -5,8 +5,13 @@ import { getPhotoUrl } from '../../utils/imageUrl';
 
 const GarageGallery = ({ images = [] }) => {
   const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const [failedIndices, setFailedIndices] = useState(new Set());
 
-  if (!images || images.length === 0) {
+  const validImages = (Array.isArray(images) ? images : []).filter(
+    (url, idx) => url && typeof url === 'string' && url.trim().length > 0 && !failedIndices.has(idx)
+  );
+
+  if (validImages.length === 0) {
     return null;
   }
 
@@ -17,13 +22,13 @@ const GarageGallery = ({ images = [] }) => {
           <Images className="w-5 h-5 text-teal-600" /> Image Gallery
         </h2>
         <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
-          {images.length} Photo{images.length > 1 ? 's' : ''}
+          {validImages.length} Photo{validImages.length > 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Grid of Images */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {images.map((url, idx) => (
+        {validImages.map((url, idx) => (
           <div
             key={idx}
             onClick={() => setLightboxIndex(idx)}
@@ -33,6 +38,12 @@ const GarageGallery = ({ images = [] }) => {
               src={getPhotoUrl(url)}
               alt={`Garage photo ${idx + 1}`}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={() => {
+                const originalIndex = images.indexOf(url);
+                if (originalIndex >= 0) {
+                  setFailedIndices(prev => new Set(prev).add(originalIndex));
+                }
+              }}
             />
             <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <div className="p-2 rounded-full bg-white/20 backdrop-blur-md text-white">
@@ -46,7 +57,7 @@ const GarageGallery = ({ images = [] }) => {
       {/* Lightbox Modal */}
       {lightboxIndex >= 0 && (
         <ImageLightbox
-          images={images}
+          images={validImages}
           currentIndex={lightboxIndex}
           onClose={() => setLightboxIndex(-1)}
           onIndexChange={(idx) => setLightboxIndex(idx)}

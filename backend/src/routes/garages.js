@@ -62,7 +62,7 @@ router.post('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
       maxCapacity: maxCapacity !== undefined ? Number(maxCapacity) : 20,
       certifications: Array.isArray(certifications) ? certifications : [],
       specializations: Array.isArray(specializations) ? specializations : [],
-      galleryPhotos: Array.isArray(galleryPhotos) ? galleryPhotos : [],
+      galleryPhotos: (Array.isArray(galleryPhotos) ? galleryPhotos : []).filter(u => typeof u === 'string' && u.trim().length > 0),
       ownerUserId: String(req.user.id),
       isActive: true,
       updatedAt: new Date()
@@ -462,7 +462,7 @@ router.get('/details/:garageId', async (req, res) => {
       description: garage.description || 'Authorized partner service center equipped with state-of-the-art diagnostic machinery and certified mechanics.',
       maxCapacity: garage.maxCapacity || 20,
       photoUrl: garage.photoUrl || null,
-      galleryPhotos: Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : [],
+      galleryPhotos: (Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []).filter(u => typeof u === 'string' && u.trim().length > 0),
       certifications: Array.isArray(garage.certifications) && garage.certifications.length > 0 ? garage.certifications : ['Bosch Authorized', 'DrivePortz Verified', 'ISO 9001 Certified'],
       specializations: Array.isArray(garage.specializations) && garage.specializations.length > 0 ? garage.specializations : ['Periodic Service', 'Engine Overhaul', 'AC Repair', 'Denting & Painting', 'Electricals'],
       rating: averageRating,
@@ -538,7 +538,7 @@ router.get('/:garageId/gallery', async (req, res) => {
   try {
     const garage = await garages.findOne({ _id: new ObjectId(String(req.params.garageId)) });
     if (!garage) return res.status(404).json({ msg: 'Garage not found' });
-    const photos = Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : [];
+    const photos = (Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []).filter(u => typeof u === 'string' && u.trim().length > 0);
     return res.status(200).json({ galleryPhotos: photos });
   } catch (e) {
     return res.status(500).json({ msg: 'Error fetching gallery', error: String(e && e.message ? e.message : e) });
