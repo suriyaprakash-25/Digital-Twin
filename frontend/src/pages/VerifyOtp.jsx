@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { KeyRound, ArrowLeft, Loader2, CheckCircle2, RefreshCw } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 function VerifyOtp() {
+  const { showToast } = useToast();
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,14 +29,13 @@ function VerifyOtp() {
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/verify-otp`, { email, otp });
       if (res.data.success) {
-        setMessage('OTP verified successfully! Redirecting...');
-        // In Phase 3, we will redirect to /reset-password
+        showToast('OTP verified successfully! Redirecting...', 'success');
         setTimeout(() => {
           navigate('/reset-password', { state: { email, otp } });
         }, 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.msg || 'An error occurred. Please try again.');
+      showToast(err.response?.data?.msg || 'An error occurred. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -50,10 +49,10 @@ function VerifyOtp() {
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/forgot-password`, { email });
       if (res.data.success) {
-        setMessage('A new OTP has been sent to your email.');
+        showToast('A new OTP has been sent to your email.', 'success');
       }
     } catch (err) {
-      setError(err.response?.data?.msg || 'Failed to resend OTP.');
+      showToast(err.response?.data?.msg || 'Failed to resend OTP.', 'error');
     } finally {
       setResending(false);
     }
@@ -82,19 +81,6 @@ function VerifyOtp() {
             <p className="text-slate-500 text-center text-sm mb-8">
               We've sent a 6-digit code to <span className="font-semibold text-slate-700">{email}</span>.
             </p>
-
-            {message && (
-              <div className="mb-6 p-4 bg-teal-50 border border-teal-100 rounded-xl flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
-                <p className="text-teal-800 text-sm font-medium">{message}</p>
-              </div>
-            )}
-
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
-                <p className="text-red-600 text-sm text-center font-medium">{error}</p>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>

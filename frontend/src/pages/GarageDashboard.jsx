@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { useToast } from '../context/ToastContext';
 import {
   Bell, Store, Wrench, Phone, MessageSquare, Filter,
   CalendarCheck, Clock, CheckCircle, XCircle, Loader2,
@@ -29,13 +30,12 @@ const GarageDashboard = () => {
   const user = userRaw ? JSON.parse(userRaw) : null;
   const role = normalizeRole(user?.role);
 
+  const { showToast } = useToast();
   const [profile, setProfile] = useState(null);
   const [services, setServices] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
 
   const [inputCapacity, setInputCapacity] = useState(20);
   const [updatingCapacity, setUpdatingCapacity] = useState(false);
@@ -74,11 +74,10 @@ const GarageDashboard = () => {
   const updateBookingStatus = async (bookingId, status) => {
     try {
       await axios.patch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}/status`, { status }, headers);
-      setMessage('Booking updated');
-      setTimeout(() => setMessage(''), 3000);
+      showToast('Booking updated successfully!', 'success');
       await loadAll();
     } catch (e) {
-      setError(e.response?.data?.msg || 'Failed to update booking');
+      showToast(e.response?.data?.msg || 'Failed to update booking', 'error');
     }
   };
 
@@ -92,10 +91,9 @@ const GarageDashboard = () => {
         headers
       );
       setProfile(p => ({ ...p, maxCapacity: res.data.maxCapacity }));
-      setMessage('Capacity limit updated successfully');
-      setTimeout(() => setMessage(''), 3000);
+      showToast('Capacity limit updated successfully', 'success');
     } catch (e) {
-      setError(e.response?.data?.msg || 'Failed to update capacity limit');
+      showToast(e.response?.data?.msg || 'Failed to update capacity limit', 'error');
     } finally {
       setUpdatingCapacity(false);
     }
@@ -206,17 +204,7 @@ const GarageDashboard = () => {
         </div>
       </div>
 
-      {/* Alerts */}
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-sm font-medium flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4" /> {error}
-        </div>
-      )}
-      {message && (
-        <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl text-sm font-medium flex items-center gap-2">
-          <CheckCircle className="h-4 w-4" /> {message}
-        </div>
-      )}
+
 
       {/* Capacity & Vehicles In Progress Control Center */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -5,6 +5,7 @@ import {
   ArrowLeft, Plus, Wrench, IndianRupee, Clock, Trash2,
   CheckCircle, AlertCircle, PackageOpen, Tag, Pencil, Image as ImageIcon, Check, ListChecks, Filter, Layers
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 const empty = {
   title: '', description: '', price: '', durationMins: '',
@@ -23,15 +24,9 @@ const GarageServices = () => {
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [showForm, setShowForm] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [newInclusion, setNewInclusion] = useState('');
-  const [newBundleItem, setNewBundleItem] = useState('');
-
+  const { showToast } = useToast();
   const flash = (type, text) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage({ type: '', text: '' }), 4000);
+    showToast(text, type);
   };
 
   const load = async () => {
@@ -146,19 +141,7 @@ const GarageServices = () => {
         ))}
       </div>
 
-      {/* Flash message */}
-      {message.text && (
-        <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold ${
-          message.type === 'success'
-            ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-            : 'bg-red-50 border border-red-200 text-red-700'
-        }`}>
-          {message.type === 'success'
-            ? <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-            : <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />}
-          {message.text}
-        </div>
-      )}
+
 
       {/* Add service form */}
       {showForm && (

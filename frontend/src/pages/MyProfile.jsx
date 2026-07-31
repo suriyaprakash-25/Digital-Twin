@@ -7,6 +7,8 @@ import {
   Car,
   CheckCircle,
   FileBadge2,
+  FileText,
+  ShieldCheck,
   Mail,
   MapPin,
   PencilLine,
@@ -16,6 +18,7 @@ import {
   User,
   Wrench
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 const StatCard = ({ label, value, tone }) => (
   <div className={`rounded-xl md:rounded-2xl border p-2 md:p-4 flex flex-col justify-between min-w-0 ${tone}`}>
@@ -45,8 +48,8 @@ const MyProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const { showToast } = useToast();
   const [uploadingLicense, setUploadingLicense] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
   const [photoError, setPhotoError] = useState(false);
 
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
@@ -72,7 +75,7 @@ const MyProfile = () => {
         setBookings(Array.isArray(bookingsRes.data) ? bookingsRes.data : []);
       } catch (err) {
         if (cancelled) return;
-        setMessage({ type: 'error', text: err.response?.data?.msg || 'Failed to load profile.' });
+        showToast(err.response?.data?.msg || 'Failed to load profile.', 'error');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -113,7 +116,6 @@ const MyProfile = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setMessage({ type: '', text: '' });
 
     try {
       const res = await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/me`, {
@@ -126,10 +128,10 @@ const MyProfile = () => {
 
       setProfile((prev) => ({ ...prev, ...res.data.user }));
       setOriginal((prev) => ({ ...prev, ...res.data.user }));
-      persistUser(res.data.user);
-      setMessage({ type: 'success', text: 'Profile updated successfully.' });
+      persistUser(profile);
+      showToast('Profile updated successfully.', 'success');
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.msg || 'Failed to save profile.' });
+      showToast(err.response?.data?.msg || 'Failed to save profile.', 'error');
     } finally {
       setSaving(false);
     }
@@ -155,9 +157,9 @@ const MyProfile = () => {
       setOriginal((prev) => ({ ...prev, photoUrl: res.data.photoUrl }));
       setPhotoError(false);
       persistUser({ photoUrl: res.data.photoUrl });
-      setMessage({ type: 'success', text: 'Profile photo updated.' });
+      showToast('Profile photo updated.', 'success');
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.msg || 'Failed to upload photo.' });
+      showToast(err.response?.data?.msg || 'Failed to upload photo.', 'error');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -183,9 +185,9 @@ const MyProfile = () => {
       setProfile((prev) => ({ ...prev, licenseDocumentUrl: res.data.licenseDocumentUrl }));
       setOriginal((prev) => ({ ...prev, licenseDocumentUrl: res.data.licenseDocumentUrl }));
       persistUser({ licenseDocumentUrl: res.data.licenseDocumentUrl });
-      setMessage({ type: 'success', text: 'License uploaded successfully.' });
+      showToast('License uploaded successfully.', 'success');
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.msg || 'Failed to upload license.' });
+      showToast(err.response?.data?.msg || 'Failed to upload license.', 'error');
     } finally {
       setUploadingLicense(false);
       if (licenseInputRef.current) licenseInputRef.current.value = '';
@@ -254,14 +256,7 @@ const MyProfile = () => {
         </div>
       </section>
 
-      {message.text ? (
-        <div className={`rounded-2xl border px-5 py-4 text-sm font-semibold ${message.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-          <div className="flex items-center gap-3">
-            <CheckCircle className="h-5 w-5" />
-            {message.text}
-          </div>
-        </div>
-      ) : null}
+
 
       <div className="grid grid-cols-1 gap-4 md:gap-8 xl:grid-cols-[1.3fr_0.7fr]">
         <form onSubmit={handleSave} className="overflow-hidden rounded-2xl md:rounded-3xl border border-slate-200 bg-white shadow-sm">

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import GarageLocationPicker from '../components/GarageLocationPicker';
 import { getPhotoUrl } from '../utils/imageUrl';
+import { useToast } from '../context/ToastContext';
 
 const Field = ({ label, icon, children }) => (
   <div className="space-y-1.5 pb-1 lg:pb-2">
@@ -40,10 +41,9 @@ const GarageProfile = () => {
   const photoInputRef = useRef(null);
   const galleryInputRef = useRef(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [newCertInput, setNewCertInput] = useState('');
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, headers)
@@ -82,7 +82,6 @@ const GarageProfile = () => {
     const formData = new FormData();
     formData.append('photo', file);
     setUploadingPhoto(true);
-    setMessage({ type: '', text: '' });
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/photo`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
@@ -90,10 +89,10 @@ const GarageProfile = () => {
       if (res.data?.photoUrl) {
         setPhotoUrl(res.data.photoUrl);
         setPhotoLoadError(false);
-        setMessage({ type: 'success', text: 'Garage logo photo uploaded successfully!' });
+        showToast('Garage logo photo uploaded successfully!', 'success');
       }
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.msg || 'Failed to upload photo.' });
+      showToast(err.response?.data?.msg || 'Failed to upload photo.', 'error');
     } finally {
       setUploadingPhoto(false);
       if (photoInputRef.current) photoInputRef.current.value = '';
@@ -103,13 +102,12 @@ const GarageProfile = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setMessage({ type: '', text: '' });
     try {
       await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, profile, headers);
       setOriginal({ ...profile });
-      setMessage({ type: 'success', text: 'Profile saved successfully!' });
+      showToast('Profile saved successfully!', 'success');
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.msg || 'Failed to save profile.' });
+      showToast(err.response?.data?.msg || 'Failed to save profile.', 'error');
     } finally {
       setSaving(false);
     }
@@ -192,19 +190,7 @@ const GarageProfile = () => {
         </div>
       </div>
 
-      {/* Message */}
-      {message.text && (
-        <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold ${
-          message.type === 'success'
-            ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-            : 'bg-red-50 border border-red-200 text-red-700'
-        }`}>
-          {message.type === 'success'
-            ? <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-            : <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />}
-          {message.text}
-        </div>
-      )}
+
 
       {/* Form card */}
       <form onSubmit={handleSave} className="bg-white border border-slate-200 rounded-2xl md:rounded-3xl shadow-sm overflow-hidden">
@@ -430,10 +416,10 @@ const GarageProfile = () => {
                       if (Array.isArray(res.data?.galleryPhotos)) {
                         setProfile(p => ({ ...p, galleryPhotos: res.data.galleryPhotos }));
                         setOriginal(o => ({ ...o, galleryPhotos: res.data.galleryPhotos }));
-                        setMessage({ type: 'success', text: `${files.length} photo(s) uploaded & saved!` });
+                        showToast(`${files.length} photo(s) uploaded & saved!`, 'success');
                       }
                     } catch (err) {
-                      setMessage({ type: 'error', text: err.response?.data?.msg || 'Failed to upload photo(s).' });
+                      showToast(err.response?.data?.msg || 'Failed to upload photo(s).', 'error');
                     } finally {
                       setUploadingGallery(false);
                       if (galleryInputRef.current) galleryInputRef.current.value = '';
