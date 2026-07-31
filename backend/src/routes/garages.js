@@ -381,12 +381,7 @@ router.get('/details/:garageId', async (req, res) => {
       description: garage.description || 'Authorized partner service center equipped with state-of-the-art diagnostic machinery and certified mechanics.',
       maxCapacity: garage.maxCapacity || 20,
       photoUrl: garage.photoUrl || null,
-      galleryPhotos: Array.isArray(garage.galleryPhotos) && garage.galleryPhotos.length > 0 ? garage.galleryPhotos : [
-        'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=800&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=800&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=800&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&auto=format&fit=crop'
-      ],
+      galleryPhotos: Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : [],
       certifications: Array.isArray(garage.certifications) && garage.certifications.length > 0 ? garage.certifications : ['Bosch Authorized', 'DrivePortz Verified', 'ISO 9001 Certified'],
       specializations: Array.isArray(garage.specializations) && garage.specializations.length > 0 ? garage.specializations : ['Periodic Service', 'Engine Overhaul', 'AC Repair', 'Denting & Painting', 'Electricals'],
       rating: averageRating,
@@ -462,11 +457,7 @@ router.get('/:garageId/gallery', async (req, res) => {
   try {
     const garage = await garages.findOne({ _id: new ObjectId(String(req.params.garageId)) });
     if (!garage) return res.status(404).json({ msg: 'Garage not found' });
-    const photos = Array.isArray(garage.galleryPhotos) && garage.galleryPhotos.length > 0 ? garage.galleryPhotos : [
-      'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=800&auto=format&fit=crop'
-    ];
+    const photos = Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : [];
     return res.status(200).json({ galleryPhotos: photos });
   } catch (e) {
     return res.status(500).json({ msg: 'Error fetching gallery', error: String(e && e.message ? e.message : e) });

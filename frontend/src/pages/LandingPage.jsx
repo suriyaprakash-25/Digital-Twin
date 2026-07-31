@@ -243,10 +243,25 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-          {/* Right Side: Illustration */}
-          <div className="w-full md:w-1/2 bg-surface-container-low flex items-center justify-center p-6 pt-2 md:p-10 border-t md:border-l md:border-t-0 border-outline-variant">
-            <div className="relative w-full aspect-[1.79]">
-              <img alt="Garage Scene" className="w-full h-full object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk4bG_vORRaC8TqJQ2YDu4CTj1TluAhujbKRLmbilwg4F2zUHl63eYWwHkv4znCgknFRNEvdYVTWZKSlT4VNsROIXA3T89oudaVPZV19d5ugjnnr8VIfvSuN-7Siy3GXSlGtwoeYEfvWqGIHz_w9YytM2h3s_SnpHnkrI6gQDnzr7Wss7oLVQvSx7P6Uj15fzhXQVZ58ulN90baB2k1nMhV1Oh77E5j_02-2wIxGDhSKfnSev4tDwT-psdmWMGJ2qzsbSphImQxs"/>
+          {/* Right Side: Vector Hero Illustration */}
+          <div className="w-full md:w-1/2 bg-gradient-to-br from-teal-900 via-slate-900 to-slate-950 flex items-center justify-center p-8 md:p-12 relative overflow-hidden border-t md:border-l md:border-t-0 border-slate-800">
+            <div className="relative w-full aspect-[4/3] flex flex-col justify-between p-6 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl">
+              <div className="flex justify-between items-start">
+                <div className="p-3 rounded-2xl bg-teal-500/20 text-teal-400 border border-teal-500/30">
+                  <Shield size={28} />
+                </div>
+                <div className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-extrabold border border-emerald-500/30">
+                  Verified Digital Twin
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-white text-lg font-bold">DrivePortz Vehicle Passport</div>
+                <div className="text-slate-400 text-xs">Tamper-evident digital service log &amp; real-time health intelligence</div>
+              </div>
+              <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
+                <span>Vehicle IQ Score</span>
+                <span className="font-extrabold text-teal-400 text-sm">98 / 100</span>
+              </div>
             </div>
           </div>
         </div>
