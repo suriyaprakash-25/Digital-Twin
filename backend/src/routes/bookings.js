@@ -200,10 +200,11 @@ router.get('/garage', requireAuth, requireRole('GARAGE'), async (req, res) => {
     return res.status(200).json(
       docs.map((b) => {
         const matchedUser = userMap.get(String(b.userId));
-        const customer = (b.snapshots && b.snapshots.user) || {
-          name: matchedUser?.name || 'Customer',
-          phone: matchedUser?.phone || '',
-          email: matchedUser?.email || ''
+        const snapshotUser = (b.snapshots && b.snapshots.user) || {};
+        const customer = {
+          name: (snapshotUser.name && snapshotUser.name.trim()) || matchedUser?.name || 'Customer',
+          phone: (snapshotUser.phone && snapshotUser.phone.trim()) || matchedUser?.phone || '',
+          email: (snapshotUser.email && snapshotUser.email.trim()) || matchedUser?.email || ''
         };
 
         return {
