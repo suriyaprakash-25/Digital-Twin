@@ -137,587 +137,587 @@ const LandingPage = () => {
   return (
     <>
       <style>{css}</style>
-      <SEO 
-        title="Smart Vehicle Driveportz & Service Tracker" 
-        description="Create a living driveportz of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance." 
+      <SEO
+        title="Smart Vehicle Driveportz & Service Tracker"
+        description="Create a living driveportz of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance."
       />
       <div style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
 
-      {/* ════════════════════════════════
+        {/* ════════════════════════════════
            NAVBAR
       ════════════════════════════════ */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999,
-        paddingTop: '6px', paddingBottom: '0px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: scrolled ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.8)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(226,232,240,.8)',
-        boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,.06)' : 'none',
-        transition: 'all .35s ease',
-      }} className="px-4 sm:px-10">
-        {/* Logo */}
-        <div 
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-        >
-          <img
-            src="/logo-removebg-preview.png"
-            alt="Logo"
-            style={{ height: 86, marginBottom: '-20px' }}
-          />
-        </div>
+        <nav style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999,
+          paddingTop: '6px', paddingBottom: '0px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: scrolled ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.8)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(226,232,240,.8)',
+          boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,.06)' : 'none',
+          transition: 'all .35s ease',
+        }} className="px-4 sm:px-10">
+          {/* Logo */}
+          <div
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+          >
+            <img
+              src="/logo-removebg-preview.png"
+              alt="Logo"
+              style={{ height: 86, marginBottom: '-20px' }}
+            />
+          </div>
 
-        {/* Nav links */}
-        <div className="hidden md:flex gap-6 lg:gap-9 items-center">
-          {[['features', 'Features'], ['how-it-works', 'How It Works']].map(([id, label]) => (
-            <button key={id} onClick={scrollTo(id)} className="nav-a" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{label}</button>
-          ))}
-          <Link to="/fleets" className="nav-a">For Fleets</Link>
-          <Link to="/garage-partners" className="nav-a">For Garages</Link>
-        </div>
+          {/* Nav links */}
+          <div className="hidden md:flex gap-6 lg:gap-9 items-center">
+            {[['features', 'Features'], ['how-it-works', 'How It Works']].map(([id, label]) => (
+              <button key={id} onClick={scrollTo(id)} className="nav-a" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{label}</button>
+            ))}
+            <Link to="/fleets" className="nav-a">For Fleets</Link>
+            <Link to="/garage-partners" className="nav-a">For Garages</Link>
+          </div>
 
-        {/* Auth CTAs */}
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-            Log in
-          </Link>
-          <Link to="/signup" style={{
-            background: 'linear-gradient(135deg,#0d9488,#0f766e)',
-            color: '#fff', fontWeight: 700, fontSize: '.82rem',
-            padding: '.4rem 1rem', borderRadius: 8, textDecoration: 'none',
-            display: 'flex', alignItems: 'center', gap: 4,
-          }}
-            className="glow-cta sm:px-4 sm:py-2 sm:text-sm">
-            Get Started <ArrowRight size={12} className="shrink-0" />
-          </Link>
-        </div>
-      </nav>
+          {/* Auth CTAs */}
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+              Log in
+            </Link>
+            <Link to="/signup" style={{
+              background: 'linear-gradient(135deg,#0d9488,#0f766e)',
+              color: '#fff', fontWeight: 700, fontSize: '.82rem',
+              padding: '.4rem 1rem', borderRadius: 8, textDecoration: 'none',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}
+              className="glow-cta sm:px-4 sm:py-2 sm:text-sm">
+              Get Started <ArrowRight size={12} className="shrink-0" />
+            </Link>
+          </div>
+        </nav>
 
-      {/* ════════════════════════════════
+        {/* ════════════════════════════════
            HERO
       ════════════════════════════════ */}
-      <main className="pt-20 md:pt-24 pb-12 px-4 md:px-8 max-w-container-max mx-auto">
-        {/* Hero Section Canvas – Parallax wrapper */}
-        <div
-          className="w-full"
-          style={{ perspective: '1200px' }}
-          onMouseMove={handleHeroMouseMove}
-          onMouseLeave={handleHeroMouseLeave}
-        >
-        <div
-          ref={heroCardRef}
-          className="canvas-card rounded-2xl overflow-hidden w-full flex flex-col md:flex-row min-h-0 md:min-h-[680px]"
-          style={{
-            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.01)`,
-            transition: 'transform 0.12s ease-out, box-shadow 0.12s ease-out',
-            boxShadow: `
+        <main className="pt-20 md:pt-24 pb-12 px-4 md:px-8 max-w-container-max mx-auto">
+          {/* Hero Section Canvas – Parallax wrapper */}
+          <div
+            className="w-full"
+            style={{ perspective: '1200px' }}
+            onMouseMove={handleHeroMouseMove}
+            onMouseLeave={handleHeroMouseLeave}
+          >
+            <div
+              ref={heroCardRef}
+              className="canvas-card rounded-2xl overflow-hidden w-full flex flex-col md:flex-row min-h-0 md:min-h-[680px]"
+              style={{
+                transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.01)`,
+                transition: 'transform 0.12s ease-out, box-shadow 0.12s ease-out',
+                boxShadow: `
               ${tilt.y * 2}px ${tilt.x * -2}px 40px rgba(15,23,42,0.10),
               0 30px 60px -15px rgba(15,23,42,0.08)
             `,
-            willChange: 'transform',
-          }}
-        >
-          {/* Left Side: Content */}
-          <div className="w-full md:w-1/2 p-6 pb-2 sm:p-12 sm:pb-4 md:p-16 lg:p-24 flex flex-col justify-center">
-            <div className="max-w-xl">
-              <span className="text-primary font-label-md text-xs sm:text-sm uppercase tracking-widest mb-4 block">Intelligent Ownership</span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-slate-900 mb-6 font-display">Track, Protect, and Maximize Your Vehicle's Value</h1>
-              <p className="text-sm sm:text-base md:text-lg text-on-surface-variant mb-8 leading-relaxed font-body-lg">
-                The definitive platform for vehicle owners. Get intelligent insights, manage maintenance, and track your vehicle's health in real-time.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Link
-                  to="/signup"
-                  className="bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm md:text-base shadow-md hover:shadow-lg transition-all active:scale-95"
-                >
-                  Get Started
-                  <ArrowRight size={18} />
-                </Link>
-                <Link
-                  to="/marketplace"
-                  className="bg-white border border-slate-300 hover:border-teal-500 text-slate-700 hover:text-teal-700 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm md:text-base transition-all shadow-sm"
-                >
-                  <Wrench size={18} className="text-teal-600" />
-                  Book a Service
-                </Link>
+                willChange: 'transform',
+              }}
+            >
+              {/* Left Side: Content */}
+              <div className="w-full md:w-1/2 p-6 pb-2 sm:p-12 sm:pb-4 md:p-16 lg:p-24 flex flex-col justify-center">
+                <div className="max-w-xl">
+                  <span className="text-primary font-label-md text-xs sm:text-sm uppercase tracking-widest mb-4 block">Intelligent Ownership</span>
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-slate-900 mb-6 font-display">Track, Protect, and Maximize Your Vehicle's Value</h1>
+                  <p className="text-sm sm:text-base md:text-lg text-on-surface-variant mb-8 leading-relaxed font-body-lg">
+                    The definitive platform for vehicle owners. Get intelligent insights, manage maintenance, and track your vehicle's health in real-time.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    <Link
+                      to="/signup"
+                      className="bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm md:text-base shadow-md hover:shadow-lg transition-all active:scale-95"
+                    >
+                      Get Started
+                      <ArrowRight size={18} />
+                    </Link>
+                    <Link
+                      to="/marketplace"
+                      className="bg-white border border-slate-300 hover:border-teal-500 text-slate-700 hover:text-teal-700 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm md:text-base transition-all shadow-sm"
+                    >
+                      <Wrench size={18} className="text-teal-600" />
+                      Book a Service
+                    </Link>
+                  </div>
+                </div>
+              </div>
+              {/* Right Side: Illustration */}
+              <div className="w-full md:w-1/2 bg-surface-container-low flex items-center justify-center p-6 pt-2 md:p-10 border-t md:border-l md:border-t-0 border-outline-variant">
+                <div className="relative w-full aspect-[1.79]">
+                  <img alt="Garage Scene" className="w-full h-full object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk4bG_vORRaC8TqJQ2YDu4CTj1TluAhujbKRLmbilwg4F2zUHl63eYWwHkv4znCgknFRNEvdYVTWZKSlT4VNsROIXA3T89oudaVPZV19d5ugjnnr8VIfvSuN-7Siy3GXSlGtwoeYEfvWqGIHz_w9YytM2h3s_SnpHnkrI6gQDnzr7Wss7oLVQvSx7P6Uj15fzhXQVZ58ulN90baB2k1nMhV1Oh77E5j_02-2wIxGDhSKfnSev4tDwT-psdmWMGJ2qzsbSphImQxs"/>
+                </div>
               </div>
             </div>
           </div>
-          {/* Right Side: Illustration */}
-          <div className="w-full md:w-1/2 bg-surface-container-low flex items-center justify-center p-6 pt-2 md:p-10 border-t md:border-l md:border-t-0 border-outline-variant">
-            <div className="relative w-full aspect-[1.79]">
-              <img alt="Garage Scene" className="w-full h-full object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk4bG_vORRaC8TqJQ2YDu4CTj1TluAhujbKRLmbilwg4F2zUHl63eYWwHkv4znCgknFRNEvdYVTWZKSlT4VNsROIXA3T89oudaVPZV19d5ugjnnr8VIfvSuN-7Siy3GXSlGtwoeYEfvWqGIHz_w9YytM2h3s_SnpHnkrI6gQDnzr7Wss7oLVQvSx7P6Uj15fzhXQVZ58ulN90baB2k1nMhV1Oh77E5j_02-2wIxGDhSKfnSev4tDwT-psdmWMGJ2qzsbSphImQxs"/>
-            </div>
-          </div>
-        </div>
-        </div>
-      </main>
+        </main>
 
 
 
-      {/* ════════════════════════════════
+        {/* ════════════════════════════════
            FEATURES
       ════════════════════════════════ */}
-      <section id="features" ref={featRef} className="py-16 md:py-28 px-4 md:px-8 bg-slate-50">
-        <div className="max-w-[1200px] mx-auto">
-          {/* Section heading */}
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#14b8a6', letterSpacing: '.12em', textTransform: 'uppercase' }}>PLATFORM FEATURES</span>
-            <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', lineHeight: 1.08, color: '#0f172a' }}>
-              Everything Your Vehicle Needs
-            </h2>
-            <p className="text-sm sm:text-base text-slate-500 max-w-[540px] mx-auto mt-4 leading-relaxed">
-              A complete intelligence layer for your vehicle's entire lifetime — from first drive to final sale.
-            </p>
-          </div>
+        <section id="features" ref={featRef} className="py-16 md:py-28 px-4 md:px-8 bg-slate-50">
+          <div className="max-w-[1200px] mx-auto">
+            {/* Section heading */}
+            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+              <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#14b8a6', letterSpacing: '.12em', textTransform: 'uppercase' }}>PLATFORM FEATURES</span>
+              <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', lineHeight: 1.08, color: '#0f172a' }}>
+                Everything Your Vehicle Needs
+              </h2>
+              <p className="text-sm sm:text-base text-slate-500 max-w-[540px] mx-auto mt-4 leading-relaxed">
+                A complete intelligence layer for your vehicle's entire lifetime — from first drive to final sale.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <Shield size={26} color="#0d9488" />,
-                bg: '#f0fdfa', border: '#99f6e4',
-                tag: 'ANTI-FRAUD', tagColor: '#0d9488',
-                title: 'Fraud-Proof Service History',
-                desc: 'Dual-layer verification cross-checks odometer readings from owners and garages. Tamper flags trigger automatically on discrepancies exceeding 50 km.',
-              },
-              {
-                icon: <HeartPulse size={26} color="#0d9488" />,
-                bg: '#f0fdfa', border: '#99f6e4',
-                tag: 'AI-POWERED', tagColor: '#0d9488',
-                title: 'Live Vehicle IQ Score',
-                desc: 'Multi-factor engine evaluates legal validity, maintenance frequency, verified records and behavioral patterns to produce a precise 0–100 Vehicle IQ score.',
-              },
-              {
-                icon: <TrendingUp size={26} color="#0d9488" />,
-                bg: '#f0fdfa', border: '#99f6e4',
-                tag: 'VALUATION ENGINE', tagColor: '#0d9488',
-                title: 'Intelligent Resale Valuation',
-                desc: 'Algorithmic depreciation model plus a trust score adjusted for ownership transfers, verified history and accident records to compute a precise price range.',
-              },
-              {
-                icon: <Bell size={26} color="#0f766e" />,
-                bg: '#f0fdfa', border: '#99f6e4',
-                tag: 'PROACTIVE ALERTS', tagColor: '#0f766e',
-                title: 'Smart Legal Reminders',
-                desc: 'Never miss an expiry. Priority-based alerts for Insurance, PUC, RC, Fitness Certificate and Road Tax — dispatched weeks before they lapse.',
-              },
-              {
-                icon: <Store size={26} color="#14b8a6" />,
-                bg: '#f0fdfa', border: '#99f6e4',
-                tag: 'MARKETPLACE', tagColor: '#14b8a6',
-                title: 'Verified Garage Marketplace',
-                desc: 'Discover certified service centres, compare pricing, and book appointments. Every service claim is cross-verified on our platform for authenticity.',
-              },
-              {
-                icon: <BarChart3 size={26} color="#0d9488" />,
-                bg: '#f0fdfa', border: '#99f6e4',
-                tag: 'DATA INTELLIGENCE', tagColor: '#0d9488',
-                title: 'Personal Vehicle Analytics',
-                desc: 'Real-time expense trends, category breakdowns, mileage distributions and Vehicle IQ scores for your car — all in one visual dashboard.',
-              },
-            ].map((f, i) => (
-              <div key={f.title} className="card" style={{
-                background: f.bg, border: `1px solid ${f.border}`, borderRadius: 20,
-                padding: '2rem', cursor: 'default',
-                opacity: featVisible ? 1 : 0,
-                transform: featVisible ? 'none' : 'translateY(32px)',
-                transition: `opacity .6s ${i * .1}s ease, transform .6s ${i * .1}s ease`,
-              }}>
-                <div style={{ width: 54, height: 54, borderRadius: 15, background: '#fff', boxShadow: `0 2px 12px ${f.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.2rem' }}>
-                  {f.icon}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  icon: <Shield size={26} color="#0d9488" />,
+                  bg: '#f0fdfa', border: '#99f6e4',
+                  tag: 'ANTI-FRAUD', tagColor: '#0d9488',
+                  title: 'Fraud-Proof Service History',
+                  desc: 'Dual-layer verification cross-checks odometer readings from owners and garages. Tamper flags trigger automatically on discrepancies exceeding 50 km.',
+                },
+                {
+                  icon: <HeartPulse size={26} color="#0d9488" />,
+                  bg: '#f0fdfa', border: '#99f6e4',
+                  tag: 'AI-POWERED', tagColor: '#0d9488',
+                  title: 'Live Vehicle IQ Score',
+                  desc: 'Multi-factor engine evaluates legal validity, maintenance frequency, verified records and behavioral patterns to produce a precise 0–100 Vehicle IQ score.',
+                },
+                {
+                  icon: <TrendingUp size={26} color="#0d9488" />,
+                  bg: '#f0fdfa', border: '#99f6e4',
+                  tag: 'VALUATION ENGINE', tagColor: '#0d9488',
+                  title: 'Intelligent Resale Valuation',
+                  desc: 'Algorithmic depreciation model plus a trust score adjusted for ownership transfers, verified history and accident records to compute a precise price range.',
+                },
+                {
+                  icon: <Bell size={26} color="#0f766e" />,
+                  bg: '#f0fdfa', border: '#99f6e4',
+                  tag: 'PROACTIVE ALERTS', tagColor: '#0f766e',
+                  title: 'Smart Legal Reminders',
+                  desc: 'Never miss an expiry. Priority-based alerts for Insurance, PUC, RC, Fitness Certificate and Road Tax — dispatched weeks before they lapse.',
+                },
+                {
+                  icon: <Store size={26} color="#14b8a6" />,
+                  bg: '#f0fdfa', border: '#99f6e4',
+                  tag: 'MARKETPLACE', tagColor: '#14b8a6',
+                  title: 'Verified Garage Marketplace',
+                  desc: 'Discover certified service centres, compare pricing, and book appointments. Every service claim is cross-verified on our platform for authenticity.',
+                },
+                {
+                  icon: <BarChart3 size={26} color="#0d9488" />,
+                  bg: '#f0fdfa', border: '#99f6e4',
+                  tag: 'DATA INTELLIGENCE', tagColor: '#0d9488',
+                  title: 'Personal Vehicle Analytics',
+                  desc: 'Real-time expense trends, category breakdowns, mileage distributions and Vehicle IQ scores for your car — all in one visual dashboard.',
+                },
+              ].map((f, i) => (
+                <div key={f.title} className="card" style={{
+                  background: f.bg, border: `1px solid ${f.border}`, borderRadius: 20,
+                  padding: '2rem', cursor: 'default',
+                  opacity: featVisible ? 1 : 0,
+                  transform: featVisible ? 'none' : 'translateY(32px)',
+                  transition: `opacity .6s ${i * .1}s ease, transform .6s ${i * .1}s ease`,
+                }}>
+                  <div style={{ width: 54, height: 54, borderRadius: 15, background: '#fff', boxShadow: `0 2px 12px ${f.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.2rem' }}>
+                    {f.icon}
+                  </div>
+                  <div style={{ fontSize: '.68rem', fontWeight: 800, color: f.tagColor, letterSpacing: '.1em', marginBottom: '.6rem' }}>{f.tag}</div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '.7rem', lineHeight: 1.3, color: '#0f172a' }}>{f.title}</h3>
+                  <p style={{ fontSize: '.88rem', color: '#64748b', lineHeight: 1.72 }}>{f.desc}</p>
                 </div>
-                <div style={{ fontSize: '.68rem', fontWeight: 800, color: f.tagColor, letterSpacing: '.1em', marginBottom: '.6rem' }}>{f.tag}</div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '.7rem', lineHeight: 1.3, color: '#0f172a' }}>{f.title}</h3>
-                <p style={{ fontSize: '.88rem', color: '#64748b', lineHeight: 1.72 }}>{f.desc}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ════════════════════════════════
+        {/* ════════════════════════════════
            HOW IT WORKS
       ════════════════════════════════ */}
-      <section id="how-it-works" ref={howRef} className="py-16 md:py-28 px-4 md:px-8 bg-white">
-        <div className="max-w-[1100px] mx-auto">
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#0d9488', letterSpacing: '.12em', textTransform: 'uppercase' }}>HOW IT WORKS</span>
-            <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', color: '#0f172a' }}>
-              Up and Running in 3 Steps
-            </h2>
-          </div>
+        <section id="how-it-works" ref={howRef} className="py-16 md:py-28 px-4 md:px-8 bg-white">
+          <div className="max-w-[1100px] mx-auto">
+            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+              <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#0d9488', letterSpacing: '.12em', textTransform: 'uppercase' }}>HOW IT WORKS</span>
+              <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', color: '#0f172a' }}>
+                Up and Running in 3 Steps
+              </h2>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 relative">
-            {/* connector */}
-            <div className="hidden md:block absolute top-14 left-[22%] right-[22%] h-0.5 bg-gradient-to-r from-teal-500/50 via-cyan-500/50 to-violet-500/50 z-0" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 relative">
+              {/* connector */}
+              <div className="hidden md:block absolute top-14 left-[22%] right-[22%] h-0.5 bg-gradient-to-r from-teal-500/50 via-cyan-500/50 to-violet-500/50 z-0" />
 
-            {[
-              { n: '01', c: '#14b8a6', t: 'Register Your Vehicle', d: "Add your vehicle's complete digital profile — ownership history, legal documents, chassis & engine numbers, and current odometer reading." },
-              { n: '02', c: '#5eead4', t: 'Log Every Service', d: 'Record each visit with parts replaced, costs, and mechanic notes. Our system cross-verifies garage-reported odometer against your records in real time.' },
-              { n: '03', c: '#a78bfa', t: 'Get Full Intelligence', d: "Receive Vehicle IQ scores, resale valuations, fraud alerts, and expiry reminders. Your vehicle's complete lifecycle, intelligently managed for you." },
-            ].map((s, i) => (
-              <div key={s.n} style={{
-                textAlign: 'center', position: 'relative', zIndex: 1,
-                opacity: howVisible ? 1 : 0,
-                transform: howVisible ? 'none' : 'translateY(28px)',
-                transition: `opacity .65s ${i * .18}s ease, transform .65s ${i * .18}s ease`,
-              }} className="max-w-sm mx-auto md:max-w-none">
-                <div style={{
-                  width: 76, height: 76, borderRadius: '50%',
-                  background: `linear-gradient(135deg,${s.c}28,${s.c}0d)`,
-                  border: `2px solid ${s.c}55`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 1.6rem',
-                  boxShadow: `0 0 32px ${s.c}28`,
-                }}>
-                  <span style={{ fontSize: '1.55rem', fontWeight: 900, color: s.c }}>{s.n}</span>
+              {[
+                { n: '01', c: '#14b8a6', t: 'Register Your Vehicle', d: "Add your vehicle's complete digital profile — ownership history, legal documents, chassis & engine numbers, and current odometer reading." },
+                { n: '02', c: '#5eead4', t: 'Log Every Service', d: 'Record each visit with parts replaced, costs, and mechanic notes. Our system cross-verifies garage-reported odometer against your records in real time.' },
+                { n: '03', c: '#a78bfa', t: 'Get Full Intelligence', d: "Receive Vehicle IQ scores, resale valuations, fraud alerts, and expiry reminders. Your vehicle's complete lifecycle, intelligently managed for you." },
+              ].map((s, i) => (
+                <div key={s.n} style={{
+                  textAlign: 'center', position: 'relative', zIndex: 1,
+                  opacity: howVisible ? 1 : 0,
+                  transform: howVisible ? 'none' : 'translateY(28px)',
+                  transition: `opacity .65s ${i * .18}s ease, transform .65s ${i * .18}s ease`,
+                }} className="max-w-sm mx-auto md:max-w-none">
+                  <div style={{
+                    width: 76, height: 76, borderRadius: '50%',
+                    background: `linear-gradient(135deg,${s.c}28,${s.c}0d)`,
+                    border: `2px solid ${s.c}55`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    margin: '0 auto 1.6rem',
+                    boxShadow: `0 0 32px ${s.c}28`,
+                  }}>
+                    <span style={{ fontSize: '1.55rem', fontWeight: 900, color: s.c }}>{s.n}</span>
+                  </div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '.75rem', color: '#0f172a' }}>{s.t}</h3>
+                  <p style={{ fontSize: '.88rem', color: '#64748b', lineHeight: 1.75, maxWidth: 270, margin: '0 auto' }}>{s.d}</p>
                 </div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '.75rem', color: '#0f172a' }}>{s.t}</h3>
-                <p style={{ fontSize: '.88rem', color: '#64748b', lineHeight: 1.75, maxWidth: 270, margin: '0 auto' }}>{s.d}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ════════════════════════════════
+        {/* ════════════════════════════════
            SPOTLIGHT: Vehicle IQ Score
       ════════════════════════════════ */}
-      <section className="py-16 md:py-28 px-4 md:px-8 bg-slate-50">
-        <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-          <div>
-            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#dc2626', letterSpacing: '.12em', textTransform: 'uppercase' }}>VEHICLE IQ INTELLIGENCE</span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-5 tracking-tight leading-tight">
-              Know Your Vehicle's True Condition
-            </h2>
-            <p className="text-sm sm:text-base text-slate-500 leading-relaxed mb-8">
-              Our multi-factor Vehicle IQ engine analyses legal document validity, maintenance frequency, verified service records, accident history, and behavioural patterns to compute a precise score — not just a rough estimate.
-            </p>
-            <div className="flex flex-col gap-3">
+        <section className="py-16 md:py-28 px-4 md:px-8 bg-slate-50">
+          <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
+            <div>
+              <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#dc2626', letterSpacing: '.12em', textTransform: 'uppercase' }}>VEHICLE IQ INTELLIGENCE</span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-5 tracking-tight leading-tight">
+                Know Your Vehicle's True Condition
+              </h2>
+              <p className="text-sm sm:text-base text-slate-500 leading-relaxed mb-8">
+                Our multi-factor Vehicle IQ engine analyses legal document validity, maintenance frequency, verified service records, accident history, and behavioural patterns to compute a precise score — not just a rough estimate.
+              </p>
+              <div className="flex flex-col gap-3">
+                {[
+                  'Expired document detection with automatic score penalties',
+                  'Service gap analysis — flags gaps beyond 6 months',
+                  'Tamper-flag penalties for fraud attempts',
+                  'Verified garage bonus: +5 per record (max +15)',
+                  'Recent accident & rapid repair frequency analysis',
+                ].map(item => (
+                  <div key={item} className="flex items-start gap-3">
+                    <CheckCircle size={15} color="#16a34a" className="shrink-0 mt-1" />
+                    <span className="text-sm text-slate-700 leading-relaxed">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Health visual */}
+            <div className="float bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xl max-w-md mx-auto lg:max-w-none w-full">
+              <div className="text-center mb-8">
+                <div style={{ fontSize: '.72rem', color: '#94a3b8', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: '.6rem' }}>VEHICLE IQ SCORE</div>
+                <div className="relative inline-block">
+                  <svg viewBox="0 0 200 120" width={200} height={120}>
+                    <path d="M 18 105 A 82 82 0 0 1 182 105" fill="none" stroke="#e2e8f0" strokeWidth={13} strokeLinecap="round" />
+                    <path d="M 18 105 A 82 82 0 0 1 182 105" fill="none" stroke="url(#hGrad)" strokeWidth={13} strokeLinecap="round" strokeDasharray="257" strokeDashoffset="54" />
+                    <defs>
+                      <linearGradient id="hGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#f43f5e" />
+                        <stop offset="45%" stopColor="#f59e0b" />
+                        <stop offset="100%" stopColor="#4ade80" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-center">
+                    <div className="text-4xl sm:text-5xl font-black text-emerald-600 tracking-tight leading-none">92</div>
+                    <div style={{ fontSize: '.65rem', color: '#94a3b8', marginTop: 2 }}>out of 100</div>
+                  </div>
+                </div>
+                <div className="mt-4 inline-block bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full">Excellent Condition</div>
+              </div>
               {[
-                'Expired document detection with automatic score penalties',
-                'Service gap analysis — flags gaps beyond 6 months',
-                'Tamper-flag penalties for fraud attempts',
-                'Verified garage bonus: +5 per record (max +15)',
-                'Recent accident & rapid repair frequency analysis',
-              ].map(item => (
-                <div key={item} className="flex items-start gap-3">
-                  <CheckCircle size={15} color="#16a34a" className="shrink-0 mt-1" />
-                  <span className="text-sm text-slate-700 leading-relaxed">{item}</span>
+                { label: 'Legal Documents', pct: 95, c: '#16a34a' },
+                { label: 'Service Consistency', pct: 88, c: '#0d9488' },
+                { label: 'Verification Score', pct: 90, c: '#0f766e' },
+                { label: 'Safety Record', pct: 97, c: '#14b8a6' },
+              ].map(m => (
+                <div key={m.label} className="mb-4">
+                  <div className="flex justify-between text-xs sm:text-sm mb-1">
+                    <span className="text-slate-500">{m.label}</span>
+                    <span className="font-bold" style={{ color: m.c }}>{m.pct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div style={{ width: m.pct + '%', height: '100%', background: `linear-gradient(90deg,${m.c}88,${m.c})` }} className="rounded-full" />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+        </section>
 
-          {/* Health visual */}
-          <div className="float bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xl max-w-md mx-auto lg:max-w-none w-full">
-            <div className="text-center mb-8">
-              <div style={{ fontSize: '.72rem', color: '#94a3b8', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: '.6rem' }}>VEHICLE IQ SCORE</div>
-              <div className="relative inline-block">
-                <svg viewBox="0 0 200 120" width={200} height={120}>
-                  <path d="M 18 105 A 82 82 0 0 1 182 105" fill="none" stroke="#e2e8f0" strokeWidth={13} strokeLinecap="round" />
-                  <path d="M 18 105 A 82 82 0 0 1 182 105" fill="none" stroke="url(#hGrad)" strokeWidth={13} strokeLinecap="round" strokeDasharray="257" strokeDashoffset="54" />
-                  <defs>
-                    <linearGradient id="hGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#f43f5e" />
-                      <stop offset="45%" stopColor="#f59e0b" />
-                      <stop offset="100%" stopColor="#4ade80" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-center">
-                  <div className="text-4xl sm:text-5xl font-black text-emerald-600 tracking-tight leading-none">92</div>
-                  <div style={{ fontSize: '.65rem', color: '#94a3b8', marginTop: 2 }}>out of 100</div>
-                </div>
-              </div>
-              <div className="mt-4 inline-block bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full">Excellent Condition</div>
-            </div>
-            {[
-              { label: 'Legal Documents', pct: 95, c: '#16a34a' },
-              { label: 'Service Consistency', pct: 88, c: '#0d9488' },
-              { label: 'Verification Score', pct: 90, c: '#0f766e' },
-              { label: 'Safety Record', pct: 97, c: '#14b8a6' },
-            ].map(m => (
-              <div key={m.label} className="mb-4">
-                <div className="flex justify-between text-xs sm:text-sm mb-1">
-                  <span className="text-slate-500">{m.label}</span>
-                  <span className="font-bold" style={{ color: m.c }}>{m.pct}%</span>
-                </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div style={{ width: m.pct + '%', height: '100%', background: `linear-gradient(90deg,${m.c}88,${m.c})` }} className="rounded-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════
+        {/* ════════════════════════════════
            SPOTLIGHT: Fraud Detection
       ════════════════════════════════ */}
-      <section className="py-16 md:py-28 px-4 md:px-8 bg-white">
-        <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-          {/* Fraud visual */}
-          <div className="float2 bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden order-2 lg:order-1 max-w-md mx-auto lg:max-w-none w-full">
-            <div className="scan" />
-            <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '1.1rem' }}>TAMPER DETECTION REPORT</div>
+        <section className="py-16 md:py-28 px-4 md:px-8 bg-white">
+          <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
+            {/* Fraud visual */}
+            <div className="float2 bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden order-2 lg:order-1 max-w-md mx-auto lg:max-w-none w-full">
+              <div className="scan" />
+              <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '1.1rem' }}>TAMPER DETECTION REPORT</div>
 
-            {/* Verified */}
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 13, padding: '1rem 1.1rem', marginBottom: '.7rem' }}>
-              <div className="flex justify-between items-center gap-3">
-                <div>
-                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Annual Service</div>
-                  <div style={{ fontSize: '.72rem', color: '#94a3b8', marginTop: 3 }}>Jan 15, 2025 &nbsp;•&nbsp; 42,500 km</div>
+              {/* Verified */}
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 13, padding: '1rem 1.1rem', marginBottom: '.7rem' }}>
+                <div className="flex justify-between items-center gap-3">
+                  <div>
+                    <div className="font-semibold text-xs sm:text-sm text-slate-800">Annual Service</div>
+                    <div style={{ fontSize: '.72rem', color: '#94a3b8', marginTop: 3 }}>Jan 15, 2025 &nbsp;•&nbsp; 42,500 km</div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold shrink-0">
+                    <Shield size={13} /> VERIFIED
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold shrink-0">
-                  <Shield size={13} /> VERIFIED
+              </div>
+
+              {/* Normal */}
+              <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 13, padding: '1rem 1.1rem', marginBottom: '.7rem' }}>
+                <div className="flex justify-between items-center gap-3">
+                  <div>
+                    <div className="font-semibold text-xs sm:text-sm text-slate-800">Brake Replacement</div>
+                    <div style={{ fontSize: '.72rem', color: '#94a3b8', marginTop: 3 }}>Mar 3, 2025 &nbsp;•&nbsp; 45,200 km</div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-teal-600 text-xs font-bold shrink-0">
+                    <CheckCircle size={13} /> OK
+                  </div>
                 </div>
+              </div>
+
+              {/* Flagged */}
+              <div className="bg-red-50/50 border border-red-200 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-red-600 rounded-bl-lg px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white">⚠ FLAGGED</div>
+                <div className="font-bold text-xs sm:text-sm text-slate-900 mb-1">Suspicious Entry Detected</div>
+                <div style={{ fontSize: '.72rem' }} className="text-red-600 font-medium">Odometer mismatch: 320 km discrepancy reported</div>
+                <div style={{ fontSize: '.72rem', color: '#94a3b8', marginTop: 4 }}>Oct 18, 2025 — Garage vs. Owner reading mismatch</div>
               </div>
             </div>
 
-            {/* Normal */}
-            <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 13, padding: '1rem 1.1rem', marginBottom: '.7rem' }}>
-              <div className="flex justify-between items-center gap-3">
-                <div>
-                  <div className="font-semibold text-xs sm:text-sm text-slate-800">Brake Replacement</div>
-                  <div style={{ fontSize: '.72rem', color: '#94a3b8', marginTop: 3 }}>Mar 3, 2025 &nbsp;•&nbsp; 45,200 km</div>
-                </div>
-                <div className="flex items-center gap-1.5 text-teal-600 text-xs font-bold shrink-0">
-                  <CheckCircle size={13} /> OK
-                </div>
+            <div className="order-1 lg:order-2">
+              <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#d97706', letterSpacing: '.12em', textTransform: 'uppercase' }}>FRAUD DETECTION</span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-5 tracking-tight leading-tight">
+                Zero Tolerance for Odometer Fraud
+              </h2>
+              <p className="text-sm sm:text-base text-slate-500 leading-relaxed mb-8">
+                Our dual-verification system compares odometer readings from vehicle owners and garages. Any discrepancy beyond 50 km triggers an automatic tamper flag, updates the vehicle's risk score, and is permanently recorded in the resale report.
+              </p>
+              <div className="flex flex-col gap-3">
+                {[
+                  'Cross-validates owner vs. garage odometer readings',
+                  'Automatic tamper flag on &gt;50 km discrepancy',
+                  'Abnormal jump detection for entries &gt;40,000 km',
+                  'Fraud history permanently visible in resale reports',
+                  'Garage trust ratings downgraded on each flag',
+                ].map(item => (
+                  <div key={item} className="flex items-start gap-3">
+                    <CheckCircle size={15} color="#d97706" className="shrink-0 mt-1" />
+                    <span className="text-sm text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: item }} />
+                  </div>
+                ))}
               </div>
             </div>
-
-            {/* Flagged */}
-            <div className="bg-red-50/50 border border-red-200 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-red-600 rounded-bl-lg px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white">⚠ FLAGGED</div>
-              <div className="font-bold text-xs sm:text-sm text-slate-900 mb-1">Suspicious Entry Detected</div>
-              <div style={{ fontSize: '.72rem' }} className="text-red-600 font-medium">Odometer mismatch: 320 km discrepancy reported</div>
-              <div style={{ fontSize: '.72rem', color: '#94a3b8', marginTop: 4 }}>Oct 18, 2025 — Garage vs. Owner reading mismatch</div>
-            </div>
           </div>
+        </section>
 
-          <div className="order-1 lg:order-2">
-            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#d97706', letterSpacing: '.12em', textTransform: 'uppercase' }}>FRAUD DETECTION</span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-5 tracking-tight leading-tight">
-              Zero Tolerance for Odometer Fraud
-            </h2>
-            <p className="text-sm sm:text-base text-slate-500 leading-relaxed mb-8">
-              Our dual-verification system compares odometer readings from vehicle owners and garages. Any discrepancy beyond 50 km triggers an automatic tamper flag, updates the vehicle's risk score, and is permanently recorded in the resale report.
-            </p>
-            <div className="flex flex-col gap-3">
-              {[
-                'Cross-validates owner vs. garage odometer readings',
-                'Automatic tamper flag on &gt;50 km discrepancy',
-                'Abnormal jump detection for entries &gt;40,000 km',
-                'Fraud history permanently visible in resale reports',
-                'Garage trust ratings downgraded on each flag',
-              ].map(item => (
-                <div key={item} className="flex items-start gap-3">
-                  <CheckCircle size={15} color="#d97706" className="shrink-0 mt-1" />
-                  <span className="text-sm text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: item }} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════
+        {/* ════════════════════════════════
            RESALE VALUATION
       ════════════════════════════════ */}
-      <section className="py-16 md:py-28 px-4 md:px-8 bg-slate-50">
-        <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-          <div>
-            <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#d97706', letterSpacing: '.12em', textTransform: 'uppercase' }}>RESALE INTELLIGENCE</span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-5 tracking-tight leading-tight">
-              Transparent Resale Valuation
-            </h2>
-            <p className="text-sm sm:text-base text-slate-500 leading-relaxed mb-8">
-              Get an algorithmically computed resale price range backed by a verifiable trust score. Buyers see exactly what factors affect the valuation — creating complete transparency in the used vehicle market.
-            </p>
-            <div className="flex flex-col gap-3">
-              {[
-                'Depreciation model: 15% year-1, 10%/year thereafter',
-                'Trust score factors: ownership count, service quality, accidents',
-                '+5% adjustment for excellent Vehicle IQ score',
-                '–10% penalty for documented accident history',
-                'Risk level classification: Low / Medium / High',
-              ].map(item => (
-                <div key={item} className="flex items-start gap-3">
-                  <CheckCircle size={15} color="#d97706" className="shrink-0 mt-1" />
-                  <span className="text-sm text-slate-700 leading-relaxed">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Resale Visual */}
-          <div className="float bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xl max-w-md mx-auto lg:max-w-none w-full">
-            <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '1.4rem' }}>RESALE REPORT</div>
-            {/* Trust score ring */}
-            <div className="text-center mb-8">
-              <div className="relative inline-block">
-                <svg viewBox="0 0 100 100" width={110} height={110}>
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" strokeWidth={9} />
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="url(#tGrad)" strokeWidth={9} strokeLinecap="round"
-                    strokeDasharray="264" strokeDashoffset={264 - 264 * 0.84} transform="rotate(-90 50 50)" />
-                  <defs>
-                    <linearGradient id="tGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#0d9488" />
-                      <stop offset="100%" stopColor="#5eead4" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="text-2xl sm:text-3xl font-black text-teal-600 tracking-tight leading-none">84</div>
-                  <div style={{ fontSize: '.6rem', color: '#94a3b8', marginTop: 2 }}>TRUST</div>
-                </div>
-              </div>
-              <div className="mt-4">
-                <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full">LOW RISK</span>
-              </div>
-            </div>
-
-            {/* Price range */}
-            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: '1.2rem', marginBottom: '1.1rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '.72rem', color: '#92400e', fontWeight: 600, marginBottom: '.45rem' }}>ESTIMATED RESALE RANGE</div>
-              <div className="text-xl sm:text-2xl font-black text-amber-600 tracking-tight leading-none">₹17.2L – ₹19.6L</div>
-              <div style={{ fontSize: '.72rem', color: '#94a3b8', marginTop: 4 }}>Mean: ₹18.4L &nbsp;•&nbsp; Based on current market</div>
-            </div>
-
-            {/* Trust factors */}
-            <div className="flex flex-col gap-2.5">
-              {[
-                { text: '1 previous owner', ok: true },
-                { text: '6 verified service records', ok: true },
-                { text: 'No accident history', ok: true },
-                { text: 'No tamper flags', ok: true },
-              ].map(f => (
-                <div key={f.text} className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border ${f.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-red-50 border-red-200 text-red-650'}`}>
-                    <span style={{ fontSize: '.6rem' }} className="font-bold">{f.ok ? '✓' : '✗'}</span>
+        <section className="py-16 md:py-28 px-4 md:px-8 bg-slate-50">
+          <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
+            <div>
+              <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#d97706', letterSpacing: '.12em', textTransform: 'uppercase' }}>RESALE INTELLIGENCE</span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-5 tracking-tight leading-tight">
+                Transparent Resale Valuation
+              </h2>
+              <p className="text-sm sm:text-base text-slate-500 leading-relaxed mb-8">
+                Get an algorithmically computed resale price range backed by a verifiable trust score. Buyers see exactly what factors affect the valuation — creating complete transparency in the used vehicle market.
+              </p>
+              <div className="flex flex-col gap-3">
+                {[
+                  'Depreciation model: 15% year-1, 10%/year thereafter',
+                  'Trust score factors: ownership count, service quality, accidents',
+                  '+5% adjustment for excellent Vehicle IQ score',
+                  '–10% penalty for documented accident history',
+                  'Risk level classification: Low / Medium / High',
+                ].map(item => (
+                  <div key={item} className="flex items-start gap-3">
+                    <CheckCircle size={15} color="#d97706" className="shrink-0 mt-1" />
+                    <span className="text-sm text-slate-700 leading-relaxed">{item}</span>
                   </div>
-                  <span className="text-sm text-slate-700">{f.text}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Resale Visual */}
+            <div className="float bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xl max-w-md mx-auto lg:max-w-none w-full">
+              <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '1.4rem' }}>RESALE REPORT</div>
+              {/* Trust score ring */}
+              <div className="text-center mb-8">
+                <div className="relative inline-block">
+                  <svg viewBox="0 0 100 100" width={110} height={110}>
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" strokeWidth={9} />
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="url(#tGrad)" strokeWidth={9} strokeLinecap="round"
+                      strokeDasharray="264" strokeDashoffset={264 - 264 * 0.84} transform="rotate(-90 50 50)" />
+                    <defs>
+                      <linearGradient id="tGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#0d9488" />
+                        <stop offset="100%" stopColor="#5eead4" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="text-2xl sm:text-3xl font-black text-teal-600 tracking-tight leading-none">84</div>
+                    <div style={{ fontSize: '.6rem', color: '#94a3b8', marginTop: 2 }}>TRUST</div>
+                  </div>
                 </div>
-              ))}
+                <div className="mt-4">
+                  <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full">LOW RISK</span>
+                </div>
+              </div>
+
+              {/* Price range */}
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: '1.2rem', marginBottom: '1.1rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '.72rem', color: '#92400e', fontWeight: 600, marginBottom: '.45rem' }}>ESTIMATED RESALE RANGE</div>
+                <div className="text-xl sm:text-2xl font-black text-amber-600 tracking-tight leading-none">₹17.2L – ₹19.6L</div>
+                <div style={{ fontSize: '.72rem', color: '#94a3b8', marginTop: 4 }}>Mean: ₹18.4L &nbsp;•&nbsp; Based on current market</div>
+              </div>
+
+              {/* Trust factors */}
+              <div className="flex flex-col gap-2.5">
+                {[
+                  { text: '1 previous owner', ok: true },
+                  { text: '6 verified service records', ok: true },
+                  { text: 'No accident history', ok: true },
+                  { text: 'No tamper flags', ok: true },
+                ].map(f => (
+                  <div key={f.text} className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border ${f.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-red-50 border-red-200 text-red-650'}`}>
+                      <span style={{ fontSize: '.6rem' }} className="font-bold">{f.ok ? '✓' : '✗'}</span>
+                    </div>
+                    <span className="text-sm text-slate-700">{f.text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
 
 
-      {/* ════════════════════════════════
+        {/* ════════════════════════════════
            FINAL CTA
       ════════════════════════════════ */}
-      <section className="py-16 md:py-28 px-4 md:px-8 bg-gradient-to-br from-teal-50/30 via-slate-50 to-teal-50/30">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white border border-teal-200 rounded-[2rem] sm:rounded-[2.5rem] py-12 px-6 sm:p-16 md:p-24 text-center relative overflow-hidden shadow-xl w-full">
-            <div style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle,rgba(13,148,136,.07) 0%,transparent 70%)', top: -170, right: -100, pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle,rgba(124,58,237,.06) 0%,transparent 70%)', bottom: -110, left: -60, pointerEvents: 'none' }} />
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 bg-teal-50 border border-teal-200 rounded-full px-4 py-1 mb-6">
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0d9488', display: 'inline-block', animation: 'dotPulse 2s ease-in-out infinite' }} />
-                <span style={{ fontSize: '.7rem', fontWeight: 700, color: '#0d9488', letterSpacing: '.08em' }}>FREE TO GET STARTED</span>
-              </div>
-              <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight mb-4 text-slate-900">
-                Start Protecting Your <span className="shimmer-text">Vehicle Today</span>
-              </h2>
-              <p className="text-sm sm:text-base text-slate-500 max-w-md mx-auto mb-10 leading-relaxed font-body-lg">
-                Join DrivePortz to track, protect, and maximise the value of your vehicle.
-              </p>
-              <div className="flex flex-col gap-4 justify-center items-center">
-                <Link to="/signup" className="glow-cta w-full sm:w-auto justify-center" style={{
-                  background: 'linear-gradient(135deg,#0d9488,#0f766e)',
-                  color: '#fff', fontWeight: 700, fontSize: '1rem',
-                  padding: '.95rem 2.6rem', borderRadius: 12, textDecoration: 'none',
-                  display: 'flex', alignItems: 'center', gap: 8,
-                }}>
-                  Get Started <ArrowRight size={17} />
-                </Link>
-                <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-                  Already have an account? Sign In
-                </Link>
+        <section className="py-16 md:py-28 px-4 md:px-8 bg-gradient-to-br from-teal-50/30 via-slate-50 to-teal-50/30">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white border border-teal-200 rounded-[2rem] sm:rounded-[2.5rem] py-12 px-6 sm:p-16 md:p-24 text-center relative overflow-hidden shadow-xl w-full">
+              <div style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle,rgba(13,148,136,.07) 0%,transparent 70%)', top: -170, right: -100, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle,rgba(124,58,237,.06) 0%,transparent 70%)', bottom: -110, left: -60, pointerEvents: 'none' }} />
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 bg-teal-50 border border-teal-200 rounded-full px-4 py-1 mb-6">
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0d9488', display: 'inline-block', animation: 'dotPulse 2s ease-in-out infinite' }} />
+                  <span style={{ fontSize: '.7rem', fontWeight: 700, color: '#0d9488', letterSpacing: '.08em' }}>FREE TO GET STARTED</span>
+                </div>
+                <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight mb-4 text-slate-900">
+                  Start Protecting Your <span className="shimmer-text">Vehicle Today</span>
+                </h2>
+                <p className="text-sm sm:text-base text-slate-500 max-w-md mx-auto mb-10 leading-relaxed font-body-lg">
+                  Join DrivePortz to track, protect, and maximise the value of your vehicle.
+                </p>
+                <div className="flex flex-col gap-4 justify-center items-center">
+                  <Link to="/signup" className="glow-cta w-full sm:w-auto justify-center" style={{
+                    background: 'linear-gradient(135deg,#0d9488,#0f766e)',
+                    color: '#fff', fontWeight: 700, fontSize: '1rem',
+                    padding: '.95rem 2.6rem', borderRadius: 12, textDecoration: 'none',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}>
+                    Get Started <ArrowRight size={17} />
+                  </Link>
+                  <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+                    Already have an account? Sign In
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <footer className="border-t border-slate-200 py-12 px-4 md:px-10 bg-white text-slate-600">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          <div>
-            <div className="flex items-center mb-1">
-              <img src="/logo-removebg-preview.png" alt="DrivePortz Logo" style={{ height: 86, marginBottom: '-15px' }} />
+        <footer className="border-t border-slate-200 py-12 px-4 md:px-10 bg-white text-slate-600">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            <div>
+              <div className="flex items-center mb-1">
+                <img src="/logo-removebg-preview.png" alt="DrivePortz Logo" style={{ height: 86, marginBottom: '-15px' }} />
+              </div>
+              <p className="text-sm text-slate-500 leading-relaxed mb-6">
+                Track, protect, and maximize the true value of your vehicle with AI-driven intelligence.
+              </p>
             </div>
-            <p className="text-sm text-slate-500 leading-relaxed mb-6">
-              Track, protect, and maximize the true value of your vehicle with AI-driven intelligence.
-            </p>
-          </div>
-          
-          <div>
-            <h4 className="text-slate-900 font-bold mb-6 tracking-wide text-sm">PLATFORM</h4>
-            <ul className="space-y-4">
-              <li><Link to="/fleets" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">For Fleets</Link></li>
-              <li><Link to="/garage-partners" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">For Garages</Link></li>
-              <li><Link to="/login" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">Log In</Link></li>
-              <li><Link to="/signup" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">Sign Up</Link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <div className="space-y-4 mb-10">
-              <button onClick={(e) => { e.preventDefault(); setShowPartnerTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Partner Terms and Conditions</button>
-              <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Terms and Conditions</button>
-              <button onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Privacy Policy</button>
-              <button onClick={(e) => { e.preventDefault(); setShowAbout(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">About Us</button>
+
+            <div>
+              <h4 className="text-slate-900 font-bold mb-6 tracking-wide text-sm">PLATFORM</h4>
+              <ul className="space-y-4">
+                <li><Link to="/fleets" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">For Fleets</Link></li>
+                <li><Link to="/garage-partners" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">For Garages</Link></li>
+                <li><Link to="/login" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">Log In</Link></li>
+                <li><Link to="/signup" className="text-sm text-slate-600 hover:text-teal-600 transition-colors">Sign Up</Link></li>
+              </ul>
             </div>
-            
-            <h4 className="text-slate-900 font-bold mb-4 text-sm uppercase tracking-wide">FOLLOW US</h4>
-            <div className="flex gap-3">
-              <a href="https://www.instagram.com/driveportz?utm_source=qr&igsh=cTl1NWFyNTRiampo" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
-                <Instagram size={16} />
-              </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
-                <MessageCircle size={16} />
-              </a>
+
+            <div>
+              <div className="space-y-4 mb-10">
+                <button onClick={(e) => { e.preventDefault(); setShowPartnerTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Partner Terms and Conditions</button>
+                <button onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Terms and Conditions</button>
+                <button onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">Privacy Policy</button>
+                <button onClick={(e) => { e.preventDefault(); setShowAbout(true); }} className="text-sm text-slate-600 hover:text-teal-600 transition-colors block text-left font-medium">About Us</button>
+              </div>
+
+              <h4 className="text-slate-900 font-bold mb-4 text-sm uppercase tracking-wide">FOLLOW US</h4>
+              <div className="flex gap-3">
+                <a href="https://www.instagram.com/driveportz?utm_source=qr&igsh=cTl1NWFyNTRiampo" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
+                  <Instagram size={16} />
+                </a>
+                <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
+                  <MessageCircle size={16} />
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Bottom copyright section */}
-        <div className="max-w-7xl mx-auto border-t border-slate-200 mt-10 pt-6 text-center md:text-left">
-          <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 DrivePortz. All rights reserved.</div>
-        </div>
-      </footer>
-      
-      <TermsConditionsModal 
-        isOpen={showTerms} 
-        onClose={() => setShowTerms(false)} 
-        onAccept={() => {}} 
-        readOnly={true} 
-      />
-      
-      <PartnerTermsModal 
-        isOpen={showPartnerTerms} 
-        onClose={() => setShowPartnerTerms(false)} 
-      />
-      
-      <PrivacyPolicyModal 
-        isOpen={showPrivacy} 
-        onClose={() => setShowPrivacy(false)} 
-        onAccept={() => {}} 
-        readOnly={true} 
-      />
-      
-      <AboutUsModal 
-        isOpen={showAbout} 
-        onClose={() => setShowAbout(false)} 
-      />
-    </div>
-  </>
-);
+
+          {/* Bottom copyright section */}
+          <div className="max-w-7xl mx-auto border-t border-slate-200 mt-10 pt-6 text-center md:text-left">
+            <div style={{ fontSize: '.8rem', color: '#94a3b8' }}>© 2026 DrivePortz. All rights reserved.</div>
+          </div>
+        </footer>
+
+        <TermsConditionsModal
+          isOpen={showTerms}
+          onClose={() => setShowTerms(false)}
+          onAccept={() => { }}
+          readOnly={true}
+        />
+
+        <PartnerTermsModal
+          isOpen={showPartnerTerms}
+          onClose={() => setShowPartnerTerms(false)}
+        />
+
+        <PrivacyPolicyModal
+          isOpen={showPrivacy}
+          onClose={() => setShowPrivacy(false)}
+          onAccept={() => { }}
+          readOnly={true}
+        />
+
+        <AboutUsModal
+          isOpen={showAbout}
+          onClose={() => setShowAbout(false)}
+        />
+      </div>
+    </>
+  );
 };
 
 export default LandingPage;
