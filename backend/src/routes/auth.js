@@ -213,7 +213,7 @@ router.post('/me/photo', requireAuth, upload.single('photo'), async (req, res) =
       removeUploadByUrl(user.photoUrl);
     }
 
-    const photoUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     await users.updateOne({ _id: user._id }, { $set: { photoUrl, updatedAt: new Date() } });
 
     return res.status(200).json({ msg: 'Photo uploaded', photoUrl });
@@ -247,7 +247,7 @@ router.post('/me/license', requireAuth, upload.single('license'), async (req, re
       removeUploadByUrl(user.licenseDocumentUrl);
     }
 
-    const licenseDocumentUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+    const licenseDocumentUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     await users.updateOne({ _id: user._id }, { $set: { licenseDocumentUrl, updatedAt: new Date() } });
 
     return res.status(200).json({ msg: 'License uploaded', licenseDocumentUrl });

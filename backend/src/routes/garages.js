@@ -281,7 +281,7 @@ router.post('/photo', requireAuth, requireRole('GARAGE'), upload.single('photo')
       removeUploadByUrl(garage.photoUrl);
     }
 
-    const photoUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     await garages.updateOne({ _id: garage._id }, { $set: { photoUrl, updatedAt: new Date() } });
 
     return res.status(200).json({ msg: 'Photo uploaded', photoUrl });

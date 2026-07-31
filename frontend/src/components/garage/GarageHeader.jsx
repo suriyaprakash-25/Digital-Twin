@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldCheck, Star, MapPin, Phone, Mail, Clock, CalendarCheck, Navigation, Award, Wrench } from 'lucide-react';
+import { getPhotoUrl } from '../../utils/imageUrl';
 
 const GarageHeader = ({ garage, onBookClick, onLocationClick }) => {
   if (!garage) return null;
@@ -33,7 +34,7 @@ const GarageHeader = ({ garage, onBookClick, onLocationClick }) => {
           {/* Logo / Photo Avatar */}
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-teal-50 border-2 border-teal-100 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
             {photoUrl ? (
-              <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+              <img src={getPhotoUrl(photoUrl)} alt={name} className="w-full h-full object-cover" />
             ) : (
               <Wrench className="w-10 h-10 text-teal-600" />
             )}

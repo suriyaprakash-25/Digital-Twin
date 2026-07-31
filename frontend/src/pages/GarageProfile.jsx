@@ -7,6 +7,7 @@ import {
   Award, Wrench, Image as ImageIcon, Star, Plus, Trash2
 } from 'lucide-react';
 import GarageLocationPicker from '../components/GarageLocationPicker';
+import { getPhotoUrl } from '../utils/imageUrl';
 
 const Field = ({ label, icon, children }) => (
   <div className="space-y-1.5 pb-1 lg:pb-2">
@@ -140,7 +141,7 @@ const GarageProfile = () => {
           <div className="relative flex-shrink-0">
             <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg">
               {photoUrl
-                ? <img src={photoUrl} alt="Garage" className="w-full h-full object-cover" />
+                ? <img src={getPhotoUrl(photoUrl)} alt="Garage" className="w-full h-full object-cover" />
                 : <div className="w-full h-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-black">{initials}</div>
               }
             </div>
@@ -356,7 +357,7 @@ const GarageProfile = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {profile.galleryPhotos.map((url, idx) => (
                   <div key={idx} className="relative group rounded-xl overflow-hidden h-24 border border-slate-200 bg-slate-100">
-                    <img src={url} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                    <img src={getPhotoUrl(url)} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => setProfile(p => ({ ...p, galleryPhotos: p.galleryPhotos.filter((_, i) => i !== idx) }))}

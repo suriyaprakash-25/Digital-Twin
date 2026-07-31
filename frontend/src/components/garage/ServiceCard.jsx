@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, IndianRupee, Check, Wrench } from 'lucide-react';
+import { getPhotoUrl } from '../../utils/imageUrl';
 
 const ServiceCard = ({ service, onRequestClick }) => {
   if (!service) return null;
@@ -22,7 +23,7 @@ const ServiceCard = ({ service, onRequestClick }) => {
 
           {photoUrl && (
             <img
-              src={photoUrl}
+              src={getPhotoUrl(photoUrl)}
               alt={title}
               className="w-14 h-14 rounded-2xl object-cover border border-slate-100 shrink-0"
             />

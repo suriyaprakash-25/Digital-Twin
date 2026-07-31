@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, MessageSquare, CornerDownRight, Car, Wrench } from 'lucide-react';
 import StarRating from './StarRating';
+import { getPhotoUrl } from '../../utils/imageUrl';
 
 const ReviewCard = ({ review, onReplyClick, isOwner = false }) => {
   if (!review) return null;
@@ -30,7 +31,7 @@ const ReviewCard = ({ review, onReplyClick, isOwner = false }) => {
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center shrink-0 overflow-hidden">
             {userPhotoUrl ? (
-              <img src={userPhotoUrl} alt={userName} className="w-full h-full object-cover" />
+              <img src={getPhotoUrl(userPhotoUrl)} alt={userName} className="w-full h-full object-cover" />
             ) : (
               <User className="w-5 h-5 text-teal-600" />
             )}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { getPhotoUrl } from '../../utils/imageUrl';
 
 const ImageLightbox = ({ images = [], currentIndex = 0, onClose = () => {}, onIndexChange = () => {} }) => {
   const [zoom, setZoom] = useState(1);
@@ -61,7 +62,7 @@ const ImageLightbox = ({ images = [], currentIndex = 0, onClose = () => {}, onIn
         className="relative max-w-5xl max-h-[80vh] overflow-hidden rounded-2xl border border-white/10 shadow-2xl flex items-center justify-center"
       >
         <img
-          src={currentImage}
+          src={getPhotoUrl(currentImage)}
           alt={`Gallery ${currentIndex + 1}`}
           style={{ transform: `scale(${zoom})`, transition: 'transform 0.25s ease-out' }}
           className="max-w-full max-h-[75vh] object-contain cursor-zoom-in"

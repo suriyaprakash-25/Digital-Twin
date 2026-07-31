@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Images, Maximize2 } from 'lucide-react';
 import ImageLightbox from './ImageLightbox';
+import { getPhotoUrl } from '../../utils/imageUrl';
 
 const GarageGallery = ({ images = [] }) => {
   const [lightboxIndex, setLightboxIndex] = useState(-1);
@@ -29,7 +30,7 @@ const GarageGallery = ({ images = [] }) => {
             className="group relative aspect-4/3 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 cursor-pointer shadow-xs hover:shadow-md transition-all hover:-translate-y-0.5"
           >
             <img
-              src={url}
+              src={getPhotoUrl(url)}
               alt={`Garage photo ${idx + 1}`}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
