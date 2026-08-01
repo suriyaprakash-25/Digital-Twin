@@ -50,7 +50,6 @@ const GarageDashboard = () => {
   }, [profile]);
 
   const loadAll = useCallback(async () => {
-    setError('');
     try {
       const [pRes, sRes, bRes, nRes] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, headers).catch(() => ({ data: { exists: false } })),
@@ -63,11 +62,11 @@ const GarageDashboard = () => {
       setBookings(Array.isArray(bRes.data) ? bRes.data : []);
       setNotifications(Array.isArray(nRes.data) ? nRes.data : []);
     } catch (e) {
-      setError(e.response?.data?.msg || 'Failed to load dashboard');
+      showToast(e.response?.data?.msg || 'Failed to load dashboard', 'error');
     } finally {
       setLoading(false);
     }
-  }, [headers]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [headers, showToast]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
