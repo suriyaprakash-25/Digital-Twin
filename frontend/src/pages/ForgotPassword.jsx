@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ShieldCheck, Mail, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 function ForgotPassword() {
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,13 +19,13 @@ function ForgotPassword() {
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/forgot-password`, { email });
       if (res.data.success) {
-        setMessage('OTP sent successfully. Redirecting...');
+        showToast('OTP sent successfully. Redirecting...', 'success');
         setTimeout(() => {
           navigate('/verify-otp', { state: { email } });
         }, 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.msg || 'An error occurred. Please try again.');
+      showToast(err.response?.data?.msg || 'An error occurred. Please try again.', 'error');
     } finally {
       setLoading(false);
     }

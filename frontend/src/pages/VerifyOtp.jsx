@@ -23,8 +23,6 @@ function VerifyOtp() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
-    setError('');
 
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/verify-otp`, { email, otp });
@@ -43,8 +41,6 @@ function VerifyOtp() {
 
   const handleResend = async () => {
     setResending(true);
-    setMessage('');
-    setError('');
 
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/forgot-password`, { email });

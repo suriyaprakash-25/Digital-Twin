@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Lock, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 function ResetPassword() {
+  const { showToast } = useToast();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,7 +29,7 @@ function ResetPassword() {
     setError('');
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+      showToast('Passwords do not match.', 'error');
       setLoading(false);
       return;
     }
@@ -42,13 +42,13 @@ function ResetPassword() {
       });
 
       if (res.data.success) {
-        setMessage('Password updated successfully! Redirecting to login...');
+        showToast('Password updated successfully! Redirecting to login...', 'success');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       }
     } catch (err) {
-      setError(err.response?.data?.msg || 'An error occurred. Please try again.');
+      showToast(err.response?.data?.msg || 'An error occurred. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
