@@ -41,6 +41,7 @@ const GarageProfile = () => {
   const photoInputRef = useRef(null);
   const galleryInputRef = useRef(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [newCertInput, setNewCertInput] = useState('');
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
