@@ -140,10 +140,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                         <HelpCircle className="h-4 w-4 mr-2.5 text-slate-400" />
                         Help & FAQs
                     </Link>
-                    <div className="flex items-center justify-between px-3 pt-2 text-[11px] font-semibold text-slate-400">
-                        <span className="flex items-center gap-1"><Info className="h-3 w-3" /> DrivePortz Partner</span>
-                        <span className="font-mono bg-slate-200/60 px-1.5 py-0.5 rounded text-[10px]">v2.4.0</span>
-                    </div>
+
                 </div>
 
                 {/* Logout */}
