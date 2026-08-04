@@ -33,6 +33,8 @@ import GaragePartnersPage from './pages/GaragePartnersPage';
 import GarageServicesHistory from './pages/GarageServicesHistory';
 import GarageDetails from './pages/GarageDetails';
 import GarageReviewsPage from './pages/GarageReviewsPage';
+import PartnerSupport from './pages/PartnerSupport';
+import PartnerHelpFAQ from './pages/PartnerHelpFAQ';
 
 import { ToastProvider } from './context/ToastContext';
 
@@ -88,6 +90,8 @@ function App() {
           <Route path="/my-profile" element={<MyProfile />} />
           <Route path="/garage-dashboard" element={<GarageDashboard />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/partner-support" element={<PartnerSupport />} />
+          <Route path="/help-faq" element={<PartnerHelpFAQ />} />
 
           {/* AI Vehicle Doctor */}
           <Route path="/vehicle-doctor" element={<VehicleDoctor />} />
