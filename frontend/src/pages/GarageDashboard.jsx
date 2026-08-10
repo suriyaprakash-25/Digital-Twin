@@ -7,6 +7,7 @@ import {
   CalendarCheck, Clock, CheckCircle, XCircle, Loader2,
   TrendingUp, AlertTriangle, PlayCircle, CheckCircle2, User, Car
 } from 'lucide-react';
+import { tryRegisterFcmToken } from '../utils/fcm';
 
 function normalizeRole(role) {
   const r = String(role || '').trim().toLowerCase();
@@ -41,7 +42,25 @@ const GarageDashboard = () => {
   const [updatingCapacity, setUpdatingCapacity] = useState(false);
   const [bookingTab, setBookingTab] = useState('ALL');
 
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(
+    typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default'
+  );
+
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
+
+  const handleEnableNotifications = async () => {
+    try {
+      const res = await tryRegisterFcmToken({ authToken: token, requestPermission: true });
+      if (res.ok) {
+        showToast('Push notifications enabled successfully!', 'success');
+        setShowNotificationPrompt(false);
+      } else {
+        showToast(`Could not enable notifications: ${res.reason}`, 'warning');
+      }
+    } catch (err) {
+      showToast('Error enabling notifications', 'error');
+    }
+  };
 
   useEffect(() => {
     if (profile?.maxCapacity !== undefined) {
@@ -151,6 +170,34 @@ const GarageDashboard = () => {
 
   return (
     <div className="space-y-8 pb-12 lg:pb-8">
+
+      {showNotificationPrompt && (
+        <div className="bg-gradient-to-r from-teal-500/10 to-indigo-500/10 border border-teal-500/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm backdrop-blur-md">
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="p-3 bg-teal-500 text-white rounded-xl shadow-md animate-bounce">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-extrabold text-slate-900">Enable Mobile & Desktop Notifications</h4>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">Receive instant alerts when customers request a service.</p>
+            </div>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={handleEnableNotifications}
+              className="flex-1 sm:flex-none px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+            >
+              Enable
+            </button>
+            <button
+              onClick={() => setShowNotificationPrompt(false)}
+              className="px-3 py-2 bg-slate-200/60 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Hero header */}
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-5 sm:p-8 shadow-2xl">

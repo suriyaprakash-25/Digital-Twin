@@ -434,6 +434,24 @@ router.get('/details/:garageId', async (req, res) => {
       return res.status(404).json({ msg: 'Garage profile not found' });
     }
 
+    let ownerEmail = '';
+    if (garage.ownerUserId) {
+      try {
+        const usersCol = db.collection('users');
+        const ownerUser = await usersCol.findOne({
+          $or: [
+            { _id: new ObjectId(String(garage.ownerUserId)) },
+            { _id: String(garage.ownerUserId) }
+          ]
+        });
+        if (ownerUser && ownerUser.email) {
+          ownerEmail = ownerUser.email;
+        }
+      } catch (err) {
+        console.warn('Error fetching owner user email:', err.message);
+      }
+    }
+
     const [servicesList, reviewsList] = await Promise.all([
       garageServices.find({ garageId, isActive: { $ne: false }, isArchived: { $ne: true } }).toArray(),
       reviewsCol.find({ garageId }).toArray()
@@ -456,7 +474,7 @@ router.get('/details/:garageId', async (req, res) => {
       id: String(garage._id),
       name: garage.name,
       phone: garage.phone,
-      email: garage.email || garage.contactEmail || `${garage.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@driveportz.com`,
+      email: garage.email || garage.contactEmail || ownerEmail || 'contact@driveportz.com',
       address: garage.address,
       city: garage.city,
       description: garage.description || 'Authorized partner service center equipped with state-of-the-art diagnostic machinery and certified mechanics.',

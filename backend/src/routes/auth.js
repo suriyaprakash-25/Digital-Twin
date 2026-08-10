@@ -27,6 +27,17 @@ router.post('/signup', async (req, res) => {
     return res.status(400).json({ msg: 'All fields are required' });
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ msg: 'Please enter a valid email address.' });
+  }
+
+  const blockedDomains = ['example.com', 'test.com', 'driveportz.com', 'tempmail.com', 'yopmail.com', 'mailinator.com'];
+  const domain = String(email).split('@')[1]?.toLowerCase().trim();
+  if (blockedDomains.includes(domain)) {
+    return res.status(400).json({ msg: 'Registration with dummy or disposable email domains is not allowed.' });
+  }
+
   if (termsAccepted !== true || privacyAccepted !== true) {
     return res.status(400).json({ msg: 'You must accept the Terms & Conditions and Privacy Policy before registration.' });
   }

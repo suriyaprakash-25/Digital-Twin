@@ -36,6 +36,19 @@ const Signup = () => {
             return;
         }
 
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            setError('Please enter a valid email address.');
+            return;
+        }
+
+        const blockedDomains = ['example.com', 'test.com', 'driveportz.com', 'tempmail.com', 'yopmail.com', 'mailinator.com'];
+        const domain = String(formData.email).split('@')[1]?.toLowerCase().trim();
+        if (blockedDomains.includes(domain)) {
+            setError('Registration with dummy or disposable email domains is not allowed.');
+            return;
+        }
+
         setIsLoading(true);
 
         try {

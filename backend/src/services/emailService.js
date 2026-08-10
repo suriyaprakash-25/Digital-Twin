@@ -66,6 +66,37 @@ async function sendOtpEmail(toEmail, otp) {
   }
 }
 
+async function sendEmail({ to, subject, text, html }) {
+  const mailOptions = {
+    from: config.smtp.fromEmail || config.smtp.user || 'no-reply@digitaltwin.com',
+    to,
+    subject,
+    text,
+    html,
+  };
+
+  if (!transporter) {
+    console.log('\n=============================================');
+    console.log('MOCK EMAIL SENT (SMTP not configured)');
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Text: ${text}`);
+    console.log(`HTML: ${html}`);
+    console.log('=============================================\n');
+    return true; // Pretend it succeeded
+  }
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent: %s', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw new Error('Failed to send email');
+  }
+}
+
 module.exports = {
   sendOtpEmail,
+  sendEmail,
 };
