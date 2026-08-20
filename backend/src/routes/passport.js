@@ -33,15 +33,8 @@ function maskEmail(email) {
 }
 
 function getPublicPassportUrl(req, vehicleId) {
-  if (process.env.FRONTEND_URL) {
-    return `${process.env.FRONTEND_URL.replace(/\/$/, '')}/passport/${vehicleId}`;
-  }
-  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
-  if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
-    const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
-    return `${proto}://${host}/passport/${vehicleId}`;
-  }
-  return `https://driveportz.in/passport/${vehicleId}`;
+  const baseUrl = process.env.FRONTEND_URL || 'https://www.driveportz.com';
+  return `${baseUrl.replace(/\/$/, '')}/passport/${vehicleId}`;
 }
 
 const getPassportHandler = async (req, res) => {

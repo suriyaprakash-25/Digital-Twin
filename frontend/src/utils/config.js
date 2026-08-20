@@ -10,9 +10,9 @@ function resolveApiBaseUrl() {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://localhost:5000';
     }
-    // In production on driveportz.in or custom domain, default to active origin
+    // In production on driveportz.com or custom domain, default to active origin
     return window.location.origin.includes('driveportz')
-      ? 'https://driveportz.in'
+      ? 'https://www.driveportz.com'
       : window.location.origin;
   }
 
