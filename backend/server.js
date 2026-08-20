@@ -35,7 +35,27 @@ const app = express();
 const config = loadConfig();
 
 // Enable CORS
-app.use(cors());
+const allowedOrigins = [
+  'https://www.driveportz.com',
+  'https://driveportz.com',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || origin.endsWith('.driveportz.com') || origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Fallback allow to avoid unexpected blocking during domain transitions
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 
 // Body parsing
 app.use(express.json({ limit: '20mb' }));

@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './config';
+
 /**
  * Helper function to safely format and resolve photo URLs.
  * Handles relative paths (/uploads/...), localhost URLs, data URIs, and external URLs.
@@ -7,8 +9,7 @@ export const getPhotoUrl = (url) => {
   const cleanUrl = url.trim();
   if (!cleanUrl) return null;
 
-  // Base API URL
-  const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+  const apiBase = (API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
 
   // 1. Data URIs or Blob URLs
   if (cleanUrl.startsWith('data:') || cleanUrl.startsWith('blob:')) {
