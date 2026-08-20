@@ -88,73 +88,77 @@ const MyVehicles = () => {
                             key={vehicle.id}
                             className="bg-white border border-slate-100 rounded-2xl md:rounded-3xl overflow-hidden hover:border-teal-200 transition-all duration-300 group hover:-translate-y-1.5 hover:shadow-xl shadow-sm relative flex flex-col"
                         >
-                            {/* Three Dot Context Menu */}
-                            <div
-                                className="absolute top-3.5 right-3.5 md:top-6 md:right-6 z-20"
-                                onBlur={(e) => {
-                                    if (!e.currentTarget.contains(e.relatedTarget)) {
-                                        setOpenMenuId(null);
-                                    }
-                                }}
-                                tabIndex={-1}
-                            >
-                                <button
-                                    onClick={() => setOpenMenuId(openMenuId === vehicle.id ? null : vehicle.id)}
-                                    className="p-1.5 md:p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-full transition-colors focus:outline-none"
-                                >
-                                    <MoreVertical className="h-4 w-4 md:h-5 md:w-5" />
-                                </button>
-
-                                {openMenuId === vehicle.id && (
-                                    <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-2 text-xs md:text-sm origin-top-right animate-in fade-in zoom-in duration-200">
-                                        <button
-                                            onClick={() => navigate(`/passport/${vehicle.id}`)}
-                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
-                                        >
-                                            <QrCode className="h-4 w-4" /> View Passport
-                                        </button>
-                                        <button
-                                            onClick={() => navigate(`/edit-vehicle/${vehicle.id}`)}
-                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
-                                        >
-                                            <Edit className="h-4 w-4" /> Edit Details
-                                        </button>
-                                        <button
-                                            onClick={() => navigate(`/resale-report/${vehicle.id}`)}
-                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-600 flex items-center gap-2 font-medium transition-colors"
-                                        >
-                                            <ShieldAlert className="h-4 w-4" /> Trust Report
-                                        </button>
-                                        <button
-                                            onClick={() => navigate(`/insurance/${vehicle.id}`)}
-                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
-                                        >
-                                            <ShieldCheck className="h-4 w-4" /> Manage Insurance
-                                        </button>
-                                        <button
-                                            onClick={() => navigate(`/transfer/${vehicle.id}`)}
-                                            className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors border-b border-slate-100 pb-3 mb-1"
-                                        >
-                                            <UserPlus className="h-4 w-4" /> Transfer Owner
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(vehicle.id)}
-                                            className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium transition-colors"
-                                        >
-                                            <Trash2 className="h-4 w-4" /> Delete Vehicle
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
                             <div className="p-4 md:p-6 lg:p-8 flex-1">
-                                <div className="flex justify-between items-start mb-4 md:mb-6">
-                                    <div className="p-2.5 md:p-4 bg-teal-50 rounded-xl md:rounded-2xl border border-teal-100 text-teal-600 group-hover:scale-110 group-hover:bg-teal-600 group-hover:text-white transition-all shadow-sm">
-                                        <Car className="h-5 w-5 md:h-7 md:w-7" />
+                                <div className="flex justify-between items-center mb-4 md:mb-6">
+                                    <div className="p-3 md:p-3.5 bg-teal-600 rounded-2xl text-white shadow-sm flex items-center justify-center">
+                                        <Car className="h-6 w-6 md:h-7 md:w-7" />
                                     </div>
-                                    <span className="px-2.5 py-1 md:px-4 md:py-1.5 bg-slate-50 text-slate-655 border border-slate-200 rounded-full text-[10px] md:text-xs font-bold shadow-sm">
-                                        {vehicle.year}
-                                    </span>
+                                    
+                                    <div className="flex items-center gap-2 md:gap-2.5">
+                                        <span className="px-3 py-1 bg-slate-50 text-slate-800 border border-slate-200 rounded-xl text-xs md:text-sm font-bold shadow-xs">
+                                            {vehicle.year}
+                                        </span>
+
+                                        {/* Three Dot Context Menu */}
+                                        <div
+                                            className="relative"
+                                            onBlur={(e) => {
+                                                if (!e.currentTarget.contains(e.relatedTarget)) {
+                                                    setOpenMenuId(null);
+                                                }
+                                            }}
+                                            tabIndex={-1}
+                                        >
+                                            <button
+                                                onClick={() => setOpenMenuId(openMenuId === vehicle.id ? null : vehicle.id)}
+                                                className="w-8 h-8 md:w-9 md:h-9 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-full transition-colors focus:outline-none flex items-center justify-center shadow-xs"
+                                                title="Options"
+                                            >
+                                                <MoreVertical className="h-4 w-4 md:h-4.5 md:w-4.5" />
+                                            </button>
+
+                                            {openMenuId === vehicle.id && (
+                                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-2 text-xs md:text-sm z-30 origin-top-right animate-in fade-in zoom-in duration-200">
+                                                    <button
+                                                        onClick={() => navigate(`/passport/${vehicle.id}`)}
+                                                        className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
+                                                    >
+                                                        <QrCode className="h-4 w-4 text-teal-600" /> View Passport
+                                                    </button>
+                                                    <button
+                                                        onClick={() => navigate(`/edit-vehicle/${vehicle.id}`)}
+                                                        className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
+                                                    >
+                                                        <Edit className="h-4 w-4 text-slate-500" /> Edit Details
+                                                    </button>
+                                                    <button
+                                                        onClick={() => navigate(`/resale-report/${vehicle.id}`)}
+                                                        className="w-full text-left px-4 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-600 flex items-center gap-2 font-medium transition-colors"
+                                                    >
+                                                        <ShieldAlert className="h-4 w-4 text-emerald-600" /> Trust Report
+                                                    </button>
+                                                    <button
+                                                        onClick={() => navigate(`/insurance/${vehicle.id}`)}
+                                                        className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors"
+                                                    >
+                                                        <ShieldCheck className="h-4 w-4 text-teal-600" /> Manage Insurance
+                                                    </button>
+                                                    <button
+                                                        onClick={() => navigate(`/transfer/${vehicle.id}`)}
+                                                        className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-teal-600 flex items-center gap-2 font-medium transition-colors border-b border-slate-100 pb-3 mb-1"
+                                                    >
+                                                        <UserPlus className="h-4 w-4 text-indigo-600" /> Transfer Owner
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(vehicle.id)}
+                                                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium transition-colors"
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-red-500" /> Delete Vehicle
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <h3 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">
