@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import { tryRegisterFcmToken } from '../utils/fcm';
 import { Menu, LogOut } from 'lucide-react';
 import Copilot from './copilot/Copilot';
+import FeedbackButton from './feedback/FeedbackButton';
 
 const MainLayout = () => {
     const navigate = useNavigate();
@@ -70,6 +71,9 @@ const MainLayout = () => {
 
             {/* AI Assistant CoPilot */}
             <Copilot />
+
+            {/* Global Feedback Button */}
+            <FeedbackButton />
         </div>
     );
 };

@@ -46,6 +46,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminGarages from './pages/admin/AdminGarages';
 import AdminRevenue from './pages/admin/AdminRevenue';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminFeedback from './pages/admin/AdminFeedback';
 
 function App() {
   return (
@@ -76,6 +77,7 @@ function App() {
           <Route path="/admin/garages" element={<AdminGarages />} />
           <Route path="/admin/analytics" element={<AdminAnalytics />} />
           <Route path="/admin/revenue" element={<AdminRevenue />} />
+          <Route path="/admin/feedback" element={<AdminFeedback />} />
         </Route>
 
         {/* Protected Dashboard Routes — pathless layout */}

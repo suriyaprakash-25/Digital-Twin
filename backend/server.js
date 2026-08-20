@@ -28,6 +28,8 @@ const ownershipRoutes = require('./src/routes/ownership');
 const vehicleDoctorRoutes = require('./src/routes/vehicleDoctorRoutes');
 const copilotRoutes = require('./src/routes/copilotRoutes');
 const garageAvailabilityRoutes = require('./src/routes/garageAvailabilityRoutes');
+const feedbackRoutes = require('./src/routes/feedbackRoutes');
+const adminFeedbackRoutes = require('./src/routes/adminFeedbackRoutes');
 
 const app = express();
 const config = loadConfig();
@@ -102,6 +104,8 @@ app.use('/api/insurance', insuranceRoutes);
 app.use('/api/ownership', ownershipRoutes);
 app.use('/api/vehicle-doctor', vehicleDoctorRoutes);
 app.use('/api/copilot', copilotRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/admin/feedback', adminFeedbackRoutes);
 
 // Start after DB connects
 (async () => {

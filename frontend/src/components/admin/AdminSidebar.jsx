@@ -5,6 +5,7 @@ import {
     Building2,
     BarChart3,
     IndianRupee,
+    MessageSquare,
     LogOut,
     X
 } from 'lucide-react';
@@ -15,6 +16,7 @@ const adminNavigation = [
     { name: 'Garages', href: '/admin/garages', icon: Building2 },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Revenue Reports', href: '/admin/revenue', icon: IndianRupee },
+    { name: 'Feedback', href: '/admin/feedback', icon: MessageSquare },
 ];
 
 const AdminSidebar = ({ onLogout, isOpen, onClose }) => {
