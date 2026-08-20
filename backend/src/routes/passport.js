@@ -83,20 +83,19 @@ const getPassportHandler = async (req, res) => {
       .sort({ serviceDate: -1 })
       .toArray();
 
-    // Verify / generate QR Code (data URL)
-    let qrCodeUrl = vehicle.qrCodeUrl;
-    // If qrCodeUrl is missing, or contains old 'digitaltwin.in', regenerate with driveportz.in
-    if (!qrCodeUrl) {
-      const passportUrl = getPublicPassportUrl(req, actualVehicleId);
-      try {
-        qrCodeUrl = await generateQRCode(passportUrl);
-        await db.collection('vehicles').updateOne(
-          { _id: vehicle._id },
-          { $set: { qrCodeUrl } }
-        );
-      } catch (qrErr) {
-        console.error('Failed to generate or store QR code', qrErr);
-      }
+    // Always generate fresh QR Code with production URL https://www.driveportz.com/passport/:vehicleId
+    const passportUrl = getPublicPassportUrl(req, actualVehicleId);
+    let qrCodeUrl = null;
+    try {
+      qrCodeUrl = await generateQRCode(passportUrl);
+      // Persist the updated QR code with the production domain
+      await db.collection('vehicles').updateOne(
+        { _id: vehicle._id },
+        { $set: { qrCodeUrl } }
+      );
+    } catch (qrErr) {
+      console.error('Failed to generate or store QR code', qrErr);
+      qrCodeUrl = vehicle.qrCodeUrl || null;
     }
 
     // Calculate vehicle health
@@ -366,16 +365,16 @@ router.get('/pdf/:vehicleId', async (req, res) => {
 
     doc.moveDown(1);
     
-    // Add QR Code if present
-    if (vehicle.qrCodeUrl && vehicle.qrCodeUrl.startsWith('data:image/png;base64,')) {
-      try {
-        const base64Data = vehicle.qrCodeUrl.replace(/^data:image\/png;base64,/, "");
-        const qrBuffer = Buffer.from(base64Data, 'base64');
-        doc.image(qrBuffer, rightColX, doc.y, { width: 90 });
-        doc.fillColor('#64748b').fontSize(8).font('Helvetica-Oblique').text('Scan to View Online Passport', rightColX + 3, doc.y + 95);
-      } catch (qrErr) {
-        console.error('Failed to embed QR code in PDF:', qrErr);
-      }
+    // Always generate fresh QR Code for PDF pointing to https://www.driveportz.com/passport/:vehicleId
+    try {
+      const pdfPassportUrl = getPublicPassportUrl(req, vehicleId);
+      const pdfQrDataUrl = await generateQRCode(pdfPassportUrl);
+      const base64Data = pdfQrDataUrl.replace(/^data:image\/png;base64,/, "");
+      const qrBuffer = Buffer.from(base64Data, 'base64');
+      doc.image(qrBuffer, rightColX, doc.y, { width: 90 });
+      doc.fillColor('#64748b').fontSize(8).font('Helvetica-Oblique').text('Scan to View Online Passport', rightColX + 3, doc.y + 95);
+    } catch (qrErr) {
+      console.error('Failed to embed QR code in PDF:', qrErr);
     }
 
     // Set Y position back down to clear columns

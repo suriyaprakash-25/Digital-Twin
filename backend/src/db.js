@@ -18,7 +18,12 @@ async function connectToMongo(config) {
   try {
     lastError = undefined;
     console.log(`Connecting to MongoDB URI: ${config.mongoUri}...`);
-    client = new MongoClient(config.mongoUri, { serverSelectionTimeoutMS: 5000 });
+    client = new MongoClient(config.mongoUri, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      retryWrites: true,
+      maxPoolSize: 10
+    });
 
     await client.connect();
     console.log("✅ MongoDB client connected");
@@ -31,14 +36,22 @@ async function connectToMongo(config) {
     console.log("🗄️ Using DB:", db.databaseName);
 
     // Seed Knowledge Base
-    const { seedKnowledgeBase } = require('./utils/seedKb');
-    await seedKnowledgeBase(db);
+    try {
+      const { seedKnowledgeBase } = require('./utils/seedKb');
+      await seedKnowledgeBase(db);
+    } catch (sErr) {
+      console.warn("Knowledge base seed skipped:", sErr.message);
+    }
 
     return db;
   } catch (err) {
-    console.warn("⚠️ Remote MongoDB connection failed, trying local fallback...");
+    console.warn("⚠️ Remote MongoDB connection failed, trying local fallback...", err && err.message ? err.message : '');
     try {
-      client = new MongoClient('mongodb://127.0.0.1:27017', { serverSelectionTimeoutMS: 3000 });
+      client = new MongoClient('mongodb://127.0.0.1:27017', {
+        serverSelectionTimeoutMS: 3000,
+        socketTimeoutMS: 45000,
+        retryWrites: true
+      });
       await client.connect();
       db = client.db('digital_twin');
       await db.command({ ping: 1 });
