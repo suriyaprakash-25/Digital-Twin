@@ -7,37 +7,98 @@ const PDFDocument = require('pdfkit');
 
 const router = express.Router();
 
-router.get('/:vehicleId', async (req, res) => {
+function safeObjectId(id) {
+  try {
+    return new ObjectId(String(id));
+  } catch {
+    return null;
+  }
+}
+
+function maskPhone(phone) {
+  if (!phone) return '';
+  const str = String(phone).trim();
+  if (str.length <= 4) return '****';
+  return str.slice(0, 2) + '*'.repeat(Math.max(2, str.length - 4)) + str.slice(-2);
+}
+
+function maskEmail(email) {
+  if (!email) return '';
+  const parts = String(email).trim().split('@');
+  if (parts.length !== 2) return '****';
+  const name = parts[0];
+  const domain = parts[1];
+  if (name.length <= 2) return `*@${domain}`;
+  return `${name[0]}***${name[name.length - 1]}@${domain}`;
+}
+
+function getPublicPassportUrl(req, vehicleId) {
+  if (process.env.FRONTEND_URL) {
+    return `${process.env.FRONTEND_URL.replace(/\/$/, '')}/passport/${vehicleId}`;
+  }
+  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+  if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+    const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+    return `${proto}://${host}/passport/${vehicleId}`;
+  }
+  return `https://driveportz.in/passport/${vehicleId}`;
+}
+
+const getPassportHandler = async (req, res) => {
   const { vehicleId } = req.params;
   const db = getDb();
 
-  let vehicleObjectId;
-  try {
-    vehicleObjectId = new ObjectId(vehicleId);
-  } catch (e) {
-    return res.status(400).json({ msg: 'Invalid vehicle ID' });
+  if (!vehicleId || !vehicleId.trim()) {
+    return res.status(400).json({ msg: 'Vehicle ID is required' });
   }
 
+  const cleanId = String(vehicleId).trim();
+  const objId = safeObjectId(cleanId);
+
   try {
-    const vehicle = await db.collection('vehicles').findOne({ _id: vehicleObjectId, isArchived: { $ne: true } });
-    if (!vehicle) {
-      return res.status(404).json({ msg: 'Vehicle not found' });
+    // Flexible query: match ObjectId, string _id, custom id, or passportId
+    const queryConditions = [
+      { _id: cleanId },
+      { id: cleanId },
+      { passportId: cleanId }
+    ];
+    if (objId) {
+      queryConditions.unshift({ _id: objId });
     }
+
+    const vehicle = await db.collection('vehicles').findOne({
+      $or: queryConditions,
+      isArchived: { $ne: true }
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({ msg: 'Vehicle passport not found or vehicle is archived' });
+    }
+
+    const actualVehicleId = String(vehicle._id);
 
     // Fetch associated service records, sorting latest first
     const services = await db.collection('services')
-      .find({ vehicleId: String(vehicleId), isArchived: { $ne: true } })
+      .find({
+        $or: [
+          { vehicleId: actualVehicleId },
+          { vehicleId: cleanId },
+          ...(vehicle.id ? [{ vehicleId: String(vehicle.id) }] : [])
+        ],
+        isArchived: { $ne: true }
+      })
       .sort({ serviceDate: -1 })
       .toArray();
 
     // Verify / generate QR Code (data URL)
     let qrCodeUrl = vehicle.qrCodeUrl;
+    // If qrCodeUrl is missing, or contains old 'digitaltwin.in', regenerate with driveportz.in
     if (!qrCodeUrl) {
-      const passportUrl = `https://digitaltwin.in/passport/${vehicleId}`;
+      const passportUrl = getPublicPassportUrl(req, actualVehicleId);
       try {
         qrCodeUrl = await generateQRCode(passportUrl);
         await db.collection('vehicles').updateOne(
-          { _id: vehicleObjectId },
+          { _id: vehicle._id },
           { $set: { qrCodeUrl } }
         );
       } catch (qrErr) {
@@ -54,20 +115,23 @@ router.get('/:vehicleId', async (req, res) => {
       console.error('Failed to calculate vehicle health, defaulting to 100', hErr);
     }
 
-    // Fetch current owner user details
+    // Fetch current owner details (sanitized for public passport)
     let ownerDetails = {
-      name: vehicle.ownerName || 'Unknown Owner',
-      email: '',
-      phone: vehicle.phone || ''
+      name: vehicle.ownerName || 'Verified Owner',
+      email: maskEmail(vehicle.email || ''),
+      phone: maskPhone(vehicle.phone || '')
     };
 
     if (vehicle.ownerId) {
       try {
-        const ownerUser = await db.collection('users').findOne({ _id: new ObjectId(vehicle.ownerId) });
-        if (ownerUser) {
-          ownerDetails.name = ownerUser.name || ownerDetails.name;
-          ownerDetails.email = ownerUser.email || '';
-          ownerDetails.phone = ownerUser.phone || ownerDetails.phone;
+        const ownerObjId = safeObjectId(vehicle.ownerId);
+        if (ownerObjId) {
+          const ownerUser = await db.collection('users').findOne({ _id: ownerObjId });
+          if (ownerUser) {
+            ownerDetails.name = ownerUser.name || ownerDetails.name;
+            ownerDetails.email = maskEmail(ownerUser.email || '');
+            ownerDetails.phone = maskPhone(ownerUser.phone || '');
+          }
         }
       } catch (userErr) {
         console.error('Failed to look up owner details', userErr);
@@ -78,7 +142,12 @@ router.get('/:vehicleId', async (req, res) => {
     let ownershipHistory = [];
     try {
       ownershipHistory = await db.collection('ownershipHistory')
-        .find({ vehicleId: String(vehicleId) })
+        .find({
+          $or: [
+            { vehicleId: actualVehicleId },
+            { vehicleId: cleanId }
+          ]
+        })
         .sort({ fromDate: 1 })
         .toArray();
     } catch (hErr) {
@@ -90,7 +159,7 @@ router.get('/:vehicleId', async (req, res) => {
         ? new Date(vehicle.purchaseDate).toISOString()
         : vehicle.createdAt || new Date(2024, 0, 1).toISOString();
       ownershipHistory.push({
-        vehicleId: String(vehicleId),
+        vehicleId: actualVehicleId,
         ownerId: vehicle.ownerId,
         ownerName: vehicle.ownerName || 'Original Owner',
         fromDate: fallbackFromDate,
@@ -106,10 +175,10 @@ router.get('/:vehicleId', async (req, res) => {
           if (p.partName) {
             partsReplaced.push({
               partName: p.partName,
-              brand: p.brand || 'Unknown Brand',
+              brand: p.brand || 'Genuine Part',
               cost: p.cost || 0,
               date: s.serviceDate,
-              garageName: s.garageName || 'Unknown Garage'
+              garageName: s.garageName || 'Authorized Service Center'
             });
           }
         });
@@ -118,7 +187,7 @@ router.get('/:vehicleId', async (req, res) => {
 
     return res.status(200).json({
       vehicle: {
-        id: String(vehicle._id),
+        id: actualVehicleId,
         vehicleNumber: vehicle.vehicleNumber,
         brand: vehicle.brand,
         model: vehicle.model,
@@ -128,8 +197,8 @@ router.get('/:vehicleId', async (req, res) => {
         color: vehicle.color,
         registrationDate: vehicle.registrationDate,
         registeredRTO: vehicle.registeredRTO,
-        chassisNumber: vehicle.chassisNumber,
-        engineNumber: vehicle.engineNumber,
+        chassisNumber: vehicle.chassisNumber ? `${vehicle.chassisNumber.slice(0, 5)}...${vehicle.chassisNumber.slice(-4)}` : null,
+        engineNumber: vehicle.engineNumber ? `${vehicle.engineNumber.slice(0, 4)}...${vehicle.engineNumber.slice(-3)}` : null,
         currentOdometerKm: vehicle.currentOdometerKm,
         qrCodeUrl: qrCodeUrl || null
       },
@@ -138,14 +207,14 @@ router.get('/:vehicleId', async (req, res) => {
       services: services.map((s) => ({
         id: String(s._id),
         serviceDate: s.serviceDate,
-        garageName: s.garageName || 'Unknown Garage',
+        garageName: s.garageName || 'Authorized Service Center',
         serviceType: s.serviceType,
         totalCost: s.totalCost || s.cost || 0,
         verifiedService: s.verifiedService === true
       })),
       ownershipHistory: ownershipHistory.map(h => ({
         id: String(h._id || ''),
-        ownerName: h.ownerName,
+        ownerName: h.ownerName || 'Registered Owner',
         fromDate: h.fromDate,
         toDate: h.toDate
       })),
@@ -155,7 +224,11 @@ router.get('/:vehicleId', async (req, res) => {
     console.error('Error fetching vehicle passport details:', err);
     return res.status(500).json({ msg: 'Server error fetching vehicle passport', error: String(err && err.message ? err.message : err) });
   }
-});
+};
+
+// Route aliases for public access
+router.get('/:vehicleId', getPassportHandler);
+router.get('/public/:vehicleId', getPassportHandler);
 
 // GET /api/passport/pdf/:vehicleId
 router.get('/pdf/:vehicleId', async (req, res) => {
