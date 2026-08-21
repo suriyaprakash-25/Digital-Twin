@@ -18,11 +18,13 @@ import {
   RotateCcw,
   FileText,
   Eye,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 import InvoiceModal from '../components/invoice/InvoiceModal';
 import ReceiptModal from '../components/invoice/ReceiptModal';
 import PaymentDetailsModal from '../components/payment/PaymentDetailsModal';
+import CreateDisputeModal from '../components/dispute/CreateDisputeModal';
 
 const PaymentHistory = () => {
   const [payments, setPayments] = useState([]);
@@ -35,6 +37,7 @@ const PaymentHistory = () => {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
   const [selectedReceiptId, setSelectedReceiptId] = useState(null);
   const [selectedPaymentForDetails, setSelectedPaymentForDetails] = useState(null);
+  const [selectedPaymentForDispute, setSelectedPaymentForDispute] = useState(null);
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -346,6 +349,17 @@ const PaymentHistory = () => {
                       </button>
                     )}
 
+                    {isSuccess && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPaymentForDispute(p)}
+                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1"
+                      >
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        Raise Dispute
+                      </button>
+                    )}
+
                     {isFailed && p.vehicleId && (
                       <Link
                         to={`/service-history/${p.vehicleId}`}
@@ -390,6 +404,19 @@ const PaymentHistory = () => {
           isOpen={Boolean(selectedReceiptId)}
           onClose={() => setSelectedReceiptId(null)}
           serviceId={selectedReceiptId}
+        />
+      )}
+
+      {/* Raise Dispute Modal */}
+      {selectedPaymentForDispute && (
+        <CreateDisputeModal
+          isOpen={Boolean(selectedPaymentForDispute)}
+          onClose={() => setSelectedPaymentForDispute(null)}
+          payment={selectedPaymentForDispute}
+          onSuccess={() => {
+            alert('Dispute submitted successfully! You can track it in My Disputes.');
+            setSelectedPaymentForDispute(null);
+          }}
         />
       )}
     </div>

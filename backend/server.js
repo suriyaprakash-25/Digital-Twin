@@ -33,8 +33,12 @@ const adminFeedbackRoutes = require('./src/routes/adminFeedbackRoutes');
 const paymentRoutes = require('./src/routes/payments');
 const invoiceRoutes = require('./src/routes/invoices');
 const earningsRoutes = require('./src/routes/earnings');
+const reconciliationRoutes = require('./src/routes/reconciliation');
+const { userDisputeRouter, garageDisputeRouter, adminDisputeRouter } = require('./src/routes/disputes');
 const { ensurePaymentIndexes } = require('./src/models/Payment');
 const { ensureEarningsIndexes } = require('./src/models/Earnings');
+const { ensureReconciliationIndexes } = require('./src/models/Reconciliation');
+const { ensureDisputeIndexes } = require('./src/models/Dispute');
 
 const app = express();
 const config = loadConfig();
@@ -143,12 +147,18 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/garage/invoices', invoiceRoutes);
 app.use('/api/garage', earningsRoutes);
 app.use('/api/garage/earnings', earningsRoutes);
+app.use('/api/admin/reconciliation', reconciliationRoutes);
+app.use('/api/disputes', userDisputeRouter);
+app.use('/api/garage/disputes', garageDisputeRouter);
+app.use('/api/admin/disputes', adminDisputeRouter);
 
 // Start after DB connects
 (async () => {
   await connectToMongo(config);
   await ensurePaymentIndexes();
   await ensureEarningsIndexes();
+  await ensureReconciliationIndexes();
+  await ensureDisputeIndexes();
   app.listen(config.port, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://localhost:${config.port}`);

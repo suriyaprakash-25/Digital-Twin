@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope, ClipboardList, HelpCircle, Headphones, Info, Star, CreditCard, Percent, Receipt } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope, ClipboardList, HelpCircle, Headphones, Info, Star, CreditCard, Percent, Receipt, AlertTriangle } from 'lucide-react';
 import { FEATURES } from '../config/features';
 
 function normalizeRole(role) {
@@ -27,6 +27,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         { name: 'Add Vehicle', href: '/add-vehicle', icon: PlusCircle },
         { name: 'My Vehicles', href: '/my-vehicles', icon: Car },
         { name: 'Payment History', href: '/payment-history', icon: CreditCard },
+        { name: 'My Disputes', href: '/disputes', icon: AlertTriangle },
         { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];
 
@@ -39,6 +40,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         { name: 'Payments & Invoices', href: '/garage/payments', icon: CreditCard },
         { name: 'Earnings', href: '/garage/earnings', icon: Percent },
         { name: 'Settlement History', href: '/garage/settlements', icon: Receipt },
+        { name: 'Customer Inquiries', href: '/garage/disputes', icon: AlertTriangle },
         { name: 'Add Service', href: '/add-service', icon: PlusCircle },
         { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];

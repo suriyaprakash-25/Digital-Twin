@@ -8,6 +8,8 @@ import {
     CreditCard,
     Percent,
     Receipt,
+    Scale,
+    AlertTriangle,
     MessageSquare,
     LogOut,
     X
@@ -18,6 +20,8 @@ const adminNavigation = [
     { name: 'Payment Center', href: '/admin/payments', icon: CreditCard },
     { name: 'Commissions', href: '/admin/commissions', icon: Percent },
     { name: 'Settlements', href: '/admin/settlements', icon: Receipt },
+    { name: 'Reconciliation', href: '/admin/reconciliation', icon: Scale },
+    { name: 'Disputes & Claims', href: '/admin/disputes', icon: AlertTriangle },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Garages', href: '/admin/garages', icon: Building2 },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },

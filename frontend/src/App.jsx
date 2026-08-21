@@ -39,6 +39,9 @@ import PaymentHistory from './pages/PaymentHistory';
 import GaragePayments from './pages/GaragePayments';
 import GarageEarnings from './pages/GarageEarnings';
 import GarageSettlements from './pages/GarageSettlements';
+import MyDisputes from './pages/MyDisputes';
+import DisputeDetails from './pages/DisputeDetails';
+import GarageDisputes from './pages/GarageDisputes';
 
 import { ToastProvider } from './context/ToastContext';
 
@@ -54,6 +57,8 @@ import AdminFeedback from './pages/admin/AdminFeedback';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminCommissions from './pages/admin/AdminCommissions';
 import AdminSettlements from './pages/admin/AdminSettlements';
+import AdminReconciliation from './pages/admin/AdminReconciliation';
+import AdminDisputes from './pages/admin/AdminDisputes';
 
 function App() {
   return (
@@ -83,6 +88,8 @@ function App() {
           <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/commissions" element={<AdminCommissions />} />
           <Route path="/admin/settlements" element={<AdminSettlements />} />
+          <Route path="/admin/reconciliation" element={<AdminReconciliation />} />
+          <Route path="/admin/disputes" element={<AdminDisputes />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/garages" element={<AdminGarages />} />
           <Route path="/admin/analytics" element={<AdminAnalytics />} />
@@ -115,6 +122,8 @@ function App() {
           <Route path="/edit-vehicle/:id" element={<EditVehicle />} />
           <Route path="/my-vehicles" element={<MyVehicles />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
+          <Route path="/disputes" element={<MyDisputes />} />
+          <Route path="/disputes/:id" element={<DisputeDetails />} />
           <Route path="/add-service" element={<AddService />} />
           <Route path="/service-history/:vehicleId" element={<ServiceHistory />} />
           <Route path="/resale-report/:vehicleId" element={<ResaleReport />} />
@@ -127,6 +136,7 @@ function App() {
           <Route path="/garage/payments" element={<GaragePayments />} />
           <Route path="/garage/earnings" element={<GarageEarnings />} />
           <Route path="/garage/settlements" element={<GarageSettlements />} />
+          <Route path="/garage/disputes" element={<GarageDisputes />} />
           <Route path="/garage-availability" element={<GarageAvailability />} />
           <Route path="/garages/:garageId" element={<GarageDetails />} />
           <Route path="/garage/reviews" element={<GarageReviewsPage />} />
