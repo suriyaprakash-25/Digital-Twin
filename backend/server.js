@@ -49,10 +49,18 @@ const { ensureDisputeIndexes } = require('./src/models/Dispute');
 const { ensureRiskIndexes } = require('./src/models/RiskEvent');
 const { ensureAuditIndexes } = require('./src/models/AuditLog');
 const { ensureSettlementOperationIndexes } = require('./src/models/SettlementSchedule');
-const { ensureComplianceAndRiskIndexes } = require('./src/models/ComplianceAndRisk');
+const { requestCorrelationMiddleware } = require('./src/middleware/requestCorrelation');
+const systemHealthRoutes = require('./src/routes/systemHealth');
+const financialAlertsRouter = require('./src/routes/financialAlerts');
+const financialIntegrityRouter = require('./src/routes/financialIntegrity');
+const { ensureWebhookEventIndexes } = require('./src/models/PaymentWebhookEvent');
+const { ensureJobRegistryIndexes } = require('./src/jobs/jobRegistry');
+const { ensureFinancialAlertIndexes } = require('./src/services/financialAlertService');
 
 const app = express();
 const config = loadConfig();
+
+app.use(requestCorrelationMiddleware);
 
 // Enable CORS
 const allowedOrigins = [
@@ -129,11 +137,14 @@ app.get('/api/status', async (req, res) => {
   });
 });
 
+const { ensureComplianceAndRiskIndexes } = require('./src/models/ComplianceAndRisk');
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/services', serviceRoutes);
-app.use('/api/health', healthRoutes);
+app.use('/api/health', systemHealthRoutes);
+app.use('/api/vehicle-health', healthRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/resale', resaleRoutes);
 app.use('/api/garage', garageRoutes);
@@ -172,6 +183,8 @@ app.use('/api/admin/treasury', treasuryRouter);
 app.use('/api/garage/tax', garageTaxRouter);
 app.use('/api/admin/tax', adminTaxRouter);
 app.use('/api/admin/risk-cases', riskCasesRouter);
+app.use('/api/admin/alerts', financialAlertsRouter);
+app.use('/api/admin/financial-integrity', financialIntegrityRouter);
 
 // Start after DB connects
 (async () => {
@@ -184,6 +197,9 @@ app.use('/api/admin/risk-cases', riskCasesRouter);
   await ensureAuditIndexes();
   await ensureSettlementOperationIndexes();
   await ensureComplianceAndRiskIndexes();
+  await ensureWebhookEventIndexes();
+  await ensureJobRegistryIndexes();
+  await ensureFinancialAlertIndexes();
   app.listen(config.port, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://localhost:${config.port}`);

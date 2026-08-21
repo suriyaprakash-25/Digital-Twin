@@ -67,6 +67,8 @@ import AdminFinancialAudit from './pages/admin/AdminFinancialAudit';
 import AdminTreasury from './pages/admin/AdminTreasury';
 import AdminTaxCompliance from './pages/admin/AdminTaxCompliance';
 import AdminRiskCases from './pages/admin/AdminRiskCases';
+import AdminFinancialAlerts from './pages/admin/AdminFinancialAlerts';
+import AdminFinancialOperationsDashboard from './pages/admin/AdminFinancialOperationsDashboard';
 import GarageTax from './pages/GarageTax';
 
 function App() {
@@ -94,6 +96,7 @@ function App() {
           }
         >
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/financial-command-center" element={<AdminFinancialOperationsDashboard />} />
           <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/commissions" element={<AdminCommissions />} />
           <Route path="/admin/settlements" element={<AdminSettlements />} />
@@ -102,6 +105,7 @@ function App() {
           <Route path="/admin/financial-audit" element={<AdminFinancialAudit />} />
           <Route path="/admin/tax-compliance" element={<AdminTaxCompliance />} />
           <Route path="/admin/risk-cases" element={<AdminRiskCases />} />
+          <Route path="/admin/financial-alerts" element={<AdminFinancialAlerts />} />
           <Route path="/admin/reconciliation" element={<AdminReconciliation />} />
           <Route path="/admin/disputes" element={<AdminDisputes />} />
           <Route path="/admin/payment-risk" element={<AdminPaymentRisk />} />

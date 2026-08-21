@@ -15,6 +15,8 @@ import {
     FileText,
     Landmark,
     FileCheck2,
+    Activity,
+    BellRing,
     MessageSquare,
     LogOut,
     X
@@ -22,6 +24,7 @@ import {
 
 const adminNavigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { name: 'Command Center', href: '/admin/financial-command-center', icon: Activity },
     { name: 'Payment Center', href: '/admin/payments', icon: CreditCard },
     { name: 'Commissions', href: '/admin/commissions', icon: Percent },
     { name: 'Settlements', href: '/admin/settlements', icon: Receipt },
@@ -30,6 +33,7 @@ const adminNavigation = [
     { name: 'Financial Audit', href: '/admin/financial-audit', icon: FileText },
     { name: 'Tax & Compliance', href: '/admin/tax-compliance', icon: FileCheck2 },
     { name: 'Risk Cases & Fraud', href: '/admin/risk-cases', icon: ShieldAlert },
+    { name: 'Financial Alerts', href: '/admin/financial-alerts', icon: BellRing },
     { name: 'Reconciliation', href: '/admin/reconciliation', icon: Scale },
     { name: 'Disputes & Claims', href: '/admin/disputes', icon: AlertTriangle },
     { name: 'Payment Risk', href: '/admin/payment-risk', icon: ShieldAlert },
