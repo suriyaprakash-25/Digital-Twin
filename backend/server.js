@@ -31,6 +31,7 @@ const garageAvailabilityRoutes = require('./src/routes/garageAvailabilityRoutes'
 const feedbackRoutes = require('./src/routes/feedbackRoutes');
 const adminFeedbackRoutes = require('./src/routes/adminFeedbackRoutes');
 const paymentRoutes = require('./src/routes/payments');
+const invoiceRoutes = require('./src/routes/invoices');
 const { ensurePaymentIndexes } = require('./src/models/Payment');
 
 const app = express();
@@ -136,6 +137,8 @@ app.use('/api/copilot', copilotRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/admin/feedback', adminFeedbackRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/garage/invoices', invoiceRoutes);
 
 // Start after DB connects
 (async () => {

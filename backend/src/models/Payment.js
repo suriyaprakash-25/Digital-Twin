@@ -32,14 +32,21 @@ async function ensurePaymentIndexes(dbInstance) {
     await payments.createIndex({ serviceId: 1 });
     await payments.createIndex({ invoiceId: 1 });
     await payments.createIndex({ vehicleId: 1 });
-    await payments.createIndex({ status: 1 });
+    await payments.createIndex({ invoiceNumber: 1 });
+    await payments.createIndex({ garageId: 1, createdAt: -1 });
+
+    // Ensure service indexes for invoicing
+    const services = db.collection('services');
+    await services.createIndex({ invoiceNumber: 1 }, { sparse: true });
+    await services.createIndex({ createdBy: 1, invoiceStatus: 1 });
+    await services.createIndex({ vehicleId: 1, paymentStatus: 1 });
 
     // Processed webhook events idempotency collection
     const webhookEvents = db.collection('webhookEvents');
     await webhookEvents.createIndex({ eventId: 1 }, { unique: true });
     await webhookEvents.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 }); // 30 days TTL
 
-    console.log('✅ Payment collection indexes verified.');
+    console.log('✅ Payment & Invoice collection indexes verified.');
   } catch (err) {
     console.error('Error creating payment indexes:', err.message);
   }

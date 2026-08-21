@@ -5,7 +5,8 @@ import { useToast } from '../context/ToastContext';
 import {
   Bell, Store, Wrench, Phone, MessageSquare, Filter,
   CalendarCheck, Clock, CheckCircle, XCircle, Loader2,
-  TrendingUp, AlertTriangle, PlayCircle, CheckCircle2, User, Car
+  TrendingUp, AlertTriangle, PlayCircle, CheckCircle2, User, Car,
+  IndianRupee, CreditCard, Receipt, ArrowRight
 } from 'lucide-react';
 import { tryRegisterFcmToken } from '../utils/fcm';
 
@@ -36,6 +37,12 @@ const GarageDashboard = () => {
   const [services, setServices] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [revenueSummary, setRevenueSummary] = useState({
+    totalRevenue: 0,
+    paidInvoices: 0,
+    pendingPayments: 0,
+    todayRevenue: 0
+  });
   const [loading, setLoading] = useState(true);
 
   const [inputCapacity, setInputCapacity] = useState(20);
@@ -70,16 +77,20 @@ const GarageDashboard = () => {
 
   const loadAll = useCallback(async () => {
     try {
-      const [pRes, sRes, bRes, nRes] = await Promise.all([
+      const [pRes, sRes, bRes, nRes, rRes] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, headers).catch(() => ({ data: { exists: false } })),
         axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me/services`, headers).catch(() => ({ data: [] })),
         axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/garage`, headers).catch(() => ({ data: [] })),
         axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications?limit=20`, headers).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garage/invoices/garage/revenue/summary`, headers).catch(() => ({ data: { success: false } })),
       ]);
       setProfile(pRes.data?.exists ? pRes.data : null);
       setServices(Array.isArray(sRes.data) ? sRes.data : []);
       setBookings(Array.isArray(bRes.data) ? bRes.data : []);
       setNotifications(Array.isArray(nRes.data) ? nRes.data : []);
+      if (rRes.data?.success && rRes.data?.summary) {
+        setRevenueSummary(rRes.data.summary);
+      }
     } catch (e) {
       showToast(e.response?.data?.msg || 'Failed to load dashboard', 'error');
     } finally {
@@ -251,6 +262,76 @@ const GarageDashboard = () => {
       </div>
 
 
+
+      {/* Verified Revenue & Payment Overview */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="p-1.5 bg-teal-50 text-teal-600 rounded-xl border border-teal-100">
+                <CreditCard className="h-4 w-4" />
+              </span>
+              Revenue & Invoicing Center
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Verified customer payments and finalized service billing overview
+            </p>
+          </div>
+
+          <Link
+            to="/garage/payments"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs self-start sm:self-auto"
+          >
+            <span>Manage Invoices & Payments</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Total Revenue</span>
+            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center">
+              <IndianRupee className="h-4 w-4 text-slate-400 mr-0.5" />
+              {Number(revenueSummary.totalRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            </div>
+            <span className="text-[11px] font-bold text-emerald-600 mt-1 inline-flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" /> {revenueSummary.paidInvoices} paid invoices
+            </span>
+          </div>
+
+          <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Today's Revenue</span>
+            <div className="text-lg sm:text-xl font-black text-teal-700 tracking-tight flex items-center">
+              <IndianRupee className="h-4 w-4 text-teal-500 mr-0.5" />
+              {Number(revenueSummary.todayRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            </div>
+            <span className="text-[11px] font-semibold text-slate-400 mt-1 block">
+              Settled today
+            </span>
+          </div>
+
+          <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Pending Payments</span>
+            <div className="text-lg sm:text-xl font-black text-amber-700 tracking-tight flex items-center">
+              <IndianRupee className="h-4 w-4 text-amber-500 mr-0.5" />
+              {Number(revenueSummary.pendingPayments || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            </div>
+            <span className="text-[11px] font-semibold text-slate-400 mt-1 block">
+              Awaiting customer payment
+            </span>
+          </div>
+
+          <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Paid Invoices</span>
+            <div className="text-lg sm:text-xl font-black text-slate-800 tracking-tight">
+              {revenueSummary.paidInvoices}
+            </div>
+            <span className="text-[11px] font-semibold text-slate-400 mt-1 block">
+              Settled digitally via Razorpay
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Capacity & Vehicles In Progress Control Center */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

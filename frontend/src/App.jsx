@@ -36,6 +36,7 @@ import GarageReviewsPage from './pages/GarageReviewsPage';
 import PartnerSupport from './pages/PartnerSupport';
 import PartnerHelpFAQ from './pages/PartnerHelpFAQ';
 import PaymentHistory from './pages/PaymentHistory';
+import GaragePayments from './pages/GaragePayments';
 
 import { ToastProvider } from './context/ToastContext';
 
@@ -115,6 +116,7 @@ function App() {
           <Route path="/garage-profile" element={<GarageProfile />} />
           <Route path="/garage-services" element={<GarageServices />} />
           <Route path="/garage-services-history" element={<GarageServicesHistory />} />
+          <Route path="/garage/payments" element={<GaragePayments />} />
           <Route path="/garage-availability" element={<GarageAvailability />} />
           <Route path="/garages/:garageId" element={<GarageDetails />} />
           <Route path="/garage/reviews" element={<GarageReviewsPage />} />

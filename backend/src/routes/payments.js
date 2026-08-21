@@ -64,13 +64,18 @@ router.post('/create-order', requireAuth, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden: You are not authorized to pay for this invoice' });
     }
 
+    // Check if cancelled
+    if (service.invoiceStatus === 'CANCELLED') {
+      return res.status(400).json({ success: false, message: 'Cannot pay for a cancelled invoice' });
+    }
+
     // Check if already paid
     if (service.paymentStatus === 'PAID') {
       return res.status(400).json({ success: false, message: 'This service invoice is already paid' });
     }
 
     // Authoritative amount calculation from database
-    const totalCost = Number(service.totalCost !== undefined ? service.totalCost : (service.cost || 0));
+    const totalCost = Number(service.totalAmount !== undefined ? service.totalAmount : (service.totalCost !== undefined ? service.totalCost : (service.cost || 0)));
     if (Number.isNaN(totalCost) || totalCost <= 0) {
       return res.status(400).json({ success: false, message: 'Invalid service amount. Invoice total must be greater than zero.' });
     }
@@ -78,6 +83,8 @@ router.post('/create-order', requireAuth, async (req, res) => {
     const amountInPaise = Math.round(totalCost * 100);
     const config = loadConfig();
     const keyId = config.razorpay?.keyId || process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder_key_id';
+
+    const invoiceNumber = service.invoiceNumber || `DP-INV-2026-${String(service._id).slice(-6).toUpperCase()}`;
 
     // Generate unique internal reference
     const receipt = `rcpt_${String(service._id).slice(-8)}_${Date.now().toString().slice(-6)}`;
@@ -90,6 +97,7 @@ router.post('/create-order', requireAuth, async (req, res) => {
         receipt,
         notes: {
           serviceId: String(service._id),
+          invoiceNumber,
           vehicleId: String(service.vehicleId),
           userId: String(req.user.id),
           vehicleNumber: vehicle?.vehicleNumber || 'Vehicle'
@@ -107,11 +115,12 @@ router.post('/create-order', requireAuth, async (req, res) => {
     // Record payment attempt in database
     const paymentDoc = {
       invoiceId: String(service._id),
+      invoiceNumber,
       serviceId: String(service._id),
       vehicleId: String(service.vehicleId),
       vehicleNumber: vehicle?.vehicleNumber || 'N/A',
       userId: String(req.user.id),
-      garageId: service.garageId ? String(service.garageId) : null,
+      garageId: service.garageId ? String(service.garageId) : (service.createdBy ? String(service.createdBy) : null),
       garageName: service.garageName || 'Authorized Service Center',
       serviceType: service.serviceType || 'Periodic Maintenance',
       amount: totalCost,
@@ -134,12 +143,14 @@ router.post('/create-order', requireAuth, async (req, res) => {
     return res.status(200).json({
       success: true,
       orderId: razorpayOrder.id,
+      invoiceNumber,
       amount: amountInPaise,
       currency: 'INR',
       keyId,
       paymentId: String(insertResult.insertedId),
       service: {
         id: String(service._id),
+        invoiceNumber,
         title: service.serviceType || 'Automotive Service',
         garageName: service.garageName || 'Authorized Service Center',
         vehicleNumber: vehicle?.vehicleNumber || '',

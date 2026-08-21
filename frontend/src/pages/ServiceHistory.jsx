@@ -4,6 +4,8 @@ import axios from 'axios';
 import { History, Wrench, Calendar, Hash, IndianRupee, ArrowLeft, Car, ShieldAlert, Building, CheckCircle, AlertTriangle, FileText, ChevronDown, ChevronUp, Receipt, X, ZoomIn, MoreVertical, Trash2, CreditCard } from 'lucide-react';
 import PaymentButton from '../components/payment/PaymentButton';
 import PaymentSuccessModal from '../components/payment/PaymentSuccessModal';
+import InvoiceModal from '../components/invoice/InvoiceModal';
+import ReceiptModal from '../components/invoice/ReceiptModal';
 
 const ServiceHistory = () => {
     const { vehicleId } = useParams();
@@ -14,6 +16,8 @@ const ServiceHistory = () => {
     const [lightboxUrl, setLightboxUrl] = useState(null);
     const [activeMenuId, setActiveMenuId] = useState(null);
     const [successPaymentDetails, setSuccessPaymentDetails] = useState(null);
+    const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
+    const [selectedReceiptId, setSelectedReceiptId] = useState(null);
 
     const userRaw = localStorage.getItem('user');
     const user = userRaw ? JSON.parse(userRaw) : null;
@@ -163,16 +167,21 @@ const ServiceHistory = () => {
                                                         </span>
                                                     )}
                                                     {service.paymentStatus === 'PAID' ? (
-                                                        <span className="flex items-center text-[10px] md:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-emerald-200">
-                                                            <CheckCircle className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-emerald-600" /> Paid
+                                                        <span className="flex items-center text-[10px] md:text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-emerald-200">
+                                                            <CheckCircle className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-emerald-600" /> PAID ✓
                                                         </span>
                                                     ) : (
-                                                        <span className="flex items-center text-[10px] md:text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-amber-200">
-                                                            Unpaid
+                                                        <span className="flex items-center text-[10px] md:text-xs font-black text-amber-700 bg-amber-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-amber-200">
+                                                            UNPAID
+                                                        </span>
+                                                    )}
+                                                    {service.invoiceNumber && (
+                                                        <span className="font-mono text-[10px] md:text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                                            {service.invoiceNumber}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <h3 className="text-base md:text-xl font-extrabold text-slate-900 group-hover:text-amber-600 transition-colors tracking-tight mt-1">
+                                                <h3 className="text-base md:text-xl font-extrabold text-slate-900 group-hover:text-teal-600 transition-colors tracking-tight mt-1">
                                                     {/^\d+$/.test(String(service.serviceType || '').trim())
                                                         ? `Periodic Service (${Number(service.serviceType).toLocaleString()} km)`
                                                         : service.serviceType || 'General Maintenance'}
@@ -239,18 +248,35 @@ const ServiceHistory = () => {
                                         </div>
 
                                         <div className="pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                                            <div className="flex items-center gap-3 flex-wrap">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <div className="text-slate-400 font-bold flex items-center gap-1.5 text-xs md:text-sm hover:text-slate-600 transition-colors">
                                                     {isExpanded ? <><ChevronUp className="h-4 w-4" /> Hide Details</> : <><ChevronDown className="h-4 w-4" /> View Full Report</>}
                                                 </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedInvoiceId(service.id || service._id); }}
+                                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-all shadow-2xs"
+                                                >
+                                                    <FileText className="h-3.5 w-3.5" />
+                                                    View Bill / Invoice
+                                                </button>
+                                                {service.paymentStatus === 'PAID' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); setSelectedReceiptId(service.id || service._id); }}
+                                                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all shadow-2xs"
+                                                    >
+                                                        <Receipt className="h-3.5 w-3.5" />
+                                                        Receipt
+                                                    </button>
+                                                )}
                                                 {service.billPhotoUrls && service.billPhotoUrls.length > 0 && (
                                                     <button
                                                         type="button"
                                                         onClick={(e) => { e.stopPropagation(); setLightboxUrl(service.billPhotoUrls[0]); }}
-                                                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] md:text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 hover:border-violet-400 transition-all"
+                                                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] md:text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all"
                                                     >
-                                                        <Receipt className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                                                        View Bill{service.billPhotoUrls.length > 1 ? ` (${service.billPhotoUrls.length})` : ''}
+                                                        Attached Photos ({service.billPhotoUrls.length})
                                                     </button>
                                                 )}
                                             </div>
@@ -413,12 +439,34 @@ const ServiceHistory = () => {
                 onClose={() => setSuccessPaymentDetails(null)}
                 paymentDetails={successPaymentDetails}
                 onViewBill={() => {
-                    const matchedService = services.find(s => s.id === successPaymentDetails?.serviceId || String(s._id) === String(successPaymentDetails?.serviceId));
-                    if (matchedService?.billPhotoUrls && matchedService.billPhotoUrls.length > 0) {
-                        setLightboxUrl(matchedService.billPhotoUrls[0]);
+                    if (successPaymentDetails?.serviceId) {
+                        setSelectedInvoiceId(successPaymentDetails.serviceId);
                     }
                 }}
             />
+
+            {/* Tax Invoice Modal */}
+            {selectedInvoiceId && (
+                <InvoiceModal
+                    isOpen={Boolean(selectedInvoiceId)}
+                    onClose={() => setSelectedInvoiceId(null)}
+                    serviceId={selectedInvoiceId}
+                    onPaymentSuccess={(payment) => {
+                        setServices(prev => prev.map(s => (s.id === (payment.serviceId || payment.invoiceId) || String(s._id) === String(payment.serviceId)) ? { ...s, paymentStatus: 'PAID', paidAt: payment.paidAt, paymentId: payment.paymentId } : s));
+                        setSuccessPaymentDetails(payment);
+                    }}
+                    onViewReceipt={(inv) => setSelectedReceiptId(inv.id || inv._id)}
+                />
+            )}
+
+            {/* Payment Receipt Modal */}
+            {selectedReceiptId && (
+                <ReceiptModal
+                    isOpen={Boolean(selectedReceiptId)}
+                    onClose={() => setSelectedReceiptId(null)}
+                    serviceId={selectedReceiptId}
+                />
+            )}
         </div>
     );
 };

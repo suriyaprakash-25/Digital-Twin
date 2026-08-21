@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Filter, Calendar, Info, MapPin, IndianRupee, Shield, Wrench, ArrowLeft, ArrowRight, X } from 'lucide-react';
+import { Search, Filter, Calendar, Info, MapPin, IndianRupee, Shield, Wrench, ArrowLeft, ArrowRight, X, FileText, CheckCircle2, Clock, Receipt, Edit3 } from 'lucide-react';
+import InvoiceModal from '../components/invoice/InvoiceModal';
+import ReceiptModal from '../components/invoice/ReceiptModal';
+import GarageBillingModal from '../components/garage/GarageBillingModal';
 
 const GarageServicesHistory = () => {
   const [services, setServices] = useState([]);
@@ -20,8 +23,11 @@ const GarageServicesHistory = () => {
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Modal state
+  // Modal states
   const [selectedService, setSelectedService] = useState(null);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
+  const [selectedReceiptId, setSelectedReceiptId] = useState(null);
+  const [billingService, setBillingService] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -262,75 +268,137 @@ const GarageServicesHistory = () => {
                   <th className="px-6 py-4">Vehicle</th>
                   <th className="px-6 py-4">Customer</th>
                   <th className="px-6 py-4">Service Type</th>
-                  <th className="px-6 py-4 text-right">Cost</th>
+                  <th className="px-6 py-4 text-center">Payment Status</th>
+                  <th className="px-6 py-4 text-right">Total Cost</th>
                   <th className="px-6 py-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-10 text-center text-slate-500">
+                    <td colSpan="7" className="px-6 py-10 text-center text-slate-500">
                       <div className="inline-block animate-spin w-6 h-6 border-2 border-slate-300 border-t-teal-600 rounded-full mb-2"></div>
                       <p>Loading services...</p>
                     </td>
                   </tr>
                 ) : services.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-10 text-center text-slate-500">
+                    <td colSpan="7" className="px-6 py-10 text-center text-slate-500">
                       {search ? 'No services matched your search.' : 'No services logged yet.'}
                     </td>
                   </tr>
                 ) : (
-                  services.map(service => (
-                    <tr key={service.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-medium text-slate-800">{new Date(service.serviceDate).toLocaleDateString()}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {service.vehicle ? (
-                          <div>
-                            <div className="font-bold text-slate-800 bg-slate-100 inline-block px-2 py-0.5 rounded text-xs tracking-wider mb-1 border border-slate-200">
-                              {service.vehicle.registrationNumber}
+                  services.map(service => {
+                    const isPaid = service.paymentStatus === 'PAID';
+                    const isFinalized = service.invoiceStatus === 'FINALIZED';
+
+                    return (
+                      <tr key={service.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="font-medium text-slate-800">{new Date(service.serviceDate).toLocaleDateString()}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {service.vehicle ? (
+                            <div>
+                              <div className="font-bold text-slate-800 bg-slate-100 inline-block px-2 py-0.5 rounded text-xs tracking-wider mb-1 border border-slate-200">
+                                {service.vehicle.registrationNumber}
+                              </div>
+                              <div className="text-xs text-slate-500 font-medium">
+                                {service.vehicle.make} {service.vehicle.model}
+                              </div>
                             </div>
-                            <div className="text-xs text-slate-500 font-medium">
-                              {service.vehicle.make} {service.vehicle.model}
+                          ) : (
+                            <span className="text-slate-400 italic">N/A</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {service.customer ? (
+                            <div>
+                              <div className="font-medium text-slate-800">{service.customer.name || 'Unknown'}</div>
+                              <div className="text-xs text-slate-500 truncate max-w-[150px]" title={service.customer.email}>{service.customer.email}</div>
                             </div>
+                          ) : (
+                            <span className="text-slate-400 italic">N/A</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-slate-800 truncate max-w-[200px]" title={service.serviceType}>
+                            {service.serviceType || 'General Service'}
                           </div>
-                        ) : (
-                          <span className="text-slate-400 italic">N/A</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        {service.customer ? (
-                          <div>
-                            <div className="font-medium text-slate-800">{service.customer.name || 'Unknown'}</div>
-                            <div className="text-xs text-slate-500 truncate max-w-[150px]" title={service.customer.email}>{service.customer.email}</div>
+                          <div className="text-xs text-teal-700 font-semibold mt-0.5">
+                            {service.serviceCategory}
                           </div>
-                        ) : (
-                          <span className="text-slate-400 italic">N/A</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-800 truncate max-w-[200px]" title={service.serviceType}>
-                          {service.serviceType || 'General Service'}
-                        </div>
-                        <div className="text-xs text-teal-700 font-semibold mt-0.5">
-                          {service.serviceCategory}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-slate-700">
-                        ₹{(parseFloat(service.totalCost) || 0).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <button 
-                          onClick={() => setSelectedService(service)}
-                          className="text-xs font-semibold text-teal-700 hover:text-white border border-teal-200 hover:bg-teal-600 px-3 py-1.5 rounded-md transition-all"
-                        >
-                          View Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                          {service.invoiceNumber && (
+                            <div className="font-mono text-[10px] text-slate-400 font-bold mt-1">
+                              {service.invoiceNumber}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          {isPaid ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200">
+                              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                              PAID
+                            </span>
+                          ) : isFinalized ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black text-amber-700 bg-amber-50 border border-amber-200">
+                              <Clock className="h-3 w-3 text-amber-600" />
+                              UNPAID
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200">
+                              DRAFT
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-slate-700">
+                          ₹{(parseFloat(service.totalCost) || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button 
+                              onClick={() => setSelectedService(service)}
+                              className="text-xs font-semibold text-slate-700 hover:text-teal-700 hover:bg-slate-100 px-2.5 py-1.5 rounded-md transition-all border border-slate-200"
+                              title="View Service Details"
+                            >
+                              Details
+                            </button>
+
+                            <button 
+                              onClick={() => setSelectedInvoiceId(service.id)}
+                              className="text-xs font-semibold text-teal-700 hover:text-white border border-teal-200 hover:bg-teal-600 px-2.5 py-1.5 rounded-md transition-all flex items-center gap-1"
+                              title="View Tax Invoice"
+                            >
+                              <FileText className="h-3 w-3" />
+                              Bill
+                            </button>
+
+                            {!isPaid && (
+                              <button 
+                                onClick={() => setBillingService(service)}
+                                className="text-xs font-semibold text-amber-700 hover:text-white border border-amber-200 hover:bg-amber-600 px-2 py-1.5 rounded-md transition-all flex items-center gap-1"
+                                title="Edit or Finalize Billing Items"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                                {isFinalized ? 'Edit' : 'Finalize'}
+                              </button>
+                            )}
+
+                            {isPaid && (
+                              <button 
+                                onClick={() => setSelectedReceiptId(service.id)}
+                                className="text-xs font-semibold text-emerald-700 hover:text-white border border-emerald-200 hover:bg-emerald-600 px-2 py-1.5 rounded-md transition-all flex items-center gap-1"
+                                title="View Payment Receipt"
+                              >
+                                <Receipt className="h-3 w-3" />
+                                Receipt
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -413,9 +481,38 @@ const GarageServicesHistory = () => {
         </div>
       </div>
       
-      {/* Modal */}
+      {/* Service Details Modal */}
       {selectedService && (
         <ServiceModal service={selectedService} onClose={() => setSelectedService(null)} />
+      )}
+
+      {/* Tax Invoice Modal */}
+      {selectedInvoiceId && (
+        <InvoiceModal
+          isOpen={Boolean(selectedInvoiceId)}
+          onClose={() => setSelectedInvoiceId(null)}
+          serviceId={selectedInvoiceId}
+          onViewReceipt={(inv) => setSelectedReceiptId(inv.id || inv._id)}
+        />
+      )}
+
+      {/* Payment Receipt Modal */}
+      {selectedReceiptId && (
+        <ReceiptModal
+          isOpen={Boolean(selectedReceiptId)}
+          onClose={() => setSelectedReceiptId(null)}
+          serviceId={selectedReceiptId}
+        />
+      )}
+
+      {/* Garage Bill Editing / Finalize Modal */}
+      {billingService && (
+        <GarageBillingModal
+          isOpen={Boolean(billingService)}
+          onClose={() => setBillingService(null)}
+          service={billingService}
+          onInvoiceUpdated={fetchServices}
+        />
       )}
     </>
   );
