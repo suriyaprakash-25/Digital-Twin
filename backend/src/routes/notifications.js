@@ -62,4 +62,32 @@ router.patch('/:notificationId/read', requireAuth, async (req, res) => {
   }
 });
 
+const { getNotificationPreferences, updateNotificationPreferences } = require('../services/financialNotificationService');
+
+/**
+ * GET /api/notifications/preferences
+ */
+router.get('/preferences', requireAuth, async (req, res) => {
+  try {
+    const recipientType = req.user.role === 'GARAGE' ? 'GARAGE' : 'USER';
+    const prefs = await getNotificationPreferences(req.user.id, recipientType);
+    return res.status(200).json({ success: true, preferences: prefs });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Error loading notification preferences' });
+  }
+});
+
+/**
+ * PUT /api/notifications/preferences
+ */
+router.put('/preferences', requireAuth, async (req, res) => {
+  try {
+    const recipientType = req.user.role === 'GARAGE' ? 'GARAGE' : 'USER';
+    const updated = await updateNotificationPreferences(req.user.id, req.body || {}, recipientType);
+    return res.status(200).json({ success: true, message: 'Preferences updated', preferences: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Error saving notification preferences' });
+  }
+});
+
 module.exports = router;

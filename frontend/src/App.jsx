@@ -70,6 +70,8 @@ import AdminRiskCases from './pages/admin/AdminRiskCases';
 import AdminFinancialAlerts from './pages/admin/AdminFinancialAlerts';
 import AdminFinancialOperationsDashboard from './pages/admin/AdminFinancialOperationsDashboard';
 import GarageTax from './pages/GarageTax';
+import PaymentCenter from './pages/PaymentCenter';
+import GarageFinancialCenter from './pages/GarageFinancialCenter';
 
 function App() {
   return (
@@ -142,6 +144,8 @@ function App() {
           <Route path="/edit-vehicle/:id" element={<EditVehicle />} />
           <Route path="/my-vehicles" element={<MyVehicles />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
+          <Route path="/payments" element={<PaymentCenter />} />
+          <Route path="/customer/payments" element={<PaymentCenter />} />
           <Route path="/disputes" element={<MyDisputes />} />
           <Route path="/disputes/:id" element={<DisputeDetails />} />
           <Route path="/add-service" element={<AddService />} />
@@ -155,6 +159,7 @@ function App() {
           <Route path="/garage-services-history" element={<GarageServicesHistory />} />
           <Route path="/garage/payments" element={<GaragePayments />} />
           <Route path="/garage/earnings" element={<GarageEarnings />} />
+          <Route path="/garage/financial-center" element={<GarageFinancialCenter />} />
           <Route path="/garage/settlements" element={<GarageSettlements />} />
           <Route path="/garage/reports" element={<GarageReports />} />
           <Route path="/garage/tax" element={<GarageTax />} />

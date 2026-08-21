@@ -26,7 +26,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         ...(FEATURES.AI_DOCTOR ? [{ name: 'AI Doctor', href: '/vehicle-doctor', icon: Stethoscope }] : []),
         { name: 'Add Vehicle', href: '/add-vehicle', icon: PlusCircle },
         { name: 'My Vehicles', href: '/my-vehicles', icon: Car },
-        { name: 'Payment History', href: '/payment-history', icon: CreditCard },
+        { name: 'Payment Center', href: '/payments', icon: CreditCard },
         { name: 'My Disputes', href: '/disputes', icon: AlertTriangle },
         { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];
@@ -34,6 +34,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
     const garageNavigation = [
         { name: 'Dashboard', href: '/garage-dashboard', icon: LayoutDashboard },
         { name: 'Garage Profile', href: '/garage-profile', icon: Building2 },
+        { name: 'Financial Center', href: '/garage/financial-center', icon: DollarSign },
         { name: 'Your Services', href: '/garage-services', icon: Wrench },
         { name: 'Customer Reviews', href: '/garage/reviews', icon: Star },
         { name: 'Service History', href: '/garage-services-history', icon: ClipboardList },

@@ -954,4 +954,100 @@ router.get('/history', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/payments/customer/financial-summary
+ * Computes authoritative customer-level financial metrics
+ */
+router.get('/customer/financial-summary', requireAuth, async (req, res) => {
+  const db = getDb();
+  const payments = db.collection('payments');
+  const invoices = db.collection('invoices');
+  const userId = String(req.user.id);
+
+  try {
+    const userPayments = await payments.find({ userId }).toArray();
+    const userInvoices = await invoices.find({ customerId: userId }).toArray();
+
+    let totalPaidPaise = 0;
+    let pendingPaise = 0;
+    let refundPaise = 0;
+
+    const statusDistribution = {
+      PENDING: 0,
+      AUTHORIZED: 0,
+      CAPTURED: 0,
+      FAILED: 0,
+      PARTIALLY_REFUNDED: 0,
+      REFUNDED: 0
+    };
+
+    const vehicleSet = new Set();
+
+    userPayments.forEach(p => {
+      const amtPaise = Math.round(Number(p.amountPaise || (p.amount * 100)) || 0);
+      const refPaise = Math.round(Number(p.refundedPaise || ((p.totalRefundedAmount || 0) * 100)) || 0);
+
+      if (p.status === PAYMENT_STATUS.CAPTURED || p.status === 'PAID') {
+        totalPaidPaise += (amtPaise - refPaise);
+        statusDistribution.CAPTURED++;
+      } else if (p.status === PAYMENT_STATUS.REFUNDED) {
+        refundPaise += amtPaise;
+        statusDistribution.REFUNDED++;
+      } else if (p.status === PAYMENT_STATUS.PARTIALLY_REFUNDED) {
+        totalPaidPaise += (amtPaise - refPaise);
+        refundPaise += refPaise;
+        statusDistribution.PARTIALLY_REFUNDED++;
+      } else if (p.status === PAYMENT_STATUS.PENDING || p.status === PAYMENT_STATUS.CREATED) {
+        pendingPaise += amtPaise;
+        statusDistribution.PENDING++;
+      } else if (p.status === PAYMENT_STATUS.AUTHORIZED) {
+        pendingPaise += amtPaise;
+        statusDistribution.AUTHORIZED++;
+      } else if (p.status === PAYMENT_STATUS.FAILED) {
+        statusDistribution.FAILED++;
+      }
+
+      if (p.vehicleNumber) vehicleSet.add(p.vehicleNumber);
+    });
+
+    const recentActivity = userPayments
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .slice(0, 10)
+      .map(p => ({
+        id: String(p._id),
+        invoiceNumber: p.invoiceNumber || '—',
+        orderId: p.razorpayOrderId,
+        paymentId: p.razorpayPaymentId || '—',
+        amount: p.amount,
+        status: p.status,
+        serviceType: p.serviceType || 'Automotive Service',
+        garageName: p.garageName || 'Authorized Service Center',
+        vehicleNumber: p.vehicleNumber || 'N/A',
+        totalRefundedAmount: p.totalRefundedAmount || 0,
+        refunds: p.refunds || [],
+        date: p.paidAt || p.createdAt
+      }));
+
+    return res.status(200).json({
+      success: true,
+      summary: {
+        totalPaidAmount: totalPaidPaise / 100,
+        totalPaidPaise,
+        pendingAmount: pendingPaise / 100,
+        pendingPaise,
+        refundAmount: refundPaise / 100,
+        refundPaise,
+        transactionsCount: userPayments.length,
+        invoicesCount: userInvoices.length || userPayments.length,
+        statusDistribution,
+        vehicles: Array.from(vehicleSet),
+        recentActivity
+      }
+    });
+  } catch (err) {
+    console.error('Error computing customer financial summary:', err);
+    return res.status(500).json({ success: false, message: 'Error computing financial summary' });
+  }
+});
+
 module.exports = router;
