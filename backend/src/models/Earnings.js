@@ -44,7 +44,7 @@ async function ensureEarningsIndexes(dbInstance) {
     await earnings.createIndex({ status: 1 });
 
     // Settlements collection indexes
-    await settlements.createIndex({ settlementId: 1 }, { unique: true });
+    await settlements.createIndex({ settlementId: 1 }, { unique: true, sparse: true });
     await settlements.createIndex({ garageId: 1, status: 1 });
     await settlements.createIndex({ garageId: 1, createdAt: -1 });
     await settlements.createIndex({ status: 1, requestedAt: -1 });

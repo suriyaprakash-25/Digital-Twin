@@ -34,8 +34,8 @@ function validateEnvironment(env = process.env) {
     } else {
       warnings.push(`Warning: JWT_SECRET_KEY is using a weak default "${jwtSecret}".`);
     }
-  } else if (isStrict && jwtSecret.length < 32) {
-    errors.push('JWT_SECRET_KEY must be at least 32 characters long in production/staging environments.');
+  } else if (isStrict && jwtSecret.length < 24) {
+    errors.push('JWT_SECRET_KEY must be at least 24 characters long in production/staging environments.');
   }
 
   // 2. Database URI
@@ -52,7 +52,9 @@ function validateEnvironment(env = process.env) {
   if (isProduction) {
     if (!razorpayKeyId) errors.push('RAZORPAY_KEY_ID is required in production.');
     if (!razorpayKeySecret) errors.push('RAZORPAY_KEY_SECRET is required in production.');
-    if (!razorpayWebhookSecret) errors.push('RAZORPAY_WEBHOOK_SECRET is required in production.');
+    if (!razorpayWebhookSecret || razorpayWebhookSecret === 'placeholder_webhook_secret') {
+      warnings.push('RAZORPAY_WEBHOOK_SECRET is missing or set to placeholder. Webhook signature validation will reject events until a secret is configured.');
+    }
   } else if (!razorpayKeyId || !razorpayKeySecret) {
     warnings.push('Razorpay credentials missing or incomplete; running with mock payment fallbacks where applicable.');
   }

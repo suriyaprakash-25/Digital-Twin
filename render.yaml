@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: driveportz-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/status
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        value: driveportz
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: FRONTEND_URL
+        value: https://www.driveportz.com
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: SETTLEMENT_MODE
+        value: MOCK_TEST_MODE
+      - key: SETTLEMENT_PROVIDER
+        value: mock
+      - key: EMAIL_PROVIDER
+        value: mock
