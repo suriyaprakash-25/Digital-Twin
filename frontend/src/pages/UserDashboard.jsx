@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Car, Bell, CheckCircle2, XCircle, Info, ChevronRight, Activity, CalendarClock } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/config';
 
 const UserDashboard = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -24,10 +25,10 @@ const UserDashboard = () => {
   const loadData = async () => {
     try {
       const [vRes, bRes, nRes, pRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, headers),
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/my`, headers),
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications?limit=20`, headers),
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ownership/pending`, headers)
+        axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers),
+        axios.get(`${API_BASE_URL}/api/bookings/my`, headers),
+        axios.get(`${API_BASE_URL}/api/notifications?limit=20`, headers),
+        axios.get(`${API_BASE_URL}/api/ownership/pending`, headers)
       ]);
       setVehicles(Array.isArray(vRes.data) ? vRes.data : []);
       setBookings(Array.isArray(bRes.data) ? bRes.data : []);
