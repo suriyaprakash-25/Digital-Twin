@@ -26,7 +26,8 @@
     "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1",
     "qrcode": "^1.5.4",
-    "razorpay": "^2.9.8"
+    "razorpay": "^2.9.8",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "jsqr": "^1.4.0",

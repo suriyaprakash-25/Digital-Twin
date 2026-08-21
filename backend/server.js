@@ -35,10 +35,14 @@ const invoiceRoutes = require('./src/routes/invoices');
 const earningsRoutes = require('./src/routes/earnings');
 const reconciliationRoutes = require('./src/routes/reconciliation');
 const { userDisputeRouter, garageDisputeRouter, adminDisputeRouter } = require('./src/routes/disputes');
+const riskRouter = require('./src/routes/risk');
+const { garageReportsRouter, adminReportsRouter } = require('./src/routes/reports');
 const { ensurePaymentIndexes } = require('./src/models/Payment');
 const { ensureEarningsIndexes } = require('./src/models/Earnings');
 const { ensureReconciliationIndexes } = require('./src/models/Reconciliation');
 const { ensureDisputeIndexes } = require('./src/models/Dispute');
+const { ensureRiskIndexes } = require('./src/models/RiskEvent');
+const { ensureAuditIndexes } = require('./src/models/AuditLog');
 
 const app = express();
 const config = loadConfig();
@@ -63,7 +67,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Razorpay-Signature']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Razorpay-Signature', 'Idempotency-Key', 'X-Idempotency-Key']
 }));
 
 // Body parsing with rawBody retention for webhook signature verification
@@ -151,6 +155,9 @@ app.use('/api/admin/reconciliation', reconciliationRoutes);
 app.use('/api/disputes', userDisputeRouter);
 app.use('/api/garage/disputes', garageDisputeRouter);
 app.use('/api/admin/disputes', adminDisputeRouter);
+app.use('/api/admin/risk', riskRouter);
+app.use('/api/garage/reports', garageReportsRouter);
+app.use('/api/admin/reports', adminReportsRouter);
 
 // Start after DB connects
 (async () => {
@@ -159,6 +166,8 @@ app.use('/api/admin/disputes', adminDisputeRouter);
   await ensureEarningsIndexes();
   await ensureReconciliationIndexes();
   await ensureDisputeIndexes();
+  await ensureRiskIndexes();
+  await ensureAuditIndexes();
   app.listen(config.port, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://localhost:${config.port}`);

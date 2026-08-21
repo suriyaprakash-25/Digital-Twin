@@ -7,6 +7,9 @@ const { EARNINGS_STATUS, SETTLEMENT_STATUS } = require('../models/Earnings');
 const { getGarageEarningsSummary } = require('../services/earningsService');
 const { generateSettlementNumber } = require('../utils/settlementNumber');
 const { notifyUser } = require('../services/notifications');
+const { idempotencyMiddleware } = require('../middleware/idempotency');
+const { settlementLimiter } = require('../middleware/financialRateLimit');
+const { logFinancialAudit } = require('../services/auditService');
 
 const router = express.Router();
 
@@ -202,7 +205,7 @@ router.get('/settlements', requireAuth, requireRole('GARAGE'), async (req, res) 
  * POST /api/garage/settlements/request
  * Request payout / settlement for available earnings
  */
-router.post('/settlements/request', requireAuth, requireRole('GARAGE'), async (req, res) => {
+router.post('/settlements/request', requireAuth, requireRole('GARAGE'), settlementLimiter, idempotencyMiddleware, async (req, res) => {
   const { amount, notes } = req.body || {};
   const db = getDb();
   const earnings = db.collection('garage_earnings');
@@ -311,6 +314,18 @@ router.post('/settlements/request', requireAuth, requireRole('GARAGE'), async (r
     } catch (notifErr) {
       console.warn('Error sending settlement notification:', notifErr.message);
     }
+
+    // Financial audit log
+    await logFinancialAudit({
+      actorId: req.user.id,
+      actorRole: 'GARAGE',
+      action: 'SETTLEMENT_REQUESTED',
+      resourceType: 'SETTLEMENT',
+      resourceId: settlementId,
+      afterState: { requestedAmount, settlementId, status: SETTLEMENT_STATUS.REQUESTED },
+      req,
+      dbInstance: db
+    });
 
     return res.status(201).json({
       success: true,

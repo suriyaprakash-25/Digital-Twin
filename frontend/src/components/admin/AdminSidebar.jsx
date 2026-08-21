@@ -10,6 +10,8 @@ import {
     Receipt,
     Scale,
     AlertTriangle,
+    ShieldAlert,
+    TrendingUp,
     MessageSquare,
     LogOut,
     X
@@ -22,6 +24,8 @@ const adminNavigation = [
     { name: 'Settlements', href: '/admin/settlements', icon: Receipt },
     { name: 'Reconciliation', href: '/admin/reconciliation', icon: Scale },
     { name: 'Disputes & Claims', href: '/admin/disputes', icon: AlertTriangle },
+    { name: 'Payment Risk', href: '/admin/payment-risk', icon: ShieldAlert },
+    { name: 'Financial Reports', href: '/admin/financial-reports', icon: TrendingUp },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Garages', href: '/admin/garages', icon: Building2 },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },

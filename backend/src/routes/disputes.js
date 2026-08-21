@@ -11,6 +11,9 @@ const { loadConfig } = require('../config');
 const { DISPUTE_STATUS, DISPUTE_RESOLUTION } = require('../models/Dispute');
 const { createDispute, logDisputeEvent, resolveDispute } = require('../services/disputeService');
 const { notifyUser } = require('../services/notifications');
+const { idempotencyMiddleware } = require('../middleware/idempotency');
+const { disputeLimiter } = require('../middleware/financialRateLimit');
+const { logFinancialAudit } = require('../services/auditService');
 
 const config = loadConfig();
 
@@ -91,7 +94,7 @@ const userDisputeRouter = express.Router();
  * POST /api/disputes
  * Create a new payment dispute
  */
-userDisputeRouter.post('/', requireAuth, upload.single('evidence'), async (req, res) => {
+userDisputeRouter.post('/', requireAuth, disputeLimiter, idempotencyMiddleware, upload.single('evidence'), async (req, res) => {
   const { paymentId, category, subject, description, disputedAmount } = req.body || {};
 
   if (!paymentId || !description) {

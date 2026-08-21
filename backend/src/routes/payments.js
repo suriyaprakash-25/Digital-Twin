@@ -14,6 +14,10 @@ const {
 const { PAYMENT_STATUS } = require('../models/Payment');
 const { notifyUser } = require('../services/notifications');
 const { recordPaymentEarnings, reconcileRefundEarnings } = require('../services/earningsService');
+const { idempotencyMiddleware } = require('../middleware/idempotency');
+const { paymentCreationLimiter, refundLimiter } = require('../middleware/financialRateLimit');
+const { evaluateTransactionRisk } = require('../services/paymentRiskService');
+const { logFinancialAudit } = require('../services/auditService');
 
 const router = express.Router();
 
@@ -29,7 +33,7 @@ function toObjectId(id) {
  * POST /api/payments/create-order
  * Initiates Razorpay Order for an unpaid service invoice
  */
-router.post('/create-order', requireAuth, async (req, res) => {
+router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMiddleware, async (req, res) => {
   const { invoiceId, serviceId } = req.body || {};
   const targetId = serviceId || invoiceId;
 
@@ -78,6 +82,16 @@ router.post('/create-order', requireAuth, async (req, res) => {
       return res.status(400).json({ success: false, message: 'This service invoice is already paid' });
     }
 
+    // Check if an existing captured payment already exists in database
+    const existingPaid = await payments.findOne({
+      $or: [{ serviceId: String(service._id) }, { invoiceId: String(service._id) }],
+      status: { $in: [PAYMENT_STATUS.CAPTURED, PAYMENT_STATUS.PAID] }
+    });
+
+    if (existingPaid) {
+      return res.status(400).json({ success: false, message: 'This service invoice is already paid' });
+    }
+
     // Authoritative amount calculation from database
     const totalCost = Number(service.totalAmount !== undefined ? service.totalAmount : (service.totalCost !== undefined ? service.totalCost : (service.cost || 0)));
     if (Number.isNaN(totalCost) || totalCost <= 0) {
@@ -89,6 +103,16 @@ router.post('/create-order', requireAuth, async (req, res) => {
     const keyId = config.razorpay?.keyId || process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder_key_id';
 
     const invoiceNumber = service.invoiceNumber || `DP-INV-2026-${String(service._id).slice(-6).toUpperCase()}`;
+
+    // Risk Assessment
+    await evaluateTransactionRisk({
+      userId: req.user.id,
+      garageId: service.garageId || service.createdBy,
+      invoiceId: service._id,
+      amount: totalCost,
+      operation: 'PAYMENT',
+      dbInstance: db
+    });
 
     // Generate unique internal reference
     const receipt = `rcpt_${String(service._id).slice(-8)}_${Date.now().toString().slice(-6)}`;
@@ -144,21 +168,31 @@ router.post('/create-order', requireAuth, async (req, res) => {
 
     const insertResult = await payments.insertOne(paymentDoc);
 
+    // Financial audit log
+    await logFinancialAudit({
+      actorId: req.user.id,
+      actorRole: 'USER',
+      action: 'PAYMENT_ORDER_CREATED',
+      resourceType: 'PAYMENT',
+      resourceId: String(insertResult.insertedId),
+      afterState: { razorpayOrderId: razorpayOrder.id, amount: totalCost },
+      req,
+      dbInstance: db
+    });
+
     return res.status(200).json({
       success: true,
-      orderId: razorpayOrder.id,
-      invoiceNumber,
-      amount: amountInPaise,
-      currency: 'INR',
-      keyId,
-      paymentId: String(insertResult.insertedId),
-      service: {
-        id: String(service._id),
+      message: 'Razorpay order created successfully',
+      order: {
+        id: razorpayOrder.id,
+        amount: amountInPaise,
+        currency: razorpayOrder.currency || 'INR',
+        receipt: razorpayOrder.receipt,
+        keyId,
         invoiceNumber,
-        title: service.serviceType || 'Automotive Service',
         garageName: service.garageName || 'Authorized Service Center',
-        vehicleNumber: vehicle?.vehicleNumber || '',
-        totalCost
+        serviceType: service.serviceType || 'Periodic Maintenance',
+        paymentRecordId: String(insertResult.insertedId)
       }
     });
   } catch (err) {
@@ -348,7 +382,7 @@ router.post('/verify', requireAuth, async (req, res) => {
  * POST /api/payments/:paymentId/refund
  * Initiates a full or partial refund for a captured payment
  */
-router.post('/:paymentId/refund', requireAuth, async (req, res) => {
+router.post('/:paymentId/refund', requireAuth, refundLimiter, idempotencyMiddleware, async (req, res) => {
   const { paymentId } = req.params;
   const { amount, reason = 'Customer requested refund' } = req.body || {};
 
@@ -505,6 +539,19 @@ router.post('/:paymentId/refund', requireAuth, async (req, res) => {
     } catch (notifErr) {
       console.warn('Error sending refund notification:', notifErr.message);
     }
+
+    // Financial audit log
+    await logFinancialAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role || 'ADMIN',
+      action: 'REFUND_COMPLETED',
+      resourceType: 'PAYMENT',
+      resourceId: String(payment._id),
+      beforeState: { status: payment.status, totalRefundedAmount: alreadyRefunded },
+      afterState: { status: newStatus, totalRefundedAmount: newTotalRefunded, refundAmount: requestedAmount },
+      req,
+      dbInstance: db
+    });
 
     return res.status(200).json({
       success: true,
