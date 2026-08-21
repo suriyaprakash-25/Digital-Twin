@@ -42,8 +42,8 @@ export default function AdminFinancialAlerts() {
       };
 
       const [listRes, sumRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/admin/alerts`, { params, headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/admin/alerts/summary`, { headers: getAuthHeaders() })
+        axios.get(`${API_BASE_URL}/api/admin/alerts`, { params, headers: getAuthHeaders() }),
+        axios.get(`${API_BASE_URL}/api/admin/alerts/summary`, { headers: getAuthHeaders() })
       ]);
 
       if (listRes.data?.success) {
@@ -68,7 +68,7 @@ export default function AdminFinancialAlerts() {
   const handleAcknowledge = async (alertId) => {
     setActionLoading(true);
     try {
-      const res = await axios.post(`${API_BASE_URL}/admin/alerts/${alertId}/acknowledge`, {}, { headers: getAuthHeaders() });
+      const res = await axios.post(`${API_BASE_URL}/api/admin/alerts/${alertId}/acknowledge`, {}, { headers: getAuthHeaders() });
       if (res.data?.success) {
         showSuccess('Alert acknowledged');
         fetchAlerts();
@@ -85,7 +85,7 @@ export default function AdminFinancialAlerts() {
     setActionLoading(true);
     try {
       const res = await axios.post(
-        `${API_BASE_URL}/admin/alerts/${alertId}/resolve`,
+        `${API_BASE_URL}/api/admin/alerts/${alertId}/resolve`,
         { resolutionNote: resolveNote },
         { headers: getAuthHeaders() }
       );

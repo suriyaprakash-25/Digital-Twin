@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Filter, Calendar, Info, MapPin, IndianRupee, Shield, Wrench, ArrowLeft, ArrowRight, X, FileText, CheckCircle2, Clock, Receipt, Edit3 } from 'lucide-react';
@@ -46,7 +47,7 @@ const GarageServicesHistory = () => {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/services/garage/all`, {
+      const res = await axios.get(`${API_BASE_URL}/api/services/garage/all`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           page,

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './config';
 import axios from 'axios';
 import { initializeApp, getApps } from 'firebase/app';
 import { getMessaging, getToken, isSupported } from 'firebase/messaging';
@@ -66,7 +67,7 @@ export async function tryRegisterFcmToken({ authToken, requestPermission = false
   }
 
   await axios.post(
-    `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications/token`,
+    `${API_BASE_URL}/api/notifications/token`,
     { token, platform: 'web' },
     {
       headers: {

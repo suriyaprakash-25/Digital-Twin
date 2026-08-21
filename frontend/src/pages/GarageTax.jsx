@@ -37,8 +37,8 @@ export default function GarageTax() {
       };
 
       const [sumRes, txRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/garage/tax/summary`, { params, headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/garage/tax/transactions`, { params, headers: getAuthHeaders() })
+        axios.get(`${API_BASE_URL}/api/garage/tax/summary`, { params, headers: getAuthHeaders() }),
+        axios.get(`${API_BASE_URL}/api/garage/tax/transactions`, { params, headers: getAuthHeaders() })
       ]);
 
       if (sumRes.data?.success) setSummary(sumRes.data.summary);
@@ -60,7 +60,7 @@ export default function GarageTax() {
 
   const handleExport = async (format) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/garage/tax/export`, {
+      const res = await axios.get(`${API_BASE_URL}/api/garage/tax/export`, {
         params: { period, dateFrom, dateTo, format },
         responseType: 'blob',
         headers: getAuthHeaders()
@@ -78,18 +78,18 @@ export default function GarageTax() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50/50 text-slate-800 p-6 md:p-8 space-y-8 font-sans">
       
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-amber-500/20">
+            <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 font-bold shadow-sm">
               <FileCheck2 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">Partner Tax & Compliance Center</h1>
-              <p className="text-xs text-slate-400">GST tax invoices, credit note adjustments, and tax breakdown for business filing</p>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">Partner Tax & Compliance Center</h1>
+              <p className="text-xs text-slate-500">GST tax invoices, credit note adjustments, and tax breakdown for business filing</p>
             </div>
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function GarageTax() {
           <select
             value={period}
             onChange={(e) => { setPeriod(e.target.value); setPage(1); }}
-            className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white"
+            className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 shadow-sm"
           >
             <option value="TODAY">Today</option>
             <option value="7_DAYS">Last 7 Days</option>
@@ -109,16 +109,16 @@ export default function GarageTax() {
 
           <button
             onClick={() => handleExport('csv')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 transition shadow-sm"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-teal-600" />
             CSV
           </button>
           <button
             onClick={() => handleExport('xlsx')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 transition shadow-sm"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-teal-600" />
             XLSX
           </button>
         </div>
@@ -126,42 +126,42 @@ export default function GarageTax() {
 
       {/* 5 Summary KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Taxable Volume</span>
-          <span className="text-xl font-black text-white">₹{((summary?.taxableAmount || 0)).toLocaleString('en-IN')}</span>
-          <span className="text-[10px] text-slate-500 block mt-1">{summary?.invoiceCount || 0} Invoices</span>
+        <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-sm">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Taxable Volume</span>
+          <span className="text-xl font-black text-slate-900 font-mono">₹{((summary?.taxableAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="text-[10px] text-slate-400 block mt-1">{summary?.invoiceCount || 0} Invoices</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-blue-900/40 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider block mb-1">CGST (9%)</span>
-          <span className="text-xl font-black text-blue-400">₹{((summary?.cgstAmount || 0)).toLocaleString('en-IN')}</span>
-          <span className="text-[10px] text-slate-500 block mt-1">Central GST</span>
+        <div className="bg-white border border-sky-200 p-4 rounded-2xl shadow-sm">
+          <span className="text-[11px] font-bold text-sky-700 uppercase tracking-wider block mb-1">CGST (9%)</span>
+          <span className="text-xl font-black text-sky-600 font-mono">₹{((summary?.cgstAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="text-[10px] text-slate-400 block mt-1">Central GST</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-cyan-900/40 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block mb-1">SGST (9%)</span>
-          <span className="text-xl font-black text-cyan-400">₹{((summary?.sgstAmount || 0)).toLocaleString('en-IN')}</span>
-          <span className="text-[10px] text-slate-500 block mt-1">State GST</span>
+        <div className="bg-white border border-teal-200 p-4 rounded-2xl shadow-sm">
+          <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider block mb-1">SGST (9%)</span>
+          <span className="text-xl font-black text-teal-600 font-mono">₹{((summary?.sgstAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="text-[10px] text-slate-400 block mt-1">State GST</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-amber-900/40 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">Credit Notes Tax</span>
-          <span className="text-xl font-black text-amber-400">-₹{((summary?.creditNotesTaxAdjustmentAmount || 0)).toLocaleString('en-IN')}</span>
-          <span className="text-[10px] text-slate-500 block mt-1">{summary?.creditNoteCount || 0} Credit Notes</span>
+        <div className="bg-white border border-amber-200 p-4 rounded-2xl shadow-sm">
+          <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block mb-1">Credit Notes Tax</span>
+          <span className="text-xl font-black text-amber-600 font-mono">-₹{((summary?.creditNotesTaxAdjustmentAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="text-[10px] text-slate-400 block mt-1">{summary?.creditNoteCount || 0} Credit Notes</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-emerald-900/40 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">Net Tax Collected</span>
-          <span className="text-xl font-black text-emerald-400">₹{((summary?.netTaxLiabilityAmount || 0)).toLocaleString('en-IN')}</span>
-          <span className="text-[10px] text-slate-500 block mt-1">Total Tax</span>
+        <div className="bg-white border border-emerald-200 p-4 rounded-2xl shadow-sm">
+          <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">Net Tax Collected</span>
+          <span className="text-xl font-black text-emerald-600 font-mono">₹{((summary?.netTaxLiabilityAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="text-[10px] text-slate-400 block mt-1">Total Tax</span>
         </div>
       </div>
 
       {/* Tax Invoices Table */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th className="px-6 py-3.5">Invoice #</th>
                 <th className="px-6 py-3.5">Date</th>
@@ -172,17 +172,17 @@ export default function GarageTax() {
                 <th className="px-6 py-3.5">Grand Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-400" />
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-600" />
                     Loading tax reports...
                   </td>
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
                     No tax transactions recorded for this period.
                   </td>
                 </tr>
@@ -195,16 +195,16 @@ export default function GarageTax() {
                   const totalTax = inv.taxSnapshot ? inv.taxSnapshot.totalTaxAmount : (gross - parseFloat(taxable)).toFixed(2);
 
                   return (
-                    <tr key={inv._id} className="hover:bg-slate-800/40 transition">
-                      <td className="px-6 py-3.5 font-mono font-semibold text-amber-400">{inv.invoiceNumber}</td>
-                      <td className="px-6 py-3.5 text-slate-400">
+                    <tr key={inv._id} className="hover:bg-slate-50/70 transition">
+                      <td className="px-6 py-3.5 font-mono font-semibold text-teal-700">{inv.invoiceNumber}</td>
+                      <td className="px-6 py-3.5 text-slate-500">
                         {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : '—'}
                       </td>
-                      <td className="px-6 py-3.5 font-semibold text-white">₹{parseFloat(taxable).toLocaleString('en-IN')}</td>
-                      <td className="px-6 py-3.5 text-blue-400">₹{cgst}</td>
-                      <td className="px-6 py-3.5 text-cyan-400">₹{sgst}</td>
-                      <td className="px-6 py-3.5 font-semibold text-amber-300">₹{parseFloat(totalTax).toLocaleString('en-IN')}</td>
-                      <td className="px-6 py-3.5 font-bold text-white">₹{gross.toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-3.5 font-semibold text-slate-900 font-mono">₹{parseFloat(taxable).toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-3.5 text-sky-700 font-mono">₹{cgst}</td>
+                      <td className="px-6 py-3.5 text-teal-700 font-mono">₹{sgst}</td>
+                      <td className="px-6 py-3.5 font-semibold text-amber-700 font-mono">₹{parseFloat(totalTax).toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-3.5 font-bold text-slate-900 font-mono">₹{gross.toLocaleString('en-IN')}</td>
                     </tr>
                   );
                 })
@@ -215,25 +215,25 @@ export default function GarageTax() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-slate-400">
+          <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <span className="text-xs text-slate-500">
               Showing {(page - 1) * 20 + 1}–{Math.min(page * 20, totalCount)} of {totalCount} entries
             </span>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 disabled:opacity-40 transition shadow-sm"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-xs font-semibold text-slate-300 px-2">
+              <span className="text-xs font-semibold text-slate-700 px-2">
                 Page {page} of {totalPages}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 disabled:opacity-40 transition shadow-sm"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

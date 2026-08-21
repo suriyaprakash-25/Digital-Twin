@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -43,7 +44,7 @@ const GarageDetails = () => {
     fetchGarageDetails();
     fetchReviews();
     if (token) {
-      axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, headers)
+      axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers)
         .then(res => {
           const list = Array.isArray(res.data) ? res.data : [];
           setUserVehicles(list);
@@ -57,7 +58,7 @@ const GarageDetails = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/details/${garageId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/garages/details/${garageId}`);
       setGarage(res.data);
     } catch (err) {
       console.error('Error fetching garage details:', err);
@@ -70,7 +71,7 @@ const GarageDetails = () => {
   const fetchReviews = async (sort = reviewSort) => {
     try {
       const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/${garageId}/reviews?sort=${sort}`, config);
+      const res = await axios.get(`${API_BASE_URL}/api/garages/${garageId}/reviews?sort=${sort}`, config);
       setReviewsData(res.data);
     } catch (err) {
       console.error('Error fetching reviews:', err);
@@ -128,7 +129,7 @@ const GarageDetails = () => {
     setBookingSubmitting(true);
     try {
       await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings`,
+        `${API_BASE_URL}/api/bookings`,
         {
           garageId: garage.id,
           serviceId: selectedServiceForRequest.id,

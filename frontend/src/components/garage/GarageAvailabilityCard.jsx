@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { CalendarClock, Activity, AlertCircle, Save, Clock, CheckCircle } from 'lucide-react';
@@ -31,7 +32,7 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
 
   const fetchAvailability = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garage/availability/${garageId}`, {
+      const res = await axios.get(`${API_BASE_URL}/api/garage/availability/${garageId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = res.data;
@@ -60,7 +61,7 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
         businessHours
       };
       
-      const res = await axios.patch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garage/availability`, payload, {
+      const res = await axios.patch(`${API_BASE_URL}/api/garage/availability`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

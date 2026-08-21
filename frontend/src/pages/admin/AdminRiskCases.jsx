@@ -48,7 +48,7 @@ export default function AdminRiskCases() {
         search: search || undefined
       };
 
-      const res = await axios.get(`${API_BASE_URL}/admin/risk-cases`, { params, headers: getAuthHeaders() });
+      const res = await axios.get(`${API_BASE_URL}/api/admin/risk-cases`, { params, headers: getAuthHeaders() });
       if (res.data?.success) {
         setCases(res.data.riskCases || []);
         setTotalPages(res.data.totalPages || 1);
@@ -70,7 +70,7 @@ export default function AdminRiskCases() {
     setActionLoading(true);
     try {
       const res = await axios.post(
-        `${API_BASE_URL}/admin/risk-cases/${selectedCase.riskCaseNumber}/action`,
+        `${API_BASE_URL}/api/admin/risk-cases/${selectedCase.riskCaseNumber}/action`,
         { action: actionType, note: actionNote },
         { headers: getAuthHeaders() }
       );
@@ -93,7 +93,7 @@ export default function AdminRiskCases() {
     setActionLoading(true);
     try {
       const res = await axios.post(
-        `${API_BASE_URL}/admin/risk-cases/${selectedCase.riskCaseNumber}/resolve`,
+        `${API_BASE_URL}/api/admin/risk-cases/${selectedCase.riskCaseNumber}/resolve`,
         { resolutionStatus, resolutionNote: actionNote },
         { headers: getAuthHeaders() }
       );

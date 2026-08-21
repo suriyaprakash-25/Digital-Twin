@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
@@ -87,7 +88,7 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiBaseUrl = API_BASE_URL;
 
       const validParts = parts.filter(p => p.partName.trim() !== '');
 
@@ -120,7 +121,7 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiBaseUrl = API_BASE_URL;
 
       const validParts = parts.filter(p => p.partName.trim() !== '');
 

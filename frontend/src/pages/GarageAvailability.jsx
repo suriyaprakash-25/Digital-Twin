@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -13,7 +14,7 @@ const GarageAvailability = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, headers)
+    axios.get(`${API_BASE_URL}/api/garages/me`, headers)
       .then(res => {
         if (res.data?.exists) {
           setProfile(res.data);

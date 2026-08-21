@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import { useState } from 'react';
 import axios from 'axios';
 import { CreditCard, CheckCircle, Loader2, IndianRupee, AlertCircle } from 'lucide-react';
@@ -42,7 +43,7 @@ const PaymentButton = ({ service, vehicle, onPaymentSuccess, className = '' }) =
       const token = localStorage.getItem('token');
       const userRaw = localStorage.getItem('user');
       const user = userRaw ? JSON.parse(userRaw) : {};
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiBaseUrl = API_BASE_URL;
 
       // 2. Create server-side Razorpay Order
       const orderResponse = await axios.post(

@@ -43,9 +43,9 @@ export default function GarageFinancialCenter() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [sumRes, foreRes, setRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/earnings/summary`, { headers }),
-        fetch(`${API_BASE_URL}/api/treasury/forecast`, { headers }),
-        fetch(`${API_BASE_URL}/api/earnings/settlements`, { headers })
+        fetch(`${API_BASE_URL}/api/garage/earnings/summary`, { headers }),
+        fetch(`${API_BASE_URL}/api/garage/settlements/forecast`, { headers }),
+        fetch(`${API_BASE_URL}/api/garage/settlements`, { headers })
       ]);
 
       const sumData = await sumRes.json();
@@ -77,7 +77,7 @@ export default function GarageFinancialCenter() {
       setRequestingSettlement(true);
       setMessage(null);
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/earnings/settlements/request`, {
+      const res = await fetch(`${API_BASE_URL}/api/garage/settlements/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

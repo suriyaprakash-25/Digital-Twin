@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -78,11 +79,11 @@ const GarageDashboard = () => {
   const loadAll = useCallback(async () => {
     try {
       const [pRes, sRes, bRes, nRes, rRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, headers).catch(() => ({ data: { exists: false } })),
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me/services`, headers).catch(() => ({ data: [] })),
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/garage`, headers).catch(() => ({ data: [] })),
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications?limit=20`, headers).catch(() => ({ data: [] })),
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garage/invoices/garage/revenue/summary`, headers).catch(() => ({ data: { success: false } })),
+        axios.get(`${API_BASE_URL}/api/garages/me`, headers).catch(() => ({ data: { exists: false } })),
+        axios.get(`${API_BASE_URL}/api/garages/me/services`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE_URL}/api/bookings/garage`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE_URL}/api/notifications?limit=20`, headers).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE_URL}/api/garage/invoices/garage/revenue/summary`, headers).catch(() => ({ data: { success: false } })),
       ]);
       setProfile(pRes.data?.exists ? pRes.data : null);
       setServices(Array.isArray(sRes.data) ? sRes.data : []);
@@ -102,7 +103,7 @@ const GarageDashboard = () => {
 
   const updateBookingStatus = async (bookingId, status) => {
     try {
-      await axios.patch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}/status`, { status }, headers);
+      await axios.patch(`${API_BASE_URL}/api/bookings/${bookingId}/status`, { status }, headers);
       showToast('Booking updated successfully!', 'success');
       await loadAll();
     } catch (e) {
@@ -115,7 +116,7 @@ const GarageDashboard = () => {
     setUpdatingCapacity(true);
     try {
       const res = await axios.patch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me/capacity`,
+        `${API_BASE_URL}/api/garages/me/capacity`,
         { maxCapacity: inputCapacity },
         headers
       );

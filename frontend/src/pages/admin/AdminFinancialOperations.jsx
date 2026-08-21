@@ -48,7 +48,7 @@ export default function AdminFinancialOperations() {
 
   const fetchSummary = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/admin/financial-operations/summary`, { headers: getAuthHeaders() });
+      const res = await axios.get(`${API_BASE_URL}/api/admin/financial-operations/summary`, { headers: getAuthHeaders() });
       if (res.data?.success) {
         setSummary(res.data.summary);
       }
@@ -61,8 +61,8 @@ export default function AdminFinancialOperations() {
     setLoading(true);
     try {
       const endpoint = activeTab === 'HIGH_VALUE'
-        ? `${API_BASE_URL}/admin/settlements/high-value`
-        : `${API_BASE_URL}/admin/settlements/pending`;
+        ? `${API_BASE_URL}/api/admin/settlements/high-value`
+        : `${API_BASE_URL}/api/admin/settlements/pending`;
 
       const res = await axios.get(endpoint, { headers: getAuthHeaders() });
       if (res.data?.success) {

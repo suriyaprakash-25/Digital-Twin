@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -76,7 +77,7 @@ const GarageLocationPicker = ({ token, initialLocation, readOnly = false, onSave
     setSaving(true);
     try {
       await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/location`,
+        `${API_BASE_URL}/api/garages/location`,
         { latitude: location.latitude, longitude: location.longitude },
         { headers: { Authorization: `Bearer ${token}` } }
       );

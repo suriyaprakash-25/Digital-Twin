@@ -18,7 +18,7 @@ export async function pollPaymentStatus(paymentId, {
   while (attempt < maxAttempts) {
     attempt++;
     try {
-      const res = await axios.get(`${API_BASE_URL}/payments/details/${paymentId}`, {
+      const res = await axios.get(`${API_BASE_URL}/api/payments/details/${paymentId}`, {
         headers: getAuthHeaders()
       });
 

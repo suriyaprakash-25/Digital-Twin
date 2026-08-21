@@ -1,3 +1,4 @@
+process.env.EMAIL_PROVIDER = 'mock';
 const { MongoClient, ObjectId } = require('mongodb');
 const crypto = require('crypto');
 const { validateEnvironment } = require('./src/config/envValidator');

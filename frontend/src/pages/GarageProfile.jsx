@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -47,7 +48,7 @@ const GarageProfile = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, headers)
+    axios.get(`${API_BASE_URL}/api/garages/me`, headers)
       .then(res => {
         if (res.data?.exists) {
           const p = {
@@ -84,7 +85,7 @@ const GarageProfile = () => {
     formData.append('photo', file);
     setUploadingPhoto(true);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/photo`, formData, {
+      const res = await axios.post(`${API_BASE_URL}/api/garages/photo`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       if (res.data?.photoUrl) {
@@ -104,7 +105,7 @@ const GarageProfile = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, profile, headers);
+      await axios.post(`${API_BASE_URL}/api/garages/me`, profile, headers);
       setOriginal({ ...profile });
       showToast('Profile saved successfully!', 'success');
     } catch (err) {
@@ -370,7 +371,7 @@ const GarageProfile = () => {
                         const targetUrl = url;
                         setProfile(p => ({ ...p, galleryPhotos: p.galleryPhotos.filter((_, i) => i !== idx) }));
                         try {
-                          await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/gallery`, {
+                          await axios.delete(`${API_BASE_URL}/api/garages/gallery`, {
                             headers: { Authorization: `Bearer ${token}` },
                             data: { photoUrl: targetUrl }
                           });
@@ -411,7 +412,7 @@ const GarageProfile = () => {
                     try {
                       const formData = new FormData();
                       files.forEach(f => formData.append('photos', f));
-                      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/gallery`, formData, {
+                      const res = await axios.post(`${API_BASE_URL}/api/garages/gallery`, formData, {
                         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                       });
                       if (Array.isArray(res.data?.galleryPhotos)) {

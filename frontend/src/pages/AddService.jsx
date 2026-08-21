@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -53,7 +54,7 @@ const AddService = () => {
                 setIsGarage(!!checkGarage);
 
                 const endpoint = checkGarage ? '/api/vehicles/all' : '/api/vehicles/myvehicles';
-                const vRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${endpoint}`, {
+                const vRes = await axios.get(`${API_BASE_URL}${endpoint}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setVehicles(vRes.data);
@@ -66,7 +67,7 @@ const AddService = () => {
                 let garageDetails = {};
                 if (checkGarage) {
                     try {
-                        const gRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, {
+                        const gRes = await axios.get(`${API_BASE_URL}/api/garages/me`, {
                             headers: { Authorization: `Bearer ${token}` }
                         });
                         if (gRes.data && gRes.data.exists) {
@@ -234,7 +235,7 @@ const AddService = () => {
                 billPhotoUrls: billPhotos
             };
 
-            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/services/add`, submitPayload, {
+            await axios.post(`${API_BASE_URL}/api/services/add`, submitPayload, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'

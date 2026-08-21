@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -18,7 +19,7 @@ const TransferOwnership = () => {
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
-        const vRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, headers);
+        const vRes = await axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers);
         const currentVehicle = vRes.data.find(v => v.id === vehicleId);
         setVehicle(currentVehicle);
       } catch (err) {
@@ -43,7 +44,7 @@ const TransferOwnership = () => {
     setSubmitting(true);
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ownership/transfer`, {
+      await axios.post(`${API_BASE_URL}/api/ownership/transfer`, {
         vehicleId,
         buyerEmail: buyerEmail.trim().toLowerCase()
       }, headers);

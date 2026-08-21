@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -44,7 +45,7 @@ const PaymentHistory = () => {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiBaseUrl = API_BASE_URL;
 
       const res = await axios.get(
         `${apiBaseUrl}/api/payments/history?status=${statusFilter}&search=${encodeURIComponent(search)}`,

@@ -37,11 +37,11 @@ export default function AdminFinancialOperationsDashboard() {
     setLoading(true);
     try {
       const [hRes, fRes, aRes, iRes, tRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/health`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/admin/treasury/forecast`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/admin/alerts/summary`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/admin/financial-integrity/summary`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/admin/tax/summary?period=TODAY`, { headers: getAuthHeaders() })
+        axios.get(`${API_BASE_URL}/api/health`, { headers: getAuthHeaders() }),
+        axios.get(`${API_BASE_URL}/api/admin/treasury/forecast`, { headers: getAuthHeaders() }),
+        axios.get(`${API_BASE_URL}/api/admin/alerts/summary`, { headers: getAuthHeaders() }),
+        axios.get(`${API_BASE_URL}/api/admin/financial-integrity/summary`, { headers: getAuthHeaders() }),
+        axios.get(`${API_BASE_URL}/api/admin/tax/summary?period=TODAY`, { headers: getAuthHeaders() })
       ]);
 
       if (hRes.data) setHealth(hRes.data);

@@ -44,7 +44,7 @@ export default function AdminPaymentRisk() {
 
   const fetchSummary = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/admin/risk/summary`, { headers: getAuthHeaders() });
+      const res = await axios.get(`${API_BASE_URL}/api/admin/risk/summary`, { headers: getAuthHeaders() });
       if (res.data?.success) {
         setSummary(res.data.summary);
       }
@@ -63,7 +63,7 @@ export default function AdminPaymentRisk() {
         status: statusFilter,
         search
       };
-      const res = await axios.get(`${API_BASE_URL}/admin/risk`, { params, headers: getAuthHeaders() });
+      const res = await axios.get(`${API_BASE_URL}/api/admin/risk`, { params, headers: getAuthHeaders() });
       if (res.data?.success) {
         setRiskEvents(res.data.riskEvents || []);
         setTotalPages(res.data.totalPages || 1);

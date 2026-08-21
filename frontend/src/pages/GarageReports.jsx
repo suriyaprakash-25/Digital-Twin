@@ -47,13 +47,13 @@ export default function GarageReports() {
       }
 
       // Fetch summary
-      const sumRes = await axios.get(`${API_BASE_URL}/garage/reports/summary`, { params, headers: getAuthHeaders() });
+      const sumRes = await axios.get(`${API_BASE_URL}/api/garage/reports/summary`, { params, headers: getAuthHeaders() });
       if (sumRes.data?.success) {
         setSummary(sumRes.data.summary);
       }
 
       // Fetch transactions
-      const txRes = await axios.get(`${API_BASE_URL}/garage/reports/transactions`, { params: { ...params, page, limit: 15 }, headers: getAuthHeaders() });
+      const txRes = await axios.get(`${API_BASE_URL}/api/garage/reports/transactions`, { params: { ...params, page, limit: 15 }, headers: getAuthHeaders() });
       if (txRes.data?.success) {
         setTransactions(txRes.data.transactions || []);
         setTotalPages(txRes.data.totalPages || 1);
@@ -77,7 +77,7 @@ export default function GarageReports() {
         if (dateFrom) params.dateFrom = dateFrom;
         if (dateTo) params.dateTo = dateTo;
       }
-      const res = await axios.get(`${API_BASE_URL}/garage/reports/statement`, { params, headers: getAuthHeaders() });
+      const res = await axios.get(`${API_BASE_URL}/api/garage/reports/statement`, { params, headers: getAuthHeaders() });
       if (res.data?.success) {
         setStatement(res.data.statement);
         setStatementView(true);
@@ -96,7 +96,7 @@ export default function GarageReports() {
         if (dateTo) params.dateTo = dateTo;
       }
 
-      const res = await axios.get(`${API_BASE_URL}/garage/reports/export`, {
+      const res = await axios.get(`${API_BASE_URL}/api/garage/reports/export`, {
         params,
         headers: getAuthHeaders(),
         responseType: 'blob'

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import React, { useState } from 'react';
 import { AlertTriangle, MapPin, X, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -29,7 +30,7 @@ const EmergencyPanel = ({ onClose, onEmergencySent }) => {
       async (position) => {
         try {
           const token = localStorage.getItem('token');
-          const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/copilot/emergency`, {
+          const res = await axios.post(`${API_BASE_URL}/api/copilot/emergency`, {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
             category: category,

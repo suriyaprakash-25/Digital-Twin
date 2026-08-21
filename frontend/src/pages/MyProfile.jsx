@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -61,9 +62,9 @@ const MyProfile = () => {
       setLoading(true);
       try {
         const [profileRes, vehiclesRes, bookingsRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/me`, headers),
-          axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, headers),
-          axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/my`, headers)
+          axios.get(`${API_BASE_URL}/api/auth/me`, headers),
+          axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers),
+          axios.get(`${API_BASE_URL}/api/bookings/my`, headers)
         ]);
 
         if (cancelled) return;
@@ -118,7 +119,7 @@ const MyProfile = () => {
     setSaving(true);
 
     try {
-      const res = await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/me`, {
+      const res = await axios.put(`${API_BASE_URL}/api/auth/me`, {
         name: profile.name,
         email: profile.email,
         phone: profile.phone,
@@ -147,7 +148,7 @@ const MyProfile = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/me/photo`, formData, {
+      const res = await axios.post(`${API_BASE_URL}/api/auth/me/photo`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -176,7 +177,7 @@ const MyProfile = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/me/license`, formData, {
+      const res = await axios.post(`${API_BASE_URL}/api/auth/me/license`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

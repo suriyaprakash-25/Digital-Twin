@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -13,7 +14,7 @@ const ResaleReport = () => {
         const fetchReport = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/resale/${vehicleId}`, {
+                const res = await axios.get(`${API_BASE_URL}/api/resale/${vehicleId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setReport(res.data);

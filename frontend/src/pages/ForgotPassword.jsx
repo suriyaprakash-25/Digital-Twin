@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -17,7 +18,7 @@ function ForgotPassword() {
     setError('');
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/forgot-password`, { email });
+      const res = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
       if (res.data.success) {
         showToast('OTP sent successfully. Redirecting...', 'success');
         setTimeout(() => {

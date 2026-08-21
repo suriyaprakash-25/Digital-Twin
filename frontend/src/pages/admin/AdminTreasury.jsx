@@ -30,8 +30,8 @@ export default function AdminTreasury() {
     setLoading(true);
     try {
       const [fRes, aRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/admin/treasury/forecast`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/admin/treasury/aging`, { headers: getAuthHeaders() })
+        axios.get(`${API_BASE_URL}/api/admin/treasury/forecast`, { headers: getAuthHeaders() }),
+        axios.get(`${API_BASE_URL}/api/admin/treasury/aging`, { headers: getAuthHeaders() })
       ]);
 
       if (fRes.data?.success) setForecast(fRes.data.forecast);

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
@@ -21,7 +22,7 @@ const AdminGarages = () => {
     const fetchGarages = async (p = 1, q = '') => {
         setLoading(true);
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/garages`, {
+            const res = await axios.get(`${API_BASE_URL}/api/admin/garages`, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: { page: p, limit: 20, search: q }
             });
@@ -49,7 +50,7 @@ const AdminGarages = () => {
         setActionLoading(`${garageId}-${action}`);
         try {
             await axios.patch(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/garages/${garageId}/${action}`,
+                `${API_BASE_URL}/api/admin/garages/${garageId}/${action}`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );

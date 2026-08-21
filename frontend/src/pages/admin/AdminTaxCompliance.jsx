@@ -40,8 +40,8 @@ export default function AdminTaxCompliance() {
       };
 
       const [sumRes, txRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/admin/tax/summary`, { params, headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/admin/tax/transactions`, { params, headers: getAuthHeaders() })
+        axios.get(`${API_BASE_URL}/api/admin/tax/summary`, { params, headers: getAuthHeaders() }),
+        axios.get(`${API_BASE_URL}/api/admin/tax/transactions`, { params, headers: getAuthHeaders() })
       ]);
 
       if (sumRes.data?.success) setSummary(sumRes.data.summary);
@@ -63,7 +63,7 @@ export default function AdminTaxCompliance() {
 
   const handleExport = async (format) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/admin/tax/export`, {
+      const res = await axios.get(`${API_BASE_URL}/api/admin/tax/export`, {
         params: { period, dateFrom, dateTo, format },
         responseType: 'blob',
         headers: getAuthHeaders()

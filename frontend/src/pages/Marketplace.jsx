@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -39,8 +40,8 @@ const Marketplace = () => {
       setIsLoading(true);
       try {
         const [mRes, vRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/marketplace`),
-          axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/myvehicles`, headers)
+          axios.get(`${API_BASE_URL}/api/marketplace`),
+          axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers)
         ]);
 
         if (cancelled) return;
@@ -80,7 +81,7 @@ const Marketplace = () => {
 
     try {
       await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings`,
+        `${API_BASE_URL}/api/bookings`,
         {
           garageId,
           serviceId,

@@ -42,7 +42,7 @@ export default function AdminFinancialAudit() {
 
   const fetchSummary = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/admin/financial-audit/summary`, { headers: getAuthHeaders() });
+      const res = await axios.get(`${API_BASE_URL}/api/admin/financial-audit/summary`, { headers: getAuthHeaders() });
       if (res.data?.success) {
         setSummary(res.data.summary);
       }
@@ -63,7 +63,7 @@ export default function AdminFinancialAudit() {
         search: search || undefined
       };
 
-      const res = await axios.get(`${API_BASE_URL}/admin/financial-audit`, { params, headers: getAuthHeaders() });
+      const res = await axios.get(`${API_BASE_URL}/api/admin/financial-audit`, { params, headers: getAuthHeaders() });
       if (res.data?.success) {
         setLogs(res.data.auditLogs || []);
         setTotalPages(res.data.totalPages || 1);

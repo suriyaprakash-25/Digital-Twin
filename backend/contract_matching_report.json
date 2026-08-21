@@ -1,0 +1,1424 @@
+{
+  "matchedCount": 48,
+  "mismatchCount": 135,
+  "matched": [
+    {
+      "file": "components\\feedback\\FeedbackForm.jsx",
+      "method": "POST",
+      "frontendPath": "/api/feedback",
+      "backendPath": "/api/feedback",
+      "backendFile": "feedbackRoutes.js"
+    },
+    {
+      "file": "components\\garage\\GarageBillingModal.jsx",
+      "method": "PUT",
+      "frontendPath": "/api/garage/invoices/garage/${service.id || service._id}",
+      "backendPath": "/api/garage/invoices/garage/:serviceId",
+      "backendFile": "invoices.js"
+    },
+    {
+      "file": "components\\garage\\GarageBillingModal.jsx",
+      "method": "POST",
+      "frontendPath": "/api/garage/invoices/garage/${service.id || service._id}/finalize",
+      "backendPath": "/api/garage/invoices/garage/:serviceId/finalize",
+      "backendFile": "invoices.js"
+    },
+    {
+      "file": "components\\invoice\\InvoiceModal.jsx",
+      "method": "GET",
+      "frontendPath": "/api/invoices/${serviceId}",
+      "backendPath": "/api/invoices/:serviceId",
+      "backendFile": "invoices.js"
+    },
+    {
+      "file": "components\\invoice\\ReceiptModal.jsx",
+      "method": "GET",
+      "frontendPath": "/api/invoices/${serviceId}/receipt",
+      "backendPath": "/api/invoices/:serviceId/receipt",
+      "backendFile": "invoices.js"
+    },
+    {
+      "file": "components\\notifications\\NotificationBell.jsx",
+      "method": "GET",
+      "frontendPath": "/api/notifications",
+      "backendPath": "/api/notifications",
+      "backendFile": "notifications.js"
+    },
+    {
+      "file": "components\\notifications\\NotificationBell.jsx",
+      "method": "GET",
+      "frontendPath": "/api/notifications/unread-count",
+      "backendPath": "/api/notifications/unread-count",
+      "backendFile": "notifications.js"
+    },
+    {
+      "file": "components\\notifications\\NotificationBell.jsx",
+      "method": "PATCH",
+      "frontendPath": "/api/notifications/read-all",
+      "backendPath": "/api/notifications/read-all",
+      "backendFile": "notifications.js"
+    },
+    {
+      "file": "components\\notifications\\NotificationBell.jsx",
+      "method": "PATCH",
+      "frontendPath": "/api/notifications/${notif.id}/read",
+      "backendPath": "/api/notifications/:notificationId/read",
+      "backendFile": "notifications.js"
+    },
+    {
+      "file": "components\\payment\\PaymentButton.jsx",
+      "method": "POST",
+      "frontendPath": "/api/payments/create-order",
+      "backendPath": "/api/payments/create-order",
+      "backendFile": "payments.js"
+    },
+    {
+      "file": "components\\payment\\PaymentButton.jsx",
+      "method": "POST",
+      "frontendPath": "/api/payments/verify",
+      "backendPath": "/api/payments/verify",
+      "backendFile": "payments.js"
+    },
+    {
+      "file": "components\\payment\\PaymentDetailsModal.jsx",
+      "method": "GET",
+      "frontendPath": "/api/payments/details/${id}",
+      "backendPath": "/api/payments/details/:id",
+      "backendFile": "payments.js"
+    },
+    {
+      "file": "components\\payment\\RefundModal.jsx",
+      "method": "POST",
+      "frontendPath": "/api/payments/${targetId}/refund",
+      "backendPath": "/api/payments/:paymentId/refund",
+      "backendFile": "payments.js"
+    },
+    {
+      "file": "components\\reconciliation\\ReconciliationDetailsModal.jsx",
+      "method": "POST",
+      "frontendPath": "/api/admin/reconciliation/${reconciliation.id}/resolve",
+      "backendPath": "/api/admin/reconciliation/:id/resolve",
+      "backendFile": "reconciliation.js"
+    },
+    {
+      "file": "components\\settlement\\RequestSettlementModal.jsx",
+      "method": "POST",
+      "frontendPath": "/api/garage/settlements/request",
+      "backendPath": "/api/garage/settlements/request",
+      "backendFile": "earnings.js"
+    },
+    {
+      "file": "pages\\admin\\AdminCommissions.jsx",
+      "method": "GET",
+      "frontendPath": "/api/admin/commissions/summary",
+      "backendPath": "/api/admin/commissions/summary",
+      "backendFile": "admin.js"
+    },
+    {
+      "file": "pages\\admin\\AdminCommissions.jsx",
+      "method": "GET",
+      "frontendPath": "/api/admin/commissions/all",
+      "backendPath": "/api/admin/commissions/all",
+      "backendFile": "admin.js"
+    },
+    {
+      "file": "pages\\admin\\AdminFeedback.jsx",
+      "method": "GET",
+      "frontendPath": "/api/admin/feedback",
+      "backendPath": "/api/admin/feedback",
+      "backendFile": "adminFeedbackRoutes.js"
+    },
+    {
+      "file": "pages\\admin\\AdminFeedback.jsx",
+      "method": "PATCH",
+      "frontendPath": "/api/admin/feedback/${id}/status",
+      "backendPath": "/api/admin/feedback/:id/status",
+      "backendFile": "adminFeedbackRoutes.js"
+    },
+    {
+      "file": "pages\\admin\\AdminFeedback.jsx",
+      "method": "DELETE",
+      "frontendPath": "/api/admin/feedback/${id}",
+      "backendPath": "/api/admin/feedback/:id",
+      "backendFile": "adminFeedbackRoutes.js"
+    },
+    {
+      "file": "pages\\admin\\AdminPayments.jsx",
+      "method": "GET",
+      "frontendPath": "/api/admin/payments/summary",
+      "backendPath": "/api/admin/payments/summary",
+      "backendFile": "admin.js"
+    },
+    {
+      "file": "pages\\admin\\AdminPayments.jsx",
+      "method": "GET",
+      "frontendPath": "/api/admin/payments/all",
+      "backendPath": "/api/admin/payments/all",
+      "backendFile": "admin.js"
+    },
+    {
+      "file": "pages\\admin\\AdminReconciliation.jsx",
+      "method": "GET",
+      "frontendPath": "/api/admin/reconciliation",
+      "backendPath": "/api/admin/reconciliation",
+      "backendFile": "reconciliation.js"
+    },
+    {
+      "file": "pages\\admin\\AdminReconciliation.jsx",
+      "method": "GET",
+      "frontendPath": "/api/admin/reconciliation/summary",
+      "backendPath": "/api/admin/reconciliation/summary",
+      "backendFile": "reconciliation.js"
+    },
+    {
+      "file": "pages\\admin\\AdminReconciliation.jsx",
+      "method": "POST",
+      "frontendPath": "/api/admin/reconciliation/run",
+      "backendPath": "/api/admin/reconciliation/run",
+      "backendFile": "reconciliation.js"
+    },
+    {
+      "file": "pages\\admin\\AdminSettlements.jsx",
+      "method": "GET",
+      "frontendPath": "/api/admin/settlements",
+      "backendPath": "/api/admin/settlements",
+      "backendFile": "admin.js"
+    },
+    {
+      "file": "pages\\admin\\AdminSettlements.jsx",
+      "method": "POST",
+      "frontendPath": "/api/admin/settlements/${s.id}/approve",
+      "backendPath": "/api/admin/settlements/:id/approve",
+      "backendFile": "admin.js"
+    },
+    {
+      "file": "pages\\admin\\AdminSettlements.jsx",
+      "method": "POST",
+      "frontendPath": "/api/admin/settlements/${rejectModalSettlement.id}/reject",
+      "backendPath": "/api/admin/settlements/:id/reject",
+      "backendFile": "admin.js"
+    },
+    {
+      "file": "pages\\admin\\AdminSettlements.jsx",
+      "method": "POST",
+      "frontendPath": "/api/admin/settlements/${s.id}/process",
+      "backendPath": "/api/admin/settlements/:id/process",
+      "backendFile": "admin.js"
+    },
+    {
+      "file": "pages\\GarageEarnings.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/earnings",
+      "backendPath": "/api/garage/earnings",
+      "backendFile": "earnings.js"
+    },
+    {
+      "file": "pages\\GarageEarnings.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/earnings/summary",
+      "backendPath": "/api/garage/earnings/summary",
+      "backendFile": "earnings.js"
+    },
+    {
+      "file": "pages\\GarageEarnings.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/payout-profile",
+      "backendPath": "/api/garage/payout-profile",
+      "backendFile": "earnings.js"
+    },
+    {
+      "file": "pages\\GarageEarnings.jsx",
+      "method": "PUT",
+      "frontendPath": "/api/garage/payout-profile",
+      "backendPath": "/api/garage/payout-profile",
+      "backendFile": "earnings.js"
+    },
+    {
+      "file": "pages\\GarageFinancialCenter.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/earnings/summary",
+      "backendPath": "/api/garage/earnings/summary",
+      "backendFile": "earnings.js"
+    },
+    {
+      "file": "pages\\GarageFinancialCenter.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/settlements/forecast",
+      "backendPath": "/api/garage/settlements/forecast",
+      "backendFile": "earnings.js"
+    },
+    {
+      "file": "pages\\GarageFinancialCenter.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/settlements",
+      "backendPath": "/api/garage/settlements",
+      "backendFile": "earnings.js"
+    },
+    {
+      "file": "pages\\GaragePayments.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/invoices/garage/all",
+      "backendPath": "/api/garage/invoices/garage/all",
+      "backendFile": "invoices.js"
+    },
+    {
+      "file": "pages\\GaragePayments.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/invoices/garage/revenue/summary",
+      "backendPath": "/api/garage/invoices/garage/revenue/summary",
+      "backendFile": "invoices.js"
+    },
+    {
+      "file": "pages\\GaragePayments.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/invoices/garage/payments/analytics",
+      "backendPath": "/api/garage/invoices/garage/payments/analytics",
+      "backendFile": "invoices.js"
+    },
+    {
+      "file": "pages\\GarageSettlements.jsx",
+      "method": "GET",
+      "frontendPath": "/api/garage/settlements",
+      "backendPath": "/api/garage/settlements",
+      "backendFile": "earnings.js"
+    },
+    {
+      "file": "pages\\Passport.jsx",
+      "method": "GET",
+      "frontendPath": "/api/passport/${vehicleId}",
+      "backendPath": "/api/passport/:vehicleId",
+      "backendFile": "passport.js"
+    },
+    {
+      "file": "pages\\PaymentCenter.jsx",
+      "method": "GET",
+      "frontendPath": "/api/payments/customer/financial-summary",
+      "backendPath": "/api/payments/customer/financial-summary",
+      "backendFile": "payments.js"
+    },
+    {
+      "file": "pages\\PaymentCenter.jsx",
+      "method": "GET",
+      "frontendPath": "/api/payments/history",
+      "backendPath": "/api/payments/history",
+      "backendFile": "payments.js"
+    },
+    {
+      "file": "pages\\PaymentHistory.jsx",
+      "method": "GET",
+      "frontendPath": "/api/payments/history",
+      "backendPath": "/api/payments/history",
+      "backendFile": "payments.js"
+    },
+    {
+      "file": "pages\\UserDashboard.jsx",
+      "method": "GET",
+      "frontendPath": "/api/vehicles/myvehicles",
+      "backendPath": "/api/vehicles/myvehicles",
+      "backendFile": "vehicles.js"
+    },
+    {
+      "file": "pages\\UserDashboard.jsx",
+      "method": "GET",
+      "frontendPath": "/api/bookings/my",
+      "backendPath": "/api/bookings/my",
+      "backendFile": "bookings.js"
+    },
+    {
+      "file": "pages\\UserDashboard.jsx",
+      "method": "GET",
+      "frontendPath": "/api/notifications",
+      "backendPath": "/api/notifications",
+      "backendFile": "notifications.js"
+    },
+    {
+      "file": "pages\\UserDashboard.jsx",
+      "method": "GET",
+      "frontendPath": "/api/ownership/pending",
+      "backendPath": "/api/ownership/pending",
+      "backendFile": "ownership.js"
+    }
+  ],
+  "mismatches": [
+    {
+      "file": "components\\copilot\\ContextPanel.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\copilot\\Copilot.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\copilot\\Copilot.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\copilot\\Copilot.jsx",
+      "method": "DELETE",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\copilot\\EmergencyPanel.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\dispute\\CreateDisputeModal.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/api/disputes",
+      "frontendPath": "/api/disputes",
+      "normalized": "/api/disputes",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\garage\\GarageAvailabilityCard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\garage\\GarageAvailabilityCard.jsx",
+      "method": "PATCH",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\garage\\WriteReview.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\GarageLocationPicker.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\risk\\RiskDetailsModal.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/admin/risk/${event.id}/action",
+      "frontendPath": "/api/${API_BASE_URL}/admin/risk/${event.id}/action",
+      "normalized": "/api/:param/admin/risk/:param/action",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\settlement\\SettlementHoldModal.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/hold",
+      "frontendPath": "/api/${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/hold",
+      "normalized": "/api/:param/admin/settlements/:param/hold",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\settlement\\SettlementReviewModal.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/reject",
+      "frontendPath": "/api/${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/reject",
+      "normalized": "/api/:param/admin/settlements/:param/reject",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "components\\settlement\\SettlementReviewModal.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/process",
+      "frontendPath": "/api/${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/process",
+      "normalized": "/api/:param/admin/settlements/:param/process",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\AddService.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\AddService.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\AddService.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\AddVehicle.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminAnalytics.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminDisputes.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/api/admin/disputes",
+      "frontendPath": "/api/admin/disputes",
+      "normalized": "/api/admin/disputes",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminDisputes.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/api/admin/disputes/summary",
+      "frontendPath": "/api/admin/disputes/summary",
+      "normalized": "/api/admin/disputes/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminDisputes.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/api/admin/disputes/${selectedDispute.id}/resolve",
+      "frontendPath": "/api/admin/disputes/${selectedDispute.id}/resolve",
+      "normalized": "/api/admin/disputes/:param/resolve",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialAlerts.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/alerts",
+      "frontendPath": "/api/${API_BASE_URL}/admin/alerts",
+      "normalized": "/api/:param/admin/alerts",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialAlerts.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/alerts/summary",
+      "frontendPath": "/api/${API_BASE_URL}/admin/alerts/summary",
+      "normalized": "/api/:param/admin/alerts/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialAlerts.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/admin/alerts/${alertId}/acknowledge",
+      "frontendPath": "/api/${API_BASE_URL}/admin/alerts/${alertId}/acknowledge",
+      "normalized": "/api/:param/admin/alerts/:param/acknowledge",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialAlerts.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/admin/alerts/${alertId}/resolve",
+      "frontendPath": "/api/${API_BASE_URL}/admin/alerts/${alertId}/resolve",
+      "normalized": "/api/:param/admin/alerts/:param/resolve",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialAudit.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/financial-audit/summary",
+      "frontendPath": "/api/${API_BASE_URL}/admin/financial-audit/summary",
+      "normalized": "/api/:param/admin/financial-audit/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialAudit.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/financial-audit",
+      "frontendPath": "/api/${API_BASE_URL}/admin/financial-audit",
+      "normalized": "/api/:param/admin/financial-audit",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialOperations.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/financial-operations/summary",
+      "frontendPath": "/api/${API_BASE_URL}/admin/financial-operations/summary",
+      "normalized": "/api/:param/admin/financial-operations/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialOperationsDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/health",
+      "frontendPath": "/api/${API_BASE_URL}/health",
+      "normalized": "/api/:param/health",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialOperationsDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/treasury/forecast",
+      "frontendPath": "/api/${API_BASE_URL}/admin/treasury/forecast",
+      "normalized": "/api/:param/admin/treasury/forecast",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialOperationsDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/alerts/summary",
+      "frontendPath": "/api/${API_BASE_URL}/admin/alerts/summary",
+      "normalized": "/api/:param/admin/alerts/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialOperationsDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/financial-integrity/summary",
+      "frontendPath": "/api/${API_BASE_URL}/admin/financial-integrity/summary",
+      "normalized": "/api/:param/admin/financial-integrity/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialOperationsDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/tax/summary?period=TODAY",
+      "frontendPath": "/api/${API_BASE_URL}/admin/tax/summary",
+      "normalized": "/api/:param/admin/tax/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialReports.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/reports/summary",
+      "frontendPath": "/api/${API_BASE_URL}/admin/reports/summary",
+      "normalized": "/api/:param/admin/reports/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialReports.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/reports/commissions",
+      "frontendPath": "/api/${API_BASE_URL}/admin/reports/commissions",
+      "normalized": "/api/:param/admin/reports/commissions",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialReports.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/reports/transactions",
+      "frontendPath": "/api/${API_BASE_URL}/admin/reports/transactions",
+      "normalized": "/api/:param/admin/reports/transactions",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminFinancialReports.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/reports/export",
+      "frontendPath": "/api/${API_BASE_URL}/admin/reports/export",
+      "normalized": "/api/:param/admin/reports/export",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminGarages.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminGarages.jsx",
+      "method": "PATCH",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminPaymentRisk.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/risk/summary",
+      "frontendPath": "/api/${API_BASE_URL}/admin/risk/summary",
+      "normalized": "/api/:param/admin/risk/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminPaymentRisk.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/risk",
+      "frontendPath": "/api/${API_BASE_URL}/admin/risk",
+      "normalized": "/api/:param/admin/risk",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminRevenue.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminRiskCases.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/risk-cases",
+      "frontendPath": "/api/${API_BASE_URL}/admin/risk-cases",
+      "normalized": "/api/:param/admin/risk-cases",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminRiskCases.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/admin/risk-cases/${selectedCase.riskCaseNumber}/action",
+      "frontendPath": "/api/${API_BASE_URL}/admin/risk-cases/${selectedCase.riskCaseNumber}/action",
+      "normalized": "/api/:param/admin/risk-cases/:param/action",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminRiskCases.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/admin/risk-cases/${selectedCase.riskCaseNumber}/resolve",
+      "frontendPath": "/api/${API_BASE_URL}/admin/risk-cases/${selectedCase.riskCaseNumber}/resolve",
+      "normalized": "/api/:param/admin/risk-cases/:param/resolve",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminTaxCompliance.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/tax/summary",
+      "frontendPath": "/api/${API_BASE_URL}/admin/tax/summary",
+      "normalized": "/api/:param/admin/tax/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminTaxCompliance.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/tax/transactions",
+      "frontendPath": "/api/${API_BASE_URL}/admin/tax/transactions",
+      "normalized": "/api/:param/admin/tax/transactions",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminTaxCompliance.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/tax/export",
+      "frontendPath": "/api/${API_BASE_URL}/admin/tax/export",
+      "normalized": "/api/:param/admin/tax/export",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminTreasury.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/treasury/forecast",
+      "frontendPath": "/api/${API_BASE_URL}/admin/treasury/forecast",
+      "normalized": "/api/:param/admin/treasury/forecast",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminTreasury.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/admin/treasury/aging",
+      "frontendPath": "/api/${API_BASE_URL}/admin/treasury/aging",
+      "normalized": "/api/:param/admin/treasury/aging",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminUsers.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\admin\\AdminUsers.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Dashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Dashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Dashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\DiagnosisHistory.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\DisputeDetails.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/api/disputes/${id}",
+      "frontendPath": "/api/disputes/${id}",
+      "normalized": "/api/disputes/:param",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\DisputeDetails.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/api/disputes/${id}/respond",
+      "frontendPath": "/api/disputes/${id}/respond",
+      "normalized": "/api/disputes/:param/respond",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\DisputeDetails.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/api/disputes/${id}/cancel",
+      "frontendPath": "/api/disputes/${id}/cancel",
+      "normalized": "/api/disputes/:param/cancel",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\EditVehicle.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\EditVehicle.jsx",
+      "method": "PUT",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\ForgotPassword.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageAvailability.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDashboard.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDashboard.jsx",
+      "method": "PATCH",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDashboard.jsx",
+      "method": "PATCH",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDetails.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDetails.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDetails.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDetails.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDisputes.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/api/garage/disputes",
+      "frontendPath": "/api/garage/disputes",
+      "normalized": "/api/garage/disputes",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageDisputes.jsx",
+      "method": "POST",
+      "rawUrl": "${API_BASE_URL}/api/garage/disputes/${selectedDispute.id}/respond",
+      "frontendPath": "/api/garage/disputes/${selectedDispute.id}/respond",
+      "normalized": "/api/garage/disputes/:param/respond",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageFinancialCenter.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/api/garage/settlements/request",
+      "frontendPath": "/api/garage/settlements/request",
+      "normalized": "/api/garage/settlements/request",
+      "possibleBackendMatch": "POST /api/garage/settlements/request"
+    },
+    {
+      "file": "pages\\GaragePortal.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GaragePortal.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageProfile.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageProfile.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageProfile.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageProfile.jsx",
+      "method": "DELETE",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageProfile.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageReports.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/garage/reports/summary",
+      "frontendPath": "/api/${API_BASE_URL}/garage/reports/summary",
+      "normalized": "/api/:param/garage/reports/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageReports.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/garage/reports/transactions",
+      "frontendPath": "/api/${API_BASE_URL}/garage/reports/transactions",
+      "normalized": "/api/:param/garage/reports/transactions",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageReports.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/garage/reports/statement",
+      "frontendPath": "/api/${API_BASE_URL}/garage/reports/statement",
+      "normalized": "/api/:param/garage/reports/statement",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageReports.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/garage/reports/export",
+      "frontendPath": "/api/${API_BASE_URL}/garage/reports/export",
+      "normalized": "/api/:param/garage/reports/export",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageReviewsPage.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageReviewsPage.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageReviewsPage.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageServices.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageServices.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageServices.jsx",
+      "method": "PUT",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageServices.jsx",
+      "method": "DELETE",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageServicesHistory.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageTax.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/garage/tax/summary",
+      "frontendPath": "/api/${API_BASE_URL}/garage/tax/summary",
+      "normalized": "/api/:param/garage/tax/summary",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageTax.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/garage/tax/transactions",
+      "frontendPath": "/api/${API_BASE_URL}/garage/tax/transactions",
+      "normalized": "/api/:param/garage/tax/transactions",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\GarageTax.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/garage/tax/export",
+      "frontendPath": "/api/${API_BASE_URL}/garage/tax/export",
+      "normalized": "/api/:param/garage/tax/export",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Insurance.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Insurance.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Insurance.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Login.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Login.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Marketplace.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Marketplace.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Marketplace.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\MyDisputes.jsx",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/api/disputes",
+      "frontendPath": "/api/disputes",
+      "normalized": "/api/disputes",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\MyProfile.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\MyProfile.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\MyProfile.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\MyProfile.jsx",
+      "method": "PUT",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\MyProfile.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\MyProfile.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\MyVehicles.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\MyVehicles.jsx",
+      "method": "DELETE",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\ResaleReport.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\ResetPassword.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\ServiceHistory.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\ServiceHistory.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\ServiceHistory.jsx",
+      "method": "DELETE",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Signup.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\Signup.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\TransferOwnership.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\TransferOwnership.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\UserDashboard.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\UserDashboard.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\VehicleDoctor.jsx",
+      "method": "GET",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\VehicleDoctor.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\VerifyOtp.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "pages\\VerifyOtp.jsx",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "services\\paymentSyncService.js",
+      "method": "GET",
+      "rawUrl": "${API_BASE_URL}/payments/details/${paymentId}",
+      "frontendPath": "/api/${API_BASE_URL}/payments/details/${paymentId}",
+      "normalized": "/api/:param/payments/details/:param",
+      "possibleBackendMatch": "NOT_FOUND"
+    },
+    {
+      "file": "utils\\fcm.js",
+      "method": "POST",
+      "rawUrl": "${import.meta.env.VITE_API_URL || ",
+      "frontendPath": "/api/${import.meta.env.VITE_API_URL || ",
+      "normalized": "/api/${import.meta.env.VITE_API_URL || ",
+      "possibleBackendMatch": "NOT_FOUND"
+    }
+  ]
+}

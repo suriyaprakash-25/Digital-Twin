@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ShieldCheck, AlertTriangle, Upload, CheckCircle, Clock } from 'lucide-react';
@@ -16,7 +17,7 @@ const GaragePortal = () => {
     const fetchPending = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garage/pending`, {
+            const res = await axios.get(`${API_BASE_URL}/api/garage/pending`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPendingServices(res.data);
@@ -46,7 +47,7 @@ const GaragePortal = () => {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garage/verify/${selectedService.id}`, formData, {
+            const res = await axios.post(`${API_BASE_URL}/api/garage/verify/${selectedService.id}`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'

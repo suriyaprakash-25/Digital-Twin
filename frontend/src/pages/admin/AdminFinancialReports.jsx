@@ -45,20 +45,20 @@ export default function AdminFinancialReports() {
       }
 
       // 1. Platform Summary
-      const sumRes = await axios.get(`${API_BASE_URL}/admin/reports/summary`, { params, headers: getAuthHeaders() });
+      const sumRes = await axios.get(`${API_BASE_URL}/api/admin/reports/summary`, { params, headers: getAuthHeaders() });
       if (sumRes.data?.success) {
         setSummary(sumRes.data.summary);
       }
 
       // 2. Commissions Report
-      const comRes = await axios.get(`${API_BASE_URL}/admin/reports/commissions`, { params, headers: getAuthHeaders() });
+      const comRes = await axios.get(`${API_BASE_URL}/api/admin/reports/commissions`, { params, headers: getAuthHeaders() });
       if (comRes.data?.success) {
         setCommissions(comRes.data.commissions || []);
         setCommissionSummary(comRes.data.summary);
       }
 
       // 3. Transactions Report
-      const txRes = await axios.get(`${API_BASE_URL}/admin/reports/transactions`, { params: { ...params, limit: 15 }, headers: getAuthHeaders() });
+      const txRes = await axios.get(`${API_BASE_URL}/api/admin/reports/transactions`, { params: { ...params, limit: 15 }, headers: getAuthHeaders() });
       if (txRes.data?.success) {
         setTransactions(txRes.data.transactions || []);
       }
@@ -82,7 +82,7 @@ export default function AdminFinancialReports() {
         if (dateTo) params.dateTo = dateTo;
       }
 
-      const res = await axios.get(`${API_BASE_URL}/admin/reports/export`, {
+      const res = await axios.get(`${API_BASE_URL}/api/admin/reports/export`, {
         params,
         headers: getAuthHeaders(),
         responseType: 'blob'

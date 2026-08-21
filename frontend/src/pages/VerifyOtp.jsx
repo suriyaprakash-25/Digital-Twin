@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -25,7 +26,7 @@ function VerifyOtp() {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/verify-otp`, { email, otp });
+      const res = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, { email, otp });
       if (res.data.success) {
         showToast('OTP verified successfully! Redirecting...', 'success');
         setTimeout(() => {
@@ -43,7 +44,7 @@ function VerifyOtp() {
     setResending(true);
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/forgot-password`, { email });
+      const res = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
       if (res.data.success) {
         showToast('A new OTP has been sent to your email.', 'success');
       }

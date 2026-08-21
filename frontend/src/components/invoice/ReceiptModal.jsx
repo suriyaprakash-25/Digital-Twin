@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
@@ -27,7 +28,7 @@ const ReceiptModal = ({ isOpen, onClose, serviceId, initialReceiptData = null })
       setError('');
       try {
         const token = localStorage.getItem('token');
-        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const apiBaseUrl = API_BASE_URL;
         const res = await axios.get(`${apiBaseUrl}/api/invoices/${serviceId}/receipt`, {
           headers: { Authorization: `Bearer ${token}` }
         });

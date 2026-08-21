@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -36,13 +37,13 @@ const ServiceHistory = () => {
                 const token = localStorage.getItem('token');
 
                 // Fetch vehicle directly by ID
-                const vRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/${vehicleId}`, {
+                const vRes = await axios.get(`${API_BASE_URL}/api/vehicles/${vehicleId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setVehicle(vRes.data);
 
                 // Fetch services for this vehicle
-                const sRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/services/${vehicleId}`, {
+                const sRes = await axios.get(`${API_BASE_URL}/api/services/${vehicleId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setServices(sRes.data);
@@ -67,7 +68,7 @@ const ServiceHistory = () => {
         
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/services/${serviceId}`, {
+            await axios.delete(`${API_BASE_URL}/api/services/${serviceId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Update UI by filtering out the deleted service

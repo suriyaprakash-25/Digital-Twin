@@ -47,7 +47,7 @@ const UserDashboard = () => {
   const handleAcceptTransfer = async (transferId) => {
     setError('');
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ownership/transfer/accept`, { transferId }, headers);
+      await axios.post(`${API_BASE_URL}/api/ownership/transfer/accept`, { transferId }, headers);
       await loadData();
     } catch (err) {
       setError(err.response?.data?.msg || 'Failed to accept transfer.');
@@ -57,7 +57,7 @@ const UserDashboard = () => {
   const handleRejectTransfer = async (transferId) => {
     setError('');
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ownership/transfer/reject`, { transferId }, headers);
+      await axios.post(`${API_BASE_URL}/api/ownership/transfer/reject`, { transferId }, headers);
       await loadData();
     } catch (err) {
       setError(err.response?.data?.msg || 'Failed to reject transfer.');

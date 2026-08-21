@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -36,7 +37,7 @@ const AddVehicle = () => {
             if (rcBookFile) submitData.append('rcBook', rcBookFile);
             if (insuranceFile) submitData.append('insuranceDocument', insuranceFile);
 
-            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles/add`, submitData, {
+            await axios.post(`${API_BASE_URL}/api/vehicles/add`, submitData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'

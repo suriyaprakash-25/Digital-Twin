@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
@@ -41,8 +42,8 @@ const Analytics = () => {
 
         setLoading(true);
         const url = role === 'GARAGE'
-            ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/garage?days=${dateRange}`
-            : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics`;
+            ? `${API_BASE_URL}/api/analytics/garage?days=${dateRange}`
+            : `${API_BASE_URL}/api/analytics`;
 
         axios.get(url, { headers })
             .then((res) => {

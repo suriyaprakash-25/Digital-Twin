@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import React, { useState } from 'react';
 import axios from 'axios';
 import { PenTool, CheckCircle, AlertCircle, Send, Star, ShieldCheck } from 'lucide-react';
@@ -36,7 +37,7 @@ const WriteReview = ({ garageId, token, completedBookings = [], onReviewSubmitte
 
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/${garageId}/reviews`,
+        `${API_BASE_URL}/api/garages/${garageId}/reviews`,
         {
           rating,
           reviewTitle,

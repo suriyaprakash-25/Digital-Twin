@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Car, ChevronDown } from 'lucide-react';
@@ -11,7 +12,7 @@ const ContextPanel = ({ activeVehicleId, setActiveVehicleId }) => {
     const fetchVehicles = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/vehicles`, {
+        const res = await axios.get(`${API_BASE_URL}/api/vehicles`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data.success) {

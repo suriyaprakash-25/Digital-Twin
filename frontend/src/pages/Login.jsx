@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -26,7 +27,7 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+            const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
                 email,
                 password,
             });
@@ -57,7 +58,7 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`, {
+            const response = await axios.post(`${API_BASE_URL}/api/auth/google`, {
                 credential,
             });
 

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/config';
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { MessageSquare, Star, Send, Search, Filter, ShieldCheck, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
@@ -29,7 +30,7 @@ const GarageReviewsPage = () => {
   const fetchGarageProfile = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/me`, headers);
+      const res = await axios.get(`${API_BASE_URL}/api/garages/me`, headers);
       if (res.data?.exists) {
         setProfile(res.data);
         fetchReviews(res.data.id, sortOption);
@@ -44,7 +45,7 @@ const GarageReviewsPage = () => {
 
   const fetchReviews = async (garageId, sort) => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/${garageId}/reviews?sort=${sort}`, headers);
+      const res = await axios.get(`${API_BASE_URL}/api/garages/${garageId}/reviews?sort=${sort}`, headers);
       setReviewsData(res.data);
     } catch (err) {
       console.error('Error fetching reviews:', err);
@@ -70,7 +71,7 @@ const GarageReviewsPage = () => {
 
     try {
       await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/garages/${profile.id}/reviews/${replyingReview.id}/reply`,
+        `${API_BASE_URL}/api/garages/${profile.id}/reviews/${replyingReview.id}/reply`,
         { replyMessage: replyText.trim() },
         headers
       );

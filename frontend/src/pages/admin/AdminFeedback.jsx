@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import {
@@ -93,7 +94,7 @@ const AdminFeedback = () => {
   const fetchFeedbacks = useCallback(async (page = 1) => {
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = API_BASE_URL;
       const params = new URLSearchParams({
         page: String(page),
         limit: '10'
@@ -130,7 +131,7 @@ const AdminFeedback = () => {
   const handleStatusChange = async (id, newStatus) => {
     setUpdatingStatusId(id);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = API_BASE_URL;
       const res = await axios.patch(
         `${apiUrl}/api/admin/feedback/${id}/status`,
         { status: newStatus },
@@ -159,7 +160,7 @@ const AdminFeedback = () => {
     }
     setDeletingId(id);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = API_BASE_URL;
       const res = await axios.delete(`${apiUrl}/api/admin/feedback/${id}`, headers);
       if (res.data && res.data.success) {
         showToast('Feedback item deleted successfully', 'success');

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/config';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BarChart3, Users, Car, Wrench, TrendingUp, Award } from 'lucide-react';
@@ -60,7 +61,7 @@ const AdminAnalytics = () => {
         const fetchAnalytics = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/analytics`, {
+                const res = await axios.get(`${API_BASE_URL}/api/admin/analytics`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setData(res.data);
