@@ -18,7 +18,10 @@ class ProductionEmailProvider extends EmailProvider {
         auth: {
           user: smtpConfig.user,
           pass: smtpConfig.pass
-        }
+        },
+        connectionTimeout: 5000,
+        greetingTimeout: 5000,
+        socketTimeout: 10000
       });
     }
   }

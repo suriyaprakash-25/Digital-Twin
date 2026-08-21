@@ -121,23 +121,33 @@ const GarageDetails = () => {
     e.preventDefault();
     setBookingStatus({ type: '', msg: '' });
 
+    if (!token) {
+      setBookingStatus({ type: 'error', msg: 'Please log in as a vehicle owner to request a booking.' });
+      return;
+    }
+
     if (!bookingVehicleId) {
-      setBookingStatus({ type: 'error', msg: 'Please select a vehicle or add one from your fleet first.' });
+      setBookingStatus({ type: 'error', msg: 'Please select a vehicle or add one to your fleet first.' });
       return;
     }
 
     setBookingSubmitting(true);
     try {
+      const targetGarageId = garage.id || garage._id || garageId;
+      const targetServiceId = selectedServiceForRequest.id || selectedServiceForRequest._id;
+
       await axios.post(
         `${API_BASE_URL}/api/bookings`,
         {
-          garageId: garage.id,
-          serviceId: selectedServiceForRequest.id,
+          garageId: targetGarageId,
+          serviceId: targetServiceId,
           vehicleId: bookingVehicleId,
           scheduledFor: bookingDate || undefined,
           notes: bookingNotes
         },
-        headers
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
       );
 
       setBookingStatus({ type: 'success', msg: 'Booking request sent successfully!' });
@@ -145,9 +155,13 @@ const GarageDetails = () => {
         setSelectedServiceForRequest(null);
         setBookingStatus({ type: '', msg: '' });
         navigate('/user-dashboard');
-      }, 1500);
+      }, 1200);
     } catch (err) {
-      setBookingStatus({ type: 'error', msg: err.response?.data?.msg || 'Failed to submit booking request.' });
+      console.error('Booking request error:', err);
+      setBookingStatus({
+        type: 'error',
+        msg: err.response?.data?.msg || err.response?.data?.message || 'Failed to submit booking request. Please try again.'
+      });
     } finally {
       setBookingSubmitting(false);
     }

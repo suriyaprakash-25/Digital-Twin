@@ -99,121 +99,127 @@ router.post('/', requireAuth, requireRole('USER'), async (req, res) => {
 
     const result = await bookings.insertOne(doc);
 
-    // Notify garage owner via App Push, Email, and SMS
-    if (garage.ownerUserId) {
-      // 1. App Push Notification (wrapped in try-catch to keep bookings resilient)
+    // Asynchronous non-blocking notification dispatch
+    setImmediate(async () => {
       try {
-        await notifyUser(String(garage.ownerUserId), {
-          title: 'New booking request',
-          body: `${vehicle.vehicleNumber || 'A vehicle'} requested: ${service.title}`,
+        if (garage.ownerUserId) {
+          // 1. App Push Notification
+          try {
+            await notifyUser(String(garage.ownerUserId), {
+              title: 'New booking request',
+              body: `${vehicle.vehicleNumber || 'A vehicle'} requested: ${service.title}`,
+              data: {
+                type: 'BOOKING_REQUEST',
+                bookingId: String(result.insertedId)
+              }
+            });
+          } catch (pushErr) {
+            console.warn('Warning sending app push notification to garage owner:', pushErr.message);
+          }
+
+          // 2. Fetch Owner's User Record for Email and Phone notifications
+          try {
+            const usersCol = db.collection('users');
+            const ownerUser = await usersCol.findOne({
+              $or: [
+                { _id: toObjectId(garage.ownerUserId) },
+                { _id: garage.ownerUserId }
+              ]
+            });
+
+            if (ownerUser) {
+              const { sendEmail } = require('../services/emailService');
+              const { sendSms } = require('../services/smsService');
+
+              const formattedDate = scheduled ? scheduled.toLocaleString() : 'As soon as possible';
+
+              // Send Email to Garage Owner
+              if (ownerUser.email) {
+                await sendEmail({
+                  to: ownerUser.email,
+                  subject: `New Booking Request - ${garage.name}`,
+                  text: `New booking request at ${garage.name}!\n\n` +
+                        `Customer: ${req.user.name || 'Vehicle Owner'}\n` +
+                        `Email: ${req.user.email || 'N/A'}\n` +
+                        `Phone: ${req.user.phone || 'N/A'}\n` +
+                        `Vehicle: ${vehicle.brand} ${vehicle.model} (${vehicle.vehicleNumber || 'N/A'})\n` +
+                        `Service: ${service.title}\n` +
+                        `Scheduled: ${formattedDate}\n` +
+                        `Notes: ${notes || 'None'}\n\n` +
+                        `Please log in to your dashboard to review this booking request.`,
+                  html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+                      <h2 style="color: #0d9488; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">New Booking Request</h2>
+                      <p>Hello <strong>${ownerUser.name || 'Garage Owner'}</strong>,</p>
+                      <p>You have received a new booking request for your garage, <strong>${garage.name}</strong>.</p>
+                      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin: 15px 0;">
+                        <h3 style="margin-top: 0; color: #475569;">Request Details:</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold; width: 35%;">Customer:</td>
+                            <td style="padding: 6px 0;">${req.user.name || 'Vehicle Owner'}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Phone:</td>
+                            <td style="padding: 6px 0;">${req.user.phone || 'N/A'}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Email:</td>
+                            <td style="padding: 6px 0;">${req.user.email || 'N/A'}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Vehicle:</td>
+                            <td style="padding: 6px 0;">${vehicle.brand} ${vehicle.model} (${vehicle.vehicleNumber || 'N/A'})</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Service:</td>
+                            <td style="padding: 6px 0;">${service.title}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Price:</td>
+                            <td style="padding: 6px 0;">₹${service.price}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Scheduled For:</td>
+                            <td style="padding: 6px 0;">${formattedDate}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Notes:</td>
+                            <td style="padding: 6px 0;">${notes || 'None'}</td>
+                          </tr>
+                        </table>
+                      </div>
+                      <p>Please log in to your dashboard to review and accept/reject this request.</p>
+                      <p style="margin-top: 25px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                        This is an automated notification from DrivePortz.
+                      </p>
+                    </div>
+                  `
+                }).catch(emailErr => console.warn('Email dispatch warning:', emailErr.message));
+              }
+
+              // Send SMS to Garage Owner
+              if (ownerUser.phone) {
+                const smsText = `New booking request at ${garage.name}! Customer ${req.user.name || 'Owner'} requested ${service.title} for ${vehicle.brand} ${vehicle.model} on ${formattedDate}. Log in to view.`;
+                await sendSms(ownerUser.phone, smsText).catch(smsErr => console.warn('SMS dispatch warning:', smsErr.message));
+              }
+            }
+          } catch (ownerErr) {
+            console.warn('Warning sending email/SMS notification to garage owner:', ownerErr.message);
+          }
+        }
+
+        // Notify requesting user
+        await notifyUser(String(req.user.id), {
+          title: 'Booking requested',
+          body: `Your booking request for ${service.title} at ${garage.name} has been sent.`,
           data: {
             type: 'BOOKING_REQUEST',
             bookingId: String(result.insertedId)
           }
-        });
-      } catch (pushErr) {
-        console.error('Error sending app push notification to garage owner:', pushErr);
-      }
-
-      // 2. Fetch Owner's User Record for Email and Phone notifications
-      try {
-        const usersCol = db.collection('users');
-        const ownerUser = await usersCol.findOne({
-          $or: [
-            { _id: toObjectId(garage.ownerUserId) },
-            { _id: garage.ownerUserId }
-          ]
-        });
-
-        if (ownerUser) {
-          const { sendEmail } = require('../services/emailService');
-          const { sendSms } = require('../services/smsService');
-
-          const formattedDate = scheduled ? scheduled.toLocaleString() : 'As soon as possible';
-
-          // Send Email to Garage Owner
-          if (ownerUser.email) {
-            await sendEmail({
-              to: ownerUser.email,
-              subject: `New Booking Request - ${garage.name}`,
-              text: `New booking request at ${garage.name}!\n\n` +
-                    `Customer: ${req.user.name || 'Vehicle Owner'}\n` +
-                    `Email: ${req.user.email || 'N/A'}\n` +
-                    `Phone: ${req.user.phone || 'N/A'}\n` +
-                    `Vehicle: ${vehicle.brand} ${vehicle.model} (${vehicle.vehicleNumber || 'N/A'})\n` +
-                    `Service: ${service.title}\n` +
-                    `Scheduled: ${formattedDate}\n` +
-                    `Notes: ${notes || 'None'}\n\n` +
-                    `Please log in to your dashboard to review this booking request.`,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
-                  <h2 style="color: #0d9488; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">New Booking Request</h2>
-                  <p>Hello <strong>${ownerUser.name || 'Garage Owner'}</strong>,</p>
-                  <p>You have received a new booking request for your garage, <strong>${garage.name}</strong>.</p>
-                  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin: 15px 0;">
-                    <h3 style="margin-top: 0; color: #475569;">Request Details:</h3>
-                    <table style="width: 100%; border-collapse: collapse;">
-                      <tr>
-                        <td style="padding: 6px 0; font-weight: bold; width: 35%;">Customer:</td>
-                        <td style="padding: 6px 0;">${req.user.name || 'Vehicle Owner'}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-weight: bold;">Phone:</td>
-                        <td style="padding: 6px 0;">${req.user.phone || 'N/A'}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-weight: bold;">Email:</td>
-                        <td style="padding: 6px 0;">${req.user.email || 'N/A'}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-weight: bold;">Vehicle:</td>
-                        <td style="padding: 6px 0;">${vehicle.brand} ${vehicle.model} (${vehicle.vehicleNumber || 'N/A'})</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-weight: bold;">Service:</td>
-                        <td style="padding: 6px 0;">${service.title}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-weight: bold;">Price:</td>
-                        <td style="padding: 6px 0;">$${service.price}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-weight: bold;">Scheduled For:</td>
-                        <td style="padding: 6px 0;">${formattedDate}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-weight: bold;">Notes:</td>
-                        <td style="padding: 6px 0;">${notes || 'None'}</td>
-                      </tr>
-                    </table>
-                  </div>
-                  <p>Please log in to your dashboard to review and accept/reject this request.</p>
-                  <p style="margin-top: 25px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px;">
-                    This is an automated notification from Digital Twin.
-                  </p>
-                </div>
-              `
-            });
-          }
-
-          // Send SMS to Garage Owner
-          if (ownerUser.phone) {
-            const smsText = `New booking request at ${garage.name}! Customer ${req.user.name || 'Owner'} requested ${service.title} for ${vehicle.brand} ${vehicle.model} on ${formattedDate}. Log in to view.`;
-            await sendSms(ownerUser.phone, smsText);
-          }
-        }
-      } catch (err) {
-        console.error('Error sending email/SMS notification to garage owner:', err);
-      }
-    }
-
-    // Notify requesting user
-    await notifyUser(String(req.user.id), {
-      title: 'Booking requested',
-      body: `Your booking request for ${service.title} at ${garage.name} has been sent.`,
-      data: {
-        type: 'BOOKING_REQUEST',
-        bookingId: String(result.insertedId)
+        }).catch(userNotifErr => console.warn('User notification warning:', userNotifErr.message));
+      } catch (bgErr) {
+        console.warn('Background booking notification error:', bgErr.message);
       }
     });
 
