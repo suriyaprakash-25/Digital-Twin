@@ -13,6 +13,7 @@ const {
 } = require('../services/razorpayService');
 const { PAYMENT_STATUS } = require('../models/Payment');
 const { notifyUser } = require('../services/notifications');
+const { recordPaymentEarnings, reconcileRefundEarnings } = require('../services/earningsService');
 
 const router = express.Router();
 
@@ -280,7 +281,17 @@ router.post('/verify', requireAuth, async (req, res) => {
       }
     });
 
-    // 8. Send notification to Customer and Garage
+    // 8. Create or update Garage Earnings Ledger with immutable commission snapshot
+    try {
+      const updatedPaymentDoc = await payments.findOne({ _id: payment._id });
+      if (updatedPaymentDoc) {
+        await recordPaymentEarnings({ payment: updatedPaymentDoc, dbInstance: db });
+      }
+    } catch (earnErr) {
+      console.warn('Error recording garage earnings ledger:', earnErr.message);
+    }
+
+    // 9. Send notification to Customer and Garage
     try {
       if (payment.userId) {
         await notifyUser(payment.userId, {
@@ -465,6 +476,16 @@ router.post('/:paymentId/refund', requireAuth, async (req, res) => {
           updatedAt: refundedAt
         }
       });
+    }
+
+    // Reconcile garage earnings ledger
+    try {
+      const updatedPaymentDoc = await payments.findOne({ _id: payment._id });
+      if (updatedPaymentDoc) {
+        await reconcileRefundEarnings({ payment: updatedPaymentDoc, refundAmount: requestedAmount, dbInstance: db });
+      }
+    } catch (recErr) {
+      console.warn('Error reconciling refund earnings:', recErr.message);
     }
 
     // Send notifications
@@ -688,6 +709,16 @@ router.post('/webhook', async (req, res) => {
               }
             });
           }
+
+          // Record garage earnings ledger
+          try {
+            const updatedPaymentDoc = await payments.findOne({ razorpayOrderId: orderId });
+            if (updatedPaymentDoc) {
+              await recordPaymentEarnings({ payment: updatedPaymentDoc, dbInstance: db });
+            }
+          } catch (earnErr) {
+            console.warn('Webhook earnings ledger error:', earnErr.message);
+          }
         }
       }
     } else if (eventName === 'payment.failed') {
@@ -740,6 +771,16 @@ router.post('/webhook', async (req, res) => {
                 refundedAt: new Date()
               }
             });
+          }
+
+          // Reconcile garage earnings ledger
+          try {
+            const updatedPaymentDoc = await payments.findOne({ _id: payment._id });
+            if (updatedPaymentDoc) {
+              await reconcileRefundEarnings({ payment: updatedPaymentDoc, refundAmount, dbInstance: db });
+            }
+          } catch (recErr) {
+            console.warn('Webhook refund earnings reconciliation error:', recErr.message);
           }
         }
       }

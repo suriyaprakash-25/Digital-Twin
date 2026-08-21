@@ -39,6 +39,11 @@ function loadConfig() {
       keyId: process.env.RAZORPAY_KEY_ID || '',
       keySecret: process.env.RAZORPAY_KEY_SECRET || '',
       webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || ''
+    },
+    commission: {
+      rate: Number(process.env.PLATFORM_COMMISSION_RATE || 5),
+      type: process.env.PLATFORM_COMMISSION_TYPE || 'PERCENTAGE',
+      minSettlementAmount: Number(process.env.MIN_SETTLEMENT_AMOUNT || 500)
     }
   };
 }

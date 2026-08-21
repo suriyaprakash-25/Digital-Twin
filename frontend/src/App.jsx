@@ -37,6 +37,8 @@ import PartnerSupport from './pages/PartnerSupport';
 import PartnerHelpFAQ from './pages/PartnerHelpFAQ';
 import PaymentHistory from './pages/PaymentHistory';
 import GaragePayments from './pages/GaragePayments';
+import GarageEarnings from './pages/GarageEarnings';
+import GarageSettlements from './pages/GarageSettlements';
 
 import { ToastProvider } from './context/ToastContext';
 
@@ -50,6 +52,8 @@ import AdminRevenue from './pages/admin/AdminRevenue';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminFeedback from './pages/admin/AdminFeedback';
 import AdminPayments from './pages/admin/AdminPayments';
+import AdminCommissions from './pages/admin/AdminCommissions';
+import AdminSettlements from './pages/admin/AdminSettlements';
 
 function App() {
   return (
@@ -77,6 +81,8 @@ function App() {
         >
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/payments" element={<AdminPayments />} />
+          <Route path="/admin/commissions" element={<AdminCommissions />} />
+          <Route path="/admin/settlements" element={<AdminSettlements />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/garages" element={<AdminGarages />} />
           <Route path="/admin/analytics" element={<AdminAnalytics />} />
@@ -119,6 +125,8 @@ function App() {
           <Route path="/garage-services" element={<GarageServices />} />
           <Route path="/garage-services-history" element={<GarageServicesHistory />} />
           <Route path="/garage/payments" element={<GaragePayments />} />
+          <Route path="/garage/earnings" element={<GarageEarnings />} />
+          <Route path="/garage/settlements" element={<GarageSettlements />} />
           <Route path="/garage-availability" element={<GarageAvailability />} />
           <Route path="/garages/:garageId" element={<GarageDetails />} />
           <Route path="/garage/reviews" element={<GarageReviewsPage />} />

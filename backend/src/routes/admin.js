@@ -647,4 +647,493 @@ router.get('/payments/all', requireAdmin, async (req, res) => {
   }
 });
 
+// ───────────────────── ADMIN COMMISSION MANAGEMENT ─────────────────────
+
+/**
+ * GET /api/admin/commissions/summary
+ * Returns global platform commission and financial metrics
+ */
+router.get('/commissions/summary', requireAdmin, async (req, res) => {
+  const db = getDb();
+  const earnings = db.collection('garage_earnings');
+
+  try {
+    const allEarnings = await earnings.find({}).toArray();
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let totalGrossVolume = 0;
+    let totalPlatformCommission = 0;
+    let todayPlatformCommission = 0;
+    let monthPlatformCommission = 0;
+    let totalGarageEarnings = 0;
+    let totalRefundAdjustments = 0;
+
+    allEarnings.forEach(e => {
+      const gross = parseFloat(e.grossAmount) || 0;
+      const comm = parseFloat(e.platformCommission) || 0;
+      const net = parseFloat(e.netAfterRefund !== undefined ? e.netAfterRefund : e.garageNetAmount) || 0;
+      const ref = parseFloat(e.refundAmount) || 0;
+      const created = new Date(e.createdAt || 0);
+
+      totalGrossVolume += gross;
+      totalPlatformCommission += comm;
+      totalGarageEarnings += net;
+      totalRefundAdjustments += ref;
+
+      if (created >= todayStart) {
+        todayPlatformCommission += comm;
+      }
+      if (created >= monthStart) {
+        monthPlatformCommission += comm;
+      }
+    });
+
+    const netPlatformRevenue = Math.max(0, totalPlatformCommission);
+
+    return res.status(200).json({
+      success: true,
+      summary: {
+        totalGrossVolume,
+        totalPlatformCommission,
+        todayPlatformCommission,
+        monthPlatformCommission,
+        totalGarageEarnings,
+        totalRefundAdjustments,
+        netPlatformRevenue,
+        totalEarningRecords: allEarnings.length
+      }
+    });
+  } catch (err) {
+    console.error('Error loading admin commissions summary:', err);
+    return res.status(500).json({ success: false, message: 'Error loading commission metrics' });
+  }
+});
+
+/**
+ * GET /api/admin/commissions/all
+ * Paginated global commission and earnings transactions
+ */
+router.get('/commissions/all', requireAdmin, async (req, res) => {
+  const { page = 1, limit = 20, status = 'ALL', search = '' } = req.query;
+  const pageNum = parseInt(page, 10) || 1;
+  const limitNum = parseInt(limit, 10) || 20;
+  const skip = (pageNum - 1) * limitNum;
+
+  const db = getDb();
+  const earnings = db.collection('garage_earnings');
+
+  try {
+    const query = {};
+    if (status && status !== 'ALL') {
+      query.status = status;
+    }
+
+    if (search && search.trim() !== '') {
+      const regex = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { invoiceNumber: regex },
+        { garageName: regex },
+        { vehicleNumber: regex },
+        { serviceType: regex },
+        { paymentId: regex }
+      ];
+    }
+
+    const totalCount = await earnings.countDocuments(query);
+    const rawEarnings = await earnings
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .toArray();
+
+    const formatted = rawEarnings.map(e => ({
+      id: String(e._id),
+      invoiceId: e.invoiceId,
+      invoiceNumber: e.invoiceNumber,
+      garageId: e.garageId,
+      garageName: e.garageName || 'Authorized Service Center',
+      serviceType: e.serviceType,
+      vehicleNumber: e.vehicleNumber,
+      paymentId: e.paymentId,
+      razorpayPaymentId: e.razorpayPaymentId,
+      grossAmount: e.grossAmount,
+      platformCommission: e.platformCommission,
+      garageNetAmount: e.garageNetAmount,
+      refundAmount: e.refundAmount || 0,
+      netAfterRefund: e.netAfterRefund !== undefined ? e.netAfterRefund : e.garageNetAmount,
+      commissionRate: e.commissionRate,
+      commissionType: e.commissionType,
+      status: e.status,
+      settlementId: e.settlementId,
+      date: e.createdAt
+    }));
+
+    return res.status(200).json({
+      success: true,
+      commissions: formatted,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limitNum),
+      currentPage: pageNum
+    });
+  } catch (err) {
+    console.error('Error loading admin commissions:', err);
+    return res.status(500).json({ success: false, message: 'Error loading commission records' });
+  }
+});
+
+// ───────────────────── ADMIN SETTLEMENT MANAGEMENT ─────────────────────
+
+/**
+ * GET /api/admin/settlements
+ * List global settlements with status filters
+ */
+router.get('/settlements', requireAdmin, async (req, res) => {
+  const { page = 1, limit = 20, status = 'ALL', search = '' } = req.query;
+  const pageNum = parseInt(page, 10) || 1;
+  const limitNum = parseInt(limit, 10) || 20;
+  const skip = (pageNum - 1) * limitNum;
+
+  const db = getDb();
+  const settlements = db.collection('settlements');
+  const garages = db.collection('garages');
+
+  try {
+    const query = {};
+    if (status && status !== 'ALL') {
+      query.status = status;
+    }
+    if (search && search.trim() !== '') {
+      const regex = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { settlementId: regex },
+        { garageId: regex },
+        { destinationAccountId: regex }
+      ];
+    }
+
+    const totalCount = await settlements.countDocuments(query);
+    const rawSettlements = await settlements
+      .find(query)
+      .sort({ requestedAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .toArray();
+
+    // Fetch garage names
+    const garageIds = [...new Set(rawSettlements.map(s => s.garageId))];
+    const garageDocs = await garages.find({
+      $or: [
+        { _id: { $in: garageIds.map(id => safeObjectId(id)).filter(Boolean) } },
+        { _id: { $in: garageIds } }
+      ]
+    }).toArray();
+
+    const garageMap = {};
+    garageDocs.forEach(g => {
+      garageMap[String(g._id)] = g.name || g.garageName || 'Authorized Garage';
+    });
+
+    const formatted = rawSettlements.map(s => ({
+      id: String(s._id),
+      settlementId: s.settlementId,
+      garageId: s.garageId,
+      garageName: garageMap[String(s.garageId)] || 'Authorized Garage',
+      requestedAmount: s.requestedAmount,
+      approvedAmount: s.approvedAmount || s.requestedAmount,
+      currency: s.currency || 'INR',
+      status: s.status,
+      earningsCount: s.earningsIds?.length || 0,
+      earningsIds: s.earningsIds || [],
+      destinationAccountId: s.destinationAccountId,
+      notes: s.notes,
+      transferId: s.transferId,
+      provider: s.provider,
+      requestedAt: s.requestedAt,
+      approvedAt: s.approvedAt,
+      processedAt: s.processedAt,
+      completedAt: s.completedAt,
+      failureReason: s.failureReason
+    }));
+
+    // Settlement KPIs
+    const all = await settlements.find({}).toArray();
+    let totalPendingVolume = 0;
+    let totalSettledVolume = 0;
+    let pendingCount = 0;
+    let completedCount = 0;
+
+    all.forEach(s => {
+      const amt = parseFloat(s.approvedAmount || s.requestedAmount) || 0;
+      if (s.status === 'REQUESTED' || s.status === 'UNDER_REVIEW' || s.status === 'APPROVED' || s.status === 'PROCESSING') {
+        totalPendingVolume += amt;
+        pendingCount++;
+      } else if (s.status === 'COMPLETED') {
+        totalSettledVolume += amt;
+        completedCount++;
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      settlements: formatted,
+      summary: {
+        totalPendingVolume,
+        totalSettledVolume,
+        pendingCount,
+        completedCount,
+        totalRequests: all.length
+      },
+      totalCount,
+      totalPages: Math.ceil(totalCount / limitNum),
+      currentPage: pageNum
+    });
+  } catch (err) {
+    console.error('Error loading admin settlements:', err);
+    return res.status(500).json({ success: false, message: 'Error loading admin settlements' });
+  }
+});
+
+/**
+ * POST /api/admin/settlements/:id/approve
+ * Admin approves a settlement request
+ */
+router.post('/settlements/:id/approve', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { approvedAmount, notes } = req.body || {};
+  const db = getDb();
+  const settlements = db.collection('settlements');
+
+  try {
+    const sId = safeObjectId(id);
+    const settlement = sId ? await settlements.findOne({ _id: sId }) : await settlements.findOne({ settlementId: id });
+
+    if (!settlement) {
+      return res.status(404).json({ success: false, message: 'Settlement request not found' });
+    }
+
+    if (settlement.status !== 'REQUESTED' && settlement.status !== 'UNDER_REVIEW') {
+      return res.status(400).json({ success: false, message: `Cannot approve settlement in ${settlement.status} status` });
+    }
+
+    const now = new Date();
+    const finalApprovedAmount = approvedAmount ? parseFloat(approvedAmount) : settlement.requestedAmount;
+
+    await settlements.updateOne(
+      { _id: settlement._id },
+      {
+        $set: {
+          status: 'APPROVED',
+          approvedAmount: finalApprovedAmount,
+          approvedBy: String(req.user.id),
+          approvedAt: now,
+          adminNotes: notes || 'Approved by administrator',
+          updatedAt: now
+        }
+      }
+    );
+
+    // Audit log
+    await db.collection('admin_audit_logs').insertOne({
+      adminId: String(req.user.id),
+      action: 'SETTLEMENT_APPROVED',
+      targetId: String(settlement._id),
+      settlementId: settlement.settlementId,
+      oldStatus: settlement.status,
+      newStatus: 'APPROVED',
+      timestamp: now
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Settlement ${settlement.settlementId} approved successfully`
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Error approving settlement' });
+  }
+});
+
+/**
+ * POST /api/admin/settlements/:id/reject
+ * Admin rejects settlement and unlocks earnings back to AVAILABLE
+ */
+router.post('/settlements/:id/reject', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body || {};
+  const db = getDb();
+  const settlements = db.collection('settlements');
+  const earnings = db.collection('garage_earnings');
+
+  try {
+    const sId = safeObjectId(id);
+    const settlement = sId ? await settlements.findOne({ _id: sId }) : await settlements.findOne({ settlementId: id });
+
+    if (!settlement) {
+      return res.status(404).json({ success: false, message: 'Settlement request not found' });
+    }
+
+    if (settlement.status === 'COMPLETED') {
+      return res.status(400).json({ success: false, message: 'Cannot reject an already completed settlement' });
+    }
+
+    const now = new Date();
+
+    // 1. Update settlement to CANCELLED
+    await settlements.updateOne(
+      { _id: settlement._id },
+      {
+        $set: {
+          status: 'CANCELLED',
+          failureReason: reason || 'Rejected by administrator',
+          rejectedBy: String(req.user.id),
+          updatedAt: now
+        }
+      }
+    );
+
+    // 2. Unlock earnings back to AVAILABLE
+    if (settlement.earningsIds && settlement.earningsIds.length > 0) {
+      const eObjectIds = settlement.earningsIds.map(eid => safeObjectId(eid)).filter(Boolean);
+      await earnings.updateMany(
+        { _id: { $in: eObjectIds } },
+        {
+          $set: {
+            status: 'AVAILABLE',
+            settlementId: null,
+            updatedAt: now
+          }
+        }
+      );
+    }
+
+    // Audit log
+    await db.collection('admin_audit_logs').insertOne({
+      adminId: String(req.user.id),
+      action: 'SETTLEMENT_REJECTED',
+      targetId: String(settlement._id),
+      settlementId: settlement.settlementId,
+      oldStatus: settlement.status,
+      newStatus: 'CANCELLED',
+      reason: reason || 'Admin rejection',
+      timestamp: now
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Settlement ${settlement.settlementId} rejected and earnings unlocked`
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Error rejecting settlement' });
+  }
+});
+
+/**
+ * POST /api/admin/settlements/:id/process
+ * Admin triggers payout processing via SettlementProvider
+ */
+router.post('/api/admin/settlements/:id/process', requireAdmin, async (req, res) => {
+  // handled via router below
+});
+
+router.post('/settlements/:id/process', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const db = getDb();
+  const settlements = db.collection('settlements');
+  const earnings = db.collection('garage_earnings');
+  const payoutProfiles = db.collection('garage_payout_profiles');
+  const { getSettlementProvider } = require('../services/settlementProvider');
+
+  try {
+    const sId = safeObjectId(id);
+    const settlement = sId ? await settlements.findOne({ _id: sId }) : await settlements.findOne({ settlementId: id });
+
+    if (!settlement) {
+      return res.status(404).json({ success: false, message: 'Settlement not found' });
+    }
+
+    if (settlement.status === 'COMPLETED') {
+      return res.status(400).json({ success: false, message: 'Settlement is already completed' });
+    }
+
+    const now = new Date();
+    const payoutProfile = await payoutProfiles.findOne({ garageId: String(settlement.garageId) });
+    const provider = getSettlementProvider();
+
+    // Call settlement provider abstraction
+    const result = await provider.processSettlement({ settlement, payoutProfile });
+
+    if (result.success) {
+      // Transition settlement to COMPLETED
+      await settlements.updateOne(
+        { _id: settlement._id },
+        {
+          $set: {
+            status: 'COMPLETED',
+            transferId: result.transferId,
+            provider: result.provider,
+            providerMessage: result.message,
+            processedAt: now,
+            completedAt: now,
+            updatedAt: now
+          }
+        }
+      );
+
+      // Transition linked earnings to SETTLED
+      if (settlement.earningsIds && settlement.earningsIds.length > 0) {
+        const eObjectIds = settlement.earningsIds.map(eid => safeObjectId(eid)).filter(Boolean);
+        await earnings.updateMany(
+          { _id: { $in: eObjectIds } },
+          {
+            $set: {
+              status: 'SETTLED',
+              settledAt: now,
+              updatedAt: now
+            }
+          }
+        );
+      }
+
+      // Send settlement completed notification to garage
+      const { notifyUser } = require('../services/notifications');
+      await notifyUser(settlement.garageId, {
+        title: 'Settlement Completed',
+        body: `Settlement ${settlement.settlementId} for ₹${(settlement.approvedAmount || settlement.requestedAmount).toLocaleString('en-IN')} has been completed.`,
+        data: {
+          type: 'SETTLEMENT_COMPLETED',
+          settlementId: settlement.settlementId,
+          amount: String(settlement.approvedAmount || settlement.requestedAmount)
+        }
+      }).catch(e => console.warn('Settlement notif error:', e));
+
+      // Audit log
+      await db.collection('admin_audit_logs').insertOne({
+        adminId: String(req.user.id),
+        action: 'SETTLEMENT_PROCESSED',
+        targetId: String(settlement._id),
+        settlementId: settlement.settlementId,
+        provider: result.provider,
+        transferId: result.transferId,
+        timestamp: now
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: result.message || `Settlement ${settlement.settlementId} processed successfully`,
+        transferId: result.transferId,
+        status: 'COMPLETED'
+      });
+    } else {
+      return res.status(500).json({ success: false, message: 'Settlement provider returned failure' });
+    }
+  } catch (err) {
+    console.error('Error processing settlement payout:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Error processing settlement' });
+  }
+});
+
 module.exports = router;
+

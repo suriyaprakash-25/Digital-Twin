@@ -32,7 +32,9 @@ const feedbackRoutes = require('./src/routes/feedbackRoutes');
 const adminFeedbackRoutes = require('./src/routes/adminFeedbackRoutes');
 const paymentRoutes = require('./src/routes/payments');
 const invoiceRoutes = require('./src/routes/invoices');
+const earningsRoutes = require('./src/routes/earnings');
 const { ensurePaymentIndexes } = require('./src/models/Payment');
+const { ensureEarningsIndexes } = require('./src/models/Earnings');
 
 const app = express();
 const config = loadConfig();
@@ -139,11 +141,14 @@ app.use('/api/admin/feedback', adminFeedbackRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/garage/invoices', invoiceRoutes);
+app.use('/api/garage', earningsRoutes);
+app.use('/api/garage/earnings', earningsRoutes);
 
 // Start after DB connects
 (async () => {
   await connectToMongo(config);
   await ensurePaymentIndexes();
+  await ensureEarningsIndexes();
   app.listen(config.port, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://localhost:${config.port}`);
