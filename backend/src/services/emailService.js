@@ -10,10 +10,16 @@ let currentProvider = null;
 function getEmailProvider() {
   if (currentProvider) return currentProvider;
 
-  const nodeEnv = process.env.NODE_ENV || 'development';
-  const isProd = nodeEnv === 'production';
+  const emailProviderType = (process.env.EMAIL_PROVIDER || '').toLowerCase();
 
-  if (isProd && config.smtp?.host && config.smtp?.user && config.smtp.user !== 'your-email@gmail.com') {
+  // If explicitly requested mock or in offline unit testing
+  if (emailProviderType === 'mock') {
+    currentProvider = new MockEmailProvider();
+    return currentProvider;
+  }
+
+  // Use real SMTP whenever credentials are provided (e.g. Gmail SMTP)
+  if (config.smtp?.host && config.smtp?.user && config.smtp?.pass && config.smtp.user !== 'your-email@gmail.com') {
     currentProvider = new ProductionEmailProvider(config.smtp);
   } else {
     currentProvider = new MockEmailProvider();
