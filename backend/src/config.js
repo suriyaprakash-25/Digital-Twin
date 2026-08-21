@@ -34,6 +34,11 @@ function loadConfig() {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
       fromEmail: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
+    },
+    razorpay: {
+      keyId: process.env.RAZORPAY_KEY_ID || '',
+      keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+      webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || ''
     }
   };
 }

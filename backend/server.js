@@ -30,6 +30,8 @@ const copilotRoutes = require('./src/routes/copilotRoutes');
 const garageAvailabilityRoutes = require('./src/routes/garageAvailabilityRoutes');
 const feedbackRoutes = require('./src/routes/feedbackRoutes');
 const adminFeedbackRoutes = require('./src/routes/adminFeedbackRoutes');
+const paymentRoutes = require('./src/routes/payments');
+const { ensurePaymentIndexes } = require('./src/models/Payment');
 
 const app = express();
 const config = loadConfig();
@@ -54,11 +56,18 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Razorpay-Signature']
 }));
 
-// Body parsing
-app.use(express.json({ limit: '20mb' }));
+// Body parsing with rawBody retention for webhook signature verification
+app.use(express.json({
+  limit: '20mb',
+  verify: (req, res, buf) => {
+    if (req.originalUrl && req.originalUrl.includes('/api/payments/webhook')) {
+      req.rawBody = buf;
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 // Uploads folder (mirrors Flask behavior)
@@ -126,10 +135,12 @@ app.use('/api/vehicle-doctor', vehicleDoctorRoutes);
 app.use('/api/copilot', copilotRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/admin/feedback', adminFeedbackRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Start after DB connects
 (async () => {
   await connectToMongo(config);
+  await ensurePaymentIndexes();
   app.listen(config.port, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://localhost:${config.port}`);

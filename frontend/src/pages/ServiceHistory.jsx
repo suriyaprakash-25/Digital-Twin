@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { History, Wrench, Calendar, Hash, IndianRupee, ArrowLeft, Car, ShieldAlert, Building, CheckCircle, AlertTriangle, FileText, ChevronDown, ChevronUp, Receipt, X, ZoomIn, MoreVertical, Trash2 } from 'lucide-react';
+import { History, Wrench, Calendar, Hash, IndianRupee, ArrowLeft, Car, ShieldAlert, Building, CheckCircle, AlertTriangle, FileText, ChevronDown, ChevronUp, Receipt, X, ZoomIn, MoreVertical, Trash2, CreditCard } from 'lucide-react';
+import PaymentButton from '../components/payment/PaymentButton';
+import PaymentSuccessModal from '../components/payment/PaymentSuccessModal';
 
 const ServiceHistory = () => {
     const { vehicleId } = useParams();
@@ -11,6 +13,7 @@ const ServiceHistory = () => {
     const [expandedService, setExpandedService] = useState(null);
     const [lightboxUrl, setLightboxUrl] = useState(null);
     const [activeMenuId, setActiveMenuId] = useState(null);
+    const [successPaymentDetails, setSuccessPaymentDetails] = useState(null);
 
     const userRaw = localStorage.getItem('user');
     const user = userRaw ? JSON.parse(userRaw) : null;
@@ -150,13 +153,22 @@ const ServiceHistory = () => {
                                     <div className="p-4 md:p-6 cursor-pointer" onClick={() => toggleExpand(service.id)}>
                                         <div className="flex flex-col xl:flex-row justify-between xl:items-start mb-4 gap-2">
                                             <div>
-                                                <div className="flex items-center gap-1.5 mb-1">
+                                                <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                                                     <span className="text-[10px] md:text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-amber-100 uppercase tracking-wide">
                                                         {service.serviceCategory}
                                                     </span>
                                                     {service.verifiedService && (
                                                         <span className="flex items-center text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-emerald-100">
                                                             <CheckCircle className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1" /> Verified
+                                                        </span>
+                                                    )}
+                                                    {service.paymentStatus === 'PAID' ? (
+                                                        <span className="flex items-center text-[10px] md:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-emerald-200">
+                                                            <CheckCircle className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-emerald-600" /> Paid
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center text-[10px] md:text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md border border-amber-200">
+                                                            Unpaid
                                                         </span>
                                                     )}
                                                 </div>
@@ -224,7 +236,9 @@ const ServiceHistory = () => {
                                                     <span className="text-sm font-bold text-slate-700 truncate max-w-[150px]">{service.garageName}</span>
                                                 </div>
                                             )}
-                                        </div>                                         <div className="pt-5 border-t border-slate-100 flex items-center justify-between gap-3">
+                                        </div>
+
+                                        <div className="pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                                             <div className="flex items-center gap-3 flex-wrap">
                                                 <div className="text-slate-400 font-bold flex items-center gap-1.5 text-xs md:text-sm hover:text-slate-600 transition-colors">
                                                     {isExpanded ? <><ChevronUp className="h-4 w-4" /> Hide Details</> : <><ChevronDown className="h-4 w-4" /> View Full Report</>}
@@ -240,12 +254,24 @@ const ServiceHistory = () => {
                                                     </button>
                                                 )}
                                             </div>
-                                            <div className="text-right shrink-0">
-                                                <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Total Cost</span>
-                                                <span className="text-lg md:text-2xl font-black text-slate-900 flex items-center tracking-tight">
-                                                    <IndianRupee className="h-4 w-4 md:h-5 md:w-5 mr-0.5 text-slate-400" />
-                                                    {(parseFloat(service.totalCost) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </span>
+                                            <div className="flex items-center gap-3 ml-auto flex-wrap">
+                                                <div className="text-right shrink-0">
+                                                    <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Total Cost</span>
+                                                    <span className="text-lg md:text-2xl font-black text-slate-900 flex items-center tracking-tight">
+                                                        <IndianRupee className="h-4 w-4 md:h-5 md:w-5 mr-0.5 text-slate-400" />
+                                                        {(parseFloat(service.totalCost) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </span>
+                                                </div>
+                                                {!isGarage && (
+                                                    <PaymentButton
+                                                        service={service}
+                                                        vehicle={vehicle}
+                                                        onPaymentSuccess={(payment) => {
+                                                            setServices(prev => prev.map(s => (s.id === (payment.serviceId || payment.invoiceId) || String(s._id) === String(payment.serviceId)) ? { ...s, paymentStatus: 'PAID', paidAt: payment.paidAt, paymentId: payment.paymentId } : s));
+                                                            setSuccessPaymentDetails(payment);
+                                                        }}
+                                                    />
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -380,6 +406,19 @@ const ServiceHistory = () => {
                     </div>
                 </div>
             )}
+
+            {/* Payment Success Modal */}
+            <PaymentSuccessModal
+                isOpen={Boolean(successPaymentDetails)}
+                onClose={() => setSuccessPaymentDetails(null)}
+                paymentDetails={successPaymentDetails}
+                onViewBill={() => {
+                    const matchedService = services.find(s => s.id === successPaymentDetails?.serviceId || String(s._id) === String(successPaymentDetails?.serviceId));
+                    if (matchedService?.billPhotoUrls && matchedService.billPhotoUrls.length > 0) {
+                        setLightboxUrl(matchedService.billPhotoUrls[0]);
+                    }
+                }}
+            />
         </div>
     );
 };

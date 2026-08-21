@@ -246,6 +246,9 @@ router.get('/garage/all', requireAuth, async (req, res) => {
       warrantyMonths: s.warrantyMonths,
       mechanicNotes: s.mechanicNotes,
       verificationStatus: s.verificationStatus || 'Pending',
+      paymentStatus: s.paymentStatus || 'UNPAID',
+      paidAt: s.paidAt ? new Date(s.paidAt).toISOString() : null,
+      paymentId: s.paymentId || null,
       createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : null,
       vehicle: s.vehicleDetails ? {
         make: s.vehicleDetails.make,
@@ -327,6 +330,10 @@ router.get('/:vehicle_id', requireAuth, async (req, res) => {
       verificationStatus: s.verificationStatus || 'Pending',
       isArchived: s.isArchived || false,
       billPhotoUrls: Array.isArray(s.billPhotoUrls) ? s.billPhotoUrls : (s.billPhotoUrl ? [s.billPhotoUrl] : []),
+      paymentStatus: s.paymentStatus || 'UNPAID',
+      paidAt: s.paidAt ? new Date(s.paidAt).toISOString() : null,
+      paymentId: s.paymentId || null,
+      paymentMethod: s.paymentMethod || null,
       createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : null
     });
   }
