@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
 import {
   CreditCard,
   Search,
@@ -16,12 +17,16 @@ import {
   Shield,
   Eye,
   Calendar,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import RefundTrackingModal from '../components/payments/RefundTrackingModal';
 import { API_BASE_URL } from '../utils/config';
+import { loadRazorpayScript } from '../utils/loadRazorpay';
+import { useToast } from '../context/ToastContext';
 
 export default function PaymentCenter() {
+  const { showToast } = useToast();
   const [summary, setSummary] = useState(null);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +61,105 @@ export default function PaymentCenter() {
       console.error('Error loading customer financial data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePayNow = async (paymentItem) => {
+    if (payingPaymentId) return;
+    setPayingPaymentId(paymentItem.id);
+
+    try {
+      // 1. Ensure Razorpay SDK is loaded
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        showToast('Failed to load payment gateway script. Please check your internet connection.', 'error');
+        setPayingPaymentId(null);
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const userRaw = localStorage.getItem('user');
+      const user = userRaw ? JSON.parse(userRaw) : {};
+
+      // 2. Create server-side Razorpay Order
+      const targetServiceId = paymentItem.serviceId || paymentItem.id;
+      const res = await axios.post(
+        `${API_BASE_URL}/api/payments/create-order`,
+        { serviceId: targetServiceId, invoiceId: paymentItem.invoiceNumber || paymentItem.id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (!res.data?.success || !res.data?.order) {
+        throw new Error(res.data?.message || 'Failed to initialize payment order');
+      }
+
+      const orderData = res.data.order;
+      const razorpayKey = orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TSSWBNcFmDPpRK';
+
+      // 3. Configure Razorpay Standard Checkout
+      const options = {
+        key: razorpayKey,
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'DrivePortz Mobility',
+        description: `Invoice ${orderData.invoiceNumber || paymentItem.invoiceNumber || 'Payment'} - ${paymentItem.serviceType || 'Automotive Service'}`,
+        image: '/logo-removebg-preview.png',
+        order_id: orderData.id,
+        prefill: {
+          name: user.name || '',
+          email: user.email || '',
+          contact: user.phone || ''
+        },
+        theme: {
+          color: '#0d9488'
+        },
+        modal: {
+          ondismiss: () => {
+            setPayingPaymentId(null);
+          }
+        },
+        handler: async (response) => {
+          try {
+            // 4. Send signature to backend for verification
+            const verifyRes = await axios.post(
+              `${API_BASE_URL}/api/payments/verify`,
+              {
+                paymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                signature: response.razorpay_signature,
+                serviceId: targetServiceId
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (verifyRes.data?.success) {
+              showToast('Payment successful! Your invoice has been settled.', 'success');
+              if (selectedInvoice) setSelectedInvoice(null);
+              await fetchFinancialData();
+            } else {
+              showToast('Payment verification failed. Please contact support.', 'error');
+            }
+          } catch (verifyErr) {
+            console.error('Payment verification error:', verifyErr);
+            showToast(verifyErr.response?.data?.message || 'Payment verification failed', 'error');
+          } finally {
+            setPayingPaymentId(null);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (response) => {
+        console.error('Razorpay payment failed:', response.error);
+        showToast(`Payment failed: ${response.error?.description || 'Transaction declined'}`, 'error');
+        setPayingPaymentId(null);
+      });
+
+      rzp.open();
+    } catch (err) {
+      console.error('Error starting payment:', err);
+      showToast(err.response?.data?.message || err.message || 'Unable to initialize payment', 'error');
+      setPayingPaymentId(null);
     }
   };
 
@@ -327,12 +431,23 @@ export default function PaymentCenter() {
 
                           {/* Pay Now for Pending */}
                           {(p.status === 'PENDING' || p.status === 'CREATED') && (
-                            <a
-                              href={`/checkout?invoiceId=${p.invoiceNumber || p.id}`}
-                              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                            <button
+                              onClick={() => handlePayNow(p)}
+                              disabled={payingPaymentId === p.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-lg text-xs font-bold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                              Pay Now
-                            </a>
+                              {payingPaymentId === p.id ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Opening...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <CreditCard className="w-3.5 h-3.5" />
+                                  <span>Pay Now</span>
+                                </>
+                              )}
+                            </button>
                           )}
                         </div>
                       </td>
@@ -455,13 +570,32 @@ export default function PaymentCenter() {
                 </div>
               </div>
 
-              <div className="flex justify-end px-6 py-4 border-t border-slate-100 bg-slate-50/70 print:hidden">
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/70 print:hidden">
                 <button
                   onClick={() => setSelectedInvoice(null)}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-sm font-medium transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition"
                 >
                   Close
                 </button>
+                {(selectedInvoice.status === 'PENDING' || selectedInvoice.status === 'CREATED') && (
+                  <button
+                    onClick={() => handlePayNow(selectedInvoice)}
+                    disabled={payingPaymentId === selectedInvoice.id}
+                    className="inline-flex items-center gap-1.5 px-5 py-2 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-xl text-sm font-bold transition shadow-sm disabled:opacity-60"
+                  >
+                    {payingPaymentId === selectedInvoice.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Opening Checkout...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4" />
+                        <span>Pay ₹{Number(selectedInvoice.amount || 0).toLocaleString('en-IN')}</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>

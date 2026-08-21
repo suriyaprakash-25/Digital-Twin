@@ -49,10 +49,18 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
   try {
     const sObjectId = toObjectId(targetId);
     const serviceQuery = sObjectId
-      ? { $or: [{ _id: sObjectId }, { _id: String(targetId) }, { id: String(targetId) }] }
-      : { $or: [{ _id: String(targetId) }, { id: String(targetId) }] };
+      ? { $or: [{ _id: sObjectId }, { _id: String(targetId) }, { id: String(targetId) }, { invoiceNumber: String(targetId) }] }
+      : { $or: [{ _id: String(targetId) }, { id: String(targetId) }, { invoiceNumber: String(targetId) }] };
 
-    const service = await services.findOne({ ...serviceQuery, isArchived: { $ne: true } });
+    let service = await services.findOne({ ...serviceQuery, isArchived: { $ne: true } });
+    if (!service) {
+      // Fallback: check if targetId matches a payment record with serviceId
+      const pDoc = await payments.findOne(sObjectId ? { $or: [{ _id: sObjectId }, { _id: String(targetId) }] } : { _id: String(targetId) });
+      if (pDoc && pDoc.serviceId) {
+        const psId = toObjectId(pDoc.serviceId);
+        service = await services.findOne(psId ? { $or: [{ _id: psId }, { _id: String(pDoc.serviceId) }] } : { _id: String(pDoc.serviceId) });
+      }
+    }
     if (!service) {
       return res.status(404).json({ success: false, message: 'Service record or invoice not found' });
     }
