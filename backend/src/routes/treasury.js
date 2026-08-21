@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/authMiddleware');
+const { requireAuth } = require('../middleware/auth');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissionMiddleware');
 const { getTreasuryForecast, getGarageSettlementForecast } = require('../services/settlementForecastService');
 const { getSettlementAgingAnalysis } = require('../services/settlementAgingService');

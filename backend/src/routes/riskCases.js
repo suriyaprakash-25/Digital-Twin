@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
-const { requireAuth } = require('../middleware/authMiddleware');
+const { requireAuth } = require('../middleware/auth');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissionMiddleware');
 const { logFinancialAudit } = require('../services/auditService');
 const { placeSettlementHold } = require('../services/settlementGovernanceService');

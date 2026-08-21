@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getDb, getMongoStatus } = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { requirePermission, PERMISSIONS } = require('../middleware/financialRbac');
+const { requirePermission, PERMISSIONS } = require('../middleware/permissionMiddleware');
 
 // Liveness Probe (process is alive)
 router.get('/live', (req, res) => {

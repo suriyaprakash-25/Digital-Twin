@@ -19,6 +19,7 @@ import {
   X
 } from 'lucide-react';
 import RefundTrackingModal from '../components/payments/RefundTrackingModal';
+import { API_BASE_URL } from '../utils/config';
 
 export default function PaymentCenter() {
   const [summary, setSummary] = useState(null);
@@ -38,8 +39,8 @@ export default function PaymentCenter() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [sumRes, histRes] = await Promise.all([
-        fetch('/api/payments/customer/financial-summary', { headers }),
-        fetch('/api/payments/history', { headers })
+        fetch(`${API_BASE_URL}/api/payments/customer/financial-summary`, { headers }),
+        fetch(`${API_BASE_URL}/api/payments/history`, { headers })
       ]);
 
       const sumData = await sumRes.json();

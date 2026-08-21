@@ -56,6 +56,7 @@ const financialIntegrityRouter = require('./src/routes/financialIntegrity');
 const { ensureWebhookEventIndexes } = require('./src/models/PaymentWebhookEvent');
 const { ensureJobRegistryIndexes } = require('./src/jobs/jobRegistry');
 const { ensureFinancialAlertIndexes } = require('./src/services/financialAlertService');
+const { ensureFinancialNotificationIndexes } = require('./src/services/financialNotificationService');
 
 const app = express();
 const config = loadConfig();
@@ -200,6 +201,7 @@ app.use('/api/admin/financial-integrity', financialIntegrityRouter);
   await ensureWebhookEventIndexes();
   await ensureJobRegistryIndexes();
   await ensureFinancialAlertIndexes();
+  await ensureFinancialNotificationIndexes();
   app.listen(config.port, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://localhost:${config.port}`);

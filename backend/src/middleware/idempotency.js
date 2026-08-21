@@ -78,5 +78,6 @@ function idempotencyMiddleware(req, res, next) {
 }
 
 module.exports = {
-  idempotencyMiddleware
+  idempotencyMiddleware,
+  requireIdempotency: idempotencyMiddleware
 };

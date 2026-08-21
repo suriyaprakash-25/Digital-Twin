@@ -3,10 +3,17 @@ backend/venv/
 **/__pycache__/
 *.pyc
 backend/uploads/
+# Environment variables
 .env
-.DS_Store
-dist/
-build/
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+*.env
 
 # Firebase Admin service account keys (NEVER commit)
 backend/*firebase-adminsdk*.json

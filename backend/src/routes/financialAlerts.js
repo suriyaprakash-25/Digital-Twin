@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
-const { requirePermission, PERMISSIONS } = require('../middleware/financialRbac');
+const { requirePermission, PERMISSIONS } = require('../middleware/permissionMiddleware');
 const {
   getAlerts,
   getAlertsSummary,

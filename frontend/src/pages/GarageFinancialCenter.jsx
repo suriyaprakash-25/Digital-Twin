@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Send
 } from 'lucide-react';
+import { API_BASE_URL } from '../utils/config';
 
 const SETTLEMENT_STEPS = [
   { key: 'REQUESTED', label: 'Requested', desc: 'Payout initiated by garage or schedule' },
@@ -42,9 +43,9 @@ export default function GarageFinancialCenter() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [sumRes, foreRes, setRes] = await Promise.all([
-        fetch('/api/earnings/summary', { headers }),
-        fetch('/api/treasury/forecast', { headers }),
-        fetch('/api/earnings/settlements', { headers })
+        fetch(`${API_BASE_URL}/api/earnings/summary`, { headers }),
+        fetch(`${API_BASE_URL}/api/treasury/forecast`, { headers }),
+        fetch(`${API_BASE_URL}/api/earnings/settlements`, { headers })
       ]);
 
       const sumData = await sumRes.json();
@@ -76,7 +77,7 @@ export default function GarageFinancialCenter() {
       setRequestingSettlement(true);
       setMessage(null);
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/earnings/settlements/request', {
+      const res = await fetch(`${API_BASE_URL}/api/earnings/settlements/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
