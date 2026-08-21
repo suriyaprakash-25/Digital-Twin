@@ -49,6 +49,7 @@ import AdminGarages from './pages/admin/AdminGarages';
 import AdminRevenue from './pages/admin/AdminRevenue';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminFeedback from './pages/admin/AdminFeedback';
+import AdminPayments from './pages/admin/AdminPayments';
 
 function App() {
   return (
@@ -75,6 +76,7 @@ function App() {
           }
         >
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/garages" element={<AdminGarages />} />
           <Route path="/admin/analytics" element={<AdminAnalytics />} />

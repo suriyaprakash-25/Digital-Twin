@@ -503,4 +503,148 @@ router.get('/analytics', requireAdmin, async (req, res) => {
   }
 });
 
+// ───────────────────────── ADMIN PAYMENT MANAGEMENT ─────────────────────────
+
+/**
+ * GET /api/admin/payments/summary
+ * Returns global platform payment KPIs
+ */
+router.get('/payments/summary', requireAdmin, async (req, res) => {
+  const db = getDb();
+  const payments = db.collection('payments');
+  const services = db.collection('services');
+
+  try {
+    const allPayments = await payments.find({}).toArray();
+
+    let totalVolume = 0;
+    let successfulVolume = 0;
+    let successfulCount = 0;
+    let failedCount = 0;
+    let totalRefundedAmount = 0;
+    let refundedCount = 0;
+
+    allPayments.forEach(p => {
+      const amt = parseFloat(p.amount) || 0;
+      totalVolume += amt;
+
+      if (p.status === 'CAPTURED' || p.status === 'PAID') {
+        successfulVolume += amt;
+        successfulCount++;
+      } else if (p.status === 'FAILED') {
+        failedCount++;
+      } else if (p.status === 'REFUNDED' || p.status === 'PARTIALLY_REFUNDED') {
+        successfulVolume += amt;
+        successfulCount++;
+        refundedCount++;
+      }
+
+      totalRefundedAmount += parseFloat(p.totalRefundedAmount) || 0;
+    });
+
+    // Unpaid finalized services
+    const pendingServices = await services.find({ paymentStatus: { $ne: 'PAID' }, isArchived: { $ne: true }, invoiceStatus: { $ne: 'CANCELLED' } }).toArray();
+    const pendingAmount = pendingServices.reduce((sum, s) => sum + (parseFloat(s.totalAmount !== undefined ? s.totalAmount : (s.totalCost || 0)) || 0), 0);
+
+    return res.status(200).json({
+      success: true,
+      summary: {
+        totalVolume,
+        successfulVolume,
+        successfulCount,
+        failedCount,
+        totalRefundedAmount,
+        refundedCount,
+        pendingAmount,
+        pendingCount: pendingServices.length,
+        totalTransactions: allPayments.length
+      }
+    });
+  } catch (err) {
+    console.error('Error loading admin payment summary:', err);
+    return res.status(500).json({ success: false, message: 'Error loading admin payment summary' });
+  }
+});
+
+/**
+ * GET /api/admin/payments/all
+ * Paginated, searchable, filterable list of all system payments
+ */
+router.get('/payments/all', requireAdmin, async (req, res) => {
+  const { page = 1, limit = 20, search = '', status = 'ALL' } = req.query;
+  const pageNum = parseInt(page, 10) || 1;
+  const limitNum = parseInt(limit, 10) || 20;
+  const skip = (pageNum - 1) * limitNum;
+
+  const db = getDb();
+  const payments = db.collection('payments');
+
+  try {
+    const query = {};
+
+    if (status && status !== 'ALL') {
+      if (status === 'PAID') query.status = 'CAPTURED';
+      else if (status === 'FAILED') query.status = 'FAILED';
+      else if (status === 'REFUNDED') query.status = { $in: ['REFUNDED', 'PARTIALLY_REFUNDED'] };
+      else if (status === 'PENDING') query.status = { $in: ['CREATED', 'PENDING'] };
+      else query.status = status;
+    }
+
+    if (search && search.trim() !== '') {
+      const regex = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { invoiceNumber: regex },
+        { razorpayPaymentId: regex },
+        { razorpayOrderId: regex },
+        { garageName: regex },
+        { vehicleNumber: regex },
+        { serviceType: regex }
+      ];
+    }
+
+    const totalCount = await payments.countDocuments(query);
+    const rawPayments = await payments
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .toArray();
+
+    const formatted = rawPayments.map(p => ({
+      id: String(p._id),
+      invoiceNumber: p.invoiceNumber || '—',
+      orderId: p.razorpayOrderId,
+      paymentId: p.razorpayPaymentId || '—',
+      amount: p.amount,
+      currency: p.currency || 'INR',
+      status: p.status,
+      paymentMethod: p.paymentMethod || 'Online',
+      garageName: p.garageName || 'Authorized Service Center',
+      garageId: p.garageId,
+      vehicleNumber: p.vehicleNumber || 'N/A',
+      vehicleId: p.vehicleId,
+      userId: p.userId,
+      serviceType: p.serviceType || 'Automotive Service',
+      serviceId: p.serviceId,
+      totalRefundedAmount: p.totalRefundedAmount || 0,
+      refunds: p.refunds || [],
+      failureReason: p.failureReason,
+      paidAt: p.paidAt,
+      refundedAt: p.refundedAt,
+      date: p.paidAt || p.createdAt
+    }));
+
+    return res.status(200).json({
+      success: true,
+      payments: formatted,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limitNum),
+      currentPage: pageNum
+    });
+  } catch (err) {
+    console.error('Error loading admin payments:', err);
+    return res.status(500).json({ success: false, message: 'Error loading admin payments' });
+  }
+});
+
 module.exports = router;

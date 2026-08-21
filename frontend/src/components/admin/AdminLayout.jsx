@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import AdminSidebar from './AdminSidebar';
 import { Menu, LogOut } from 'lucide-react';
+import NotificationBell from '../notifications/NotificationBell';
 
 const AdminLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -34,22 +35,29 @@ const AdminLayout = () => {
                 <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[100px] opacity-30 pointer-events-none transform -translate-x-1/4 translate-y-1/4"
                     style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 68%)' }} />
 
-                <div className="lg:hidden flex items-center justify-between h-16 px-4 bg-white/90 backdrop-blur-md border-b border-slate-200 z-20 shadow-sm">
-                    <button
-                        onClick={() => setSidebarOpen(true)}
-                        className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                        aria-label="Open menu"
-                    >
-                        <Menu className="h-6 w-6" />
-                    </button>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors border border-slate-100/80 bg-slate-50/50"
-                        aria-label="Logout"
-                    >
-                        <LogOut className="h-4 w-4" />
-                        <span className="text-xs font-bold">Logout</span>
-                    </button>
+                {/* Top bar (Desktop & Mobile) */}
+                <div className="flex items-center justify-between h-16 px-4 lg:px-8 bg-white/80 backdrop-blur-md border-b border-slate-200/80 z-20 shadow-2xs">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            className="lg:hidden p-1.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                            aria-label="Open menu"
+                        >
+                            <Menu className="h-5.5 w-5.5" />
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 ml-auto">
+                        <NotificationBell />
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-600 hover:text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors border border-slate-200/60 bg-white shadow-2xs"
+                            aria-label="Logout"
+                        >
+                            <LogOut className="h-3.5 w-3.5" />
+                            <span className="text-xs font-bold hidden sm:inline">Logout</span>
+                        </button>
+                    </div>
                 </div>
 
                 <main className="flex-1 overflow-y-auto w-full z-10 p-4 sm:p-6 lg:p-8">

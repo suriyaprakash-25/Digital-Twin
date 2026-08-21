@@ -10,7 +10,9 @@ const PAYMENT_STATUS = {
   AUTHORIZED: 'AUTHORIZED',
   CAPTURED: 'CAPTURED',
   FAILED: 'FAILED',
-  REFUNDED: 'REFUNDED'
+  REFUND_PENDING: 'REFUND_PENDING',
+  REFUNDED: 'REFUNDED',
+  PARTIALLY_REFUNDED: 'PARTIALLY_REFUNDED'
 };
 
 /**
@@ -29,11 +31,13 @@ async function ensurePaymentIndexes(dbInstance) {
 
     // Lookup indexes
     await payments.createIndex({ userId: 1, createdAt: -1 });
+    await payments.createIndex({ garageId: 1, createdAt: -1 });
+    await payments.createIndex({ vehicleId: 1, createdAt: -1 });
     await payments.createIndex({ serviceId: 1 });
     await payments.createIndex({ invoiceId: 1 });
-    await payments.createIndex({ vehicleId: 1 });
     await payments.createIndex({ invoiceNumber: 1 });
-    await payments.createIndex({ garageId: 1, createdAt: -1 });
+    await payments.createIndex({ status: 1 });
+    await payments.createIndex({ 'refunds.refundId': 1 }, { sparse: true });
 
     // Ensure service indexes for invoicing
     const services = db.collection('services');

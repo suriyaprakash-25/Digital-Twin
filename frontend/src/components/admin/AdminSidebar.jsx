@@ -5,6 +5,7 @@ import {
     Building2,
     BarChart3,
     IndianRupee,
+    CreditCard,
     MessageSquare,
     LogOut,
     X
@@ -12,6 +13,7 @@ import {
 
 const adminNavigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { name: 'Payment Center', href: '/admin/payments', icon: CreditCard },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Garages', href: '/admin/garages', icon: Building2 },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },

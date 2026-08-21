@@ -643,6 +643,41 @@ router.get('/garage/revenue/summary', requireAuth, requireRole('GARAGE'), async 
       .filter(p => p.paidAt && new Date(p.paidAt) >= startOfToday)
       .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
+    // This month's revenue calculation
+    const startOfMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth(), 1);
+    const monthRevenue = capturedPayments
+      .filter(p => p.paidAt && new Date(p.paidAt) >= startOfMonth)
+      .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+
+    // Total refunded amount
+    const refundedPayments = await payments
+      .find({
+        $or: [
+          { status: { $in: [PAYMENT_STATUS.REFUNDED, PAYMENT_STATUS.PARTIALLY_REFUNDED] } },
+          { totalRefundedAmount: { $gt: 0 } }
+        ],
+        $and: [
+          {
+            $or: [
+              { serviceId: { $in: serviceIds } },
+              { garageId: String(req.user.id) }
+            ]
+          }
+        ]
+      })
+      .toArray();
+
+    const refundedAmount = refundedPayments.reduce((sum, p) => sum + (parseFloat(p.totalRefundedAmount) || 0), 0);
+
+    // Failed payments count
+    const failedPaymentCount = await payments.countDocuments({
+      status: PAYMENT_STATUS.FAILED,
+      $or: [
+        { serviceId: { $in: serviceIds } },
+        { garageId: String(req.user.id) }
+      ]
+    });
+
     // Pending payments from finalized unpaid invoices
     const pendingServices = garageServices.filter(s => s.paymentStatus !== 'PAID' && s.invoiceStatus !== 'CANCELLED');
     const pendingPaymentsTotal = pendingServices.reduce((sum, s) => {
@@ -657,12 +692,86 @@ router.get('/garage/revenue/summary', requireAuth, requireRole('GARAGE'), async 
         paidInvoices: paidInvoicesCount,
         pendingPayments: pendingPaymentsTotal,
         todayRevenue,
+        monthRevenue,
+        refundedAmount,
+        failedPayments: failedPaymentCount,
         totalServicesLogged: garageServices.length
       }
     });
   } catch (err) {
     console.error('Error loading garage revenue summary:', err);
     return res.status(500).json({ success: false, message: 'Error loading revenue summary' });
+  }
+});
+
+/**
+ * GET /api/garage/payments/analytics
+ * Computes breakdown data for charts & trends
+ */
+router.get('/garage/payments/analytics', requireAuth, requireRole('GARAGE'), async (req, res) => {
+  const { period = '7days' } = req.query;
+  const db = getDb();
+  const services = db.collection('services');
+  const payments = db.collection('payments');
+
+  try {
+    const garageServices = await services
+      .find({ createdBy: String(req.user.id), isArchived: { $ne: true } })
+      .project({ _id: 1 })
+      .toArray();
+
+    const serviceIds = garageServices.map(s => String(s._id));
+
+    let daysCount = 7;
+    if (period === '30days') daysCount = 30;
+    else if (period === '90days') daysCount = 90;
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysCount);
+    startDate.setHours(0, 0, 0, 0);
+
+    const relevantPayments = await payments
+      .find({
+        status: { $in: [PAYMENT_STATUS.CAPTURED, PAYMENT_STATUS.PARTIALLY_REFUNDED, PAYMENT_STATUS.REFUNDED] },
+        paidAt: { $gte: startDate },
+        $or: [
+          { serviceId: { $in: serviceIds } },
+          { garageId: String(req.user.id) }
+        ]
+      })
+      .sort({ paidAt: 1 })
+      .toArray();
+
+    // Group by Day
+    const trendMap = {};
+    for (let i = 0; i <= daysCount; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const key = d.toISOString().split('T')[0];
+      trendMap[key] = { date: key, label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), revenue: 0, refunds: 0, count: 0 };
+    }
+
+    relevantPayments.forEach(p => {
+      if (p.paidAt) {
+        const key = new Date(p.paidAt).toISOString().split('T')[0];
+        if (trendMap[key]) {
+          trendMap[key].revenue += parseFloat(p.amount) || 0;
+          trendMap[key].refunds += parseFloat(p.totalRefundedAmount) || 0;
+          trendMap[key].count += 1;
+        }
+      }
+    });
+
+    const trendData = Object.values(trendMap);
+
+    return res.status(200).json({
+      success: true,
+      period,
+      trends: trendData
+    });
+  } catch (err) {
+    console.error('Error loading analytics:', err);
+    return res.status(500).json({ success: false, message: 'Error loading analytics' });
   }
 });
 

@@ -1,7 +1,13 @@
 const express = require('express');
 
 const { requireAuth } = require('../middleware/auth');
-const { upsertDeviceToken, listNotifications, markNotificationRead } = require('../services/notifications');
+const {
+  upsertDeviceToken,
+  listNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  getUnreadCount
+} = require('../services/notifications');
 
 const router = express.Router();
 
@@ -26,6 +32,24 @@ router.get('/', requireAuth, async (req, res) => {
     return res.status(200).json(docs);
   } catch (e) {
     return res.status(500).json({ msg: 'Error loading notifications', error: String(e && e.message ? e.message : e) });
+  }
+});
+
+router.get('/unread-count', requireAuth, async (req, res) => {
+  try {
+    const count = await getUnreadCount(req.user.id);
+    return res.status(200).json({ success: true, count });
+  } catch (e) {
+    return res.status(500).json({ success: false, message: 'Error getting unread count' });
+  }
+});
+
+router.patch('/read-all', requireAuth, async (req, res) => {
+  try {
+    await markAllNotificationsRead(req.user.id);
+    return res.status(200).json({ success: true, msg: 'All notifications marked as read' });
+  } catch (e) {
+    return res.status(500).json({ success: false, message: 'Error marking all notifications read' });
   }
 });
 

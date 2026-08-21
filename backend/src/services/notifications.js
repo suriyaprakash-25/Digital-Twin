@@ -126,9 +126,28 @@ async function markNotificationRead(userId, notificationId) {
   );
 }
 
+async function markAllNotificationsRead(userId) {
+  const { notifications } = getCollections();
+  await notifications.updateMany(
+    { userId: String(userId), read: { $ne: true } },
+    { $set: { read: true, readAt: new Date() } }
+  );
+}
+
+async function getUnreadCount(userId) {
+  const { notifications } = getCollections();
+  return await notifications.countDocuments({
+    userId: String(userId),
+    read: { $ne: true }
+  });
+}
+
 module.exports = {
   upsertDeviceToken,
+  createNotification,
   notifyUser,
   listNotifications,
-  markNotificationRead
+  markNotificationRead,
+  markAllNotificationsRead,
+  getUnreadCount
 };

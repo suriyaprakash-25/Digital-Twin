@@ -142,10 +142,55 @@ async function fetchPaymentDetails(paymentId) {
   return await razorpay.payments.fetch(paymentId);
 }
 
+/**
+ * Initiates a full or partial refund via Razorpay
+ * @param {Object} params
+ * @param {string} params.paymentId - Razorpay Payment ID (pay_...)
+ * @param {number} params.amountInPaise - Authoritative refund amount in paise
+ * @param {Object} [params.notes] - Audit notes
+ * @param {string} [params.receipt] - Unique internal refund identifier
+ * @returns {Promise<Object>} Razorpay refund object
+ */
+async function createRazorpayRefund({ paymentId, amountInPaise, notes = {}, receipt }) {
+  if (!paymentId) {
+    throw new Error('Missing paymentId for refund');
+  }
+
+  const razorpay = getRazorpayInstance();
+  const options = {
+    notes: {
+      ...notes,
+      platform: 'DrivePortz'
+    }
+  };
+
+  if (amountInPaise && amountInPaise > 0) {
+    options.amount = Math.round(amountInPaise);
+  }
+
+  if (receipt) {
+    options.receipt = String(receipt).slice(0, 40);
+  }
+
+  return await razorpay.payments.refund(paymentId, options);
+}
+
+/**
+ * Fetches refund details from Razorpay API
+ * @param {string} paymentId 
+ * @param {string} refundId 
+ */
+async function fetchRefundDetails(paymentId, refundId) {
+  const razorpay = getRazorpayInstance();
+  return await razorpay.payments.fetchRefund(paymentId, refundId);
+}
+
 module.exports = {
   getRazorpayInstance,
   createRazorpayOrder,
   verifyPaymentSignature,
   verifyWebhookSignature,
-  fetchPaymentDetails
+  fetchPaymentDetails,
+  createRazorpayRefund,
+  fetchRefundDetails
 };

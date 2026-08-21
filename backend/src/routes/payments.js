@@ -7,9 +7,12 @@ const {
   createRazorpayOrder,
   verifyPaymentSignature,
   verifyWebhookSignature,
-  fetchPaymentDetails
+  fetchPaymentDetails,
+  createRazorpayRefund,
+  fetchRefundDetails
 } = require('../services/razorpayService');
 const { PAYMENT_STATUS } = require('../models/Payment');
+const { notifyUser } = require('../services/notifications');
 
 const router = express.Router();
 
@@ -277,11 +280,42 @@ router.post('/verify', requireAuth, async (req, res) => {
       }
     });
 
+    // 8. Send notification to Customer and Garage
+    try {
+      if (payment.userId) {
+        await notifyUser(payment.userId, {
+          title: 'Payment Successful',
+          body: `Your payment of ₹${payment.amount} for ${payment.serviceType || 'Service'} has been confirmed. (Invoice: ${payment.invoiceNumber || 'N/A'})`,
+          data: {
+            type: 'PAYMENT_SUCCESS',
+            paymentId,
+            serviceId: String(payment.serviceId || ''),
+            invoiceNumber: payment.invoiceNumber || ''
+          }
+        });
+      }
+      if (payment.garageId) {
+        await notifyUser(payment.garageId, {
+          title: 'Payment Received',
+          body: `Payment of ₹${payment.amount} received from customer for ${payment.vehicleNumber || 'Vehicle'}.`,
+          data: {
+            type: 'PAYMENT_SUCCESS',
+            paymentId,
+            serviceId: String(payment.serviceId || ''),
+            invoiceNumber: payment.invoiceNumber || ''
+          }
+        });
+      }
+    } catch (notifErr) {
+      console.warn('Error sending payment notification:', notifErr.message);
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Payment verified and captured successfully!',
       payment: {
         id: String(payment._id),
+        invoiceNumber: payment.invoiceNumber,
         orderId: payment.razorpayOrderId,
         paymentId,
         amount: payment.amount,
@@ -300,8 +334,285 @@ router.post('/verify', requireAuth, async (req, res) => {
 });
 
 /**
+ * POST /api/payments/:paymentId/refund
+ * Initiates a full or partial refund for a captured payment
+ */
+router.post('/:paymentId/refund', requireAuth, async (req, res) => {
+  const { paymentId } = req.params;
+  const { amount, reason = 'Customer requested refund' } = req.body || {};
+
+  const db = getDb();
+  const payments = db.collection('payments');
+  const services = db.collection('services');
+
+  try {
+    const pObjectId = toObjectId(paymentId);
+    const payment = pObjectId
+      ? await payments.findOne({ $or: [{ _id: pObjectId }, { razorpayPaymentId: paymentId }] })
+      : await payments.findOne({ razorpayPaymentId: paymentId });
+
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment record not found' });
+    }
+
+    // Authorization: Garage owner who created the service OR Admin
+    const isAuthorized = (payment.garageId && String(payment.garageId) === String(req.user.id)) ||
+                         (req.user.role === 'ADMIN') ||
+                         (req.user.role === 'GARAGE' && String(payment.garageId) === String(req.user.id));
+
+    if (!isAuthorized) {
+      return res.status(403).json({ success: false, message: 'Forbidden: You are not authorized to refund this payment' });
+    }
+
+    // Verify payment is captured and eligible for refund
+    if (payment.status !== PAYMENT_STATUS.CAPTURED && payment.status !== PAYMENT_STATUS.PARTIALLY_REFUNDED) {
+      return res.status(400).json({
+        success: false,
+        message: `Only captured payments can be refunded. Current status is ${payment.status}`
+      });
+    }
+
+    if (!payment.razorpayPaymentId) {
+      return res.status(400).json({ success: false, message: 'No gateway payment ID associated with this record' });
+    }
+
+    // Calculate maximum refundable amount
+    const originalAmount = parseFloat(payment.amount) || 0;
+    const alreadyRefunded = parseFloat(payment.totalRefundedAmount) || 0;
+    const maxRefundable = Math.max(0, originalAmount - alreadyRefunded);
+
+    if (maxRefundable <= 0) {
+      return res.status(400).json({ success: false, message: 'This payment has already been fully refunded' });
+    }
+
+    const requestedAmount = amount !== undefined ? parseFloat(amount) : maxRefundable;
+    if (isNaN(requestedAmount) || requestedAmount <= 0 || requestedAmount > maxRefundable) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid refund amount. Must be between ₹1 and ₹${maxRefundable}`
+      });
+    }
+
+    const amountInPaise = Math.round(requestedAmount * 100);
+    const refundReceipt = `ref_${String(payment._id).slice(-6)}_${Date.now().toString().slice(-6)}`;
+
+    // Call Razorpay Refund API
+    let rzpRefund;
+    try {
+      rzpRefund = await createRazorpayRefund({
+        paymentId: payment.razorpayPaymentId,
+        amountInPaise,
+        receipt: refundReceipt,
+        notes: {
+          invoiceNumber: payment.invoiceNumber || '',
+          serviceId: String(payment.serviceId || ''),
+          reason: String(reason).slice(0, 100),
+          refundInitiatedBy: String(req.user.id)
+        }
+      });
+    } catch (rzpErr) {
+      console.error('Razorpay refund API error:', rzpErr);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to process refund with payment gateway',
+        error: rzpErr.message
+      });
+    }
+
+    const newTotalRefunded = alreadyRefunded + requestedAmount;
+    const isFullyRefunded = newTotalRefunded >= originalAmount;
+    const newStatus = isFullyRefunded ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED;
+    const refundedAt = new Date();
+
+    const refundEntry = {
+      refundId: rzpRefund.id,
+      amount: requestedAmount,
+      currency: 'INR',
+      reason,
+      status: rzpRefund.status || 'processed',
+      receipt: refundReceipt,
+      createdAt: refundedAt
+    };
+
+    // Update payment record atomically
+    await payments.updateOne(
+      { _id: payment._id },
+      {
+        $set: {
+          status: newStatus,
+          totalRefundedAmount: newTotalRefunded,
+          refundedAt,
+          updatedAt: refundedAt
+        },
+        $push: {
+          refunds: refundEntry
+        }
+      }
+    );
+
+    // Update service record status
+    if (payment.serviceId) {
+      const sObjectId = toObjectId(payment.serviceId);
+      const serviceQuery = sObjectId
+        ? { $or: [{ _id: sObjectId }, { _id: String(payment.serviceId) }] }
+        : { _id: String(payment.serviceId) };
+
+      await services.updateOne(serviceQuery, {
+        $set: {
+          paymentStatus: newStatus,
+          totalRefundedAmount: newTotalRefunded,
+          refundedAt,
+          updatedAt: refundedAt
+        }
+      });
+    }
+
+    // Send notifications
+    try {
+      if (payment.userId) {
+        await notifyUser(payment.userId, {
+          title: isFullyRefunded ? 'Payment Refunded' : 'Partial Refund Processed',
+          body: `A refund of ₹${requestedAmount} has been processed for your invoice ${payment.invoiceNumber || ''}.`,
+          data: {
+            type: 'REFUND_COMPLETED',
+            paymentId: payment.razorpayPaymentId,
+            refundId: rzpRefund.id,
+            amount: String(requestedAmount)
+          }
+        });
+      }
+    } catch (notifErr) {
+      console.warn('Error sending refund notification:', notifErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Refund of ₹${requestedAmount} initiated successfully`,
+      refund: refundEntry,
+      payment: {
+        id: String(payment._id),
+        status: newStatus,
+        totalRefundedAmount: newTotalRefunded,
+        remainingAmount: Math.max(0, originalAmount - newTotalRefunded)
+      }
+    });
+  } catch (err) {
+    console.error('Error initiating refund:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error processing refund' });
+  }
+});
+
+/**
+ * GET /api/payments/:paymentId/refund-status
+ * Checks the status of refunds for a given payment
+ */
+router.get('/:paymentId/refund-status', requireAuth, async (req, res) => {
+  const { paymentId } = req.params;
+  const db = getDb();
+  const payments = db.collection('payments');
+
+  try {
+    const pObjectId = toObjectId(paymentId);
+    const payment = pObjectId
+      ? await payments.findOne({ $or: [{ _id: pObjectId }, { razorpayPaymentId: paymentId }] })
+      : await payments.findOne({ razorpayPaymentId: paymentId });
+
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment record not found' });
+    }
+
+    // Authorization
+    const isOwner = (String(payment.userId) === String(req.user.id)) ||
+                    (payment.garageId && String(payment.garageId) === String(req.user.id)) ||
+                    (req.user.role === 'ADMIN');
+
+    if (!isOwner) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      paymentId: payment.razorpayPaymentId,
+      status: payment.status,
+      originalAmount: payment.amount,
+      totalRefundedAmount: payment.totalRefundedAmount || 0,
+      refunds: payment.refunds || []
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Error loading refund status' });
+  }
+});
+
+/**
+ * GET /api/payments/details/:id
+ * Fetches complete audit details of a payment transaction
+ */
+router.get('/details/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const db = getDb();
+  const payments = db.collection('payments');
+  const services = db.collection('services');
+
+  try {
+    const pObjectId = toObjectId(id);
+    const payment = pObjectId
+      ? await payments.findOne({ $or: [{ _id: pObjectId }, { razorpayOrderId: id }, { razorpayPaymentId: id }] })
+      : await payments.findOne({ $or: [{ razorpayOrderId: id }, { razorpayPaymentId: id }] });
+
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment record not found' });
+    }
+
+    // Authorization
+    const isOwner = (String(payment.userId) === String(req.user.id)) ||
+                    (payment.garageId && String(payment.garageId) === String(req.user.id)) ||
+                    (req.user.role === 'ADMIN');
+
+    if (!isOwner) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    let service = null;
+    if (payment.serviceId) {
+      const sObjectId = toObjectId(payment.serviceId);
+      service = sObjectId ? await services.findOne({ _id: sObjectId }) : null;
+    }
+
+    return res.status(200).json({
+      success: true,
+      payment: {
+        id: String(payment._id),
+        invoiceNumber: payment.invoiceNumber || service?.invoiceNumber || '—',
+        orderId: payment.razorpayOrderId,
+        paymentId: payment.razorpayPaymentId || '—',
+        amount: payment.amount,
+        currency: payment.currency || 'INR',
+        status: payment.status,
+        paymentMethod: payment.paymentMethod || 'Online',
+        serviceType: payment.serviceType,
+        garageName: payment.garageName,
+        vehicleNumber: payment.vehicleNumber,
+        serviceId: payment.serviceId,
+        userId: payment.userId,
+        garageId: payment.garageId,
+        failureReason: payment.failureReason,
+        receipt: payment.receipt,
+        totalRefundedAmount: payment.totalRefundedAmount || 0,
+        refunds: payment.refunds || [],
+        paidAt: payment.paidAt,
+        refundedAt: payment.refundedAt,
+        createdAt: payment.createdAt
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching payment details:', err);
+    return res.status(500).json({ success: false, message: 'Error fetching payment details' });
+  }
+});
+
+/**
  * POST /api/payments/webhook
- * Razorpay Webhook Handler with raw signature verification and idempotency
+ * Razorpay Webhook Handler with refund support, raw signature verification, and idempotency
  */
 router.post('/webhook', async (req, res) => {
   const signature = req.headers['x-razorpay-signature'];
@@ -337,11 +648,12 @@ router.post('/webhook', async (req, res) => {
 
   try {
     const paymentEntity = eventPayload.payload?.payment?.entity;
-    const orderId = paymentEntity?.order_id;
-    const paymentId = paymentEntity?.id;
+    const refundEntity = eventPayload.payload?.refund?.entity;
+    const orderId = paymentEntity?.order_id || refundEntity?.order_id;
+    const paymentId = paymentEntity?.id || refundEntity?.payment_id;
 
-    if (orderId) {
-      if (eventName === 'payment.captured' || eventName === 'order.paid') {
+    if (eventName === 'payment.captured' || eventName === 'order.paid') {
+      if (orderId) {
         const paidAt = new Date(paymentEntity.created_at ? paymentEntity.created_at * 1000 : Date.now());
         const method = paymentEntity.method ? String(paymentEntity.method).toUpperCase() : 'ONLINE';
 
@@ -377,7 +689,9 @@ router.post('/webhook', async (req, res) => {
             });
           }
         }
-      } else if (eventName === 'payment.failed') {
+      }
+    } else if (eventName === 'payment.failed') {
+      if (orderId) {
         const errorDesc = paymentEntity.error_description || 'Payment failed';
         await payments.updateOne(
           { razorpayOrderId: orderId, status: { $ne: PAYMENT_STATUS.CAPTURED } },
@@ -389,6 +703,45 @@ router.post('/webhook', async (req, res) => {
             }
           }
         );
+      }
+    } else if (eventName === 'refund.processed' || eventName === 'refund.created') {
+      if (paymentId) {
+        const refundAmount = refundEntity ? (refundEntity.amount / 100) : 0;
+        const payment = await payments.findOne({ razorpayPaymentId: paymentId });
+
+        if (payment) {
+          const alreadyRefunded = parseFloat(payment.totalRefundedAmount) || 0;
+          const newTotalRefunded = Math.max(alreadyRefunded, refundAmount);
+          const isFullyRefunded = newTotalRefunded >= payment.amount;
+          const newStatus = isFullyRefunded ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED;
+
+          await payments.updateOne(
+            { _id: payment._id },
+            {
+              $set: {
+                status: newStatus,
+                totalRefundedAmount: newTotalRefunded,
+                refundedAt: new Date(),
+                updatedAt: new Date()
+              }
+            }
+          );
+
+          if (payment.serviceId) {
+            const sObjectId = toObjectId(payment.serviceId);
+            const serviceQuery = sObjectId
+              ? { $or: [{ _id: sObjectId }, { _id: String(payment.serviceId) }] }
+              : { _id: String(payment.serviceId) };
+
+            await services.updateOne(serviceQuery, {
+              $set: {
+                paymentStatus: newStatus,
+                totalRefundedAmount: newTotalRefunded,
+                refundedAt: new Date()
+              }
+            });
+          }
+        }
       }
     }
 
@@ -433,6 +786,7 @@ router.get('/status/:orderId', requireAuth, async (req, res) => {
       success: true,
       payment: {
         id: String(payment._id),
+        invoiceNumber: payment.invoiceNumber,
         orderId: payment.razorpayOrderId,
         paymentId: payment.razorpayPaymentId,
         amount: payment.amount,
@@ -440,6 +794,7 @@ router.get('/status/:orderId', requireAuth, async (req, res) => {
         serviceType: payment.serviceType,
         garageName: payment.garageName,
         vehicleNumber: payment.vehicleNumber,
+        totalRefundedAmount: payment.totalRefundedAmount || 0,
         paidAt: payment.paidAt
       }
     });
@@ -450,21 +805,44 @@ router.get('/status/:orderId', requireAuth, async (req, res) => {
 
 /**
  * GET /api/payments/history
- * Retrieves authenticated user's payment history
+ * Retrieves authenticated user's payment history with filtering and search
  */
 router.get('/history', requireAuth, async (req, res) => {
+  const { status, search } = req.query;
   const db = getDb();
   const payments = db.collection('payments');
 
   try {
+    const query = { userId: String(req.user.id) };
+
+    if (status && status !== 'ALL') {
+      if (status === 'PAID') query.status = PAYMENT_STATUS.CAPTURED;
+      else if (status === 'FAILED') query.status = PAYMENT_STATUS.FAILED;
+      else if (status === 'REFUNDED') query.status = { $in: [PAYMENT_STATUS.REFUNDED, PAYMENT_STATUS.PARTIALLY_REFUNDED] };
+      else if (status === 'PENDING') query.status = { $in: [PAYMENT_STATUS.CREATED, PAYMENT_STATUS.PENDING] };
+      else query.status = status;
+    }
+
+    if (search && search.trim()) {
+      const regex = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { invoiceNumber: regex },
+        { vehicleNumber: regex },
+        { garageName: regex },
+        { serviceType: regex },
+        { razorpayPaymentId: regex }
+      ];
+    }
+
     const userPayments = await payments
-      .find({ userId: String(req.user.id) })
+      .find(query)
       .sort({ createdAt: -1 })
       .limit(100)
       .toArray();
 
     const formatted = userPayments.map(p => ({
       id: String(p._id),
+      invoiceNumber: p.invoiceNumber || '—',
       orderId: p.razorpayOrderId,
       paymentId: p.razorpayPaymentId || '—',
       amount: p.amount,
@@ -476,6 +854,8 @@ router.get('/history', requireAuth, async (req, res) => {
       serviceId: p.serviceId,
       status: p.status,
       paymentMethod: p.paymentMethod || 'Online',
+      totalRefundedAmount: p.totalRefundedAmount || 0,
+      refunds: p.refunds || [],
       date: p.paidAt || p.createdAt
     }));
 
