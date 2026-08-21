@@ -62,6 +62,8 @@ import AdminReconciliation from './pages/admin/AdminReconciliation';
 import AdminDisputes from './pages/admin/AdminDisputes';
 import AdminPaymentRisk from './pages/admin/AdminPaymentRisk';
 import AdminFinancialReports from './pages/admin/AdminFinancialReports';
+import AdminFinancialOperations from './pages/admin/AdminFinancialOperations';
+import AdminFinancialAudit from './pages/admin/AdminFinancialAudit';
 
 function App() {
   return (
@@ -91,6 +93,8 @@ function App() {
           <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/commissions" element={<AdminCommissions />} />
           <Route path="/admin/settlements" element={<AdminSettlements />} />
+          <Route path="/admin/financial-operations" element={<AdminFinancialOperations />} />
+          <Route path="/admin/financial-audit" element={<AdminFinancialAudit />} />
           <Route path="/admin/reconciliation" element={<AdminReconciliation />} />
           <Route path="/admin/disputes" element={<AdminDisputes />} />
           <Route path="/admin/payment-risk" element={<AdminPaymentRisk />} />

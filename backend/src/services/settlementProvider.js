@@ -24,14 +24,41 @@ class MockSettlementProvider extends BaseSettlementProvider {
     this.name = 'MOCK_TEST_MODE';
   }
 
-  async processSettlement({ settlement, payoutProfile }) {
+  async processSettlement({ settlement, payoutProfile, simulationMode }) {
     const timestamp = Date.now();
-    const mockTransferId = `mock_trf_${settlement.settlementId.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp.toString().slice(-4)}`;
+    const mode = simulationMode || settlement?.metadata?.simulationMode || 'SUCCESS';
+
+    if (mode === 'TEMPORARY_FAILURE') {
+      return {
+        success: false,
+        isTemporary: true,
+        provider: this.name,
+        failureCode: 'BANK_SERVER_UNAVAILABLE',
+        failureReason: 'Mock Bank API timeout / temporary network degradation',
+        processedAt: new Date()
+      };
+    }
+
+    if (mode === 'PERMANENT_FAILURE') {
+      return {
+        success: false,
+        isTemporary: false,
+        provider: this.name,
+        failureCode: 'BENEFICIARY_ACCOUNT_BLOCKED',
+        failureReason: 'Beneficiary account invalid or blocked by recipient bank',
+        processedAt: new Date()
+      };
+    }
+
+    const mockTransferId = `mock_trf_${(settlement.settlementId || 'SET').replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp.toString().slice(-4)}`;
+    const mockRef = `REF_DP_${timestamp.toString().slice(-6)}`;
 
     return {
       success: true,
       provider: this.name,
       transferId: mockTransferId,
+      providerTransactionId: mockTransferId,
+      providerReference: mockRef,
       status: 'COMPLETED',
       message: 'Settlement processed in TEST MODE (Ledger Simulation).',
       processedAt: new Date(),

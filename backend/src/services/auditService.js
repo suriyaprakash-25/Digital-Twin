@@ -20,8 +20,12 @@ async function logFinancialAudit({
   action,
   resourceType,
   resourceId,
+  settlementId = null,
+  garageId = null,
   beforeState = null,
   afterState = null,
+  ip = null,
+  userAgent = null,
   req = null,
   metadata = {},
   dbInstance
@@ -31,12 +35,12 @@ async function logFinancialAudit({
 
   const auditLogs = db.collection('financial_audit_logs');
 
-  let ipAddress = 'internal';
-  let userAgent = 'server';
+  let ipAddress = ip || 'internal';
+  let clientUserAgent = userAgent || 'server';
 
   if (req) {
-    ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
-    userAgent = req.headers['user-agent'] || 'unknown';
+    ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || ipAddress;
+    clientUserAgent = req.headers['user-agent'] || clientUserAgent;
   }
 
   const auditDoc = {
@@ -45,10 +49,13 @@ async function logFinancialAudit({
     action,
     resourceType,
     resourceId: String(resourceId || ''),
+    settlementId: settlementId || null,
+    garageId: garageId || null,
     beforeState,
     afterState,
+    ip: ipAddress,
     ipAddress,
-    userAgent,
+    userAgent: clientUserAgent,
     metadata,
     createdAt: new Date()
   };

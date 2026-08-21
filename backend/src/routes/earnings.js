@@ -211,34 +211,23 @@ router.post('/settlements/request', requireAuth, requireRole('GARAGE'), settleme
   const earnings = db.collection('garage_earnings');
   const settlements = db.collection('settlements');
   const payoutProfiles = db.collection('garage_payout_profiles');
+  const { checkSettlementEligibility } = require('../services/settlementEligibilityService');
+  const { HIGH_VALUE_THRESHOLD_RUPEES } = require('../services/settlementGovernanceService');
 
   try {
-    // 1. Calculate authoritative available balance on backend
-    const summary = await getGarageEarningsSummary(req.user.id, db);
-    const availableBalance = summary.availableBalance || 0;
+    const requestedAmount = amount !== undefined ? parseFloat(amount) : undefined;
+    const eligibility = await checkSettlementEligibility(req.user.id, requestedAmount, db);
 
-    const config = loadConfig();
-    const minSettlementAmount = config.commission?.minSettlementAmount || 500;
-
-    const requestedAmount = amount !== undefined ? parseFloat(amount) : availableBalance;
-
-    if (isNaN(requestedAmount) || requestedAmount <= 0) {
-      return res.status(400).json({ success: false, message: 'Please specify a valid settlement amount' });
-    }
-
-    if (requestedAmount < minSettlementAmount) {
+    if (!eligibility.eligible) {
       return res.status(400).json({
         success: false,
-        message: `Minimum settlement request amount is ₹${minSettlementAmount.toLocaleString('en-IN')}`
+        reasonCode: eligibility.reasonCode,
+        message: eligibility.reason
       });
     }
 
-    if (requestedAmount > availableBalance) {
-      return res.status(400).json({
-        success: false,
-        message: `Requested amount ₹${requestedAmount.toLocaleString('en-IN')} exceeds your available balance of ₹${availableBalance.toLocaleString('en-IN')}`
-      });
-    }
+    const finalAmount = eligibility.requestedRupees;
+    const finalPaise = eligibility.requestedPaise;
 
     // 2. Fetch available earnings records to lock
     const availableDocs = await earnings
@@ -253,7 +242,7 @@ router.post('/settlements/request', requireAuth, requireRole('GARAGE'), settleme
     const selectedEarningsIds = [];
 
     for (const doc of availableDocs) {
-      if (accumulated >= requestedAmount) break;
+      if (accumulated >= finalAmount) break;
       const net = parseFloat(doc.netAfterRefund !== undefined ? doc.netAfterRefund : doc.garageNetAmount) || 0;
       accumulated += net;
       selectedEarningsIds.push(doc._id);
@@ -263,19 +252,26 @@ router.post('/settlements/request', requireAuth, requireRole('GARAGE'), settleme
     const settlementId = await generateSettlementNumber(db);
     const now = new Date();
 
-    // 4. Fetch payout profile if existing
-    const payoutProfile = await payoutProfiles.findOne({ garageId: String(req.user.id) });
+    const isHighValue = finalAmount >= HIGH_VALUE_THRESHOLD_RUPEES;
 
     const settlementDoc = {
       settlementId,
       garageId: String(req.user.id),
-      requestedAmount,
-      approvedAmount: requestedAmount,
+      requestedAmount: finalAmount,
+      requestedPaise: finalPaise,
+      approvedAmount: finalAmount,
+      approvedPaise: finalPaise,
       currency: 'INR',
       status: SETTLEMENT_STATUS.REQUESTED,
       earningsIds: selectedEarningsIds.map(id => String(id)),
-      destinationAccountId: payoutProfile?.bankAccountLast4 ? `Account ending in ${payoutProfile.bankAccountLast4}` : 'Default Garage Account',
+      payoutProfile: eligibility.payoutProfile,
+      destinationAccountId: eligibility.payoutProfile?.bankAccountLast4 ? `Account ending in ${eligibility.payoutProfile.bankAccountLast4}` : 'Default Garage Account',
       notes: notes || 'Garage requested withdrawal',
+      requestedBy: String(req.user.id),
+      isHighValue,
+      requiredApprovalCount: isHighValue ? 2 : 1,
+      approvalCount: 0,
+      approvals: [],
       requestedAt: now,
       approvedAt: null,
       processedAt: null,

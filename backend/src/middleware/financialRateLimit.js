@@ -47,9 +47,17 @@ const settlementLimiter = createFinancialLimiter({
   message: 'Settlement request limit exceeded. Please wait before requesting another withdrawal.'
 });
 
+// 30 financial mutations per 15 mins
+const financialMutationLimiter = createFinancialLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: 'Financial operations rate limit reached. Please wait a few moments before retrying.'
+});
+
 module.exports = {
   paymentCreationLimiter,
   refundLimiter,
   disputeLimiter,
-  settlementLimiter
+  settlementLimiter,
+  financialMutationLimiter
 };

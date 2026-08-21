@@ -12,6 +12,7 @@ import {
     AlertTriangle,
     ShieldAlert,
     TrendingUp,
+    FileText,
     MessageSquare,
     LogOut,
     X
@@ -22,6 +23,8 @@ const adminNavigation = [
     { name: 'Payment Center', href: '/admin/payments', icon: CreditCard },
     { name: 'Commissions', href: '/admin/commissions', icon: Percent },
     { name: 'Settlements', href: '/admin/settlements', icon: Receipt },
+    { name: 'Financial Operations', href: '/admin/financial-operations', icon: Scale },
+    { name: 'Financial Audit', href: '/admin/financial-audit', icon: FileText },
     { name: 'Reconciliation', href: '/admin/reconciliation', icon: Scale },
     { name: 'Disputes & Claims', href: '/admin/disputes', icon: AlertTriangle },
     { name: 'Payment Risk', href: '/admin/payment-risk', icon: ShieldAlert },
