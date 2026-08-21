@@ -36,6 +36,21 @@ router.get('/earnings/summary', requireAuth, requireRole('GARAGE'), async (req, 
 });
 
 /**
+ * GET /api/garage/settlements/forecast
+ * Retrieves settlement liquidity and expected next payout forecast for authenticated garage
+ */
+router.get('/settlements/forecast', requireAuth, requireRole('GARAGE'), async (req, res) => {
+  const { getGarageSettlementForecast } = require('../services/settlementForecastService');
+  try {
+    const forecast = await getGarageSettlementForecast(req.user.id, getDb());
+    return res.status(200).json({ success: true, forecast });
+  } catch (err) {
+    console.error('Error fetching garage settlement forecast:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch settlement forecast' });
+  }
+});
+
+/**
  * GET /api/garage/earnings
  * Paginated, searchable, filterable list of garage earnings records
  */

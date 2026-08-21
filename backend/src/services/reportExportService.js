@@ -99,6 +99,7 @@ async function generateReportExport({
   return {
     exportId,
     content: bufferOrString,
+    data: bufferOrString,
     mimeType,
     filename
   };

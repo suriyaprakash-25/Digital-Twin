@@ -64,6 +64,10 @@ import AdminPaymentRisk from './pages/admin/AdminPaymentRisk';
 import AdminFinancialReports from './pages/admin/AdminFinancialReports';
 import AdminFinancialOperations from './pages/admin/AdminFinancialOperations';
 import AdminFinancialAudit from './pages/admin/AdminFinancialAudit';
+import AdminTreasury from './pages/admin/AdminTreasury';
+import AdminTaxCompliance from './pages/admin/AdminTaxCompliance';
+import AdminRiskCases from './pages/admin/AdminRiskCases';
+import GarageTax from './pages/GarageTax';
 
 function App() {
   return (
@@ -93,8 +97,11 @@ function App() {
           <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/commissions" element={<AdminCommissions />} />
           <Route path="/admin/settlements" element={<AdminSettlements />} />
+          <Route path="/admin/treasury" element={<AdminTreasury />} />
           <Route path="/admin/financial-operations" element={<AdminFinancialOperations />} />
           <Route path="/admin/financial-audit" element={<AdminFinancialAudit />} />
+          <Route path="/admin/tax-compliance" element={<AdminTaxCompliance />} />
+          <Route path="/admin/risk-cases" element={<AdminRiskCases />} />
           <Route path="/admin/reconciliation" element={<AdminReconciliation />} />
           <Route path="/admin/disputes" element={<AdminDisputes />} />
           <Route path="/admin/payment-risk" element={<AdminPaymentRisk />} />
@@ -146,6 +153,7 @@ function App() {
           <Route path="/garage/earnings" element={<GarageEarnings />} />
           <Route path="/garage/settlements" element={<GarageSettlements />} />
           <Route path="/garage/reports" element={<GarageReports />} />
+          <Route path="/garage/tax" element={<GarageTax />} />
           <Route path="/garage/disputes" element={<GarageDisputes />} />
           <Route path="/garage-availability" element={<GarageAvailability />} />
           <Route path="/garages/:garageId" element={<GarageDetails />} />

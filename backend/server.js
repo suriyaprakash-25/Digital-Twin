@@ -39,6 +39,9 @@ const riskRouter = require('./src/routes/risk');
 const { garageReportsRouter, adminReportsRouter } = require('./src/routes/reports');
 const financialOperationsRouter = require('./src/routes/financialOperations');
 const financialAuditRouter = require('./src/routes/financialAudit');
+const treasuryRouter = require('./src/routes/treasury');
+const { garageTaxRouter, adminTaxRouter } = require('./src/routes/tax');
+const riskCasesRouter = require('./src/routes/riskCases');
 const { ensurePaymentIndexes } = require('./src/models/Payment');
 const { ensureEarningsIndexes } = require('./src/models/Earnings');
 const { ensureReconciliationIndexes } = require('./src/models/Reconciliation');
@@ -46,6 +49,7 @@ const { ensureDisputeIndexes } = require('./src/models/Dispute');
 const { ensureRiskIndexes } = require('./src/models/RiskEvent');
 const { ensureAuditIndexes } = require('./src/models/AuditLog');
 const { ensureSettlementOperationIndexes } = require('./src/models/SettlementSchedule');
+const { ensureComplianceAndRiskIndexes } = require('./src/models/ComplianceAndRisk');
 
 const app = express();
 const config = loadConfig();
@@ -164,6 +168,10 @@ app.use('/api/admin/reports', adminReportsRouter);
 app.use('/api/admin/financial-operations', financialOperationsRouter);
 app.use('/api/admin/settlements', financialOperationsRouter);
 app.use('/api/admin/financial-audit', financialAuditRouter);
+app.use('/api/admin/treasury', treasuryRouter);
+app.use('/api/garage/tax', garageTaxRouter);
+app.use('/api/admin/tax', adminTaxRouter);
+app.use('/api/admin/risk-cases', riskCasesRouter);
 
 // Start after DB connects
 (async () => {
@@ -175,6 +183,7 @@ app.use('/api/admin/financial-audit', financialAuditRouter);
   await ensureRiskIndexes();
   await ensureAuditIndexes();
   await ensureSettlementOperationIndexes();
+  await ensureComplianceAndRiskIndexes();
   app.listen(config.port, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://localhost:${config.port}`);
