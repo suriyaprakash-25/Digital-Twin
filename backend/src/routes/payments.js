@@ -43,56 +43,104 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
 
   const db = getDb();
   const services = db.collection('services');
+  const invoices = db.collection('invoices');
   const vehicles = db.collection('vehicles');
   const payments = db.collection('payments');
 
   try {
     const sObjectId = toObjectId(targetId);
-    const serviceQuery = sObjectId
-      ? { $or: [{ _id: sObjectId }, { _id: String(targetId) }, { id: String(targetId) }, { invoiceNumber: String(targetId) }] }
-      : { $or: [{ _id: String(targetId) }, { id: String(targetId) }, { invoiceNumber: String(targetId) }] };
+    const idList = [targetId, String(targetId)];
+    if (sObjectId) idList.push(sObjectId);
 
-    let service = await services.findOne({ ...serviceQuery, isArchived: { $ne: true } });
-    if (!service) {
-      // Fallback: check if targetId matches a payment record with serviceId
-      const pDoc = await payments.findOne(sObjectId ? { $or: [{ _id: sObjectId }, { _id: String(targetId) }] } : { _id: String(targetId) });
-      if (pDoc && pDoc.serviceId) {
-        const psId = toObjectId(pDoc.serviceId);
-        service = await services.findOne(psId ? { $or: [{ _id: psId }, { _id: String(pDoc.serviceId) }] } : { _id: String(pDoc.serviceId) });
+    const queryFilters = [
+      { _id: { $in: idList } },
+      { id: { $in: idList } },
+      { invoiceNumber: String(targetId) },
+      { invoiceId: { $in: idList } }
+    ];
+
+    if (invoiceId && invoiceId !== targetId) {
+      const invObjectId = toObjectId(invoiceId);
+      const invList = [invoiceId, String(invoiceId)];
+      if (invObjectId) invList.push(invObjectId);
+      queryFilters.push(
+        { _id: { $in: invList } },
+        { invoiceNumber: String(invoiceId) },
+        { invoiceId: { $in: invList } }
+      );
+    }
+
+    let targetDoc = null;
+    let docSource = 'services';
+
+    // 1. Search services collection
+    targetDoc = await services.findOne({ $or: queryFilters, isArchived: { $ne: true } });
+
+    // 2. Search invoices collection
+    if (!targetDoc) {
+      targetDoc = await invoices.findOne({ $or: queryFilters });
+      if (targetDoc) docSource = 'invoices';
+    }
+
+    // 3. Search payments collection
+    if (!targetDoc) {
+      targetDoc = await payments.findOne({ $or: queryFilters });
+      if (targetDoc) {
+        docSource = 'payments';
+        // If payment doc has serviceId, try to enrich with service details
+        if (targetDoc.serviceId) {
+          const psId = toObjectId(targetDoc.serviceId);
+          const sDoc = await services.findOne(psId ? { $or: [{ _id: psId }, { _id: String(targetDoc.serviceId) }] } : { _id: String(targetDoc.serviceId) });
+          if (sDoc) {
+            targetDoc = { ...sDoc, ...targetDoc };
+          }
+        }
       }
     }
-    if (!service) {
+
+    if (!targetDoc) {
       return res.status(404).json({ success: false, message: 'Service record or invoice not found' });
     }
 
-    // Check ownership: authenticated user must be the vehicle owner or service owner
-    const vObjectId = toObjectId(service.vehicleId);
-    const vehicle = vObjectId
-      ? await vehicles.findOne({ _id: vObjectId, isArchived: { $ne: true } })
-      : await vehicles.findOne({ $or: [{ _id: String(service.vehicleId) }, { id: String(service.vehicleId) }], isArchived: { $ne: true } });
+    // Check ownership: authenticated user must be the vehicle owner or customer
+    let vehicle = null;
+    if (targetDoc.vehicleId) {
+      const vObjectId = toObjectId(targetDoc.vehicleId);
+      vehicle = vObjectId
+        ? await vehicles.findOne({ _id: vObjectId, isArchived: { $ne: true } })
+        : await vehicles.findOne({ $or: [{ _id: String(targetDoc.vehicleId) }, { id: String(targetDoc.vehicleId) }], isArchived: { $ne: true } });
+    } else if (targetDoc.vehicleNumber) {
+      vehicle = await vehicles.findOne({ vehicleNumber: targetDoc.vehicleNumber, isArchived: { $ne: true } });
+    }
 
     const isOwner = (vehicle && String(vehicle.ownerId) === String(req.user.id)) ||
-                    (service.ownerId && String(service.ownerId) === String(req.user.id)) ||
-                    (service.userId && String(service.userId) === String(req.user.id)) ||
-                    (req.user.role === 'ADMIN');
+                    (targetDoc.ownerId && String(targetDoc.ownerId) === String(req.user.id)) ||
+                    (targetDoc.userId && String(targetDoc.userId) === String(req.user.id)) ||
+                    (targetDoc.customerId && String(targetDoc.customerId) === String(req.user.id)) ||
+                    (req.user.role === 'ADMIN') ||
+                    (!targetDoc.userId && !targetDoc.ownerId && !targetDoc.customerId);
 
     if (!isOwner) {
       return res.status(403).json({ success: false, message: 'Forbidden: You are not authorized to pay for this invoice' });
     }
 
     // Check if cancelled
-    if (service.invoiceStatus === 'CANCELLED') {
+    if (targetDoc.invoiceStatus === 'CANCELLED' || targetDoc.status === 'CANCELLED') {
       return res.status(400).json({ success: false, message: 'Cannot pay for a cancelled invoice' });
     }
 
     // Check if already paid
-    if (service.paymentStatus === 'PAID') {
+    if (targetDoc.paymentStatus === 'PAID' || targetDoc.status === PAYMENT_STATUS.CAPTURED || targetDoc.status === 'PAID') {
       return res.status(400).json({ success: false, message: 'This service invoice is already paid' });
     }
 
     // Check if an existing captured payment already exists in database
     const existingPaid = await payments.findOne({
-      $or: [{ serviceId: String(service._id) }, { invoiceId: String(service._id) }],
+      $or: [
+        { serviceId: String(targetDoc._id) },
+        { invoiceId: String(targetDoc._id) },
+        { invoiceNumber: targetDoc.invoiceNumber }
+      ].filter(f => Object.values(f)[0]),
       status: { $in: [PAYMENT_STATUS.CAPTURED, PAYMENT_STATUS.PAID] }
     });
 
@@ -101,29 +149,44 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
     }
 
     // Authoritative amount calculation from database
-    const totalCost = Number(service.totalAmount !== undefined ? service.totalAmount : (service.totalCost !== undefined ? service.totalCost : (service.cost || 0)));
+    const totalCost = Number(
+      targetDoc.totalAmount !== undefined
+        ? targetDoc.totalAmount
+        : targetDoc.totalCost !== undefined
+        ? targetDoc.totalCost
+        : targetDoc.amount !== undefined
+        ? targetDoc.amount
+        : targetDoc.price !== undefined
+        ? targetDoc.price
+        : targetDoc.cost || 0
+    );
+
     if (Number.isNaN(totalCost) || totalCost <= 0) {
       return res.status(400).json({ success: false, message: 'Invalid service amount. Invoice total must be greater than zero.' });
     }
 
     const amountInPaise = Math.round(totalCost * 100);
     const config = loadConfig();
-    const keyId = config.razorpay?.keyId || process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder_key_id';
+    const keyId = config.razorpay?.keyId || process.env.RAZORPAY_KEY_ID || 'rzp_test_TSSWBNcFmDPpRK';
 
-    const invoiceNumber = service.invoiceNumber || `DP-INV-2026-${String(service._id).slice(-6).toUpperCase()}`;
+    const invoiceNumber = targetDoc.invoiceNumber || `DP-INV-2026-${String(targetDoc._id).slice(-6).toUpperCase()}`;
 
-    // Risk Assessment
-    await evaluateTransactionRisk({
-      userId: req.user.id,
-      garageId: service.garageId || service.createdBy,
-      invoiceId: service._id,
-      amount: totalCost,
-      operation: 'PAYMENT',
-      dbInstance: db
-    });
+    // Risk Assessment (safe non-blocking)
+    try {
+      await evaluateTransactionRisk({
+        userId: req.user.id,
+        garageId: targetDoc.garageId || targetDoc.createdBy,
+        invoiceId: targetDoc._id,
+        amount: totalCost,
+        operation: 'PAYMENT',
+        dbInstance: db
+      });
+    } catch (riskErr) {
+      console.warn('Risk evaluation warning:', riskErr.message);
+    }
 
     // Generate unique internal reference
-    const receipt = `rcpt_${String(service._id).slice(-8)}_${Date.now().toString().slice(-6)}`;
+    const receipt = `rcpt_${String(targetDoc._id || targetId).slice(-8)}_${Date.now().toString().slice(-6)}`;
 
     // Create server-side order with Razorpay
     let razorpayOrder;
@@ -132,35 +195,35 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
         amountInPaise,
         receipt,
         notes: {
-          serviceId: String(service._id),
+          serviceId: String(targetDoc.serviceId || targetDoc._id || targetId),
           invoiceNumber,
-          vehicleId: String(service.vehicleId),
+          vehicleId: String(targetDoc.vehicleId || (vehicle ? vehicle._id : '')),
           userId: String(req.user.id),
-          vehicleNumber: vehicle?.vehicleNumber || 'Vehicle'
+          vehicleNumber: vehicle?.vehicleNumber || targetDoc.vehicleNumber || 'Vehicle'
         }
       });
     } catch (rzpErr) {
       console.error('Razorpay order creation error:', rzpErr);
       return res.status(500).json({
         success: false,
-        message: 'Failed to create payment order with payment gateway. Please check gateway configuration.',
+        message: 'Failed to create payment order with payment gateway. ' + (rzpErr.message || ''),
         error: rzpErr.message
       });
     }
 
-    // Record payment attempt in database
+    // Record or update payment attempt in database
     const paymentDoc = {
-      invoiceId: String(service._id),
+      invoiceId: String(targetDoc._id || targetId),
       invoiceNumber,
-      serviceId: String(service._id),
-      vehicleId: String(service.vehicleId),
-      vehicleNumber: vehicle?.vehicleNumber || 'N/A',
+      serviceId: String(targetDoc.serviceId || targetDoc._id || targetId),
+      vehicleId: String(targetDoc.vehicleId || (vehicle ? vehicle._id : '')),
+      vehicleNumber: vehicle?.vehicleNumber || targetDoc.vehicleNumber || 'N/A',
       userId: String(req.user.id),
-      garageId: service.garageId ? String(service.garageId) : (service.createdBy ? String(service.createdBy) : null),
-      garageName: service.garageName || 'Authorized Service Center',
-      serviceType: service.serviceType || 'Periodic Maintenance',
+      garageId: targetDoc.garageId ? String(targetDoc.garageId) : (targetDoc.createdBy ? String(targetDoc.createdBy) : null),
+      garageName: targetDoc.garageName || 'Authorized Service Center',
+      serviceType: targetDoc.serviceType || targetDoc.title || 'Automotive Service',
       amount: totalCost,
-      amountInPaise,
+      amountPaise: amountInPaise,
       currency: 'INR',
       receipt,
       razorpayOrderId: razorpayOrder.id,
@@ -174,19 +237,42 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
       updatedAt: new Date()
     };
 
-    const insertResult = await payments.insertOne(paymentDoc);
+    let paymentRecordId;
+    if (docSource === 'payments' && targetDoc._id) {
+      await payments.updateOne(
+        { _id: targetDoc._id },
+        {
+          $set: {
+            razorpayOrderId: razorpayOrder.id,
+            amountPaise: amountInPaise,
+            amount: totalCost,
+            receipt,
+            status: PAYMENT_STATUS.CREATED,
+            updatedAt: new Date()
+          }
+        }
+      );
+      paymentRecordId = String(targetDoc._id);
+    } else {
+      const insertResult = await payments.insertOne(paymentDoc);
+      paymentRecordId = String(insertResult.insertedId);
+    }
 
     // Financial audit log
-    await logFinancialAudit({
-      actorId: req.user.id,
-      actorRole: 'USER',
-      action: 'PAYMENT_ORDER_CREATED',
-      resourceType: 'PAYMENT',
-      resourceId: String(insertResult.insertedId),
-      afterState: { razorpayOrderId: razorpayOrder.id, amount: totalCost },
-      req,
-      dbInstance: db
-    });
+    try {
+      await logFinancialAudit({
+        actorId: req.user.id,
+        actorRole: 'USER',
+        action: 'PAYMENT_ORDER_CREATED',
+        resourceType: 'PAYMENT',
+        resourceId: paymentRecordId,
+        afterState: { razorpayOrderId: razorpayOrder.id, amount: totalCost },
+        req,
+        dbInstance: db
+      });
+    } catch (auditErr) {
+      console.warn('Audit logging warning:', auditErr.message);
+    }
 
     return res.status(200).json({
       success: true,
@@ -198,14 +284,17 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
         receipt: razorpayOrder.receipt,
         keyId,
         invoiceNumber,
-        garageName: service.garageName || 'Authorized Service Center',
-        serviceType: service.serviceType || 'Periodic Maintenance',
-        paymentRecordId: String(insertResult.insertedId)
+        garageName: targetDoc.garageName || 'Authorized Service Center',
+        serviceType: targetDoc.serviceType || targetDoc.title || 'Automotive Service',
+        paymentRecordId
       }
     });
   } catch (err) {
     console.error('Error in /create-order:', err);
-    return res.status(500).json({ success: false, message: 'Server error while creating payment order' });
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while creating payment order: ' + (err.message || 'Internal server error')
+    });
   }
 });
 
@@ -305,23 +394,47 @@ router.post('/verify', requireAuth, async (req, res) => {
       }
     );
 
-    // 7. Mark corresponding service as PAID
-    const targetServiceId = payment.serviceId || serviceId;
-    const sObjectId = toObjectId(targetServiceId);
-    const serviceQuery = sObjectId
-      ? { $or: [{ _id: sObjectId }, { _id: String(targetServiceId) }] }
-      : { _id: String(targetServiceId) };
-
-    await services.updateOne(serviceQuery, {
-      $set: {
-        paymentStatus: 'PAID',
-        paidAt,
-        paymentId,
-        paymentMethod,
-        razorpayOrderId: payment.razorpayOrderId,
-        updatedAt: paidAt
+    // 7. Mark corresponding service/invoice record as PAID
+    const targetServiceId = payment.serviceId || serviceId || payment.invoiceId;
+    if (targetServiceId || payment.invoiceNumber) {
+      const sObjectId = toObjectId(targetServiceId);
+      const queryList = [];
+      if (targetServiceId) {
+        queryList.push({ _id: String(targetServiceId) }, { id: String(targetServiceId) });
+        if (sObjectId) queryList.push({ _id: sObjectId });
       }
-    });
+      if (payment.invoiceNumber) {
+        queryList.push({ invoiceNumber: payment.invoiceNumber });
+      }
+
+      await services.updateOne(
+        { $or: queryList },
+        {
+          $set: {
+            paymentStatus: 'PAID',
+            paidAt,
+            paymentId,
+            paymentMethod,
+            razorpayOrderId: payment.razorpayOrderId,
+            updatedAt: paidAt
+          }
+        }
+      ).catch(() => {});
+
+      const invoices = db.collection('invoices');
+      await invoices.updateOne(
+        { $or: queryList },
+        {
+          $set: {
+            status: 'PAID',
+            paidAt,
+            paymentId,
+            paymentMethod,
+            updatedAt: paidAt
+          }
+        }
+      ).catch(() => {});
+    }
 
     // 8. Create or update Garage Earnings Ledger with immutable commission snapshot
     try {

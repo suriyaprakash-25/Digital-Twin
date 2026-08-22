@@ -43,9 +43,9 @@ function loadConfig() {
       fromEmail: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
     },
     razorpay: {
-      keyId: process.env.RAZORPAY_KEY_ID || '',
-      keySecret: process.env.RAZORPAY_KEY_SECRET || '',
-      webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || ''
+      keyId: (process.env.RAZORPAY_KEY_ID || '').trim(),
+      keySecret: (process.env.RAZORPAY_KEY_SECRET || '').trim(),
+      webhookSecret: (process.env.RAZORPAY_WEBHOOK_SECRET || '').trim()
     },
     settlement: {
       mode: (process.env.SETTLEMENT_MODE || 'MOCK_TEST_MODE').toUpperCase(),
