@@ -438,7 +438,7 @@ const GarageDashboard = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => updateBookingStatus(b.id, 'COMPLETED')}
+                      onClick={() => navigate(`/garage/add-service?bookingId=${b.id}&serviceId=${b.serviceId || b.id}&completionMode=true`)}
                       className="px-3.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 border border-emerald-200 transition-colors"
                     >
                       Mark Completed

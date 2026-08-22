@@ -69,9 +69,21 @@ router.get('/:serviceId', requireAuth, async (req, res) => {
 
   try {
     const sId = toObjectId(serviceId);
-    const service = sId
-      ? await services.findOne({ _id: sId, isArchived: { $ne: true } })
-      : await services.findOne({ id: serviceId, isArchived: { $ne: true } });
+    const serviceQuery = sId
+      ? { $or: [{ _id: sId }, { id: String(serviceId) }, { invoiceNumber: String(serviceId) }] }
+      : { $or: [{ _id: String(serviceId) }, { id: String(serviceId) }, { invoiceNumber: String(serviceId) }] };
+
+    let service = await services.findOne({ ...serviceQuery, isArchived: { $ne: true } });
+
+    if (!service) {
+      // Check in invoices collection as fallback
+      const invCol = db.collection('invoices');
+      const invDoc = await invCol.findOne(serviceQuery);
+      if (invDoc && invDoc.serviceId) {
+        const sObj = toObjectId(invDoc.serviceId);
+        service = sObj ? await services.findOne({ _id: sObj }) : await services.findOne({ _id: String(invDoc.serviceId) });
+      }
+    }
 
     if (!service) {
       return res.status(404).json({ success: false, message: 'Invoice / Service record not found' });
@@ -129,13 +141,16 @@ router.get('/:serviceId', requireAuth, async (req, res) => {
       serviceCategory: service.serviceCategory || 'Periodic Maintenance',
       serviceType: service.serviceType || 'Automotive Service',
       mechanicNotes: service.mechanicNotes || '',
-      partsReplaced: totals.partsReplaced,
-      partsAmount: totals.partsAmount,
-      laborAmount: totals.laborAmount,
-      additionalCharges: totals.additionalCharges,
-      discountAmount: totals.discountAmount,
-      taxAmount: totals.taxAmount,
-      subtotal: totals.subtotal,
+      partsReplaced: service.partsReplaced || totals.partsReplaced,
+      partsAmount: service.partsAmount !== undefined ? service.partsAmount : totals.partsAmount,
+      laborCharges: service.laborCharges || [],
+      laborAmount: service.laborAmount !== undefined ? service.laborAmount : (service.laborCost || totals.laborAmount),
+      additionalCharges: service.additionalCharges || totals.additionalCharges,
+      discountAmount: service.discountAmount !== undefined ? service.discountAmount : totals.discountAmount,
+      taxableAmount: service.taxableAmount !== undefined ? service.taxableAmount : (totals.subtotal - totals.discountAmount),
+      taxAmount: service.taxAmount !== undefined ? service.taxAmount : totals.taxAmount,
+      taxSnapshot: service.taxSnapshot || null,
+      subtotal: service.subtotalAmount !== undefined ? service.subtotalAmount : totals.subtotal,
       totalAmount: service.totalAmount !== undefined ? service.totalAmount : (service.totalCost || totals.totalAmount),
       paidAt: service.paidAt,
       paymentId: service.paymentId,

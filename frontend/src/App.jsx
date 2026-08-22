@@ -149,6 +149,7 @@ function App() {
           <Route path="/disputes" element={<MyDisputes />} />
           <Route path="/disputes/:id" element={<DisputeDetails />} />
           <Route path="/add-service" element={<AddService />} />
+          <Route path="/garage/add-service" element={<AddService />} />
           <Route path="/service-history/:vehicleId" element={<ServiceHistory />} />
           <Route path="/resale-report/:vehicleId" element={<ResaleReport />} />
           <Route path="/insurance/:vehicleId" element={<Insurance />} />
