@@ -235,22 +235,39 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
       updatedAt: new Date()
     };
 
+    // Check if an existing pending payment record already exists for this invoice
+    const pendingQuery = [
+      { invoiceNumber },
+      { invoiceId: String(targetDoc._id || targetId) },
+      { serviceId: String(targetDoc.serviceId || targetDoc._id || targetId) }
+    ];
+    if (targetDoc._id) pendingQuery.push({ _id: targetDoc._id });
+
+    const existingPendingPayment = await payments.findOne({
+      $or: pendingQuery,
+      status: { $in: [PAYMENT_STATUS.CREATED, PAYMENT_STATUS.PENDING] }
+    });
+
     let paymentRecordId;
-    if (docSource === 'payments' && targetDoc._id) {
+    if (existingPendingPayment) {
       await payments.updateOne(
-        { _id: targetDoc._id },
+        { _id: existingPendingPayment._id },
         {
           $set: {
             razorpayOrderId: razorpayOrder.id,
             amountPaise: amountInPaise,
             amount: totalCost,
             receipt,
+            invoiceNumber,
+            vehicleNumber: vehicle?.vehicleNumber || targetDoc.vehicleNumber || 'N/A',
+            garageName: targetDoc.garageName || 'Authorized Service Center',
+            serviceType: targetDoc.serviceType || targetDoc.title || 'Automotive Service',
             status: PAYMENT_STATUS.CREATED,
             updatedAt: new Date()
           }
         }
       );
-      paymentRecordId = String(targetDoc._id);
+      paymentRecordId = String(existingPendingPayment._id);
     } else {
       const insertResult = await payments.insertOne(paymentDoc);
       paymentRecordId = String(insertResult.insertedId);
@@ -432,6 +449,28 @@ router.post('/verify', requireAuth, async (req, res) => {
           }
         }
       ).catch(() => {});
+    }
+
+    // Clean up any stale duplicate pending attempts for this invoice
+    const cleanupFilters = [];
+    if (payment.invoiceNumber && payment.invoiceNumber !== '—') cleanupFilters.push({ invoiceNumber: payment.invoiceNumber });
+    if (payment.invoiceId) {
+      cleanupFilters.push({ invoiceId: String(payment.invoiceId) }, { _id: String(payment.invoiceId) });
+      const invObj = toObjectId(payment.invoiceId);
+      if (invObj) cleanupFilters.push({ _id: invObj });
+    }
+    if (payment.serviceId) {
+      cleanupFilters.push({ serviceId: String(payment.serviceId) }, { _id: String(payment.serviceId) });
+      const srvObj = toObjectId(payment.serviceId);
+      if (srvObj) cleanupFilters.push({ _id: srvObj });
+    }
+
+    if (cleanupFilters.length > 0) {
+      await payments.deleteMany({
+        _id: { $ne: payment._id },
+        $or: cleanupFilters,
+        status: { $in: [PAYMENT_STATUS.CREATED, PAYMENT_STATUS.PENDING] }
+      }).catch(err => console.warn('Cleanup stale pending payments warning:', err.message));
     }
 
     // 8. Create or update Garage Earnings Ledger with immutable commission snapshot
@@ -1047,7 +1086,26 @@ router.get('/history', requireAuth, async (req, res) => {
       .limit(100)
       .toArray();
 
-    const formatted = userPayments.map(p => ({
+    // Deduplicate by invoiceNumber / serviceId: if an invoice is CAPTURED, omit older pending duplicate attempts
+    const capturedInvoiceKeys = new Set();
+    userPayments.forEach(p => {
+      if (p.status === PAYMENT_STATUS.CAPTURED || p.status === 'PAID') {
+        if (p.invoiceNumber && p.invoiceNumber !== '—') capturedInvoiceKeys.add(p.invoiceNumber);
+        if (p.serviceId) capturedInvoiceKeys.add(String(p.serviceId));
+        if (p.invoiceId) capturedInvoiceKeys.add(String(p.invoiceId));
+      }
+    });
+
+    const activeUserPayments = userPayments.filter(p => {
+      if (p.status === PAYMENT_STATUS.CREATED || p.status === PAYMENT_STATUS.PENDING) {
+        if (p.invoiceNumber && capturedInvoiceKeys.has(p.invoiceNumber)) return false;
+        if (p.serviceId && capturedInvoiceKeys.has(String(p.serviceId))) return false;
+        if (p.invoiceId && capturedInvoiceKeys.has(String(p.invoiceId))) return false;
+      }
+      return true;
+    });
+
+    const formatted = activeUserPayments.map(p => ({
       id: String(p._id),
       invoiceNumber: p.invoiceNumber || '—',
       orderId: p.razorpayOrderId,
@@ -1087,6 +1145,25 @@ router.get('/customer/financial-summary', requireAuth, async (req, res) => {
     const userPayments = await payments.find({ userId }).toArray();
     const userInvoices = await invoices.find({ customerId: userId }).toArray();
 
+    // Deduplicate by invoiceNumber / serviceId: if an invoice is CAPTURED, omit older pending duplicate attempts
+    const capturedInvoiceKeys = new Set();
+    userPayments.forEach(p => {
+      if (p.status === PAYMENT_STATUS.CAPTURED || p.status === 'PAID') {
+        if (p.invoiceNumber && p.invoiceNumber !== '—') capturedInvoiceKeys.add(p.invoiceNumber);
+        if (p.serviceId) capturedInvoiceKeys.add(String(p.serviceId));
+        if (p.invoiceId) capturedInvoiceKeys.add(String(p.invoiceId));
+      }
+    });
+
+    const activeUserPayments = userPayments.filter(p => {
+      if (p.status === PAYMENT_STATUS.CREATED || p.status === PAYMENT_STATUS.PENDING) {
+        if (p.invoiceNumber && capturedInvoiceKeys.has(p.invoiceNumber)) return false;
+        if (p.serviceId && capturedInvoiceKeys.has(String(p.serviceId))) return false;
+        if (p.invoiceId && capturedInvoiceKeys.has(String(p.invoiceId))) return false;
+      }
+      return true;
+    });
+
     let totalPaidPaise = 0;
     let pendingPaise = 0;
     let refundPaise = 0;
@@ -1102,7 +1179,7 @@ router.get('/customer/financial-summary', requireAuth, async (req, res) => {
 
     const vehicleSet = new Set();
 
-    userPayments.forEach(p => {
+    activeUserPayments.forEach(p => {
       const amtPaise = Math.round(Number(p.amountPaise || (p.amount * 100)) || 0);
       const refPaise = Math.round(Number(p.refundedPaise || ((p.totalRefundedAmount || 0) * 100)) || 0);
 
@@ -1129,7 +1206,7 @@ router.get('/customer/financial-summary', requireAuth, async (req, res) => {
       if (p.vehicleNumber) vehicleSet.add(p.vehicleNumber);
     });
 
-    const recentActivity = userPayments
+    const recentActivity = activeUserPayments
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, 10)
       .map(p => ({
