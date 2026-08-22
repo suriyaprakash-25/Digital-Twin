@@ -23,11 +23,30 @@ async function ensurePaymentIndexes(dbInstance) {
     const db = dbInstance || getDb();
     const payments = db.collection('payments');
 
-    // Unique index on razorpayOrderId
-    await payments.createIndex({ razorpayOrderId: 1 }, { unique: true, sparse: true });
+    // Safely migrate legacy unique indexes to partialFilterExpression
+    try {
+      const existingIndexes = await payments.indexes();
+      for (const idx of existingIndexes) {
+        if ((idx.name === 'razorpayPaymentId_1' || idx.name === 'razorpayOrderId_1') && !idx.partialFilterExpression) {
+          console.log(`Migrating legacy index: ${idx.name}`);
+          await payments.dropIndex(idx.name).catch(() => {});
+        }
+      }
+    } catch (dropErr) {
+      console.warn('Index migration check notice:', dropErr.message);
+    }
 
-    // Sparse unique index on razorpayPaymentId
-    await payments.createIndex({ razorpayPaymentId: 1 }, { unique: true, sparse: true });
+    // Unique index on razorpayOrderId (ignores null/undefined/missing)
+    await payments.createIndex(
+      { razorpayOrderId: 1 },
+      { unique: true, partialFilterExpression: { razorpayOrderId: { $type: 'string' } } }
+    );
+
+    // Unique index on razorpayPaymentId (ignores null/undefined/missing)
+    await payments.createIndex(
+      { razorpayPaymentId: 1 },
+      { unique: true, partialFilterExpression: { razorpayPaymentId: { $type: 'string' } } }
+    );
 
     // Lookup indexes
     await payments.createIndex({ userId: 1, createdAt: -1 });

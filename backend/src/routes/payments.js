@@ -227,8 +227,6 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
       currency: 'INR',
       receipt,
       razorpayOrderId: razorpayOrder.id,
-      razorpayPaymentId: null,
-      razorpaySignature: null,
       status: PAYMENT_STATUS.CREATED,
       paymentMethod: null,
       failureReason: null,
