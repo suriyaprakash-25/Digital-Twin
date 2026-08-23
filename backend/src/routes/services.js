@@ -294,100 +294,10 @@ router.get('/garage/all', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/:vehicle_id', requireAuth, async (req, res) => {
-  const vehicleId = req.params.vehicle_id;
-  const db = getDb();
-  const services = db.collection('services');
-  const vehicles = db.collection('vehicles');
-
-  let vehicleObjectId;
-  try {
-    vehicleObjectId = new ObjectId(vehicleId);
-  } catch (e) {
-    return res.status(400).json({ msg: 'Invalid vehicle ID' });
-  }
-
-  const vehicle = await vehicles.findOne({ _id: vehicleObjectId, isArchived: { $ne: true } });
-  if (!vehicle) {
-    return res.status(404).json({ msg: 'Vehicle not found' });
-  }
-
-  if (req.user.role !== 'GARAGE' && req.user.role !== 'ADMIN' && String(vehicle.ownerId) !== req.user.id) {
-    return res.status(403).json({ msg: 'Unauthorized to view service history for this vehicle' });
-  }
-
-
-  const cursor = services
-    .find({ vehicleId, isArchived: { $ne: true } })
-    .sort({ serviceDate: -1 });
-
-  const results = [];
-  for await (const s of cursor) {
-    results.push({
-      id: String(s._id),
-      vehicleId: s.vehicleId,
-      serviceDate: s.serviceDate,
-      odometerKm: s.odometerKm || s.mileage,
-      serviceCategory: s.serviceCategory || 'Periodic Maintenance',
-      serviceType: s.serviceType,
-      partsReplaced: s.partsReplaced || [],
-      laborCost: s.laborCost || 0,
-      totalCost: s.totalCost || s.cost,
-      warrantyMonths: s.warrantyMonths,
-      mechanicNotes: s.mechanicNotes,
-      garageName: s.garageName,
-      location: s.location,
-      verifiedService: s.verifiedService === true,
-      recommendedKm: s.recommendedKm,
-      recommendedDate: s.recommendedDate,
-      abnormalKmJump: s.abnormalKmJump || false,
-      verificationStatus: s.verificationStatus || 'Pending',
-      isArchived: s.isArchived || false,
-      billPhotoUrls: Array.isArray(s.billPhotoUrls) ? s.billPhotoUrls : (s.billPhotoUrl ? [s.billPhotoUrl] : []),
-      paymentStatus: s.paymentStatus || 'UNPAID',
-      paidAt: s.paidAt ? new Date(s.paidAt).toISOString() : null,
-      paymentId: s.paymentId || null,
-      paymentMethod: s.paymentMethod || null,
-      createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : null
-    });
-  }
-
-  return res.status(200).json(results);
-});
-
-// DELETE a service record
-router.delete('/:service_id', requireAuth, async (req, res) => {
-  const serviceId = req.params.service_id;
-  const db = getDb();
-  const services = db.collection('services');
-  const vehicles = db.collection('vehicles');
-
-  try {
-    const serviceObjectId = new ObjectId(serviceId);
-    
-    // Find service to get vehicleId
-    const service = await services.findOne({ _id: serviceObjectId });
-    if (!service) {
-      return res.status(404).json({ msg: 'Service record not found' });
-    }
-
-    // Verify ownership
-    const vehicleObjectId = new ObjectId(service.vehicleId);
-    const vehicle = await vehicles.findOne({ _id: vehicleObjectId, ownerId: req.user.id });
-    if (!vehicle) {
-      return res.status(403).json({ msg: 'Unauthorized: You do not own this vehicle' });
-    }
-
-    await services.deleteOne({ _id: serviceObjectId });
-    return res.status(200).json({ msg: 'Service record deleted successfully' });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error deleting service record', error: String(e && e.message ? e.message : e) });
-  }
-});
-
 /**
  * GET /api/services/completion-details
  * Retrieves prefill information for completing an in-progress service/booking
+ * NOTE: Placed BEFORE router.get('/:vehicle_id') so Express does not capture 'completion-details' as a vehicleId param.
  */
 router.get('/completion-details', requireAuth, async (req, res) => {
   const { bookingId, serviceId } = req.query;
@@ -411,19 +321,37 @@ router.get('/completion-details', requireAuth, async (req, res) => {
 
     if (bookingId) {
       const bObj = toObjectId(bookingId);
-      bookingDoc = bObj ? await bookings.findOne({ _id: bObj }) : await bookings.findOne({ _id: String(bookingId) });
+      bookingDoc = await bookings.findOne({
+        $or: [
+          ...(bObj ? [{ _id: bObj }] : []),
+          { _id: String(bookingId) },
+          { id: String(bookingId) }
+        ]
+      });
     }
 
     if (serviceId) {
       const sObj = toObjectId(serviceId);
-      serviceDoc = sObj ? await services.findOne({ _id: sObj }) : await services.findOne({ _id: String(serviceId) });
+      serviceDoc = await services.findOne({
+        $or: [
+          ...(sObj ? [{ _id: sObj }] : []),
+          { _id: String(serviceId) },
+          { id: String(serviceId) }
+        ]
+      });
     }
 
     // Resolve vehicle
     const vehicleId = bookingDoc?.vehicleId || serviceDoc?.vehicleId;
     if (vehicleId) {
       const vObj = toObjectId(vehicleId);
-      vehicleDoc = vObj ? await vehicles.findOne({ _id: vObj }) : await vehicles.findOne({ _id: String(vehicleId) });
+      vehicleDoc = await vehicles.findOne({
+        $or: [
+          ...(vObj ? [{ _id: vObj }] : []),
+          { _id: String(vehicleId) },
+          { id: String(vehicleId) }
+        ]
+      });
     }
 
     // Resolve garage
@@ -432,14 +360,26 @@ router.get('/completion-details', requireAuth, async (req, res) => {
     }
     if (!garageDoc && bookingDoc?.garageId) {
       const gObj = toObjectId(bookingDoc.garageId);
-      garageDoc = gObj ? await garages.findOne({ _id: gObj }) : await garages.findOne({ _id: String(bookingDoc.garageId) });
+      garageDoc = await garages.findOne({
+        $or: [
+          ...(gObj ? [{ _id: gObj }] : []),
+          { _id: String(bookingDoc.garageId) },
+          { id: String(bookingDoc.garageId) }
+        ]
+      });
     }
 
     // Resolve customer
     const customerId = bookingDoc?.userId || serviceDoc?.ownerId || vehicleDoc?.ownerId;
     if (customerId) {
       const uObj = toObjectId(customerId);
-      customerDoc = uObj ? await users.findOne({ _id: uObj }) : await users.findOne({ $or: [{ uid: String(customerId) }, { _id: String(customerId) }] });
+      customerDoc = await users.findOne({
+        $or: [
+          ...(uObj ? [{ _id: uObj }] : []),
+          { uid: String(customerId) },
+          { _id: String(customerId) }
+        ]
+      });
     }
 
     const snapshotUser = bookingDoc?.snapshots?.user || {};
@@ -482,6 +422,37 @@ router.get('/completion-details', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Error fetching completion details:', err);
     return res.status(500).json({ success: false, message: 'Failed to load service completion details' });
+  }
+    return res.status(200).json(results);
+});
+
+// DELETE a service record
+router.delete('/:service_id', requireAuth, async (req, res) => {
+  const serviceId = req.params.service_id;
+  const db = getDb();
+  const services = db.collection('services');
+  const vehicles = db.collection('vehicles');
+
+  try {
+    const serviceObjectId = new ObjectId(serviceId);
+    
+    // Find service to get vehicleId
+    const service = await services.findOne({ _id: serviceObjectId });
+    if (!service) {
+      return res.status(404).json({ msg: 'Service record not found' });
+    }
+
+    // Verify ownership
+    const vehicleObjectId = new ObjectId(service.vehicleId);
+    const vehicle = await vehicles.findOne({ _id: vehicleObjectId, ownerId: req.user.id });
+    if (!vehicle) {
+      return res.status(403).json({ msg: 'Unauthorized: You do not own this vehicle' });
+    }
+
+    await services.deleteOne({ _id: serviceObjectId });
+    return res.status(200).json({ msg: 'Service record deleted successfully' });
+  } catch (e) {
+    return res.status(500).json({ msg: 'Error deleting service record', error: String(e && e.message ? e.message : e) });
   }
 });
 
