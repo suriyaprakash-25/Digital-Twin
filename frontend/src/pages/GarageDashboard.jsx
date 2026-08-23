@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../utils/config';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useToast } from '../context/ToastContext';
 import {
@@ -28,6 +28,7 @@ const statusMeta = {
 };
 
 const GarageDashboard = () => {
+  const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const userRaw = localStorage.getItem('user');
   const user = userRaw ? JSON.parse(userRaw) : null;
@@ -590,7 +591,7 @@ const GarageDashboard = () => {
 
                     {b.status === 'IN_PROGRESS' && (
                       <button
-                        onClick={() => updateBookingStatus(b.id, 'COMPLETED')}
+                        onClick={() => navigate(`/garage/add-service?bookingId=${b.id}&serviceId=${b.serviceId || b.id}&completionMode=true`)}
                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" /> Mark Complete

@@ -396,9 +396,9 @@ const AddService = () => {
           serviceCategory: formData.serviceCategory,
           serviceType: formData.serviceType,
           mechanicNotes: formData.mechanicNotes,
-          parts: partsReplaced.filter(p => p.partName.trim() !== ''),
-          labour: labourCharges.filter(l => l.description.trim() !== ''),
-          additionalCharges: additionalCharges.filter(c => c.description.trim() !== ''),
+          parts: partsReplaced.filter(p => p.partName && p.partName.trim() !== ''),
+          labour: labourCharges.filter(l => l.description && l.description.trim() !== ''),
+          additionalCharges: additionalCharges.filter(c => c.description && c.description.trim() !== ''),
           discount: parseFloat(discount) || 0,
           warrantyMonths: formData.warrantyMonths,
           recommendedKm: formData.recommendedKm,
@@ -423,7 +423,7 @@ const AddService = () => {
         // Regular service log entry
         const submitPayload = {
           ...formData,
-          partsReplaced: partsReplaced.filter(p => p.partName.trim() !== ''),
+          partsReplaced: partsReplaced.filter(p => p.partName && p.partName.trim() !== ''),
           billPhotoUrls: billPhotos
         };
 
@@ -564,19 +564,19 @@ const AddService = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => setShowInvoiceModal(true)}
-              className="w-full sm:w-auto px-6 py-3.5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-600/20 transition-all flex items-center justify-center gap-2 text-sm"
+              className="w-full sm:w-auto px-6 py-3.5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-600/20 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
             >
               <FileText className="h-4 w-4" /> View Generated Invoice
             </button>
             <button
               onClick={() => navigate('/garage-services-history')}
-              className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm"
+              className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
             >
               Back to Service History
             </button>
             <button
               onClick={() => navigate('/garage-dashboard')}
-              className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2 text-sm"
+              className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
             >
               Dashboard
             </button>
@@ -602,7 +602,7 @@ const AddService = () => {
         {completionMode && (
           <button
             onClick={() => navigate('/garage-dashboard')}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 mb-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 mb-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm transition-colors cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to Vehicles In Progress
           </button>
@@ -735,7 +735,7 @@ const AddService = () => {
             <button
               type="button"
               onClick={addPartRow}
-              className="text-xs sm:text-sm text-teal-700 bg-white hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+              className="text-xs sm:text-sm text-teal-700 bg-white hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
             >
               <Plus className="h-4 w-4" /> Add Part
             </button>
@@ -813,7 +813,7 @@ const AddService = () => {
                         <button
                           type="button"
                           onClick={() => removePartRow(index)}
-                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                           title="Remove item"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -842,7 +842,7 @@ const AddService = () => {
               <button
                 type="button"
                 onClick={addLabourRow}
-                className="text-xs sm:text-sm text-teal-700 bg-white hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                className="text-xs sm:text-sm text-teal-700 bg-white hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
               >
                 <Plus className="h-4 w-4" /> Add Labour
               </button>
@@ -908,7 +908,7 @@ const AddService = () => {
                         <button
                           type="button"
                           onClick={() => removeLabourRow(index)}
-                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                           title="Remove item"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -941,7 +941,7 @@ const AddService = () => {
               <button
                 type="button"
                 onClick={addAdditionalChargeRow}
-                className="text-xs sm:text-sm text-teal-700 bg-white hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                className="text-xs sm:text-sm text-teal-700 bg-white hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
               >
                 <Plus className="h-4 w-4" /> Add Charge
               </button>
@@ -977,7 +977,7 @@ const AddService = () => {
                       <button
                         type="button"
                         onClick={() => removeAdditionalChargeRow(index)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg cursor-pointer"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -1131,7 +1131,7 @@ const AddService = () => {
                         <button
                           type="button"
                           onClick={() => removeBillPhoto(idx)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white shadow-lg"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white shadow-lg cursor-pointer"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -1207,7 +1207,7 @@ const AddService = () => {
                   <button
                     type="button"
                     onClick={capturePhoto}
-                    className="w-16 h-16 rounded-full bg-white hover:bg-violet-100 border-4 border-violet-400 shadow-xl hover:scale-105 transition-all flex items-center justify-center"
+                    className="w-16 h-16 rounded-full bg-white hover:bg-violet-100 border-4 border-violet-400 shadow-xl hover:scale-105 transition-all flex items-center justify-center cursor-pointer"
                   >
                     <Camera className="h-7 w-7 text-violet-600" />
                   </button>
