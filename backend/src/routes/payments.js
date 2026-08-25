@@ -292,8 +292,14 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
     return res.status(200).json({
       success: true,
       message: 'Razorpay order created successfully',
+      orderId: razorpayOrder.id,
+      amount: amountInPaise,
+      currency: razorpayOrder.currency || 'INR',
+      keyId,
+      invoiceNumber,
       order: {
         id: razorpayOrder.id,
+        orderId: razorpayOrder.id,
         amount: amountInPaise,
         currency: razorpayOrder.currency || 'INR',
         receipt: razorpayOrder.receipt,

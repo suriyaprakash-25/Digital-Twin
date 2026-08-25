@@ -46,28 +46,39 @@ const PaymentButton = ({ service, vehicle, onPaymentSuccess, className = '' }) =
       const apiBaseUrl = API_BASE_URL;
 
       // 2. Create server-side Razorpay Order
+      const targetServiceId = service.id || service._id;
       const orderResponse = await axios.post(
         `${apiBaseUrl}/api/payments/create-order`,
-        { serviceId: service.id || service._id },
+        {
+          serviceId: targetServiceId,
+          invoiceId: service.invoiceNumber || targetServiceId
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const orderData = orderResponse.data;
-      if (!orderData || !orderData.orderId) {
-        throw new Error(orderData?.message || 'Failed to generate payment order');
+      const resData = orderResponse.data;
+      if (!resData || (!resData.success && resData.orderId === undefined && !resData.order)) {
+        throw new Error(resData?.message || 'Failed to generate payment order');
       }
 
-      const razorpayKey = orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder';
+      const orderData = resData.order || resData;
+      const orderId = orderData.id || orderData.orderId || resData.orderId;
+      if (!orderId) {
+        throw new Error(resData?.message || 'Failed to obtain payment order ID');
+      }
+
+      const razorpayKey = orderData.keyId || resData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TSSWBNcFmDPpRK';
+      const amountPaise = orderData.amount || resData.amount || Math.round(totalCost * 100);
 
       // 3. Configure Razorpay Standard Checkout
       const options = {
         key: razorpayKey,
-        amount: orderData.amount,
-        currency: orderData.currency || 'INR',
-        name: 'DrivePortz',
-        description: `${service.serviceType || 'Service'} - ${vehicle?.vehicleNumber || 'Vehicle'}`,
+        amount: amountPaise,
+        currency: orderData.currency || resData.currency || 'INR',
+        name: 'DrivePortz Mobility',
+        description: `Invoice ${orderData.invoiceNumber || service.invoiceNumber || 'Payment'} - ${service.serviceType || 'Automotive Service'}`,
         image: '/logo-removebg-preview.png',
-        order_id: orderData.orderId,
+        order_id: orderId,
         prefill: {
           name: user.name || '',
           email: user.email || '',
@@ -90,14 +101,16 @@ const PaymentButton = ({ service, vehicle, onPaymentSuccess, className = '' }) =
                 paymentId: response.razorpay_payment_id,
                 razorpayOrderId: response.razorpay_order_id,
                 signature: response.razorpay_signature,
-                serviceId: service.id || service._id
+                serviceId: targetServiceId,
+                invoiceNumber: service.invoiceNumber
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
 
             if (verifyRes.data?.success) {
+              setErrorMessage('');
               if (onPaymentSuccess) {
-                onPaymentSuccess(verifyRes.data.payment);
+                onPaymentSuccess(verifyRes.data.payment || { ...service, paymentStatus: 'PAID', paidAt: new Date().toISOString() });
               }
             } else {
               setErrorMessage('Payment verification failed. Please contact support.');
