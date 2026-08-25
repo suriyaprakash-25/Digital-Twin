@@ -423,7 +423,94 @@ router.get('/completion-details', requireAuth, async (req, res) => {
     console.error('Error fetching completion details:', err);
     return res.status(500).json({ success: false, message: 'Failed to load service completion details' });
   }
-    return res.status(200).json(results);
+});
+
+/**
+ * GET /api/services/:vehicle_id
+ * Returns all service history records for a specific vehicle.
+ */
+router.get('/:vehicle_id', requireAuth, async (req, res) => {
+  const vehicleId = req.params.vehicle_id;
+  const db = getDb();
+  const services = db.collection('services');
+  const vehicles = db.collection('vehicles');
+
+  const vObj = toObjectId(vehicleId);
+  const vehicle = await vehicles.findOne({
+    $or: [
+      ...(vObj ? [{ _id: vObj }] : []),
+      { _id: String(vehicleId) },
+      { id: String(vehicleId) }
+    ],
+    isArchived: { $ne: true }
+  });
+
+  if (!vehicle) {
+    return res.status(404).json({ msg: 'Vehicle not found' });
+  }
+
+  // Authorization check
+  const isOwner = String(vehicle.ownerId) === String(req.user.id) || String(vehicle.userId) === String(req.user.id);
+  const isGarageOrAdmin = req.user.role === 'GARAGE' || req.user.role === 'ADMIN';
+
+  if (!isOwner && !isGarageOrAdmin) {
+    return res.status(403).json({ msg: 'Unauthorized to view service history for this vehicle' });
+  }
+
+  const queryMatch = {
+    $or: [
+      ...(vObj ? [{ vehicleId: vObj }, { vehicleId: String(vObj) }] : []),
+      { vehicleId: String(vehicleId) },
+      { vehicle_id: String(vehicleId) },
+      { 'vehicle.id': String(vehicleId) }
+    ],
+    isArchived: { $ne: true }
+  };
+
+  const cursor = services.find(queryMatch).sort({ serviceDate: -1, createdAt: -1 });
+
+  const results = [];
+  for await (const s of cursor) {
+    results.push({
+      id: String(s._id),
+      vehicleId: s.vehicleId,
+      serviceDate: s.serviceDate,
+      odometerKm: s.odometerKm || s.mileage || 0,
+      serviceCategory: s.serviceCategory || 'Periodic Maintenance',
+      serviceType: s.serviceType || s.serviceName || 'General Service',
+      partsReplaced: s.partsReplaced || [],
+      laborCost: s.laborCost || (s.laborCharges && s.laborCharges.reduce((sum, l) => sum + (parseFloat(l.total || l.rate) || 0), 0)) || 0,
+      laborCharges: s.laborCharges || [],
+      additionalCharges: s.additionalCharges || [],
+      discount: s.discountAmount || s.discount || 0,
+      subtotal: s.subtotalAmount || 0,
+      taxAmount: s.taxAmount || 0,
+      totalCost: s.totalCost !== undefined ? s.totalCost : (s.grandTotalAmount !== undefined ? s.grandTotalAmount : (s.totalAmount !== undefined ? s.totalAmount : (s.cost || 0))),
+      totalAmount: s.totalAmount || s.grandTotalAmount || s.totalCost || s.cost || 0,
+      warrantyMonths: s.warrantyMonths || '',
+      mechanicNotes: s.mechanicNotes || s.notes || '',
+      garageName: s.garageName || 'Authorized Service Center',
+      location: s.location || '',
+      verifiedService: s.verifiedService === true || s.status === 'COMPLETED',
+      recommendedKm: s.recommendedKm || '',
+      recommendedDate: s.recommendedDate || '',
+      abnormalKmJump: s.abnormalKmJump || false,
+      verificationStatus: s.verificationStatus || (s.status === 'COMPLETED' ? 'Verified' : 'Pending'),
+      status: s.status || 'COMPLETED',
+      isArchived: s.isArchived || false,
+      billPhotoUrls: Array.isArray(s.billPhotoUrls) ? s.billPhotoUrls : (s.billPhotoUrl ? [s.billPhotoUrl] : []),
+      invoiceNumber: s.invoiceNumber || null,
+      invoiceStatus: s.invoiceStatus || 'FINALIZED',
+      paymentStatus: s.paymentStatus || (s.paidAt ? 'PAID' : 'UNPAID'),
+      paidAt: s.paidAt ? new Date(s.paidAt).toISOString() : null,
+      paymentId: s.paymentId || null,
+      paymentMethod: s.paymentMethod || null,
+      razorpayOrderId: s.razorpayOrderId || null,
+      createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : null
+    });
+  }
+
+  return res.status(200).json(results);
 });
 
 // DELETE a service record

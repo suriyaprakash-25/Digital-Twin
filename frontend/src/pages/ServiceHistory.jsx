@@ -306,7 +306,6 @@ const ServiceHistory = () => {
                                     {/* Expanded Details Section */}
                                     {isExpanded && (
                                         <div className="px-4 pb-4 md:px-6 md:pb-6 bg-slate-50 border-t border-slate-200 animate-in slide-in-from-top-2 duration-200">
-
                                             {/* Parts Table */}
                                             {service.partsReplaced && service.partsReplaced.length > 0 && (
                                                 <div className="mt-6 mb-6">
@@ -314,31 +313,65 @@ const ServiceHistory = () => {
                                                         <Wrench className="h-3.5 w-3.5" /> Parts / Materials Replaced
                                                     </h4>
                                                     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                                                        {service.partsReplaced.map((part, pIdx) => (
-                                                            <div key={pIdx} className="flex justify-between items-center p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                                                                <span className="text-sm font-bold text-slate-700">
-                                                                    {part.partName} {part.brand && <span className="font-normal text-xs text-slate-400 font-sans ml-2 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5">Brand: {part.brand}</span>}
-                                                                </span>
-                                                                <span className="text-sm font-bold text-slate-900 flex items-center">
-                                                                    <IndianRupee className="h-3 w-3 mr-0.5 text-slate-400" /> {Number(part.cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                        {service.laborCost > 0 && (
-                                                            <div className="flex justify-between items-center p-3 bg-slate-50 border-t border-slate-200 text-sm">
-                                                                <span className="font-bold text-slate-500">Labor Charges</span>
-                                                                <span className="font-bold text-slate-700 flex items-center">
-                                                                    <IndianRupee className="h-3 w-3 mr-0.5 text-slate-400" /> {Number(service.laborCost).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                                </span>
-                                                            </div>
-                                                        )}
+                                                        {service.partsReplaced.map((part, pIdx) => {
+                                                            const partTotal = parseFloat(part.total) || (parseFloat(part.quantity || 1) * parseFloat(part.unitPrice || 0)) || parseFloat(part.cost) || 0;
+                                                            return (
+                                                                <div key={pIdx} className="flex justify-between items-center p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                                                                    <div>
+                                                                        <span className="text-sm font-bold text-slate-700">
+                                                                            {part.partName}
+                                                                        </span>
+                                                                        {part.brand && <span className="font-normal text-xs text-slate-400 font-sans ml-2 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5">Brand: {part.brand}</span>}
+                                                                        {part.quantity > 1 && (
+                                                                            <span className="text-xs text-slate-400 font-medium ml-2">
+                                                                                (Qty: {part.quantity} @ ₹{parseFloat(part.unitPrice || 0).toLocaleString('en-IN')})
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-sm font-bold text-slate-900 flex items-center">
+                                                                        <IndianRupee className="h-3 w-3 mr-0.5 text-slate-400" /> {partTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             )}
 
+                                            {/* Labour Charges Breakdown */}
+                                            {service.laborCharges && service.laborCharges.length > 0 ? (
+                                                <div className="mt-4 mb-6">
+                                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                        <Wrench className="h-3.5 w-3.5" /> Labour Charges
+                                                    </h4>
+                                                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                                        {service.laborCharges.map((labour, lIdx) => {
+                                                            const labourTotal = parseFloat(labour.total) || (parseFloat(labour.quantity || labour.hours || 1) * parseFloat(labour.rate || 0)) || 0;
+                                                            return (
+                                                                <div key={lIdx} className="flex justify-between items-center p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                                                                    <span className="text-sm font-bold text-slate-700">
+                                                                        {labour.description || 'Labour Service'}
+                                                                    </span>
+                                                                    <span className="text-sm font-bold text-slate-900 flex items-center">
+                                                                        <IndianRupee className="h-3 w-3 mr-0.5 text-slate-400" /> {labourTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ) : service.laborCost > 0 ? (
+                                                <div className="mt-4 mb-4 bg-white rounded-xl border border-slate-200 p-3 flex justify-between items-center shadow-sm">
+                                                    <span className="text-sm font-bold text-slate-600">Labour Charges</span>
+                                                    <span className="text-sm font-bold text-slate-900 flex items-center">
+                                                        <IndianRupee className="h-3 w-3 mr-0.5 text-slate-400" /> {Number(service.laborCost).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+
                                             {/* Notes Area */}
                                             {service.mechanicNotes && (
-                                                <div className="mt-6">
+                                                <div className="mt-4">
                                                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
                                                         <FileText className="h-3.5 w-3.5" /> Mechanic Notes
                                                     </h4>
