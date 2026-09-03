@@ -31,23 +31,50 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];
 
-    const garageNavigation = [
-        { name: 'Dashboard', href: '/garage-dashboard', icon: LayoutDashboard },
-        { name: 'Garage Profile', href: '/garage-profile', icon: Building2 },
-        { name: 'Financial Center', href: '/garage/financial-center', icon: DollarSign },
-        { name: 'Your Services', href: '/garage-services', icon: Wrench },
-        { name: 'Customer Reviews', href: '/garage/reviews', icon: Star },
-        { name: 'Service History', href: '/garage-services-history', icon: ClipboardList },
-        { name: 'Payments & Invoices', href: '/garage/payments', icon: CreditCard },
-        { name: 'Earnings', href: '/garage/earnings', icon: Percent },
-        { name: 'Settlement History', href: '/garage/settlements', icon: Receipt },
-        { name: 'Reports & Statements', href: '/garage/reports', icon: FileSpreadsheet },
-        { name: 'Customer Inquiries', href: '/garage/disputes', icon: AlertTriangle },
-        { name: 'Add Service', href: '/add-service', icon: PlusCircle },
-        { name: 'Analytics', href: '/analytics', icon: PieChart },
+    const garageSections = [
+        {
+            label: 'DASHBOARD',
+            items: [
+                { name: 'Dashboard', href: '/garage-dashboard', icon: LayoutDashboard }
+            ]
+        },
+        {
+            label: 'OPERATIONS',
+            items: [
+                { name: 'Your Services', href: '/garage-services', icon: Wrench },
+                { name: 'Add Service', href: '/add-service', icon: PlusCircle },
+                { name: 'Customer Inquiries', href: '/garage/disputes', icon: AlertTriangle },
+                { name: 'Service History', href: '/garage-services-history', icon: ClipboardList }
+            ]
+        },
+        {
+            label: 'CUSTOMERS',
+            items: [
+                { name: 'Customer Reviews', href: '/garage/reviews', icon: Star }
+            ]
+        },
+        {
+            label: 'FINANCE',
+            items: [
+                { name: 'Payments & Invoices', href: '/garage/payments', icon: CreditCard },
+                { name: 'Earnings', href: '/garage/earnings', icon: Percent },
+                { name: 'Settlement History', href: '/garage/settlements', icon: Receipt }
+            ]
+        },
+        {
+            label: 'INSIGHTS',
+            items: [
+                { name: 'Analytics', href: '/analytics', icon: PieChart },
+                { name: 'Reports & Statements', href: '/garage/reports', icon: FileSpreadsheet }
+            ]
+        },
+        {
+            label: 'SETTINGS',
+            items: [
+                { name: 'Garage Profile', href: '/garage-profile', icon: Building2 }
+            ]
+        }
     ];
-
-    const navigation = role === 'GARAGE' ? garageNavigation : userNavigation;
 
     const handleNavClick = () => {
         if (onClose) onClose();
@@ -99,34 +126,73 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                 </div>
 
                 {/* Navigation */}
-                <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5">
-                    {navigation.map((item) => {
-                        const isActive = location.pathname === item.href;
-                        const Icon = item.icon;
+                <div className="flex-1 overflow-y-auto py-5 px-3.5 space-y-1">
+                    {role === 'GARAGE' ? (
+                        garageSections.map((section, idx) => (
+                            <div key={section.label} className={idx > 0 ? 'pt-3 mt-3 border-t border-slate-100' : ''}>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5">
+                                    {section.label}
+                                </div>
+                                <div className="space-y-1">
+                                    {section.items.map((item) => {
+                                        const isActive = location.pathname === item.href;
+                                        const Icon = item.icon;
 
-                        return (
-                            <Link
-                                key={item.name}
-                                to={item.href}
-                                onClick={handleNavClick}
-                                className={`group flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
-                                    isActive
-                                        ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-100/50'
-                                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                                }`}
-                            >
-                                <Icon
-                                    className={`flex-shrink-0 h-5 w-5 mr-3 transition-colors ${
-                                        isActive ? 'text-teal-600' : 'text-slate-400 group-hover:text-teal-500'
+                                        return (
+                                            <Link
+                                                key={item.name}
+                                                to={item.href}
+                                                onClick={handleNavClick}
+                                                className={`group flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 ${
+                                                    isActive
+                                                        ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-100/50'
+                                                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                                }`}
+                                            >
+                                                <Icon
+                                                    className={`flex-shrink-0 h-4.5 w-4.5 mr-3 transition-colors ${
+                                                        isActive ? 'text-teal-600' : 'text-slate-400 group-hover:text-teal-500'
+                                                    }`}
+                                                />
+                                                {item.name}
+                                                {isActive && (
+                                                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-500 shadow-sm shadow-teal-400/50" />
+                                                )}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        userNavigation.map((item) => {
+                            const isActive = location.pathname === item.href;
+                            const Icon = item.icon;
+
+                            return (
+                                <Link
+                                    key={item.name}
+                                    to={item.href}
+                                    onClick={handleNavClick}
+                                    className={`group flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
+                                        isActive
+                                            ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-100/50'
+                                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                                     }`}
-                                />
-                                {item.name}
-                                {isActive && (
-                                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-500 shadow-sm shadow-teal-400/50" />
-                                )}
-                            </Link>
-                        );
-                    })}
+                                >
+                                    <Icon
+                                        className={`flex-shrink-0 h-5 w-5 mr-3 transition-colors ${
+                                            isActive ? 'text-teal-600' : 'text-slate-400 group-hover:text-teal-500'
+                                        }`}
+                                    />
+                                    {item.name}
+                                    {isActive && (
+                                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-500 shadow-sm shadow-teal-400/50" />
+                                    )}
+                                </Link>
+                            );
+                        })
+                    )}
                 </div>
 
                 {/* Secondary items (Help, Support, Version) */}
