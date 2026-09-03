@@ -227,6 +227,76 @@ const LandingPage = () => {
     .scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(13,148,136,.4),transparent);animation:scanline 2.5s linear infinite;pointer-events:none}
     ::-webkit-scrollbar{width:6px;background:#f1f5f9}
     ::-webkit-scrollbar-thumb{background:rgba(13,148,136,.3);border-radius:6px}
+
+    /* ── How It Works Data Flow Particles ──────────────── */
+    @keyframes dataParticleFlowX {
+      0% {
+        left: 0%;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.6);
+        background-color: #14b8a6;
+        box-shadow: 0 0 10px #14b8a6, 0 0 20px rgba(20,184,166,0.6);
+      }
+      8% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      48% {
+        background-color: #06b6d4;
+        box-shadow: 0 0 12px #06b6d4, 0 0 24px rgba(6,182,212,0.6);
+      }
+      92% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% {
+        left: 100%;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.6);
+        background-color: #8b5cf6;
+        box-shadow: 0 0 12px #8b5cf6, 0 0 24px rgba(139,92,246,0.6);
+      }
+    }
+
+    @keyframes dataParticleFlowY {
+      0% {
+        top: 0%;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.6);
+        background-color: #14b8a6;
+        box-shadow: 0 0 10px #14b8a6, 0 0 20px rgba(20,184,166,0.6);
+      }
+      8% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      48% {
+        background-color: #06b6d4;
+        box-shadow: 0 0 12px #06b6d4, 0 0 24px rgba(6,182,212,0.6);
+      }
+      92% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% {
+        top: 100%;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.6);
+        background-color: #8b5cf6;
+        box-shadow: 0 0 12px #8b5cf6, 0 0 24px rgba(139,92,246,0.6);
+      }
+    }
+
+    @keyframes nodePulse01 {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.45), 0 0 24px rgba(20, 184, 166, 0.22); }
+      50% { box-shadow: 0 0 0 7px rgba(20, 184, 166, 0.08), 0 0 32px rgba(20, 184, 166, 0.38); }
+    }
+    @keyframes nodePulse02 {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.45), 0 0 24px rgba(6, 182, 212, 0.22); }
+      50% { box-shadow: 0 0 0 7px rgba(6, 182, 212, 0.08), 0 0 32px rgba(6, 182, 212, 0.38); }
+    }
+    @keyframes nodePulse03 {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.45), 0 0 28px rgba(139, 92, 246, 0.26); }
+      50% { box-shadow: 0 0 0 9px rgba(139, 92, 246, 0.08), 0 0 36px rgba(139, 92, 246, 0.45); }
+    }
+
+    .pulse-node-01 { animation: nodePulse01 3.2s ease-in-out infinite; }
+    .pulse-node-02 { animation: nodePulse02 3.2s ease-in-out 1.1s infinite; }
+    .pulse-node-03 { animation: nodePulse03 3.2s ease-in-out 2.2s infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .data-flow-particle, .pulse-node-01, .pulse-node-02, .pulse-node-03 {
+        animation: none !important;
+      }
+    }
   `;
 
   return (
@@ -424,46 +494,201 @@ const LandingPage = () => {
         </section>
 
         {/* ════════════════════════════════
-           HOW IT WORKS
+           HOW IT WORKS (VEHICLE → DATA → INTELLIGENCE JOURNEY)
       ════════════════════════════════ */}
-        <section id="how-it-works" ref={howRef} className="py-16 md:py-28 px-4 md:px-8 bg-white">
-          <div className="max-w-[1100px] mx-auto">
-            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-              <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#0d9488', letterSpacing: '.12em', textTransform: 'uppercase' }}>HOW IT WORKS</span>
-              <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', color: '#0f172a' }}>
+        <section id="how-it-works" ref={howRef} className="py-20 md:py-32 px-4 md:px-8 bg-white relative overflow-hidden">
+          <div className="max-w-[1140px] mx-auto">
+            {/* Section heading */}
+            <div style={{ textAlign: 'center', marginBottom: '4.5rem' }}>
+              <span
+                style={{
+                  fontSize: '.75rem',
+                  fontWeight: 800,
+                  color: '#0d9488',
+                  letterSpacing: '.12em',
+                  textTransform: 'uppercase',
+                  opacity: howVisible ? 1 : 0,
+                  transform: howVisible ? 'none' : 'translateY(16px)',
+                  transition: 'opacity 0.6s ease, transform 0.6s ease'
+                }}
+              >
+                HOW IT WORKS
+              </span>
+              <h2
+                style={{
+                  fontSize: 'clamp(1.9rem,4vw,3.1rem)',
+                  fontWeight: 900,
+                  marginTop: '.7rem',
+                  letterSpacing: '-0.04em',
+                  color: '#0f172a',
+                  opacity: howVisible ? 1 : 0,
+                  transform: howVisible ? 'none' : 'translateY(20px)',
+                  transition: 'opacity 0.65s 0.1s ease, transform 0.65s 0.1s ease'
+                }}
+              >
                 Up and Running in 3 Steps
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 relative">
-              {/* connector */}
-              <div className="hidden md:block absolute top-14 left-[22%] right-[22%] h-0.5 bg-gradient-to-r from-teal-500/50 via-cyan-500/50 to-violet-500/50 z-0" />
-
-              {[
-                { n: '01', c: '#14b8a6', t: 'Register Your Vehicle', d: "Add your vehicle's complete digital profile — ownership history, legal documents, chassis & engine numbers, and current odometer reading." },
-                { n: '02', c: '#5eead4', t: 'Log Every Service', d: 'Record each visit with parts replaced, costs, and mechanic notes. Our system cross-verifies garage-reported odometer against your records in real time.' },
-                { n: '03', c: '#a78bfa', t: 'Get Full Intelligence', d: "Receive Vehicle IQ scores, resale valuations, fraud alerts, and expiry reminders. Your vehicle's complete lifecycle, intelligently managed for you." },
-              ].map((s, i) => (
-                <div key={s.n} style={{
-                  textAlign: 'center', position: 'relative', zIndex: 1,
+            {/* Desktop / Tablet Horizontal Timeline + Mobile Vertical Journey */}
+            <div className="relative">
+              {/* ── Desktop Horizontal Connecting Track (Passes exactly through Node centers at 16.666%, 50%, 83.333%) ── */}
+              <div
+                className="hidden md:block absolute top-[38px] left-[16.666%] right-[16.666%] h-[2px] z-0 pointer-events-none"
+                style={{
                   opacity: howVisible ? 1 : 0,
-                  transform: howVisible ? 'none' : 'translateY(28px)',
-                  transition: `opacity .65s ${i * .18}s ease, transform .65s ${i * .18}s ease`,
-                }} className="max-w-sm mx-auto md:max-w-none">
-                  <div style={{
-                    width: 76, height: 76, borderRadius: '50%',
-                    background: `linear-gradient(135deg,${s.c}28,${s.c}0d)`,
-                    border: `2px solid ${s.c}55`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 auto 1.6rem',
-                    boxShadow: `0 0 32px ${s.c}28`,
-                  }}>
-                    <span style={{ fontSize: '1.55rem', fontWeight: 900, color: s.c }}>{s.n}</span>
+                  transition: 'opacity 0.8s 0.25s ease'
+                }}
+              >
+                {/* Static glowing gradient base line */}
+                <div
+                  className="w-full h-full rounded-full"
+                  style={{
+                    background: 'linear-gradient(90deg, #14b8a6 0%, #06b6d4 50%, #8b5cf6 100%)',
+                    opacity: 0.45,
+                    boxShadow: '0 0 10px rgba(6,182,212,0.3)'
+                  }}
+                />
+
+                {/* Flowing Data Particle 1 */}
+                <div
+                  className="data-flow-particle absolute top-1/2 w-3 h-3 rounded-full pointer-events-none"
+                  style={{
+                    animation: 'dataParticleFlowX 3.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite'
+                  }}
+                />
+
+                {/* Flowing Data Particle 2 (Delayed phase for continuous stream) */}
+                <div
+                  className="data-flow-particle absolute top-1/2 w-2 h-2 rounded-full pointer-events-none"
+                  style={{
+                    animation: 'dataParticleFlowX 3.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1.7s infinite'
+                  }}
+                />
+              </div>
+
+              {/* ── Mobile Vertical Connecting Track (Passes through center of nodes) ── */}
+              <div
+                className="md:hidden absolute top-[38px] bottom-[38px] left-1/2 -translate-x-1/2 w-[2px] z-0 pointer-events-none"
+                style={{
+                  opacity: howVisible ? 1 : 0,
+                  transition: 'opacity 0.8s 0.25s ease'
+                }}
+              >
+                {/* Static glowing vertical gradient line */}
+                <div
+                  className="w-full h-full rounded-full"
+                  style={{
+                    background: 'linear-gradient(180deg, #14b8a6 0%, #06b6d4 50%, #8b5cf6 100%)',
+                    opacity: 0.45,
+                    boxShadow: '0 0 10px rgba(6,182,212,0.3)'
+                  }}
+                />
+
+                {/* Vertical Data Particle 1 */}
+                <div
+                  className="data-flow-particle absolute left-1/2 w-3 h-3 rounded-full pointer-events-none"
+                  style={{
+                    animation: 'dataParticleFlowY 3.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite'
+                  }}
+                />
+
+                {/* Vertical Data Particle 2 */}
+                <div
+                  className="data-flow-particle absolute left-1/2 w-2 h-2 rounded-full pointer-events-none"
+                  style={{
+                    animation: 'dataParticleFlowY 3.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1.7s infinite'
+                  }}
+                />
+              </div>
+
+              {/* ── 3 Steps Grid ── */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-14 md:gap-8 relative z-10">
+                {[
+                  {
+                    n: '01',
+                    c: '#14b8a6',
+                    glowClass: 'pulse-node-01',
+                    bg: 'linear-gradient(135deg, rgba(20, 184, 166, 0.12) 0%, rgba(20, 184, 166, 0.03) 100%)',
+                    borderColor: 'rgba(20, 184, 166, 0.45)',
+                    t: 'Register Your Vehicle',
+                    d: "Add your vehicle's complete digital profile — ownership history, legal documents, chassis & engine numbers, and current odometer reading."
+                  },
+                  {
+                    n: '02',
+                    c: '#06b6d4',
+                    glowClass: 'pulse-node-02',
+                    bg: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(6, 182, 212, 0.03) 100%)',
+                    borderColor: 'rgba(6, 182, 212, 0.45)',
+                    t: 'Log Every Service',
+                    d: 'Record each visit with parts replaced, costs, and mechanic notes. Our system cross-verifies garage-reported odometer against your records in real time.'
+                  },
+                  {
+                    n: '03',
+                    c: '#8b5cf6',
+                    glowClass: 'pulse-node-03',
+                    bg: 'linear-gradient(135deg, rgba(139, 92, 246, 0.14) 0%, rgba(139, 92, 246, 0.04) 100%)',
+                    borderColor: 'rgba(139, 92, 246, 0.45)',
+                    t: 'Get Full Intelligence',
+                    d: "Receive Vehicle IQ scores, resale valuations, fraud alerts, and expiry reminders. Your vehicle's complete lifecycle, intelligently managed for you."
+                  }
+                ].map((s, i) => (
+                  <div
+                    key={s.n}
+                    style={{
+                      textAlign: 'center',
+                      position: 'relative',
+                      opacity: howVisible ? 1 : 0,
+                      transform: howVisible ? 'none' : 'translateY(28px)',
+                      transition: `opacity .65s ${0.2 + i * 0.16}s cubic-bezier(0.16, 1, 0.3, 1), transform .65s ${0.2 + i * 0.16}s cubic-bezier(0.16, 1, 0.3, 1)`
+                    }}
+                    className="max-w-sm mx-auto md:max-w-none flex flex-col items-center"
+                  >
+                    {/* Centered Milestone Node Circle */}
+                    <div
+                      className={`relative z-10 w-[76px] h-[76px] rounded-full flex items-center justify-center transition-all duration-300 ${s.glowClass}`}
+                      style={{
+                        background: '#ffffff',
+                        border: `2px solid ${s.borderColor}`,
+                        boxShadow: `0 0 24px ${s.c}33`
+                      }}
+                    >
+                      {/* Inner gradient fill */}
+                      <div
+                        className="w-[66px] h-[66px] rounded-full flex items-center justify-center"
+                        style={{
+                          background: s.bg
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 900,
+                            color: s.c,
+                            letterSpacing: '-0.03em'
+                          }}
+                        >
+                          {s.n}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Step Title */}
+                    <h3
+                      className="text-xl font-bold text-slate-900 mt-6 mb-3 tracking-tight leading-snug"
+                    >
+                      {s.t}
+                    </h3>
+
+                    {/* Description */}
+                    <p
+                      className="text-[0.88rem] text-slate-600 leading-relaxed max-w-[290px] mx-auto font-normal"
+                    >
+                      {s.d}
+                    </p>
                   </div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '.75rem', color: '#0f172a' }}>{s.t}</h3>
-                  <p style={{ fontSize: '.88rem', color: '#64748b', lineHeight: 1.75, maxWidth: 270, margin: '0 auto' }}>{s.d}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>
