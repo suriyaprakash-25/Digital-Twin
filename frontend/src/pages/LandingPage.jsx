@@ -43,88 +43,95 @@ function useVisible(threshold = 0.25) {
 }
 
 function FeatureInteractiveCard({ f, i, featVisible }) {
-  const [mousePos, setMousePos] = useState({ x: 50, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setMousePos({ x, y });
-  };
 
   return (
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onMouseMove={handleMouseMove}
-      className="group relative rounded-[22px] p-7 md:p-8 transition-all duration-500 overflow-hidden cursor-default"
+      className="group relative rounded-[22px] p-7 md:p-8 transition-all duration-500 overflow-hidden cursor-default min-h-[265px] flex flex-col justify-between"
       style={{
         backgroundColor: '#f0fdfa',
         border: isHovered ? '1px solid #14b8a6' : `1px solid ${f.border || '#99f6e4'}`,
         boxShadow: isHovered
-          ? '0 24px 50px -12px rgba(13, 148, 136, 0.22), 0 0 24px rgba(45, 212, 191, 0.16)'
+          ? '0 20px 40px -12px rgba(13, 148, 136, 0.25), 0 0 20px rgba(45, 212, 191, 0.15)'
           : '0 2px 10px rgba(15, 23, 42, 0.03)',
-        transform: featVisible ? (isHovered ? 'translateY(-8px)' : 'translateY(0)') : 'translateY(32px)',
+        transform: featVisible ? (isHovered ? 'translateY(-6px)' : 'translateY(0)') : 'translateY(32px)',
         opacity: featVisible ? 1 : 0,
         transition: `opacity .6s ${i * .1}s ease, transform .4s cubic-bezier(0.16, 1, 0.3, 1), border-color .4s ease, box-shadow .4s ease`
       }}
     >
-      {/* Top-to-bottom luminous green/teal gradient curtain sweep (as in sample reference) */}
-      <div
-        className="absolute inset-0 pointer-events-none transition-all duration-500 ease-out"
-        style={{
-          opacity: isHovered ? 1 : 0,
-          background: `
-            radial-gradient(circle 280px at ${mousePos.x}% ${mousePos.y}%, rgba(45, 212, 191, 0.30), transparent 75%),
-            linear-gradient(180deg, rgba(13, 148, 136, 0.22) 0%, rgba(45, 212, 191, 0.12) 40%, rgba(240, 253, 250, 0) 90%)
-          `
-        }}
-      />
+      {/* ── Initial Front View (Tag, Icon, Main Heading) ── */}
+      <div className="flex flex-col h-full justify-between z-10">
+        <div>
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 bg-white"
+            style={{
+              border: '1px solid #99f6e4',
+              boxShadow: '0 2px 12px rgba(153, 246, 228, 0.8)',
+              color: f.iconColor || '#0d9488'
+            }}
+          >
+            {f.icon}
+          </div>
 
-      {/* Radiant Top Luminous Border Beam */}
-      <div
-        className="absolute top-0 left-0 right-0 h-[2.5px] transition-all duration-500 ease-out pointer-events-none"
-        style={{
-          opacity: isHovered ? 1 : 0,
-          background: `linear-gradient(90deg, transparent 0%, rgba(13, 148, 136, 0.9) ${mousePos.x}%, transparent 100%)`
-        }}
-      />
+          <div
+            className="text-[11px] font-extrabold tracking-wider uppercase mb-2"
+            style={{ color: f.tagColor || '#0d9488' }}
+          >
+            {f.tag}
+          </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col h-full">
-        {/* White Icon Container with Soft Glow */}
-        <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300"
-          style={{
-            background: '#ffffff',
-            border: isHovered ? '1px solid #14b8a6' : '1px solid #99f6e4',
-            boxShadow: isHovered
-              ? '0 0 20px rgba(13, 148, 136, 0.3), 0 4px 12px rgba(13, 148, 136, 0.15)'
-              : '0 2px 12px rgba(153, 246, 228, 0.8)',
-            color: f.iconColor || '#0d9488'
-          }}
-        >
-          {f.icon}
+          <h3 className="text-[1.22rem] font-bold text-slate-900 leading-snug tracking-tight">
+            {f.title}
+          </h3>
         </div>
 
-        {/* Tag / Category */}
-        <div
-          className="text-[11px] font-extrabold tracking-wider uppercase mb-2.5 transition-colors duration-300"
-          style={{ color: f.tagColor || '#0d9488' }}
-        >
-          {f.tag}
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-600/80 mt-4 group-hover:text-teal-700">
+          <span>Explore details</span>
+          <span className="text-sm transition-transform duration-300 group-hover:translate-y-0.5">↓</span>
+        </div>
+      </div>
+
+      {/* ── Slide-Down Info Card (Slides from Top to Bottom on Hover) ── */}
+      <div
+        className="absolute inset-0 z-20 rounded-[inherit] p-7 md:p-8 flex flex-col justify-between pointer-events-none transition-all duration-500 ease-out"
+        style={{
+          background: 'linear-gradient(180deg, #ccfbf1 0%, #e6fffa 50%, #f0fdfa 100%)',
+          border: '1.5px solid #14b8a6',
+          boxShadow: 'inset 0 2px 10px rgba(20, 184, 166, 0.15)',
+          transform: isHovered ? 'translateY(0%)' : 'translateY(-102%)',
+          opacity: isHovered ? 1 : 0,
+          transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease'
+        }}
+      >
+        <div>
+          {/* Header row in sliding card */}
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-teal-200/60">
+            <span
+              className="text-[10px] font-extrabold tracking-wider uppercase px-2.5 py-1 rounded-full bg-teal-600 text-white shadow-sm"
+            >
+              {f.tag}
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-teal-700 shadow-sm border border-teal-200">
+              {f.icon}
+            </div>
+          </div>
+
+          {/* Title */}
+          <h4 className="text-[1.05rem] font-bold text-slate-900 mb-2 leading-snug">
+            {f.title}
+          </h4>
+
+          {/* Detailed Info / Description */}
+          <p className="text-[0.86rem] text-slate-700 leading-relaxed font-normal">
+            {f.desc}
+          </p>
         </div>
 
-        {/* Title */}
-        <h3 className="text-[1.12rem] font-bold text-slate-900 mb-2.5 tracking-tight leading-snug">
-          {f.title}
-        </h3>
-
-        {/* Description */}
-        <p className="text-[0.88rem] text-slate-600 leading-relaxed font-normal">
-          {f.desc}
-        </p>
+        <div className="flex items-center gap-1 text-[11px] font-bold text-teal-700 pt-2">
+          <span>DrivePortz Intelligence</span>
+        </div>
       </div>
     </div>
   );
