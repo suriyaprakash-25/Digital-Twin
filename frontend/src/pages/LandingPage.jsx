@@ -58,49 +58,51 @@ function FeatureInteractiveCard({ f, i, featVisible }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onMouseMove={handleMouseMove}
-      className="group relative rounded-3xl p-7 md:p-8 transition-all duration-500 overflow-hidden cursor-default"
+      className="group relative rounded-[22px] p-7 md:p-8 transition-all duration-500 overflow-hidden cursor-default"
       style={{
-        backgroundColor: '#111827',
-        border: isHovered ? '1px solid rgba(56, 189, 248, 0.45)' : '1px solid rgba(255, 255, 255, 0.08)',
+        backgroundColor: '#f0fdfa',
+        border: isHovered ? '1px solid #14b8a6' : `1px solid ${f.border || '#99f6e4'}`,
         boxShadow: isHovered
-          ? '0 25px 50px -12px rgba(14, 165, 233, 0.25), 0 0 25px rgba(56, 189, 248, 0.15)'
-          : '0 4px 20px rgba(0, 0, 0, 0.25)',
-        transform: featVisible ? (isHovered ? 'translateY(-6px)' : 'translateY(0)') : 'translateY(32px)',
+          ? '0 24px 50px -12px rgba(13, 148, 136, 0.22), 0 0 24px rgba(45, 212, 191, 0.16)'
+          : '0 2px 10px rgba(15, 23, 42, 0.03)',
+        transform: featVisible ? (isHovered ? 'translateY(-8px)' : 'translateY(0)') : 'translateY(32px)',
         opacity: featVisible ? 1 : 0,
         transition: `opacity .6s ${i * .1}s ease, transform .4s cubic-bezier(0.16, 1, 0.3, 1), border-color .4s ease, box-shadow .4s ease`
       }}
     >
-      {/* Top-to-bottom luminous gradient curtain / beam (as in sample reference) */}
+      {/* Top-to-bottom luminous green/teal gradient curtain sweep (as in sample reference) */}
       <div
         className="absolute inset-0 pointer-events-none transition-all duration-500 ease-out"
         style={{
           opacity: isHovered ? 1 : 0,
           background: `
-            radial-gradient(circle 280px at ${mousePos.x}% ${mousePos.y}%, rgba(56, 189, 248, 0.28), transparent 75%),
-            linear-gradient(180deg, rgba(30, 64, 175, 0.45) 0%, rgba(14, 165, 233, 0.20) 35%, rgba(17, 24, 39, 0) 90%)
+            radial-gradient(circle 280px at ${mousePos.x}% ${mousePos.y}%, rgba(45, 212, 191, 0.30), transparent 75%),
+            linear-gradient(180deg, rgba(13, 148, 136, 0.22) 0%, rgba(45, 212, 191, 0.12) 40%, rgba(240, 253, 250, 0) 90%)
           `
         }}
       />
 
       {/* Radiant Top Luminous Border Beam */}
       <div
-        className="absolute top-0 left-0 right-0 h-[2px] transition-all duration-500 ease-out pointer-events-none"
+        className="absolute top-0 left-0 right-0 h-[2.5px] transition-all duration-500 ease-out pointer-events-none"
         style={{
           opacity: isHovered ? 1 : 0,
-          background: `linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.9) ${mousePos.x}%, transparent 100%)`
+          background: `linear-gradient(90deg, transparent 0%, rgba(13, 148, 136, 0.9) ${mousePos.x}%, transparent 100%)`
         }}
       />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col h-full">
-        {/* Icon Container with Neon Glow */}
+        {/* White Icon Container with Soft Glow */}
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300"
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300"
           style={{
-            background: isHovered ? 'rgba(56, 189, 248, 0.16)' : 'rgba(255, 255, 255, 0.05)',
-            border: isHovered ? '1px solid rgba(56, 189, 248, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: isHovered ? '0 0 24px rgba(56, 189, 248, 0.35)' : 'none',
-            color: isHovered ? '#38bdf8' : f.iconColor
+            background: '#ffffff',
+            border: isHovered ? '1px solid #14b8a6' : '1px solid #99f6e4',
+            boxShadow: isHovered
+              ? '0 0 20px rgba(13, 148, 136, 0.3), 0 4px 12px rgba(13, 148, 136, 0.15)'
+              : '0 2px 12px rgba(153, 246, 228, 0.8)',
+            color: f.iconColor || '#0d9488'
           }}
         >
           {f.icon}
@@ -109,18 +111,18 @@ function FeatureInteractiveCard({ f, i, featVisible }) {
         {/* Tag / Category */}
         <div
           className="text-[11px] font-extrabold tracking-wider uppercase mb-2.5 transition-colors duration-300"
-          style={{ color: isHovered ? '#38bdf8' : f.tagColor || '#2dd4bf' }}
+          style={{ color: f.tagColor || '#0d9488' }}
         >
           {f.tag}
         </div>
 
         {/* Title */}
-        <h3 className="text-xl font-bold text-white mb-3 tracking-tight leading-snug group-hover:text-slate-50 transition-colors">
+        <h3 className="text-[1.12rem] font-bold text-slate-900 mb-2.5 tracking-tight leading-snug">
           {f.title}
         </h3>
 
         {/* Description */}
-        <p className="text-sm text-slate-400 leading-relaxed font-normal group-hover:text-slate-300 transition-colors">
+        <p className="text-[0.88rem] text-slate-600 leading-relaxed font-normal">
           {f.desc}
         </p>
       </div>
@@ -342,20 +344,17 @@ const LandingPage = () => {
         {/* ════════════════════════════════
            FEATURES
       ════════════════════════════════ */}
-        <section id="features" ref={featRef} className="py-20 md:py-32 px-4 md:px-8 bg-[#090d16] text-white relative overflow-hidden">
-          {/* Ambient luminous glow in background */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-gradient-to-r from-blue-600/15 via-teal-500/15 to-indigo-600/15 blur-[140px] pointer-events-none rounded-full" />
-
+        <section id="features" ref={featRef} className="py-16 md:py-28 px-4 md:px-8 bg-slate-50 relative overflow-hidden">
           <div className="max-w-[1200px] mx-auto relative z-10">
             {/* Section heading */}
             <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-              <span className="text-xs font-extrabold text-cyan-400 tracking-widest uppercase bg-cyan-950/60 border border-cyan-800/60 px-3.5 py-1.5 rounded-full inline-block mb-3 shadow-inner">
+              <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#14b8a6', letterSpacing: '.12em', textTransform: 'uppercase' }}>
                 PLATFORM FEATURES
               </span>
-              <h2 style={{ fontSize: 'clamp(2rem,4vw,3.2rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', lineHeight: 1.08, color: '#ffffff' }}>
+              <h2 style={{ fontSize: 'clamp(1.9rem,4vw,3.1rem)', fontWeight: 900, marginTop: '.7rem', letterSpacing: '-0.04em', lineHeight: 1.08, color: '#0f172a' }}>
                 Everything Your Vehicle Needs
               </h2>
-              <p className="text-sm sm:text-base text-slate-400 max-w-[560px] mx-auto mt-4 leading-relaxed font-normal">
+              <p className="text-sm sm:text-base text-slate-500 max-w-[540px] mx-auto mt-4 leading-relaxed font-normal">
                 A complete intelligence layer for your vehicle's entire lifetime — from first drive to final sale.
               </p>
             </div>
@@ -363,50 +362,50 @@ const LandingPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7">
               {[
                 {
-                  icon: <Shield size={26} />,
-                  iconColor: '#38bdf8',
+                  icon: <Shield size={26} color="#0d9488" />,
+                  border: '#99f6e4',
                   tag: 'ANTI-FRAUD',
-                  tagColor: '#38bdf8',
+                  tagColor: '#0d9488',
                   title: 'Fraud-Proof Service History',
                   desc: 'Dual-layer verification cross-checks odometer readings from owners and garages. Tamper flags trigger automatically on discrepancies exceeding 50 km.',
                 },
                 {
-                  icon: <HeartPulse size={26} />,
-                  iconColor: '#2dd4bf',
+                  icon: <HeartPulse size={26} color="#0d9488" />,
+                  border: '#99f6e4',
                   tag: 'AI-POWERED',
-                  tagColor: '#2dd4bf',
+                  tagColor: '#0d9488',
                   title: 'Live Vehicle IQ Score',
                   desc: 'Multi-factor engine evaluates legal validity, maintenance frequency, verified records and behavioral patterns to produce a precise 0–100 Vehicle IQ score.',
                 },
                 {
-                  icon: <TrendingUp size={26} />,
-                  iconColor: '#60a5fa',
+                  icon: <TrendingUp size={26} color="#0d9488" />,
+                  border: '#99f6e4',
                   tag: 'VALUATION ENGINE',
-                  tagColor: '#60a5fa',
+                  tagColor: '#0d9488',
                   title: 'Intelligent Resale Valuation',
                   desc: 'Algorithmic depreciation model plus a trust score adjusted for ownership transfers, verified history and accident records to compute a precise price range.',
                 },
                 {
-                  icon: <Bell size={26} />,
-                  iconColor: '#38bdf8',
+                  icon: <Bell size={26} color="#0f766e" />,
+                  border: '#99f6e4',
                   tag: 'PROACTIVE ALERTS',
-                  tagColor: '#38bdf8',
+                  tagColor: '#0f766e',
                   title: 'Smart Legal Reminders',
                   desc: 'Never miss an expiry. Priority-based alerts for Insurance, PUC, RC, Fitness Certificate and Road Tax — dispatched weeks before they lapse.',
                 },
                 {
-                  icon: <Store size={26} />,
-                  iconColor: '#2dd4bf',
+                  icon: <Store size={26} color="#14b8a6" />,
+                  border: '#99f6e4',
                   tag: 'MARKETPLACE',
-                  tagColor: '#2dd4bf',
+                  tagColor: '#14b8a6',
                   title: 'Verified Garage Marketplace',
                   desc: 'Discover certified service centres, compare pricing, and book appointments. Every service claim is cross-verified on our platform for authenticity.',
                 },
                 {
-                  icon: <BarChart3 size={26} />,
-                  iconColor: '#818cf8',
+                  icon: <BarChart3 size={26} color="#0d9488" />,
+                  border: '#99f6e4',
                   tag: 'DATA INTELLIGENCE',
-                  tagColor: '#818cf8',
+                  tagColor: '#0d9488',
                   title: 'Personal Vehicle Analytics',
                   desc: 'Real-time expense trends, category breakdowns, mileage distributions and Vehicle IQ scores for your car — all in one visual dashboard.',
                 },
