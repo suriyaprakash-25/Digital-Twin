@@ -550,19 +550,11 @@ const LandingPage = () => {
                   }}
                 />
 
-                {/* Flowing Data Particle 1 */}
+                {/* Flowing Single Data Particle */}
                 <div
                   className="data-flow-particle absolute top-1/2 w-3 h-3 rounded-full pointer-events-none"
                   style={{
-                    animation: 'dataParticleFlowX 3.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite'
-                  }}
-                />
-
-                {/* Flowing Data Particle 2 (Delayed phase for continuous stream) */}
-                <div
-                  className="data-flow-particle absolute top-1/2 w-2 h-2 rounded-full pointer-events-none"
-                  style={{
-                    animation: 'dataParticleFlowX 3.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1.7s infinite'
+                    animation: 'dataParticleFlowX 2.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite'
                   }}
                 />
               </div>
@@ -585,19 +577,11 @@ const LandingPage = () => {
                   }}
                 />
 
-                {/* Vertical Data Particle 1 */}
+                {/* Vertical Single Data Particle */}
                 <div
                   className="data-flow-particle absolute left-1/2 w-3 h-3 rounded-full pointer-events-none"
                   style={{
-                    animation: 'dataParticleFlowY 3.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite'
-                  }}
-                />
-
-                {/* Vertical Data Particle 2 */}
-                <div
-                  className="data-flow-particle absolute left-1/2 w-2 h-2 rounded-full pointer-events-none"
-                  style={{
-                    animation: 'dataParticleFlowY 3.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1.7s infinite'
+                    animation: 'dataParticleFlowY 2.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite'
                   }}
                 />
               </div>
