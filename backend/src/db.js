@@ -19,7 +19,7 @@ async function connectToMongo(config) {
     lastError = undefined;
     console.log(`Connecting to MongoDB URI: ${config.mongoUri}...`);
     client = new MongoClient(config.mongoUri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 15000,
       socketTimeoutMS: 45000,
       retryWrites: true,
       maxPoolSize: 10

@@ -217,8 +217,10 @@ async function reconcileRefundEarnings({ payment, refundAmount, dbInstance }) {
 async function getGarageEarningsSummary(garageId, dbInstance) {
   const db = dbInstance || getDb();
   const earnings = db.collection('garage_earnings');
+  const { resolveGarageIds } = require('../utils/garageResolver');
 
-  const allEarnings = await earnings.find({ garageId: String(garageId) }).toArray();
+  const garageIds = await resolveGarageIds(garageId, db);
+  const allEarnings = await earnings.find({ garageId: { $in: garageIds } }).toArray();
 
   let totalGrossRevenue = 0;
   let platformCommissionTotal = 0;

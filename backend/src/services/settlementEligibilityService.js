@@ -79,8 +79,11 @@ async function checkSettlementEligibility(garageId, amount, dbInstance) {
     };
   }
 
+  const { resolveGarageIds } = require('../utils/garageResolver');
+  const garageIds = await resolveGarageIds(garageId, db);
+
   // 4. Payout Profile Check
-  const payoutProfile = await payoutProfiles.findOne({ garageId: String(garageId) });
+  const payoutProfile = await payoutProfiles.findOne({ garageId: { $in: garageIds } });
   if (!payoutProfile || !payoutProfile.bankAccountLast4) {
     return {
       eligible: false,
@@ -99,7 +102,7 @@ async function checkSettlementEligibility(garageId, amount, dbInstance) {
   }
 
   // 6. Active Holds Check
-  const activeHold = await holds.findOne({ garageId: String(garageId), active: true });
+  const activeHold = await holds.findOne({ garageId: { $in: garageIds }, active: true });
   if (activeHold) {
     return {
       eligible: false,
@@ -110,7 +113,7 @@ async function checkSettlementEligibility(garageId, amount, dbInstance) {
 
   // 7. Active Processing Settlement Check
   const activeSettlement = await settlements.findOne({
-    garageId: String(garageId),
+    garageId: { $in: garageIds },
     status: {
       $in: [
         SETTLEMENT_STATUS.REQUESTED,
@@ -133,7 +136,7 @@ async function checkSettlementEligibility(garageId, amount, dbInstance) {
   // 8. Calculate Authoritative Available Balance in Integer Paise
   const availableEarningsDocs = await earnings
     .find({
-      garageId: String(garageId),
+      garageId: { $in: garageIds },
       status: { $in: ['AVAILABLE', 'REFUND_ADJUSTMENT'] }
     })
     .toArray();

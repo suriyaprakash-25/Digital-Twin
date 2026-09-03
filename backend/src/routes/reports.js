@@ -66,11 +66,13 @@ garageReportsRouter.get('/export', requireAuth, requireRole('GARAGE'), async (re
   try {
     const db = getDb();
     const earnings = db.collection('garage_earnings');
+    const { resolveGarageIds } = require('../utils/garageResolver');
     const { from, to } = parseDateRange(period, dateFrom, dateTo);
 
+    const garageIds = await resolveGarageIds(req.user.id, db);
     const docs = await earnings
       .find({
-        garageId: String(req.user.id),
+        garageId: { $in: garageIds },
         createdAt: { $gte: from, $lte: to }
       })
       .sort({ createdAt: -1 })

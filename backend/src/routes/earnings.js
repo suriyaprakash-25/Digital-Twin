@@ -62,9 +62,11 @@ router.get('/earnings', requireAuth, requireRole('GARAGE'), async (req, res) => 
 
   const db = getDb();
   const earnings = db.collection('garage_earnings');
+  const { resolveGarageIds } = require('../utils/garageResolver');
 
   try {
-    const query = { garageId: String(req.user.id) };
+    const garageIds = await resolveGarageIds(req.user.id, db);
+    const query = { garageId: { $in: garageIds } };
 
     if (status && status !== 'ALL') {
       if (status === 'AVAILABLE') {
@@ -134,6 +136,7 @@ router.get('/earnings/:id', requireAuth, requireRole('GARAGE'), async (req, res)
   const { id } = req.params;
   const db = getDb();
   const earnings = db.collection('garage_earnings');
+  const { resolveGarageIds } = require('../utils/garageResolver');
 
   try {
     const eId = toObjectId(id);
@@ -145,7 +148,8 @@ router.get('/earnings/:id', requireAuth, requireRole('GARAGE'), async (req, res)
       return res.status(404).json({ success: false, message: 'Earnings record not found' });
     }
 
-    if (String(earning.garageId) !== String(req.user.id) && req.user.role !== 'ADMIN') {
+    const garageIds = await resolveGarageIds(req.user.id, db);
+    if (!garageIds.includes(String(earning.garageId)) && req.user.role !== 'ADMIN') {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
@@ -175,7 +179,8 @@ router.get('/settlements', requireAuth, requireRole('GARAGE'), async (req, res) 
   const settlements = db.collection('settlements');
 
   try {
-    const query = { garageId: String(req.user.id) };
+    const garageIds = await resolveGarageIds(req.user.id, db);
+    const query = { garageId: { $in: garageIds } };
     if (status && status !== 'ALL') {
       query.status = status;
     }
@@ -228,6 +233,7 @@ router.post('/settlements/request', requireAuth, requireRole('GARAGE'), settleme
   const payoutProfiles = db.collection('garage_payout_profiles');
   const { checkSettlementEligibility } = require('../services/settlementEligibilityService');
   const { HIGH_VALUE_THRESHOLD_RUPEES } = require('../services/settlementGovernanceService');
+  const { resolveGarageIds } = require('../utils/garageResolver');
 
   try {
     const requestedAmount = amount !== undefined ? parseFloat(amount) : undefined;
@@ -245,9 +251,10 @@ router.post('/settlements/request', requireAuth, requireRole('GARAGE'), settleme
     const finalPaise = eligibility.requestedPaise;
 
     // 2. Fetch available earnings records to lock
+    const garageIds = await resolveGarageIds(req.user.id, db);
     const availableDocs = await earnings
       .find({
-        garageId: String(req.user.id),
+        garageId: { $in: garageIds },
         status: { $in: [EARNINGS_STATUS.AVAILABLE, EARNINGS_STATUS.REFUND_ADJUSTMENT] }
       })
       .sort({ createdAt: 1 })

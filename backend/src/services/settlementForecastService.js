@@ -144,12 +144,15 @@ async function getGarageSettlementForecast(garageId, dbInstance) {
   const settlements = db.collection('settlements');
   const schedules = db.collection('settlement_schedules');
   const holds = db.collection('settlement_holds');
+  const { resolveGarageIds } = require('../utils/garageResolver');
   const now = new Date();
+
+  const garageIds = await resolveGarageIds(garageId, db);
 
   // 1. Available balance in integer paise
   const availableEarnings = await earnings
     .find({
-      garageId: String(garageId),
+      garageId: { $in: garageIds },
       status: { $in: ['AVAILABLE', 'REFUND_ADJUSTMENT'] }
     })
     .toArray();
@@ -165,7 +168,7 @@ async function getGarageSettlementForecast(garageId, dbInstance) {
   // 2. Pending settlements for this garage
   const pendingSettlements = await settlements
     .find({
-      garageId: String(garageId),
+      garageId: { $in: garageIds },
       status: {
         $in: [
           SETTLEMENT_STATUS.REQUESTED,
@@ -187,7 +190,7 @@ async function getGarageSettlementForecast(garageId, dbInstance) {
   // 3. Historical Settled Average
   const pastSettled = await settlements
     .find({
-      garageId: String(garageId),
+      garageId: { $in: garageIds },
       status: { $in: [SETTLEMENT_STATUS.SETTLED, 'COMPLETED'] }
     })
     .sort({ createdAt: -1 })
@@ -205,8 +208,8 @@ async function getGarageSettlementForecast(garageId, dbInstance) {
     : 0;
 
   // 4. Schedule & Hold info
-  const scheduleDoc = await schedules.findOne({ garageId: String(garageId) });
-  const activeHold = await holds.findOne({ garageId: String(garageId), active: true });
+  const scheduleDoc = await schedules.findOne({ garageId: { $in: garageIds } });
+  const activeHold = await holds.findOne({ garageId: { $in: garageIds }, active: true });
 
   const estimatedPayoutDate = scheduleDoc?.nextRunAt || new Date(now.getTime() + (24 * 60 * 60 * 1000));
 

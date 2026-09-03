@@ -52,11 +52,13 @@ async function getGarageFinancialSummary(garageId, { period = '30_DAYS', dateFro
   const earnings = db.collection('garage_earnings');
   const services = db.collection('services');
   const settlements = db.collection('settlements');
+  const { resolveGarageIds } = require('../utils/garageResolver');
 
   const { from, to } = parseDateRange(period, dateFrom, dateTo);
+  const garageIds = await resolveGarageIds(garageId, db);
 
   const earningsQuery = {
-    garageId: String(garageId),
+    garageId: { $in: garageIds },
     createdAt: { $gte: from, $lte: to }
   };
 
