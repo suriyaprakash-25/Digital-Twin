@@ -2,10 +2,11 @@ import { API_BASE_URL } from '../utils/config';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { MapPin, Navigation, Search, X, ShieldCheck } from 'lucide-react';
+import { MapPin, Navigation, Search, X, ShieldCheck, AlertTriangle } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useToast } from '../context/ToastContext';
 import { getPhotoUrl } from '../utils/imageUrl';
+import MediaManager from '../components/MediaManager';
 
 const Marketplace = () => {
   const navigate = useNavigate();
@@ -20,6 +21,16 @@ const Marketplace = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL'); // ALL, AVAILABLE, BUSY, CLOSED
+
+  const [targetGarageId, setTargetGarageId] = useState(null);
+  const [isCustomIssueModalOpen, setIsCustomIssueModalOpen] = useState(false);
+  const [customIssueDescription, setCustomIssueDescription] = useState('');
+  const [customIssueDuration, setCustomIssueDuration] = useState('A few days ago');
+  const [customIssueUrgency, setCustomIssueUrgency] = useState('Vehicle is working but has a problem');
+  const [showSafetyWarning, setShowSafetyWarning] = useState(false);
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [bookingStatus, setBookingStatus] = useState({ type: '', msg: '' });
+  const [successBookingId, setSuccessBookingId] = useState(null);
 
   const token = localStorage.getItem('token');
 
@@ -95,6 +106,60 @@ const Marketplace = () => {
       showToast(`Booking requested for ${serviceTitle || 'service'}! The garage will respond soon.`, 'success');
     } catch (e) {
       showToast(e.response?.data?.msg || 'Failed to request booking', 'error');
+    }
+  };
+
+  const handleCustomIssueSubmit = async (e) => {
+    e.preventDefault();
+    setBookingStatus({ type: '', msg: '' });
+
+    if (!token) {
+      setBookingStatus({ type: 'error', msg: 'Please log in as a vehicle owner to report an issue.' });
+      return;
+    }
+    if (!selectedVehicleId) {
+      setBookingStatus({ type: 'error', msg: 'Please select a vehicle from the top menu first.' });
+      return;
+    }
+    if (!customIssueDescription || customIssueDescription.trim().length < 5) {
+      setBookingStatus({ type: 'error', msg: 'Please provide a clearer description of the issue.' });
+      return;
+    }
+
+    const safetyTerms = /\b(brake|brakes|steering|burst|leak|smoke|fire|overheating)\b/i;
+    if (safetyTerms.test(customIssueDescription) && !showSafetyWarning) {
+      setShowSafetyWarning(true);
+      return;
+    }
+
+    setBookingSubmitting(true);
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/bookings`,
+        {
+          garageId: targetGarageId,
+          vehicleId: selectedVehicleId,
+          isCustomIssue: true,
+          issueDetails: {
+            description: customIssueDescription,
+            duration: customIssueDuration,
+            urgency: customIssueUrgency
+          }
+        },
+        headers
+      );
+
+      setBookingStatus({ type: 'success', msg: 'Issue reported successfully!' });
+      setSuccessBookingId(res.data.id);
+      setIsCustomIssueModalOpen(false); // Move to success state
+    } catch (err) {
+      console.error('Custom issue request error:', err);
+      setBookingStatus({
+        type: 'error',
+        msg: err.response?.data?.msg || err.response?.data?.message || 'Failed to submit issue. Please try again.'
+      });
+    } finally {
+      setBookingSubmitting(false);
     }
   };
 
@@ -335,6 +400,32 @@ const Marketplace = () => {
             </div>
 
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="border border-indigo-200 rounded-2xl p-4 bg-indigo-50/50 flex flex-col justify-center transition-colors hover:border-indigo-300">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-extrabold text-indigo-900 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-indigo-600" /> Custom Vehicle Issue
+                    </div>
+                    <div className="text-xs text-indigo-700 mt-1">Not sure what's wrong? Describe the problem directly to the garage.</div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setTargetGarageId(g.id);
+                      setIsCustomIssueModalOpen(true);
+                      setBookingStatus({ type: '', msg: '' });
+                    }}
+                    disabled={vehicles.length === 0 || g.currentStatus === 'CLOSED' || (g.maxCapacity - g.activeBookingsCount) <= 0}
+                    className={`shrink-0 text-white text-sm font-bold py-2 px-4 rounded-xl shadow-sm transition-colors ${
+                      g.currentStatus === 'CLOSED' || (g.maxCapacity - g.activeBookingsCount) <= 0
+                        ? 'bg-slate-350 cursor-not-allowed text-slate-500' 
+                        : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                    }`}
+                  >
+                    Request
+                  </button>
+                </div>
+              </div>
+
               {(g.services || []).length === 0 ? (
                 <div className="text-slate-500 text-sm">No services listed.</div>
               ) : (
@@ -383,6 +474,129 @@ const Marketplace = () => {
           </div>
         ))}
       </div>
+
+      {/* Custom Issue Modal */}
+      {isCustomIssueModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-indigo-600" /> Report a Vehicle Issue
+            </h3>
+
+            {bookingStatus.msg && (
+              <div className={`p-3 mb-4 rounded-xl text-xs font-semibold ${
+                bookingStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-700'
+              }`}>
+                {bookingStatus.msg}
+              </div>
+            )}
+
+            <form onSubmit={handleCustomIssueSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">What problem are you experiencing? *</label>
+                <textarea
+                  required
+                  value={customIssueDescription}
+                  onChange={(e) => {
+                    setCustomIssueDescription(e.target.value);
+                    setShowSafetyWarning(false);
+                  }}
+                  placeholder="Describe what is happening with your vehicle. For example: My brake pedal feels soft and the vehicle takes longer to stop."
+                  rows={4}
+                  maxLength={1000}
+                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">When did the problem start?</label>
+                <select
+                  value={customIssueDuration}
+                  onChange={(e) => setCustomIssueDuration(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold focus:outline-none"
+                >
+                  <option value="Today">Today</option>
+                  <option value="A few days ago">A few days ago</option>
+                  <option value="More than a week ago">More than a week ago</option>
+                  <option value="More than a month ago">More than a month ago</option>
+                  <option value="Not sure">Not sure</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">How is the issue affecting your vehicle?</label>
+                <select
+                  value={customIssueUrgency}
+                  onChange={(e) => setCustomIssueUrgency(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold focus:outline-none"
+                >
+                  <option value="Vehicle is working normally">Vehicle is working normally</option>
+                  <option value="Vehicle is working but has a problem">Vehicle is working but has a problem</option>
+                  <option value="Difficult to drive">Difficult to drive</option>
+                  <option value="Unable to drive">Unable to drive</option>
+                  <option value="Not sure">Not sure</option>
+                </select>
+              </div>
+
+              {showSafetyWarning && (
+                <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-xl">
+                  <div className="flex gap-3">
+                    <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
+                    <p className="text-xs text-orange-800 font-semibold">
+                      <strong>Safety Notice:</strong> Some vehicle problems may make a vehicle unsafe to drive. If you believe your vehicle is unsafe, avoid driving it and consider appropriate professional or emergency assistance. Click Submit again to proceed.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsCustomIssueModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={bookingSubmitting}
+                  className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-sm hover:bg-indigo-700 transition-colors"
+                >
+                  {bookingSubmitting ? 'Sending...' : (showSafetyWarning ? 'Acknowledge & Submit' : 'Submit Issue')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal with MediaManager */}
+      {successBookingId && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Upload Issue Photos (Optional)</h3>
+            <p className="text-sm text-slate-600 mb-4">Adding photos of the issue can help the garage understand the problem better.</p>
+            <MediaManager 
+              entityId={successBookingId} 
+              entityType="BOOKING" 
+              category="CUSTOMER_ISSUE" 
+              label="Vehicle Issue Photos" 
+              maxFiles={3} 
+            />
+            <div className="pt-4 flex justify-end">
+              <button 
+                onClick={() => {
+                  setSuccessBookingId(null);
+                  showToast('Booking requested successfully!', 'success');
+                }}
+                className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );

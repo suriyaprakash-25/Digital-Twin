@@ -5,6 +5,7 @@ import { Search, Filter, Calendar, Info, MapPin, IndianRupee, Shield, Wrench, Ar
 import InvoiceModal from '../components/invoice/InvoiceModal';
 import ReceiptModal from '../components/invoice/ReceiptModal';
 import GarageBillingModal from '../components/garage/GarageBillingModal';
+import MediaManager from '../components/MediaManager';
 
 const GarageServicesHistory = () => {
   const [services, setServices] = useState([]);
@@ -182,6 +183,16 @@ const GarageServicesHistory = () => {
               </div>
             )}
             
+            {/* Service Media Management */}
+            <div>
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Service Media</h4>
+              <div className="space-y-4 border border-slate-100 rounded-xl p-4 bg-white">
+                <MediaManager entityId={service.id} entityType="SERVICE" category="GARAGE_INSPECTION" label="Inspection Photos" />
+                <MediaManager entityId={service.id} entityType="SERVICE" category="REPAIR_PROGRESS" label="Repair Progress Photos" />
+                <MediaManager entityId={service.id} entityType="SERVICE" category="SERVICE_COMPLETION" label="Completed Service Photos" />
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

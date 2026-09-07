@@ -35,6 +35,7 @@ const invoiceRoutes = require('./src/routes/invoices');
 const earningsRoutes = require('./src/routes/earnings');
 const reconciliationRoutes = require('./src/routes/reconciliation');
 const { userDisputeRouter, garageDisputeRouter, adminDisputeRouter } = require('./src/routes/disputes');
+const mediaRoutes = require('./src/routes/media');
 const riskRouter = require('./src/routes/risk');
 const { garageReportsRouter, adminReportsRouter } = require('./src/routes/reports');
 const financialOperationsRouter = require('./src/routes/financialOperations');
@@ -186,6 +187,7 @@ app.use('/api/admin/tax', adminTaxRouter);
 app.use('/api/admin/risk-cases', riskCasesRouter);
 app.use('/api/admin/alerts', financialAlertsRouter);
 app.use('/api/admin/financial-integrity', financialIntegrityRouter);
+app.use('/api/media', mediaRoutes);
 
 // Start after DB connects
 (async () => {

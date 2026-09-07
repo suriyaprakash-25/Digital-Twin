@@ -10,6 +10,7 @@ const UserDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [pendingTransfers, setPendingTransfers] = useState([]);
   const [error, setError] = useState('');
+  const [provideInfoModal, setProvideInfoModal] = useState({ isOpen: false, bookingId: null, message: '' });
 
   const token = localStorage.getItem('token');
 
@@ -43,6 +44,22 @@ const UserDashboard = () => {
     setError('');
     loadData();
   }, [headers]);
+
+  const handleProvideInfo = (bookingId) => {
+    setProvideInfoModal({ isOpen: true, bookingId, message: '' });
+  };
+
+  const submitProvideInfo = async () => {
+    const { bookingId, message } = provideInfoModal;
+    if (!message || message.trim() === '') return;
+    try {
+      await axios.patch(`${API_BASE_URL}/api/bookings/${bookingId}/provide-info`, { message }, headers);
+      setProvideInfoModal({ isOpen: false, bookingId: null, message: '' });
+      loadData();
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to provide info');
+    }
+  };
 
   const handleAcceptTransfer = async (transferId) => {
     setError('');
@@ -217,7 +234,14 @@ const UserDashboard = () => {
                 }
 
                 return (
-                  <div key={n.id} className="flex gap-3 md:gap-4 p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-300 group cursor-default">
+                  <div 
+                    key={n.id} 
+                    onClick={() => {
+                      if (n.data?.bookingId) navigate('/user-dashboard');
+                      else if (n.data?.vehicleId) navigate(`/service-history/${n.data.vehicleId}`);
+                    }}
+                    className={`flex gap-3 md:gap-4 p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-300 group ${(n.data?.bookingId || n.data?.vehicleId) ? 'cursor-pointer' : 'cursor-default'}`}
+                  >
                     <div className={`shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border ${iconBg}`}>
                       <Icon className={`w-4 h-4 md:w-5 md:h-5 ${iconColor} group-hover:scale-110 transition-transform`} />
                     </div>
@@ -264,11 +288,60 @@ const UserDashboard = () => {
                   <span className="font-semibold">{b.scheduledFor ? new Date(b.scheduledFor).toLocaleString() : 'Not set'}</span>
                 </div>
                 {b.notes ? <div className="text-xs md:text-sm text-slate-500 mt-2 bg-white/50 p-2 rounded-lg border border-slate-100 italic">"{b.notes}"</div> : null}
+                {b.status === 'MORE_INFO_REQUIRED' && (
+                  <div className="mt-3 border-t border-slate-100 pt-3">
+                    <button
+                      onClick={() => handleProvideInfo(b.id)}
+                      className="w-full py-2 rounded-xl bg-orange-50 text-orange-600 text-xs font-bold hover:bg-orange-100 border border-orange-200 transition-colors shadow-sm"
+                    >
+                      Provide Required Info
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}
         </div>
       </div>
+
+      {/* Provide Info Modal */}
+      {provideInfoModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
+              Provide Information
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                  Message to Garage
+                </label>
+                <textarea
+                  value={provideInfoModal.message}
+                  onChange={(e) => setProvideInfoModal({ ...provideInfoModal, message: e.target.value })}
+                  placeholder="Please describe..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all resize-none h-24"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setProvideInfoModal({ isOpen: false, bookingId: null, message: '' })}
+                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitProvideInfo}
+                disabled={!provideInfoModal.message.trim()}
+                className="flex-1 px-4 py-3 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-sm disabled:opacity-50"
+              >
+                Submit Info
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

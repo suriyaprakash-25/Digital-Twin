@@ -170,6 +170,15 @@ function App() {
           <Route path="/garage/reviews" element={<GarageReviewsPage />} />
           <Route path="/analytics" element={<Analytics />} />
         </Route>
+
+        {/* Catch-all 404 Route */}
+        <Route path="*" element={
+          <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 text-slate-900">
+            <h1 className="text-4xl font-extrabold mb-2">404</h1>
+            <p className="text-lg text-slate-500 font-medium mb-4">Page not found</p>
+            <a href="/" className="px-5 py-2.5 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 transition">Go Home</a>
+          </div>
+        } />
       </Routes>
     </Router>
     </ToastProvider>

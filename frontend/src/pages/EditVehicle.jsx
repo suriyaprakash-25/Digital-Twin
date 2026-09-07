@@ -2,8 +2,8 @@ import { API_BASE_URL } from '../utils/config';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Car, CheckCircle, Hash, Calendar, Fuel, FileText, User, Phone, IndianRupee, Activity, Tag, Shield, FileCheck, Layers, ArrowLeft } from 'lucide-react';
-
+import { Car, CheckCircle, Hash, Calendar, Fuel, FileText, User, Phone, IndianRupee, Activity, Tag, Shield, FileCheck, Layers, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import MediaManager from '../components/MediaManager';
 const EditVehicle = () => {
     const { id } = useParams();
     const [formData, setFormData] = useState({
@@ -259,6 +259,17 @@ const EditVehicle = () => {
                             {renderInputGroup("Current Odometer (km)", "currentOdometerKm", "number", <Activity className="h-4 w-4 md:h-5 md:w-5" />, "e.g. 15000", null, { min: 0 })}
                             {renderInputGroup("Average Monthly Km", "averageMonthlyKm", "number", <Activity className="h-4 w-4 md:h-5 md:w-5" />, "e.g. 1000", null, { min: 0 })}
                         </div>
+                    </div>
+                </div>
+
+                {/* Vehicle Media */}
+                <div className="bg-white border border-slate-100 rounded-2xl md:rounded-3xl shadow-sm overflow-hidden">
+                    <div className="bg-slate-50 px-4 py-2.5 md:px-8 md:py-5 border-b border-slate-100 flex items-center gap-2.5">
+                        <div className="p-1 md:p-1.5 bg-slate-200 rounded-lg text-slate-600"><ImageIcon className="h-4 w-4 md:h-5 md:w-5" /></div>
+                        <h2 className="text-sm md:text-xl font-bold text-slate-800">Vehicle Photos</h2>
+                    </div>
+                    <div className="p-4 md:p-8">
+                        <MediaManager entityId={id} entityType="VEHICLE" category="VEHICLE_PROFILE" label="Vehicle Profile Photos" />
                     </div>
                 </div>
 

@@ -2,7 +2,7 @@ import { API_BASE_URL } from '../utils/config';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Search, SlidersHorizontal, Wrench, ShieldCheck, Star, Images, Info, MessageSquare, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Search, SlidersHorizontal, Wrench, ShieldCheck, Star, Images, Info, MessageSquare, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import GarageHeader from '../components/garage/GarageHeader';
 import GarageGallery from '../components/garage/GarageGallery';
 import ServiceCard from '../components/garage/ServiceCard';
@@ -10,6 +10,7 @@ import BusinessInfo from '../components/garage/BusinessInfo';
 import RatingDistribution from '../components/garage/RatingDistribution';
 import ReviewList from '../components/garage/ReviewList';
 import WriteReview from '../components/garage/WriteReview';
+import MediaManager from '../components/MediaManager';
 
 const GarageDetails = () => {
   const { garageId } = useParams();
@@ -37,6 +38,14 @@ const GarageDetails = () => {
   const [bookingNotes, setBookingNotes] = useState('');
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingStatus, setBookingStatus] = useState({ type: '', msg: '' });
+  const [successBookingId, setSuccessBookingId] = useState(null);
+
+  // Custom Issue State
+  const [isCustomIssueModalOpen, setIsCustomIssueModalOpen] = useState(false);
+  const [customIssueDescription, setCustomIssueDescription] = useState('');
+  const [customIssueDuration, setCustomIssueDuration] = useState('Not sure');
+  const [customIssueUrgency, setCustomIssueUrgency] = useState('Not sure');
+  const [showSafetyWarning, setShowSafetyWarning] = useState(false);
 
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
@@ -136,7 +145,7 @@ const GarageDetails = () => {
       const targetGarageId = garage.id || garage._id || garageId;
       const targetServiceId = selectedServiceForRequest.id || selectedServiceForRequest._id;
 
-      await axios.post(
+      const res = await axios.post(
         `${API_BASE_URL}/api/bookings`,
         {
           garageId: targetGarageId,
@@ -151,16 +160,68 @@ const GarageDetails = () => {
       );
 
       setBookingStatus({ type: 'success', msg: 'Booking request sent successfully!' });
-      setTimeout(() => {
-        setSelectedServiceForRequest(null);
-        setBookingStatus({ type: '', msg: '' });
-        navigate('/user-dashboard');
-      }, 1200);
+      setSuccessBookingId(res.data.id);
     } catch (err) {
       console.error('Booking request error:', err);
       setBookingStatus({
         type: 'error',
         msg: err.response?.data?.msg || err.response?.data?.message || 'Failed to submit booking request. Please try again.'
+      });
+    } finally {
+      setBookingSubmitting(false);
+    }
+  };
+
+  const handleCustomIssueSubmit = async (e) => {
+    e.preventDefault();
+    setBookingStatus({ type: '', msg: '' });
+
+    if (!token) {
+      setBookingStatus({ type: 'error', msg: 'Please log in as a vehicle owner to report an issue.' });
+      return;
+    }
+    if (!bookingVehicleId) {
+      setBookingStatus({ type: 'error', msg: 'Please select a vehicle.' });
+      return;
+    }
+    if (!customIssueDescription || customIssueDescription.trim().length < 5) {
+      setBookingStatus({ type: 'error', msg: 'Please provide a clearer description of the issue.' });
+      return;
+    }
+
+    const safetyTerms = /\b(brake|brakes|steering|burst|leak|smoke|fire|overheating)\b/i;
+    if (safetyTerms.test(customIssueDescription) && !showSafetyWarning) {
+      setShowSafetyWarning(true);
+      return;
+    }
+
+    setBookingSubmitting(true);
+    try {
+      const targetGarageId = garage.id || garage._id || garageId;
+      const res = await axios.post(
+        `${API_BASE_URL}/api/bookings`,
+        {
+          garageId: targetGarageId,
+          vehicleId: bookingVehicleId,
+          isCustomIssue: true,
+          issueDetails: {
+            description: customIssueDescription,
+            duration: customIssueDuration,
+            urgency: customIssueUrgency
+          }
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setBookingStatus({ type: 'success', msg: 'Issue reported successfully!' });
+      setSuccessBookingId(res.data.id);
+      setIsCustomIssueModalOpen(false); // Move to success state
+      setSelectedServiceForRequest(true); // Reuse the success modal view
+    } catch (err) {
+      console.error('Custom issue request error:', err);
+      setBookingStatus({
+        type: 'error',
+        msg: err.response?.data?.msg || 'Failed to submit issue. Please try again.'
       });
     } finally {
       setBookingSubmitting(false);
@@ -220,6 +281,27 @@ const GarageDetails = () => {
       {garage.galleryPhotos && garage.galleryPhotos.length > 0 && (
         <GarageGallery images={garage.galleryPhotos} />
       )}
+
+      {/* Section 2.5: Custom Issue Banner */}
+      <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div>
+          <h2 className="text-lg font-bold text-indigo-900 mb-2">Not sure which service you need?</h2>
+          <p className="text-sm font-medium text-indigo-700 max-w-2xl">
+            Tell the garage what is wrong with your vehicle. You can describe the issue and optionally attach photos. The garage will review your request before accepting it.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setBookingStatus({ type: '', msg: '' });
+            setShowSafetyWarning(false);
+            setCustomIssueDescription('');
+            setIsCustomIssueModalOpen(true);
+          }}
+          className="shrink-0 whitespace-nowrap bg-indigo-600 hover:bg-indigo-700 transition-colors text-white text-sm font-bold py-3 px-6 rounded-xl shadow-sm"
+        >
+          Report a Vehicle Issue
+        </button>
+      </div>
 
       {/* Section 3: Services Catalog */}
       <div id="services-section" className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
@@ -313,19 +395,136 @@ const GarageDetails = () => {
       {selectedServiceForRequest && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
-              Request Service: {selectedServiceForRequest.title}
+            {successBookingId ? (
+              <div className="text-center space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner animate-bounce">
+                    <CheckCircle className="h-8 w-8" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-extrabold text-slate-900">Booking Requested</h3>
+                    <p className="text-xs text-slate-500 font-medium mt-1">The garage will review and confirm shortly.</p>
+                </div>
+                
+                <div className="border border-slate-100 bg-slate-50 rounded-xl p-4 text-left shadow-sm">
+                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-3">
+                        <Images className="h-4 w-4 text-teal-600" />
+                        {selectedServiceForRequest === true ? 'Vehicle Issue Photos' : 'Customer Damage Photos'}
+                    </h4>
+                    <p className="text-[10px] text-slate-500 mb-3">
+                      {selectedServiceForRequest === true 
+                        ? 'Upload photos demonstrating the problem you are experiencing (Optional).' 
+                        : 'Upload photos of your vehicle\'s condition or specific damage before the service (Optional).'}
+                    </p>
+                    <MediaManager 
+                      entityId={successBookingId} 
+                      entityType="BOOKING" 
+                      category={selectedServiceForRequest === true ? 'CUSTOMER_ISSUE' : 'CUSTOMER_DAMAGE'} 
+                      label="Upload Photos" 
+                    />
+                </div>
+
+                <button
+                    onClick={() => {
+                        setSuccessBookingId(null);
+                        setSelectedServiceForRequest(null);
+                        setBookingStatus({ type: '', msg: '' });
+                        navigate('/user-dashboard');
+                    }}
+                    className="w-full py-3 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-sm hover:bg-slate-800 transition-colors"
+                >
+                    Done
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
+                  Request Service: {selectedServiceForRequest.title}
+                </h3>
+
+                {bookingStatus.msg && (
+                  <div className={`p-3 rounded-xl text-xs font-semibold ${
+                    bookingStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-700'
+                  }`}>
+                    {bookingStatus.msg}
+                  </div>
+                )}
+
+                <form onSubmit={handleRequestBooking} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Select Your Vehicle *</label>
+                    <select
+                      value={bookingVehicleId}
+                      onChange={(e) => setBookingVehicleId(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold"
+                      required
+                    >
+                      {userVehicles.map(v => (
+                        <option key={v.id} value={v.id}>{v.vehicleNumber} ({v.brand} {v.model})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Preferred Date &amp; Time</label>
+                    <input
+                      type="datetime-local"
+                      value={bookingDate}
+                      onChange={(e) => setBookingDate(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Notes / Instructions</label>
+                    <textarea
+                      value={bookingNotes}
+                      onChange={(e) => setBookingNotes(e.target.value)}
+                      placeholder="Any specific issues or preferences..."
+                      rows={2}
+                      className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedServiceForRequest(null)}
+                      className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={bookingSubmitting}
+                      className="flex-1 py-2.5 rounded-xl bg-teal-600 text-white text-xs font-bold shadow-sm"
+                    >
+                      {bookingSubmitting ? 'Sending Request...' : 'Confirm Booking'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Custom Issue Modal */}
+      {isCustomIssueModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">
+              Report a Vehicle Issue
             </h3>
 
             {bookingStatus.msg && (
-              <div className={`p-3 rounded-xl text-xs font-semibold ${
+              <div className={`p-3 mb-4 rounded-xl text-xs font-semibold ${
                 bookingStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-700'
               }`}>
                 {bookingStatus.msg}
               </div>
             )}
 
-            <form onSubmit={handleRequestBooking} className="space-y-4">
+            <form onSubmit={handleCustomIssueSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Select Your Vehicle *</label>
                 <select
@@ -341,30 +540,66 @@ const GarageDetails = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Preferred Date &amp; Time</label>
-                <input
-                  type="datetime-local"
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Notes / Instructions</label>
+                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">What problem are you experiencing? *</label>
                 <textarea
-                  value={bookingNotes}
-                  onChange={(e) => setBookingNotes(e.target.value)}
-                  placeholder="Any specific issues or preferences..."
-                  rows={2}
+                  required
+                  value={customIssueDescription}
+                  onChange={(e) => {
+                    setCustomIssueDescription(e.target.value);
+                    setShowSafetyWarning(false); // Reset warning on edit
+                  }}
+                  placeholder="Describe what is happening with your vehicle. For example: My brake pedal feels soft and the vehicle takes longer to stop."
+                  rows={4}
+                  maxLength={1000}
                   className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium"
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">When did the problem start?</label>
+                <select
+                  value={customIssueDuration}
+                  onChange={(e) => setCustomIssueDuration(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold"
+                >
+                  <option value="Today">Today</option>
+                  <option value="A few days ago">A few days ago</option>
+                  <option value="More than a week ago">More than a week ago</option>
+                  <option value="More than a month ago">More than a month ago</option>
+                  <option value="Not sure">Not sure</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">How is the issue affecting your vehicle?</label>
+                <select
+                  value={customIssueUrgency}
+                  onChange={(e) => setCustomIssueUrgency(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold"
+                >
+                  <option value="Vehicle is working normally">Vehicle is working normally</option>
+                  <option value="Vehicle is working but has a problem">Vehicle is working but has a problem</option>
+                  <option value="Difficult to drive">Difficult to drive</option>
+                  <option value="Unable to drive">Unable to drive</option>
+                  <option value="Not sure">Not sure</option>
+                </select>
+              </div>
+
+              {showSafetyWarning && (
+                <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-xl">
+                  <div className="flex gap-3">
+                    <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
+                    <p className="text-xs text-orange-800 font-semibold">
+                      <strong>Safety Notice:</strong> Some vehicle problems may make a vehicle unsafe to drive. If you believe your vehicle is unsafe, avoid driving it and consider appropriate professional or emergency assistance. Click Submit again to proceed.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setSelectedServiceForRequest(null)}
+                  onClick={() => setIsCustomIssueModalOpen(false)}
                   className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold"
                 >
                   Cancel
@@ -372,9 +607,9 @@ const GarageDetails = () => {
                 <button
                   type="submit"
                   disabled={bookingSubmitting}
-                  className="flex-1 py-2.5 rounded-xl bg-teal-600 text-white text-xs font-bold shadow-sm"
+                  className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-sm"
                 >
-                  {bookingSubmitting ? 'Sending Request...' : 'Confirm Booking'}
+                  {bookingSubmitting ? 'Sending...' : (showSafetyWarning ? 'Acknowledge & Submit' : 'Submit Issue')}
                 </button>
               </div>
             </form>

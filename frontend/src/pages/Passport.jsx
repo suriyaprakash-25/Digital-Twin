@@ -4,9 +4,10 @@ import axios from 'axios';
 import {
   Car, User, ShieldCheck, History, Calendar,
   Building2, Wrench, Download, QrCode, AlertCircle,
-  Activity, Sparkles, Phone, Mail, Award
+  Activity, Sparkles, Phone, Mail, Award, Image as ImageIcon
 } from 'lucide-react';
 import { API_BASE_URL } from '../utils/config';
+import MediaManager from '../components/MediaManager';
 
 const Passport = () => {
   const { vehicleId } = useParams();
@@ -68,7 +69,7 @@ const Passport = () => {
     );
   }
 
-  const { vehicle, owner, healthScore, services, ownershipHistory, partsReplaced } = data;
+  const { vehicle, owner, healthScore, services, ownershipHistory, partsReplaced, vehiclePhotos } = data;
 
   const findReplacedPart = (keywords) => {
     return partsReplaced?.find(p => 
@@ -172,6 +173,39 @@ const Passport = () => {
                     <span className={`text-sm sm:text-base font-extrabold ${spec.highlight ? 'text-teal-600 font-black' : 'text-slate-800'}`}>{spec.val}</span>
                   </div>
                 ))}
+              </div>
+            </section>
+
+            {/* Section: Vehicle Photos */}
+            <section className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                <div className="p-3 bg-teal-50 text-teal-600 rounded-xl">
+                  <ImageIcon className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Vehicle Photos</h2>
+                  <p className="text-xs text-slate-400 font-medium">Digital records of vehicle appearance</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                {vehiclePhotos && vehiclePhotos.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {vehiclePhotos.map(photo => (
+                      <div key={photo._id || photo.id} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 group">
+                        <img 
+                          src={photo.url?.startsWith('http') ? photo.url : `${API_BASE_URL}${photo.url}`} 
+                          alt="Vehicle" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
+                    <ImageIcon className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                    <p className="text-sm font-medium">No photos available for this vehicle.</p>
+                  </div>
+                )}
               </div>
             </section>
 

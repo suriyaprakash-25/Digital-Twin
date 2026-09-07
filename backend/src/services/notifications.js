@@ -18,7 +18,9 @@ async function ensureIndexes() {
   const { deviceTokens, notifications } = getCollections();
   await Promise.allSettled([
     deviceTokens.createIndex({ userId: 1, token: 1 }, { unique: true }),
-    notifications.createIndex({ userId: 1, createdAt: -1 })
+    notifications.createIndex({ userId: 1, createdAt: -1 }),
+    // TTL index: delete notifications automatically after 4 days (4 * 24 * 60 * 60 = 345600 seconds)
+    notifications.createIndex({ createdAt: 1 }, { expireAfterSeconds: 345600 })
   ]);
 }
 

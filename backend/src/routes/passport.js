@@ -177,6 +177,16 @@ const getPassportHandler = async (req, res) => {
       }
     });
 
+    const vehiclePhotos = await db.collection('media').find({
+      entityType: 'VEHICLE',
+      category: 'VEHICLE_PROFILE',
+      $or: [
+        { entityId: actualVehicleId },
+        { entityId: cleanId },
+        ...(vehicle.id ? [{ entityId: String(vehicle.id) }] : [])
+      ]
+    }).toArray();
+
     return res.status(200).json({
       vehicle: {
         id: actualVehicleId,
@@ -194,6 +204,7 @@ const getPassportHandler = async (req, res) => {
         currentOdometerKm: vehicle.currentOdometerKm,
         qrCodeUrl: qrCodeUrl || null
       },
+      vehiclePhotos,
       owner: ownerDetails,
       healthScore,
       services: services.map((s) => ({

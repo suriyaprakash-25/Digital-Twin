@@ -10,6 +10,7 @@ import {
   IndianRupee, CreditCard, Receipt, ArrowRight
 } from 'lucide-react';
 import { tryRegisterFcmToken } from '../utils/fcm';
+import MediaManager from '../components/MediaManager';
 
 function normalizeRole(role) {
   const r = String(role || '').trim().toLowerCase();
@@ -21,6 +22,7 @@ function normalizeRole(role) {
 const statusMeta = {
   REQUESTED:   { label: 'Pending',     color: 'bg-amber-100 text-amber-700',    icon: <Clock className="h-3.5 w-3.5" /> },
   PENDING:     { label: 'Pending',     color: 'bg-amber-100 text-amber-700',    icon: <Clock className="h-3.5 w-3.5" /> },
+  MORE_INFO_REQUIRED: { label: 'Need Info', color: 'bg-orange-100 text-orange-700', icon: <AlertTriangle className="h-3.5 w-3.5" /> },
   ACCEPTED:    { label: 'Accepted',    color: 'bg-teal-100 text-teal-700',      icon: <CheckCircle className="h-3.5 w-3.5" /> },
   IN_PROGRESS: { label: 'In Progress', color: 'bg-violet-100 text-violet-700',  icon: <Loader2 className="h-3.5 w-3.5" /> },
   COMPLETED:   { label: 'Completed',   color: 'bg-emerald-100 text-emerald-700',icon: <CheckCircle className="h-3.5 w-3.5" /> },
@@ -50,6 +52,7 @@ const GarageDashboard = () => {
   const [inputCapacity, setInputCapacity] = useState(20);
   const [updatingCapacity, setUpdatingCapacity] = useState(false);
   const [bookingTab, setBookingTab] = useState('ALL');
+  const [requestInfoModal, setRequestInfoModal] = useState({ isOpen: false, bookingId: null, message: '' });
 
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(
     typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default'
@@ -109,6 +112,23 @@ const GarageDashboard = () => {
       await loadAll();
     } catch (e) {
       showToast(e.response?.data?.msg || 'Failed to update booking', 'error');
+    }
+  };
+
+  const handleRequestInfo = (bookingId) => {
+    setRequestInfoModal({ isOpen: true, bookingId, message: '' });
+  };
+
+  const submitRequestInfo = async () => {
+    const { bookingId, message } = requestInfoModal;
+    if (!message || message.trim() === '') return;
+    try {
+      await axios.patch(`${API_BASE_URL}/api/bookings/${bookingId}/request-info`, { message }, headers);
+      showToast('Request sent to customer', 'success');
+      setRequestInfoModal({ isOpen: false, bookingId: null, message: '' });
+      await loadAll();
+    } catch (e) {
+      showToast(e.response?.data?.msg || 'Failed to request info', 'error');
     }
   };
 
@@ -428,6 +448,11 @@ const GarageDashboard = () => {
                     <div className="text-xs text-slate-500 font-semibold mt-0.5">
                       Service: {b.service?.title} | Status: <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${b.status === 'IN_PROGRESS' ? 'bg-violet-100 text-violet-700' : 'bg-teal-100 text-teal-700'}`}>{b.status === 'IN_PROGRESS' ? 'In Progress' : 'Accepted'}</span>
                     </div>
+                    {b.status === 'IN_PROGRESS' && (
+                      <div className="mt-3 border-t border-slate-100 pt-3">
+                        <MediaManager entityId={b.id} entityType="BOOKING" category="REPAIR_PROGRESS" label="Repair Progress Photos" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     {b.status === 'ACCEPTED' && (
@@ -554,6 +579,34 @@ const GarageDashboard = () => {
                         Scheduled: <span className="font-bold text-slate-700">{b.scheduledFor ? new Date(b.scheduledFor).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Not set'}</span>
                       </div>
                       {b.notes && <div className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100 max-w-lg mt-1">Notes: {b.notes}</div>}
+                      
+                      {b.isCustomIssue && b.service?.issueDetails && (
+                        <div className="mt-3 p-3 bg-orange-50 border border-orange-100 rounded-xl max-w-2xl">
+                          <h4 className="text-xs font-black text-orange-800 mb-2 uppercase tracking-wide">Reported Issue Details</h4>
+                          <div className="space-y-1.5">
+                            <div className="text-sm text-orange-900"><span className="font-semibold">Description:</span> {b.service.issueDetails.description}</div>
+                            <div className="text-xs text-orange-800"><span className="font-semibold">Started:</span> {b.service.issueDetails.duration}</div>
+                            <div className="text-xs text-orange-800"><span className="font-semibold">Impact:</span> {b.service.issueDetails.urgency}</div>
+                          </div>
+                          {b.timeline?.filter(t => t.by === 'USER' && t.message).length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-orange-200">
+                              <h4 className="text-[10px] font-black text-orange-800 mb-1.5 uppercase tracking-wide">Additional Info Provided</h4>
+                              <div className="space-y-1.5">
+                                {b.timeline.filter(t => t.by === 'USER' && t.message).map((t, idx) => (
+                                  <div key={idx} className="text-sm text-orange-900 bg-orange-100/50 p-2.5 rounded-lg border border-orange-200/50">
+                                    "{t.message}"
+                                    <div className="text-[10px] font-semibold text-orange-700/70 mt-1">{new Date(t.at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="mt-2">
+                        <MediaManager entityId={b.id} entityType="BOOKING" category={b.isCustomIssue ? "CUSTOMER_ISSUE" : "CUSTOMER_DAMAGE"} label={b.isCustomIssue ? "Vehicle Issue Photos" : "Customer Damage Photos"} readOnly={true} />
+                      </div>
                     </div>
 
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${meta.color}`}>
@@ -571,6 +624,14 @@ const GarageDashboard = () => {
                         >
                           <CheckCircle className="h-3.5 w-3.5" /> Accept Booking
                         </button>
+                        {b.isCustomIssue && (
+                          <button
+                            onClick={() => handleRequestInfo(b.id)}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-50 text-orange-600 text-xs font-bold hover:bg-orange-100 border border-orange-200 transition-colors shadow-sm"
+                          >
+                            <AlertTriangle className="h-3.5 w-3.5" /> Request Info
+                          </button>
+                        )}
                         <button
                           onClick={() => updateBookingStatus(b.id, 'REJECTED')}
                           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 border border-red-200 transition-colors"
@@ -647,6 +708,45 @@ const GarageDashboard = () => {
           })()}
         </div>
       </div>
+
+      {/* Request Info Modal */}
+      {requestInfoModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
+              Request Information
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                  Message to Customer
+                </label>
+                <textarea
+                  value={requestInfoModal.message}
+                  onChange={(e) => setRequestInfoModal({ ...requestInfoModal, message: e.target.value })}
+                  placeholder="What more information do you need?"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all resize-none h-24"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setRequestInfoModal({ isOpen: false, bookingId: null, message: '' })}
+                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitRequestInfo}
+                disabled={!requestInfoModal.message.trim()}
+                className="flex-1 px-4 py-3 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-sm disabled:opacity-50"
+              >
+                Send Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

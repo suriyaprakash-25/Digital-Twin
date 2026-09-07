@@ -7,7 +7,8 @@ const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { loadConfig } = require('../config');
 const { requireAuth, normalizeRole } = require('../middleware/auth');
-const { upload, removeUploadByUrl } = require('../utils/uploads');
+const { upload, createUploader, removeUploadByUrl } = require('../utils/uploads');
+const documentUpload = createUploader(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
 const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
@@ -233,7 +234,7 @@ router.post('/me/photo', requireAuth, upload.single('photo'), async (req, res) =
   }
 });
 
-router.post('/me/license', requireAuth, upload.single('license'), async (req, res) => {
+router.post('/me/license', requireAuth, documentUpload.single('license'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ msg: 'No license document uploaded' });
   }

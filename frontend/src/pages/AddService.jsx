@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import InvoiceModal from '../components/invoice/InvoiceModal';
+import MediaManager from '../components/MediaManager';
 
 const AddService = () => {
   const { showToast } = useToast();
@@ -427,7 +428,7 @@ const AddService = () => {
           billPhotoUrls: billPhotos
         };
 
-        await axios.post(`${API_BASE_URL}/api/services/add`, submitPayload, {
+        const res = await axios.post(`${API_BASE_URL}/api/services/add`, submitPayload, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -436,14 +437,7 @@ const AddService = () => {
 
         setStatus({ type: 'success', message: 'Service logged successfully!' });
         showToast('Service logged successfully!', 'success');
-
-        setTimeout(() => {
-          if (isGarage) {
-            navigate('/garage-dashboard');
-          } else {
-            navigate(`/service-history/${formData.vehicleId}`);
-          }
-        }, 1500);
+        setSuccessResult({ isLogOnly: true, serviceId: res.data.serviceId, invoiceNumber: null });
       }
     } catch (err) {
       console.error('Error logging/completing service:', err);
@@ -503,18 +497,21 @@ const AddService = () => {
           </div>
 
           <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black uppercase tracking-wider rounded-full">
-            Service Finalized
+            {successResult.isLogOnly ? 'Service Logged' : 'Service Finalized'}
           </span>
 
           <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 mt-3 tracking-tight">
-            Service Completed Successfully
+            {successResult.isLogOnly ? 'Service Logged Successfully' : 'Service Completed Successfully'}
           </h1>
           <p className="text-slate-500 text-sm md:text-base mt-2 max-w-lg mx-auto font-medium">
-            The customer has been notified and the authoritative GST tax invoice has been generated.
+            {successResult.isLogOnly
+              ? 'The service details have been securely logged to the vehicle history.'
+              : 'The customer has been notified and the authoritative GST tax invoice has been generated.'}
           </p>
 
           {/* Key Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
+          {!successResult.isLogOnly && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
               <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Invoice Number</div>
               <div className="text-base font-extrabold text-slate-900 mt-1 font-mono">{successResult.invoiceNumber}</div>
@@ -535,8 +532,9 @@ const AddService = () => {
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                 Awaiting Customer Payment
               </div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Vehicle & Customer Details */}
           {prefilledData && (
@@ -560,14 +558,28 @@ const AddService = () => {
             </div>
           )}
 
+          {/* Media Manager Section */}
+          <div className="mt-8 mb-8 text-left border border-slate-100 bg-slate-50 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">Upload Service Photos (Optional)</h2>
+            <div className="space-y-4">
+              {completionMode ? (
+                <MediaManager entityId={successResult.serviceId} entityType="SERVICE" category="SERVICE_COMPLETION" label="Completed Service Photos" />
+              ) : (
+                <MediaManager entityId={successResult.serviceId} entityType="SERVICE" category="GARAGE_INSPECTION" label="Inspection Photos" />
+              )}
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => setShowInvoiceModal(true)}
-              className="w-full sm:w-auto px-6 py-3.5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-600/20 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
-            >
-              <FileText className="h-4 w-4" /> View Generated Invoice
-            </button>
+            {!successResult.isLogOnly && (
+              <button
+                onClick={() => setShowInvoiceModal(true)}
+                className="w-full sm:w-auto px-6 py-3.5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-600/20 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+              >
+                <FileText className="h-4 w-4" /> View Generated Invoice
+              </button>
+            )}
             <button
               onClick={() => navigate('/garage-services-history')}
               className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"

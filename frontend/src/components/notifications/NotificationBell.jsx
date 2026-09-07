@@ -83,7 +83,9 @@ const NotificationBell = () => {
 
         // Navigation intelligence based on notification type
         const type = notif.data?.type || '';
-        const role = localStorage.getItem('role') || 'USER';
+        const userStr = localStorage.getItem('user');
+        const userObj = userStr ? JSON.parse(userStr) : {};
+        const role = userObj?.role || 'USER';
 
         if (type.startsWith('REFUND') || type.startsWith('PAYMENT')) {
             if (role === 'GARAGE') {
@@ -99,6 +101,14 @@ const NotificationBell = () => {
             } else {
                 navigate('/payment-history');
             }
+        } else if (notif.data?.bookingId) {
+            if (role === 'GARAGE') {
+                navigate('/garage-dashboard'); // Garages manage active bookings on the main dashboard
+            } else {
+                navigate('/user-dashboard'); // Users view their bookings on their dashboard
+            }
+        } else if (notif.data?.vehicleId) {
+            navigate(`/service-history/${notif.data.vehicleId}`);
         }
     };
 

@@ -123,11 +123,11 @@ router.post('/add', requireAuth, async (req, res) => {
   };
 
   try {
-    await services.insertOne(newService);
+    const result = await services.insertOne(newService);
     if (odometerKm > (vehicle.currentOdometerKm || 0)) {
       await vehicles.updateOne({ _id: vehicleObjectId }, { $set: { currentOdometerKm: odometerKm } });
     }
-    return res.status(201).json({ msg: 'Service record added successfully' });
+    return res.status(201).json({ msg: 'Service record added successfully', serviceId: result.insertedId });
   } catch (e) {
     return res.status(500).json({ msg: 'Error adding service record', error: String(e && e.message ? e.message : e) });
   }
@@ -501,6 +501,7 @@ router.get('/:vehicle_id', requireAuth, async (req, res) => {
       billPhotoUrls: Array.isArray(s.billPhotoUrls) ? s.billPhotoUrls : (s.billPhotoUrl ? [s.billPhotoUrl] : []),
       invoiceNumber: s.invoiceNumber || null,
       invoiceStatus: s.invoiceStatus || 'FINALIZED',
+      bookingId: s.bookingId || null,
       paymentStatus: s.paymentStatus || (s.paidAt ? 'PAID' : 'UNPAID'),
       paidAt: s.paidAt ? new Date(s.paidAt).toISOString() : null,
       paymentId: s.paymentId || null,
@@ -723,6 +724,7 @@ async function handleCompleteService(req, res) {
     // 6. Record or Update Service Document
     const servicePayload = {
       vehicleId: String(vehicle._id),
+      bookingId: bookingDoc ? String(bookingDoc._id) : null,
       serviceDate: serviceDate || new Date().toISOString().split('T')[0],
       odometerKm: finalOdometer,
       serviceCategory: serviceCategory || 'Periodic Maintenance',

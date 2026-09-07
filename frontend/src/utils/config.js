@@ -10,6 +10,10 @@ function resolveApiBaseUrl() {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://localhost:5000';
     }
+    // Handle local network access (e.g., from mobile devices scanning local QR codes)
+    if (hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
+      return `http://${hostname}:5000`;
+    }
   }
 
   // Production Render backend

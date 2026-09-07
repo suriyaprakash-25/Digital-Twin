@@ -51,6 +51,8 @@ async function ensureFinancialNotificationIndexes(dbInstance) {
     const notifications = db.collection('notifications');
     await notifications.createIndex({ userId: 1, createdAt: -1 });
     await notifications.createIndex({ type: 1, createdAt: -1 });
+    // TTL index: auto-delete after 4 days
+    await notifications.createIndex({ createdAt: 1 }, { expireAfterSeconds: 345600 });
   } catch (err) {
     console.warn('Notification indexes notice:', err.message);
   }

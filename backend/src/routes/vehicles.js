@@ -121,7 +121,7 @@ router.post('/add', requireAuth, upload.fields([{ name: 'rcBook', maxCount: 1 },
     };
     await db.collection('ownershipHistory').insertOne(historyDoc);
 
-    return res.status(201).json({ msg: 'Vehicle added successfully' });
+    return res.status(201).json({ msg: 'Vehicle added successfully', vehicleId: vehicleIdStr });
   } catch (e) {
     return res.status(500).json({ msg: 'Error adding vehicle', error: String(e && e.message ? e.message : e) });
   }

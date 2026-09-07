@@ -7,6 +7,7 @@ import PaymentButton from '../components/payment/PaymentButton';
 import PaymentSuccessModal from '../components/payment/PaymentSuccessModal';
 import InvoiceModal from '../components/invoice/InvoiceModal';
 import ReceiptModal from '../components/invoice/ReceiptModal';
+import MediaManager from '../components/MediaManager';
 
 const ServiceHistory = () => {
     const { vehicleId } = useParams();
@@ -431,6 +432,19 @@ const ServiceHistory = () => {
                                                     <p className="text-[10px] text-slate-400 font-medium mt-1.5">Click any photo to enlarge</p>
                                                 </div>
                                             )}
+
+                                            {/* Service Media Management (Read Only) */}
+                                            <div className="mt-6">
+                                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                    <Car className="h-3.5 w-3.5" /> Service Photos
+                                                </h4>
+                                                <div className="space-y-4">
+                                                    {service.bookingId && <MediaManager entityId={service.bookingId} entityType="BOOKING" category="CUSTOMER_DAMAGE" label="Customer Damage Photos" readOnly={true} />}
+                                                    <MediaManager entityId={service.id || service._id} entityType="SERVICE" category="GARAGE_INSPECTION" label="Inspection Photos" readOnly={true} />
+                                                    {service.bookingId && <MediaManager entityId={service.bookingId} entityType="BOOKING" category="REPAIR_PROGRESS" label="Repair Progress Photos" readOnly={true} />}
+                                                    <MediaManager entityId={service.id || service._id} entityType="SERVICE" category="SERVICE_COMPLETION" label="Completed Service Photos" readOnly={true} />
+                                                </div>
+                                            </div>
 
                                         </div>
                                     )}

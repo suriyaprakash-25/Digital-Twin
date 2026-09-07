@@ -20,10 +20,14 @@ function safeDate(value) {
 }
 
 router.post('/', requireAuth, requireRole('USER'), async (req, res) => {
-  const { garageId, serviceId, vehicleId, scheduledFor, notes } = req.body || {};
+  const { garageId, serviceId, vehicleId, scheduledFor, notes, isCustomIssue, issueDetails } = req.body || {};
 
-  if (!garageId || !serviceId || !vehicleId) {
-    return res.status(400).json({ msg: 'garageId, serviceId, vehicleId are required' });
+  if (!garageId || !vehicleId) {
+    return res.status(400).json({ msg: 'garageId and vehicleId are required' });
+  }
+  
+  if (!serviceId && !isCustomIssue) {
+    return res.status(400).json({ msg: 'Either serviceId or isCustomIssue must be provided' });
   }
 
   const scheduled = safeDate(scheduledFor);
@@ -38,15 +42,33 @@ router.post('/', requireAuth, requireRole('USER'), async (req, res) => {
   const bookings = db.collection('bookings');
 
   try {
-    const [garage, service, vehicle] = await Promise.all([
-      garages.findOne({ _id: toObjectId(garageId), isActive: { $ne: false } }),
-      garageServices.findOne({ _id: toObjectId(serviceId), isActive: { $ne: false }, isArchived: { $ne: true } }),
-      vehicles.findOne({ _id: toObjectId(vehicleId), ownerId: String(req.user.id), isArchived: { $ne: true } })
+    const garagePromise = garages.findOne({ _id: toObjectId(garageId), isActive: { $ne: false } });
+    const vehiclePromise = vehicles.findOne({ _id: toObjectId(vehicleId), ownerId: String(req.user.id), isArchived: { $ne: true } });
+    
+    let servicePromise = null;
+    if (serviceId) {
+      servicePromise = garageServices.findOne({ _id: toObjectId(serviceId), isActive: { $ne: false }, isArchived: { $ne: true } });
+    }
+
+    const [garage, serviceResult, vehicle] = await Promise.all([
+      garagePromise,
+      servicePromise,
+      vehiclePromise
     ]);
 
     if (!garage) return res.status(404).json({ msg: 'Garage not found' });
-    if (!service) return res.status(404).json({ msg: 'Service not found' });
+    if (serviceId && !serviceResult) return res.status(404).json({ msg: 'Service not found' });
     if (!vehicle) return res.status(404).json({ msg: 'Vehicle not found' });
+
+    // Build effective service object
+    const service = isCustomIssue ? {
+      _id: null,
+      title: 'Custom Vehicle Issue',
+      price: 0,
+      durationMins: null,
+      isCustomIssue: true,
+      issueDetails: issueDetails || null
+    } : serviceResult;
 
     // Enforce capacity check
     const activeBookingsCount = await bookings.countDocuments({
@@ -66,6 +88,7 @@ router.post('/', requireAuth, requireRole('USER'), async (req, res) => {
       garageId: garage._id,
       serviceId: service._id,
       vehicleId: vehicle._id,
+      isCustomIssue: Boolean(isCustomIssue),
       scheduledFor: scheduled,
       notes: notes ? String(notes) : '',
       status: 'REQUESTED',
@@ -80,7 +103,9 @@ router.post('/', requireAuth, requireRole('USER'), async (req, res) => {
         service: {
           title: service.title,
           price: service.price,
-          durationMins: service.durationMins
+          durationMins: service.durationMins,
+          isCustomIssue: service.isCustomIssue,
+          issueDetails: service.issueDetails
         },
         vehicle: {
           vehicleNumber: vehicle.vehicleNumber,
@@ -187,6 +212,20 @@ router.post('/', requireAuth, requireRole('USER'), async (req, res) => {
                             <td style="padding: 6px 0; font-weight: bold;">Notes:</td>
                             <td style="padding: 6px 0;">${notes || 'None'}</td>
                           </tr>
+                          ${isCustomIssue && service.issueDetails ? `
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Problem Description:</td>
+                            <td style="padding: 6px 0;">${service.issueDetails.description}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Problem Duration:</td>
+                            <td style="padding: 6px 0;">${service.issueDetails.duration}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-weight: bold;">Impact:</td>
+                            <td style="padding: 6px 0;">${service.issueDetails.urgency}</td>
+                          </tr>
+                          ` : ''}
                         </table>
                       </div>
                       <p>Please log in to your dashboard to review and accept/reject this request.</p>
@@ -252,6 +291,7 @@ router.get('/my', requireAuth, requireRole('USER'), async (req, res) => {
         notes: b.notes,
         timeline: b.timeline || [],
         createdAt: b.createdAt,
+        isCustomIssue: Boolean(b.isCustomIssue),
         garage: b.snapshots && b.snapshots.garage,
         service: b.snapshots && b.snapshots.service,
         vehicle: b.snapshots && b.snapshots.vehicle
@@ -317,6 +357,7 @@ router.get('/garage', requireAuth, requireRole('GARAGE'), async (req, res) => {
           timeline: b.timeline || [],
           createdAt: b.createdAt,
           userId: b.userId,
+          isCustomIssue: Boolean(b.isCustomIssue),
           customer,
           garage: b.snapshots && b.snapshots.garage,
           service: b.snapshots && b.snapshots.service,
@@ -332,7 +373,7 @@ router.get('/garage', requireAuth, requireRole('GARAGE'), async (req, res) => {
 router.patch('/:bookingId/status', requireAuth, requireRole('GARAGE'), async (req, res) => {
   const { status } = req.body || {};
   const nextStatus = String(status || '').toUpperCase();
-  const allowed = new Set(['ACCEPTED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED']);
+  const allowed = new Set(['ACCEPTED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'MORE_INFO_REQUIRED']);
 
   if (!allowed.has(nextStatus)) {
     return res.status(400).json({ msg: 'Invalid status' });
@@ -382,6 +423,113 @@ router.patch('/:bookingId/status', requireAuth, requireRole('GARAGE'), async (re
     return res.status(200).json({ msg: 'Booking updated' });
   } catch (e) {
     return res.status(500).json({ msg: 'Error updating booking', error: String(e && e.message ? e.message : e) });
+  }
+});
+
+router.patch('/:bookingId/request-info', requireAuth, requireRole('GARAGE'), async (req, res) => {
+  const { message } = req.body || {};
+  if (!message || message.trim().length === 0) {
+    return res.status(400).json({ msg: 'Message is required' });
+  }
+
+  const db = getDb();
+  const garages = db.collection('garages');
+  const bookings = db.collection('bookings');
+
+  try {
+    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
+    if (!garage) {
+      return res.status(400).json({ msg: 'Create your garage profile first' });
+    }
+
+    const booking = await bookings.findOne({ _id: toObjectId(req.params.bookingId), garageId: garage._id });
+    if (!booking) {
+      return res.status(404).json({ msg: 'Booking not found' });
+    }
+
+    const nextStatus = 'MORE_INFO_REQUIRED';
+    const timelineEntry = { 
+      status: nextStatus, 
+      at: new Date(), 
+      by: 'GARAGE', 
+      message: message.trim() 
+    };
+
+    await bookings.updateOne(
+      { _id: booking._id },
+      {
+        $set: { status: nextStatus, updatedAt: new Date() },
+        $push: { timeline: timelineEntry }
+      }
+    );
+
+    if (booking.userId) {
+      await notifyUser(String(booking.userId), {
+        title: 'More Information Required',
+        body: `The garage requested more info regarding your Custom Issue.`,
+        data: {
+          type: 'BOOKING_UPDATE',
+          bookingId: String(booking._id),
+          status: nextStatus
+        }
+      });
+    }
+
+    return res.status(200).json({ msg: 'Request for info sent' });
+  } catch (e) {
+    return res.status(500).json({ msg: 'Error requesting info', error: String(e && e.message ? e.message : e) });
+  }
+});
+
+router.patch('/:bookingId/provide-info', requireAuth, requireRole('USER'), async (req, res) => {
+  const { message } = req.body || {};
+  if (!message || message.trim().length === 0) {
+    return res.status(400).json({ msg: 'Message is required' });
+  }
+
+  const db = getDb();
+  const bookings = db.collection('bookings');
+
+  try {
+    const booking = await bookings.findOne({ _id: toObjectId(req.params.bookingId), userId: String(req.user.id) });
+    if (!booking) {
+      return res.status(404).json({ msg: 'Booking not found' });
+    }
+
+    const nextStatus = 'REQUESTED';
+    const timelineEntry = { 
+      status: nextStatus, 
+      at: new Date(), 
+      by: 'USER', 
+      message: message.trim() 
+    };
+
+    await bookings.updateOne(
+      { _id: booking._id },
+      {
+        $set: { status: nextStatus, updatedAt: new Date() },
+        $push: { timeline: timelineEntry }
+      }
+    );
+
+    // Notify garage
+    const garages = db.collection('garages');
+    const garage = await garages.findOne({ _id: booking.garageId });
+    if (garage && garage.ownerUserId) {
+      await notifyUser(String(garage.ownerUserId), {
+        title: 'Customer Provided Info',
+        body: `The customer provided the requested info for their Custom Issue.`,
+        data: {
+          type: 'BOOKING_UPDATE',
+          bookingId: String(booking._id),
+          status: nextStatus
+        }
+      });
+    }
+
+    return res.status(200).json({ msg: 'Info provided' });
+  } catch (e) {
+    return res.status(500).json({ msg: 'Error providing info', error: String(e && e.message ? e.message : e) });
   }
 });
 

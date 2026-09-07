@@ -2,7 +2,8 @@ import { API_BASE_URL } from '../utils/config';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Car, CheckCircle, Hash, Calendar, Fuel, FileText, User, Phone, IndianRupee, Activity, Tag, FileCheck, Layers } from 'lucide-react';
+import { Car, CheckCircle, Hash, Calendar, Fuel, FileText, User, Phone, IndianRupee, Activity, Tag, FileCheck, Layers, Image as ImageIcon } from 'lucide-react';
+import MediaManager from '../components/MediaManager';
 
 const AddVehicle = () => {
     const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ const AddVehicle = () => {
     const [insuranceFile, setInsuranceFile] = useState(null);
     const [status, setStatus] = useState({ type: '', message: '' });
     const [isLoading, setIsLoading] = useState(false);
+    const [successResult, setSuccessResult] = useState(null);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -37,7 +39,7 @@ const AddVehicle = () => {
             if (rcBookFile) submitData.append('rcBook', rcBookFile);
             if (insuranceFile) submitData.append('insuranceDocument', insuranceFile);
 
-            await axios.post(`${API_BASE_URL}/api/vehicles/add`, submitData, {
+            const res = await axios.post(`${API_BASE_URL}/api/vehicles/add`, submitData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -45,7 +47,7 @@ const AddVehicle = () => {
             });
 
             setStatus({ type: 'success', message: 'Vehicle added successfully!' });
-            setTimeout(() => navigate('/my-vehicles'), 1500);
+            setSuccessResult({ vehicleId: res.data.vehicleId });
         } catch (err) {
             setStatus({
                 type: 'error',
@@ -87,6 +89,47 @@ const AddVehicle = () => {
             </div>
         </div>
     );
+
+    if (successResult) {
+        return (
+            <div className="max-w-3xl mx-auto py-8 px-4 animate-in fade-in zoom-in-95 duration-400">
+                <div className="bg-white border border-slate-200 rounded-3xl shadow-xl overflow-hidden text-center p-8 md:p-12">
+                    <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner animate-bounce">
+                        <CheckCircle className="h-10 w-10" />
+                    </div>
+
+                    <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black uppercase tracking-wider rounded-full">
+                        Vehicle Registered
+                    </span>
+
+                    <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 mt-3 tracking-tight">
+                        Vehicle Added Successfully
+                    </h1>
+                    <p className="text-slate-500 text-sm md:text-base mt-2 max-w-lg mx-auto font-medium">
+                        Your vehicle has been successfully added to your profile.
+                    </p>
+
+                    {/* Media Manager Section */}
+                    <div className="mt-8 mb-8 text-left border border-slate-100 bg-slate-50 rounded-2xl p-6 shadow-sm">
+                        <h2 className="text-xl font-bold text-slate-900 mb-4">Upload Vehicle Photos (Optional)</h2>
+                        <div className="space-y-4">
+                            <MediaManager entityId={successResult.vehicleId} entityType="VEHICLE" category="VEHICLE_PROFILE" label="Vehicle Photos" />
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <button
+                            onClick={() => navigate('/my-vehicles')}
+                            className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+                        >
+                            Back to My Vehicles
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 lg:pb-8">
