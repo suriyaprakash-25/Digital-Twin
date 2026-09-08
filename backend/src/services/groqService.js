@@ -25,7 +25,7 @@ async function analyzeWithGroq({ systemInstruction, prompt }) {
       { role: 'system', content: systemInstruction },
       { role: 'user', content: prompt }
     ],
-    model: 'llama-3.3-70b-versatile',
+    model: 'qwen/qwen3.8-27b',
     temperature: 0.7,
     max_tokens: 2048,
   });
