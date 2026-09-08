@@ -1,7 +1,7 @@
 const intentMap = {
   vehicle: [
     'my vehicle', 'my vehicles', 'my car', 'my bike', 'passport', 'insurance', 'service history',
-    'vehicle summary', 'fleet', 'registered', 'my fleet', 'show my', 'list my',
+    'vehicle summary', 'fleet', 'registered', 'my fleet',
     'service record', 'maintenance history', 'repair history'
   ],
   marketplace: ['garage', 'garages', 'mechanic', 'repair shop', 'service center'],
