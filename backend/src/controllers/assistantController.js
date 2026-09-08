@@ -109,7 +109,14 @@ const processMessage = async (req, res) => {
                  const requested = bookings.filter(b => b.status === 'REQUESTED').length;
                  const completed = bookings.filter(b => b.status === 'COMPLETED').length;
                  const inProgress = bookings.filter(b => b.status === 'IN_PROGRESS' || b.status === 'ACCEPTED').length;
-                 roleContext = `User is a GARAGE PARTNER. Garage Name: ${garage.name}. Total Booking Requests: ${bookings.length}. Pending/Requested: ${requested}. In Progress/Accepted: ${inProgress}. Completed: ${completed}.`;
+                 
+                 const payments = await db.collection('payments').find({ garageId: String(userId), status: 'CAPTURED' }).toArray();
+                 const totalRevenue = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                 
+                 const reviews = await db.collection('reviews').find({ targetId: String(garage._id) }).toArray();
+                 const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) : 'No ratings yet';
+
+                 roleContext = `User is a GARAGE PARTNER. Garage Name: ${garage.name}. Total Booking Requests: ${bookings.length}. Pending/Requested: ${requested}. In Progress/Accepted: ${inProgress}. Completed: ${completed}. Total Revenue/Earnings: ₹${totalRevenue.toFixed(2)}. Garage Rating: ${avgRating} (${reviews.length} reviews).`;
              } else {
                  roleContext = 'User is a Garage Partner but has not set up their Garage Profile yet.';
              }

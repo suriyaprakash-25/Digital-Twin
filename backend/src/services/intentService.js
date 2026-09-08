@@ -1,4 +1,5 @@
 const intentMap = {
+  garage_dashboard: ['earnings', 'revenue', 'my rating', 'garage rating', 'customer reviews', 'pending service requests', 'active vehicles', 'pending services', 'in service'],
   vehicle: [
     'my vehicle', 'my vehicles', 'my car', 'my bike', 'passport', 'insurance', 'service history',
     'vehicle summary', 'fleet', 'registered', 'my fleet',
