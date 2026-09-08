@@ -185,7 +185,7 @@ function VehicleModel({ onLoaded }) {
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
-      const scale = 3.5 / maxDim; // normalize to ~3.5 units wide
+      const scale = 4.8 / maxDim; // normalize to ~4.8 units wide
 
       scene.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
       scene.scale.setScalar(scale);
