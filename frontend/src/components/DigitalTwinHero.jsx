@@ -175,6 +175,11 @@ function VehicleModel({ onLoaded }) {
         }
       });
 
+      // Reset scale and position before measuring, since useGLTF caches the scene object
+      scene.scale.setScalar(1);
+      scene.position.set(0, 0, 0);
+      scene.updateMatrixWorld(true);
+
       // Compute bounding box and center/scale the model
       const box = new THREE.Box3().setFromObject(scene);
       const center = box.getCenter(new THREE.Vector3());
