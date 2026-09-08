@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Car, Bell, CheckCircle2, XCircle, Info, ChevronRight, Activity, CalendarClock } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/config';
 
 const UserDashboard = () => {
+  const navigate = useNavigate();
   const [vehicles, setVehicles] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -178,7 +179,11 @@ const UserDashboard = () => {
               <div className="text-slate-400 text-xs md:text-sm py-4">No vehicles yet. Add one to book services.</div>
             ) : (
               vehicles.slice(0, 5).map((v) => (
-                <div key={v.id} className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer group/card">
+                <div 
+                  key={v.id} 
+                  onClick={() => navigate(`/service-history/${v.id}`)}
+                  className="flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer group/card"
+                >
                   <div className="flex items-center gap-3 md:gap-4">
                     <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-teal-50 flex items-center justify-center border border-teal-100">
                       <Car className="w-4 h-4 md:w-5 md:h-5 text-teal-600 group-hover/card:scale-110 transition-transform" />

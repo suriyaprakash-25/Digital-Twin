@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import {
@@ -9,6 +9,9 @@ import TermsConditionsModal from '../components/TermsConditionsModal';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 import AboutUsModal from '../components/AboutUsModal';
 import PartnerTermsModal from '../components/PartnerTermsModal';
+
+/* ── Lazy-load DigitalTwinHero ── */
+const DigitalTwinHero = lazy(() => import('../components/DigitalTwinHero'));
 
 /* ── Animated counter hook ────────────────────────────── */
 function useCounter(end, duration = 2000, active = false) {
@@ -157,28 +160,7 @@ const LandingPage = () => {
   const c3 = useCounter(98, 1800, statsVisible);
   const c4 = useCounter(240, 2200, statsVisible);
 
-  /* ── Parallax hero card ───────────────────────────── */
-  const heroCardRef = useRef(null);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const tiltRaf = useRef(null);
 
-  const handleHeroMouseMove = (e) => {
-    if (tiltRaf.current) cancelAnimationFrame(tiltRaf.current);
-    tiltRaf.current = requestAnimationFrame(() => {
-      const rect = heroCardRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = (e.clientX - cx) / (rect.width / 2);   // -1 … 1
-      const dy = (e.clientY - cy) / (rect.height / 2);  // -1 … 1
-      setTilt({ x: dy * -6, y: dx * 6 });               // max 6° tilt
-    });
-  };
-
-  const handleHeroMouseLeave = () => {
-    if (tiltRaf.current) cancelAnimationFrame(tiltRaf.current);
-    setTilt({ x: 0, y: 0 });
-  };
 
   /* ── Smooth scroll without hash in URL ─────────────── */
   const scrollTo = (id) => (e) => {
@@ -359,38 +341,25 @@ const LandingPage = () => {
         </nav>
 
         {/* ════════════════════════════════
-           HERO
+           HERO – Full-width immersive layout
       ════════════════════════════════ */}
-        <main className="pt-20 md:pt-24 pb-12 px-4 md:px-8 max-w-container-max mx-auto">
-          {/* Hero Section Canvas – Parallax wrapper */}
-          <div
-            className="w-full"
-            style={{ perspective: '1200px' }}
-            onMouseMove={handleHeroMouseMove}
-            onMouseLeave={handleHeroMouseLeave}
-          >
-            <div
-              ref={heroCardRef}
-              className="canvas-card rounded-2xl overflow-hidden w-full flex flex-col md:flex-row min-h-0 md:min-h-[680px]"
-              style={{
-                transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.01)`,
-                transition: 'transform 0.12s ease-out, box-shadow 0.12s ease-out',
-                boxShadow: `
-              ${tilt.y * 2}px ${tilt.x * -2}px 40px rgba(15,23,42,0.10),
-              0 30px 60px -15px rgba(15,23,42,0.08)
-            `,
-                willChange: 'transform',
-              }}
-            >
-              {/* Left Side: Content */}
-              <div className="w-full md:w-1/2 p-6 pb-2 sm:p-12 sm:pb-4 md:p-16 lg:p-24 flex flex-col justify-center">
+        <main className="pt-20 md:pt-24 pb-6 md:pb-10">
+          <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12">
+            <div className="flex flex-col md:flex-row items-center md:items-stretch min-h-0 md:min-h-[680px] gap-4 md:gap-0">
+
+              {/* Left Column: Content (~38%) */}
+              <div className="w-full md:w-[38%] flex flex-col justify-center py-6 md:py-12 lg:py-16">
                 <div className="max-w-xl">
-                  <span className="text-primary font-label-md text-xs sm:text-sm uppercase tracking-widest mb-4 block">Intelligent Ownership</span>
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-slate-900 mb-6 font-display">Track, Protect, and Maximize Your Vehicle's Value</h1>
-                  <p className="text-sm sm:text-base md:text-lg text-on-surface-variant mb-8 leading-relaxed font-body-lg">
-                    The definitive platform for vehicle owners. Get intelligent insights, manage maintenance, and track your vehicle's health in real-time.
+                  <span className="text-primary font-label-md text-xs sm:text-sm uppercase tracking-widest mb-4 block fu fu1" style={{ animationFillMode: 'forwards' }}>INTELLIGENT VEHICLE OWNERSHIP</span>
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-slate-900 mb-6 font-display fu fu2" style={{ animationFillMode: 'forwards' }}>
+                    Track. Protect.<br />
+                    Maximize Your<br className="hidden sm:block" />{' '}
+                    Vehicle's Value
+                  </h1>
+                  <p className="text-sm sm:text-base md:text-lg text-on-surface-variant mb-8 leading-relaxed font-body-lg fu fu3" style={{ animationFillMode: 'forwards' }}>
+                    One intelligent platform to understand your vehicle, manage its history and make smarter ownership decisions.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 fu fu4" style={{ animationFillMode: 'forwards' }}>
                     <Link
                       to="/signup"
                       className="bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm md:text-base shadow-md hover:shadow-lg transition-all active:scale-95"
@@ -406,14 +375,39 @@ const LandingPage = () => {
                       Book a Service
                     </Link>
                   </div>
+
+                  {/* ── Trust Metrics ── */}
+                  <div className="flex items-center gap-6 sm:gap-8 mt-10 pt-6 border-t border-slate-200 fu fu5" style={{ animationFillMode: 'forwards' }}>
+                    <div>
+                      <div style={{ fontSize: 'clamp(1.4rem, 3vw, 1.8rem)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', lineHeight: 1.1 }}>50K+</div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 500, color: '#94a3b8', marginTop: '2px' }}>Happy Owners</div>
+                    </div>
+                    <div style={{ width: '1px', height: '36px', background: '#e2e8f0' }} />
+                    <div>
+                      <div style={{ fontSize: 'clamp(1.4rem, 3vw, 1.8rem)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', lineHeight: 1.1 }}>1,200+</div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 500, color: '#94a3b8', marginTop: '2px' }}>Verified Garages</div>
+                    </div>
+                    <div style={{ width: '1px', height: '36px', background: '#e2e8f0' }} />
+                    <div>
+                      <div style={{ fontSize: 'clamp(1.4rem, 3vw, 1.8rem)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', lineHeight: 1.1 }}>98%</div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 500, color: '#94a3b8', marginTop: '2px' }}>Trust Score</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {/* Right Side: Illustration */}
-              <div className="w-full md:w-1/2 bg-surface-container-low flex items-center justify-center p-6 pt-2 md:p-10 border-t md:border-l md:border-t-0 border-outline-variant">
-                <div className="relative w-full aspect-[1.79]">
-                  <img alt="Garage Scene" className="w-full h-full object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk4bG_vORRaC8TqJQ2YDu4CTj1TluAhujbKRLmbilwg4F2zUHl63eYWwHkv4znCgknFRNEvdYVTWZKSlT4VNsROIXA3T89oudaVPZV19d5ugjnnr8VIfvSuN-7Siy3GXSlGtwoeYEfvWqGIHz_w9YytM2h3s_SnpHnkrI6gQDnzr7Wss7oLVQvSx7P6Uj15fzhXQVZ58ulN90baB2k1nMhV1Oh77E5j_02-2wIxGDhSKfnSev4tDwT-psdmWMGJ2qzsbSphImQxs"/>
-                </div>
+
+              {/* Right Column: Digital Twin Visual (~62%) */}
+              <div className="w-full md:w-[62%] relative flex items-center justify-center overflow-visible">
+                <Suspense fallback={
+                  <div className="w-full h-full min-h-[400px] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full border-2 border-teal-200 border-t-teal-600" style={{ animation: 'spin 1s linear infinite' }} />
+                    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                  </div>
+                }>
+                  <DigitalTwinHero />
+                </Suspense>
               </div>
+
             </div>
           </div>
         </main>
@@ -444,7 +438,7 @@ const LandingPage = () => {
                   tag: 'ANTI-FRAUD',
                   tagColor: '#0d9488',
                   title: 'Fraud-Proof Service History',
-                  desc: 'Dual-layer verification cross-checks odometer readings from owners and garages. Tamper flags trigger automatically on discrepancies exceeding 50 km.',
+                  desc: "Verified service records and odometer checks that help detect tampering and protect your vehicle's history.",
                 },
                 {
                   icon: <HeartPulse size={26} color="#0d9488" />,
@@ -452,7 +446,7 @@ const LandingPage = () => {
                   tag: 'AI-POWERED',
                   tagColor: '#0d9488',
                   title: 'Live Vehicle IQ Score',
-                  desc: 'Multi-factor engine evaluates legal validity, maintenance frequency, verified records and behavioral patterns to produce a precise 0–100 Vehicle IQ score.',
+                  desc: "A smart 0–100 score based on your vehicle's records, maintenance and overall history.",
                 },
                 {
                   icon: <TrendingUp size={26} color="#0d9488" />,
@@ -460,7 +454,7 @@ const LandingPage = () => {
                   tag: 'VALUATION ENGINE',
                   tagColor: '#0d9488',
                   title: 'Intelligent Resale Valuation',
-                  desc: 'Algorithmic depreciation model plus a trust score adjusted for ownership transfers, verified history and accident records to compute a precise price range.',
+                  desc: "Get a smarter estimated resale value based on your vehicle's history, condition and market factors.",
                 },
                 {
                   icon: <Bell size={26} color="#0f766e" />,
@@ -468,7 +462,7 @@ const LandingPage = () => {
                   tag: 'PROACTIVE ALERTS',
                   tagColor: '#0f766e',
                   title: 'Smart Legal Reminders',
-                  desc: 'Never miss an expiry. Priority-based alerts for Insurance, PUC, RC, Fitness Certificate and Road Tax — dispatched weeks before they lapse.',
+                  desc: "Stay ahead of insurance, PUC, RC and other important vehicle renewals with timely reminders.",
                 },
                 {
                   icon: <Store size={26} color="#14b8a6" />,
@@ -476,7 +470,7 @@ const LandingPage = () => {
                   tag: 'MARKETPLACE',
                   tagColor: '#14b8a6',
                   title: 'Verified Garage Marketplace',
-                  desc: 'Discover certified service centres, compare pricing, and book appointments. Every service claim is cross-verified on our platform for authenticity.',
+                  desc: "Find trusted garages, compare services and book appointments with verified service professionals.",
                 },
                 {
                   icon: <BarChart3 size={26} color="#0d9488" />,
@@ -484,7 +478,7 @@ const LandingPage = () => {
                   tag: 'DATA INTELLIGENCE',
                   tagColor: '#0d9488',
                   title: 'Personal Vehicle Analytics',
-                  desc: 'Real-time expense trends, category breakdowns, mileage distributions and Vehicle IQ scores for your car — all in one visual dashboard.',
+                  desc: "Track expenses, mileage and key vehicle insights through one simple and personalised dashboard.",
                 },
               ].map((f, i) => (
                 <FeatureInteractiveCard key={f.title} f={f} i={i} featVisible={featVisible} />
