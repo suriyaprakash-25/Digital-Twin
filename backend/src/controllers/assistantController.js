@@ -23,7 +23,18 @@ const processMessage = async (req, res) => {
     }
 
     // Determine Intent (pass imageBase64 as well, since an image alone might mean diagnosis)
-    const intent = detectIntent(message, imageBase64);
+    let intent = detectIntent(message, imageBase64);
+
+    const { ObjectId: ObjId } = require('mongodb');
+    const user = await db.collection('users').findOne({ _id: new ObjId(userId) });
+    const role = user?.role || 'USER';
+
+    // Reroute Garage Partners asking about their garage away from consumer marketplace search
+    if (intent === 'marketplace' && role === 'GARAGE') {
+        if (!message.toLowerCase().includes('near me') && !message.toLowerCase().includes('find')) {
+            intent = 'knowledge_base';
+        }
+    }
 
     let aiResponse;
     let type = 'text';
@@ -98,9 +109,6 @@ const processMessage = async (req, res) => {
           let historyContext = recentHistory.reverse().map(h => `User: ${h.message}\nAssistant: ${h.response}`).join('\n');
 
           // Determine user role to inject appropriate context
-          const user = await db.collection('users').findOne({ _id: new ObjId(userId) });
-          const role = user?.role || 'USER';
-          
           let roleContext = '';
           if (role === 'GARAGE') {
              const garage = await db.collection('garages').findOne({ ownerUserId: String(userId) });
