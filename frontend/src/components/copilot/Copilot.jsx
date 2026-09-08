@@ -10,6 +10,7 @@ const Copilot = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState('USER');
   const [activeVehicleId, setActiveVehicleId] = useState(null);
 
   // Load chat history on mount
@@ -22,7 +23,9 @@ const Copilot = () => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           try {
-            setUserName(JSON.parse(storedUser).name);
+            const parsed = JSON.parse(storedUser);
+            setUserName(parsed.name);
+            setUserRole(parsed.role || 'USER');
           } catch (e) {}
         }
 
@@ -137,6 +140,7 @@ const Copilot = () => {
         onSendMessage={handleSendMessage}
         onClearChat={handleClearChat}
         userName={userName}
+        userRole={userRole}
         activeVehicleId={activeVehicleId}
         setActiveVehicleId={setActiveVehicleId}
         onAppendMessage={(msg) => setMessages(prev => [...prev, msg])}

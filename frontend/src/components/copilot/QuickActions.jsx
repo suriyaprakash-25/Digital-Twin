@@ -1,7 +1,7 @@
 import React from 'react';
 import { Shield, FileText, Car, Wrench, AlertTriangle, Clock, Lightbulb, Gauge } from 'lucide-react';
 
-const actions = [
+const userActions = [
   { id: 1, text: "My Vehicles",       message: "show my vehicles",            icon: Car,          color: "text-blue-600",    bg: "bg-blue-50" },
   { id: 2, text: "Vehicle Passport",   message: "vehicle passport",            icon: FileText,     color: "text-indigo-600",  bg: "bg-indigo-50" },
   { id: 3, text: "Emergency Help",     message: null, action: "OPEN_EMERGENCY",icon: AlertTriangle,color: "text-red-600",     bg: "bg-red-50" },
@@ -12,7 +12,16 @@ const actions = [
   { id: 8, text: "Next Service",      message: "predict my upcoming maintenance", icon: Gauge,    color: "text-emerald-600", bg: "bg-emerald-50" },
 ];
 
-const QuickActions = ({ onSelectAction }) => {
+const garageActions = [
+  { id: 1, text: "Pending Services",   message: "show my pending service requests", icon: Clock,        color: "text-amber-600",   bg: "bg-amber-50" },
+  { id: 2, text: "My Earnings",        message: "show my earnings",               icon: FileText,     color: "text-emerald-600", bg: "bg-emerald-50" },
+  { id: 3, text: "Active Vehicles",    message: "show vehicles currently in service", icon: Car,      color: "text-blue-600",    bg: "bg-blue-50" },
+  { id: 4, text: "Customer Reviews",   message: "show my recent customer reviews",  icon: Lightbulb,  color: "text-indigo-600",  bg: "bg-indigo-50" },
+];
+
+const QuickActions = ({ onSelectAction, userRole = 'USER' }) => {
+  const actions = userRole === 'GARAGE' ? garageActions : userActions;
+
   return (
     <div className="mb-6">
       <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider px-2">Quick Actions</p>

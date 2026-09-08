@@ -16,7 +16,7 @@ import InsightCard from './cards/InsightCard';
 import PredictionCard from './cards/PredictionCard';
 import ReminderCard from './cards/ReminderCard';
 
-const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessage, onClearChat, userName, activeVehicleId, setActiveVehicleId, onAppendMessage }) => {
+const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessage, onClearChat, userName, userRole, activeVehicleId, setActiveVehicleId, onAppendMessage }) => {
   const [showEmergency, setShowEmergency] = useState(false);
   const [showHome, setShowHome] = useState(false);
   const messagesEndRef = useRef(null);
@@ -127,14 +127,17 @@ const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessag
               <div className="h-full flex flex-col">
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-slate-800 mb-1">
-                    Hello {typeof userName === 'string' && userName ? userName.split(' ')[0] : 'there'} 👋
+                    {userRole === 'GARAGE' ? 'Hello Partner 👋' : `Hello ${typeof userName === 'string' && userName ? userName.split(' ')[0] : 'there'} 👋`}
                   </h3>
                   <p className="text-sm text-slate-500">
                     {showHome ? 'What would you like to do?' : 'Welcome back to your Driveportz. How can I help you today?'}
                   </p>
                 </div>
                 <div className="flex-1">
-                  <QuickActions onSelectAction={(action) => { setShowHome(false); handleQuickAction(action); }} />
+                  <QuickActions 
+                    userRole={userRole} 
+                    onSelectAction={(action) => { setShowHome(false); handleQuickAction(action); }} 
+                  />
                 </div>
               </div>
             ) : (
