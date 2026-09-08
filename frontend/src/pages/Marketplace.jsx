@@ -436,9 +436,13 @@ const Marketplace = () => {
                         <div className="text-sm font-extrabold text-slate-900">{s.title}</div>
                         {s.description ? <div className="text-sm text-slate-600 mt-1">{s.description}</div> : null}
                         <div className="text-xs text-slate-500 mt-2 flex flex-col gap-1">
-                          <div>
-                            {s.price !== null && s.price !== undefined ? `₹${s.price}` : 'Price: —'}
-                            {s.durationMins ? ` • ${s.durationMins} mins` : ''}
+                          <div className="flex items-center gap-1.5">
+                            {s.price !== null && s.price !== undefined ? (
+                              <span className="font-metric text-metric-md text-teal-700">₹{s.price}</span>
+                            ) : (
+                              <span className="text-slate-500 font-semibold">Price: —</span>
+                            )}
+                            {s.durationMins ? <span className="text-slate-400 font-medium">• {s.durationMins} mins</span> : ''}
                           </div>
                           {g.currentStatus === 'BUSY' && <span className="text-amber-600 font-semibold text-[10px]">Garage is busy, expect delays</span>}
                         </div>

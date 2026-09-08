@@ -222,37 +222,37 @@ export default function GarageReports() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-sm">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Gross Revenue</span>
-              <span className="text-xl font-black text-slate-900 font-mono">₹{parseFloat(summary.grossRevenue || 0).toLocaleString('en-IN')}</span>
+              <span className="font-metric text-metric-lg text-slate-900">₹{parseFloat(summary.grossRevenue || 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-slate-500 block mt-1">{summary.paidInvoiceCount} Paid Invoices</span>
             </div>
 
             <div className="bg-white border border-amber-200/70 p-4 rounded-2xl shadow-sm">
               <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider block mb-1">Platform Fees</span>
-              <span className="text-xl font-black text-amber-600 font-mono">₹{parseFloat(summary.platformCommission || 0).toLocaleString('en-IN')}</span>
+              <span className="font-metric text-metric-lg text-amber-600">₹{parseFloat(summary.platformCommission || 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-slate-500 block mt-1">Platform Commission</span>
             </div>
 
             <div className="bg-white border border-teal-200/70 p-4 rounded-2xl shadow-sm">
               <span className="text-[11px] font-bold text-teal-600 uppercase tracking-wider block mb-1">Net Earnings</span>
-              <span className="text-xl font-black text-teal-600 font-mono">₹{parseFloat(summary.garageNetRevenue || 0).toLocaleString('en-IN')}</span>
+              <span className="font-metric text-metric-lg text-teal-600">₹{parseFloat(summary.garageNetRevenue || 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-slate-500 block mt-1">Net of Platform Fee</span>
             </div>
 
             <div className="bg-white border border-rose-200/70 p-4 rounded-2xl shadow-sm">
               <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider block mb-1">Refund Deductions</span>
-              <span className="text-xl font-black text-rose-600 font-mono">₹{parseFloat(summary.refundAmount || 0).toLocaleString('en-IN')}</span>
+              <span className="font-metric text-metric-lg text-rose-600">₹{parseFloat(summary.refundAmount || 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-slate-500 block mt-1">{summary.refundCount} Refunded</span>
             </div>
 
             <div className="bg-white border border-emerald-200/70 p-4 rounded-2xl shadow-sm">
               <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block mb-1">Settled Payouts</span>
-              <span className="text-xl font-black text-emerald-600 font-mono">₹{parseFloat(summary.settledAmount || 0).toLocaleString('en-IN')}</span>
+              <span className="font-metric text-metric-lg text-emerald-600">₹{parseFloat(summary.settledAmount || 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-slate-500 block mt-1">Completed Bank Transfers</span>
             </div>
 
             <div className="bg-white border border-teal-200 p-4 rounded-2xl shadow-sm">
               <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider block mb-1">Available Balance</span>
-              <span className="text-xl font-black text-teal-700 font-mono">₹{parseFloat(summary.availableBalance || 0).toLocaleString('en-IN')}</span>
+              <span className="font-metric text-metric-lg text-teal-700">₹{parseFloat(summary.availableBalance || 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-teal-600 font-medium block mt-1">Ready for Withdrawal</span>
             </div>
           </div>

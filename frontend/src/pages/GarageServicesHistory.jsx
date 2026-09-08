@@ -212,11 +212,11 @@ const GarageServicesHistory = () => {
           <div className="flex items-center gap-3">
             <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm min-w-[140px]">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Services Logged</p>
-              <p className="text-2xl font-black text-slate-800">{stats.totalServices}</p>
+              <p className="font-metric text-metric-lg text-slate-800">{stats.totalServices}</p>
             </div>
             <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm min-w-[140px]">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Revenue</p>
-              <p className="text-2xl font-black text-teal-700">₹{parseFloat(stats.totalRevenue || 0).toLocaleString()}</p>
+              <p className="font-metric text-metric-lg text-teal-700">₹{parseFloat(stats.totalRevenue || 0).toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -363,7 +363,7 @@ const GarageServicesHistory = () => {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-slate-700">
+                        <td className="px-6 py-4 whitespace-nowrap text-right font-metric text-metric-md text-slate-700">
                           ₹{(parseFloat(service.totalCost) || 0).toLocaleString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">

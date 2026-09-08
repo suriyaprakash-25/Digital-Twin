@@ -223,9 +223,37 @@ body {
   min-width: 44px;
 }
 
-/* Responsive heading helpers */
 @utility heading-responsive {
   font-size: clamp(1.25rem, 5vw, 1.875rem);
   font-weight: 800;
   line-height: 1.2;
+}
+
+/* =============================================
+   METRIC / NUMERICAL TYPOGRAPHY
+   ============================================= */
+@utility font-metric {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+}
+
+@utility text-metric-hero {
+  font-size: clamp(2.25rem, 4vw, 3rem);
+  line-height: 1.1;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+@utility text-metric-lg {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+@utility text-metric-md {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  line-height: 1.4;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }

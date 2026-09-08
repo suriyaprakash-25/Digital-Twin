@@ -148,7 +148,7 @@ const GarageSettlements = () => {
                           {s.settlementId}
                         </span>
                       </td>
-                      <td className="py-4 px-4 font-black text-slate-900 text-sm">
+                      <td className="py-4 px-4 font-metric text-metric-md text-slate-900">
                         ₹{Number(s.approvedAmount || s.requestedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="py-4 px-4">

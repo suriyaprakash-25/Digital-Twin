@@ -128,31 +128,31 @@ export default function GarageTax() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-sm">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Taxable Volume</span>
-          <span className="text-xl font-black text-slate-900 font-mono">₹{((summary?.taxableAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="font-metric text-metric-lg text-slate-900">₹{((summary?.taxableAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-400 block mt-1">{summary?.invoiceCount || 0} Invoices</span>
         </div>
 
         <div className="bg-white border border-sky-200 p-4 rounded-2xl shadow-sm">
           <span className="text-[11px] font-bold text-sky-700 uppercase tracking-wider block mb-1">CGST (9%)</span>
-          <span className="text-xl font-black text-sky-600 font-mono">₹{((summary?.cgstAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="font-metric text-metric-lg text-sky-600">₹{((summary?.cgstAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-400 block mt-1">Central GST</span>
         </div>
 
         <div className="bg-white border border-teal-200 p-4 rounded-2xl shadow-sm">
           <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider block mb-1">SGST (9%)</span>
-          <span className="text-xl font-black text-teal-600 font-mono">₹{((summary?.sgstAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="font-metric text-metric-lg text-teal-600">₹{((summary?.sgstAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-400 block mt-1">State GST</span>
         </div>
 
         <div className="bg-white border border-amber-200 p-4 rounded-2xl shadow-sm">
           <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block mb-1">Credit Notes Tax</span>
-          <span className="text-xl font-black text-amber-600 font-mono">-₹{((summary?.creditNotesTaxAdjustmentAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="font-metric text-metric-lg text-amber-600">-₹{((summary?.creditNotesTaxAdjustmentAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-400 block mt-1">{summary?.creditNoteCount || 0} Credit Notes</span>
         </div>
 
         <div className="bg-white border border-emerald-200 p-4 rounded-2xl shadow-sm">
           <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">Net Tax Collected</span>
-          <span className="text-xl font-black text-emerald-600 font-mono">₹{((summary?.netTaxLiabilityAmount || 0)).toLocaleString('en-IN')}</span>
+          <span className="font-metric text-metric-lg text-emerald-600">₹{((summary?.netTaxLiabilityAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-400 block mt-1">Total Tax</span>
         </div>
       </div>

@@ -275,7 +275,7 @@ const GarageDashboard = () => {
             ].map(s => (
               <div key={s.label} className="bg-white/5 border border-white/10 rounded-2xl p-2.5 sm:p-4 text-center sm:text-left">
                 <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl ${s.bg} flex items-center justify-center mx-auto sm:mx-0 mb-1.5 sm:mb-3`}>{s.icon}</div>
-                <div className="text-lg sm:text-2xl font-black text-white">{s.value}</div>
+                <div className="font-metric text-metric-lg text-white">{s.value}</div>
                 <div className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 truncate">{s.label}</div>
               </div>
             ))}
@@ -312,8 +312,8 @@ const GarageDashboard = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Total Revenue</span>
-            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center">
-              <IndianRupee className="h-4 w-4 text-slate-400 mr-0.5" />
+            <div className="font-metric text-metric-lg text-slate-900 flex items-center">
+              <IndianRupee className="h-5 w-5 text-slate-400 mr-0.5" />
               {Number(revenueSummary.totalRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
             <span className="text-[11px] font-bold text-emerald-600 mt-1 inline-flex items-center gap-1">
@@ -323,8 +323,8 @@ const GarageDashboard = () => {
 
           <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Today's Revenue</span>
-            <div className="text-lg sm:text-xl font-black text-teal-700 tracking-tight flex items-center">
-              <IndianRupee className="h-4 w-4 text-teal-500 mr-0.5" />
+            <div className="font-metric text-metric-lg text-teal-700 flex items-center">
+              <IndianRupee className="h-5 w-5 text-teal-500 mr-0.5" />
               {Number(revenueSummary.todayRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
             <span className="text-[11px] font-semibold text-slate-400 mt-1 block">
@@ -334,8 +334,8 @@ const GarageDashboard = () => {
 
           <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Pending Payments</span>
-            <div className="text-lg sm:text-xl font-black text-amber-700 tracking-tight flex items-center">
-              <IndianRupee className="h-4 w-4 text-amber-500 mr-0.5" />
+            <div className="font-metric text-metric-lg text-amber-700 flex items-center">
+              <IndianRupee className="h-5 w-5 text-amber-500 mr-0.5" />
               {Number(revenueSummary.pendingPayments || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
             <span className="text-[11px] font-semibold text-slate-400 mt-1 block">
@@ -345,7 +345,7 @@ const GarageDashboard = () => {
 
           <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Paid Invoices</span>
-            <div className="text-lg sm:text-xl font-black text-slate-800 tracking-tight">
+            <div className="font-metric text-metric-lg text-slate-800">
               {revenueSummary.paidInvoices}
             </div>
             <span className="text-[11px] font-semibold text-slate-400 mt-1 block">

@@ -247,7 +247,7 @@ export default function PaymentCenter() {
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Paid</span>
-                <h3 className="text-2xl font-black text-slate-900 mt-1">
+                <h3 className="font-metric text-metric-lg text-slate-900 mt-1">
                   ₹{Number(summary?.totalPaidAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </h3>
               </div>
@@ -262,7 +262,7 @@ export default function PaymentCenter() {
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Pending Payments</span>
-                <h3 className="text-2xl font-black text-amber-600 mt-1">
+                <h3 className="font-metric text-metric-lg text-amber-600 mt-1">
                   ₹{Number(summary?.pendingAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </h3>
               </div>
@@ -277,7 +277,7 @@ export default function PaymentCenter() {
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Refunds Received</span>
-                <h3 className="text-2xl font-black text-sky-600 mt-1">
+                <h3 className="font-metric text-metric-lg text-sky-600 mt-1">
                   ₹{Number(summary?.refundAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </h3>
               </div>
@@ -292,7 +292,7 @@ export default function PaymentCenter() {
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tax Invoices</span>
-                <h3 className="text-2xl font-black text-teal-600 mt-1">
+                <h3 className="font-metric text-metric-lg text-teal-600 mt-1">
                   {summary?.invoicesCount || 0}
                 </h3>
               </div>
@@ -565,7 +565,7 @@ export default function PaymentCenter() {
                   </div>
                   <div className="flex justify-between text-slate-900 font-bold pt-2 border-t border-slate-200 text-sm">
                     <span>Grand Total:</span>
-                    <span className="font-mono text-teal-600 font-black">₹{Number(selectedInvoice.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="font-metric text-metric-md text-teal-600">₹{Number(selectedInvoice.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>

@@ -311,7 +311,7 @@ const Passport = () => {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Cost</span>
-                            <span className="text-sm font-black text-teal-600">₹{(parseFloat(service.totalCost) || 0).toLocaleString('en-IN')}</span>
+                            <span className="font-metric text-metric-md text-teal-600">₹{(parseFloat(service.totalCost) || 0).toLocaleString('en-IN')}</span>
                           </div>
                         </div>
                       </div>
@@ -345,7 +345,7 @@ const Passport = () => {
                 
                 {/* Score Value Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-black text-slate-900 tracking-tight leading-none">{healthScore}</span>
+                  <span className="font-metric text-metric-hero text-slate-900 tracking-tight leading-none">{healthScore}</span>
                   <span className="text-[10px] text-slate-400 font-bold uppercase mt-1">Score</span>
                 </div>
               </div>
