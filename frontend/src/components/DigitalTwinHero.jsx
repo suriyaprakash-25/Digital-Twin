@@ -134,15 +134,15 @@ function VehicleModel({ onLoaded }) {
 
           const name = (child.material?.name || child.name || '').toLowerCase();
 
-          // Car body - teal/dark metallic paint
+          // Car body - bright metallic silver/white to contrast teal theme
           if (name.includes('body') || name.includes('paint')) {
             child.material = new THREE.MeshPhysicalMaterial({
-              color: new THREE.Color('#1a3a3a'),
-              metalness: 0.9,
-              roughness: 0.15,
+              color: new THREE.Color('#e2e8f0'), // slate-200 (bright silver)
+              metalness: 0.6,
+              roughness: 0.2,
               clearcoat: 1.0,
               clearcoatRoughness: 0.05,
-              envMapIntensity: 1.5,
+              envMapIntensity: 1.8,
             });
           }
           // Glass
