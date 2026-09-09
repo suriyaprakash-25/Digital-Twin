@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ArrowRight, Globe, Users, Award } from 'lucide-react';
 import SEO from '../components/SEO';
 import TermsConditionsModal from '../components/TermsConditionsModal';
@@ -40,7 +41,12 @@ const GaragePartnersPage = () => {
         title="Driveportz Garage Partners" 
         description="Grow your workshop online with Driveportz. Manage bookings, verify service claims, and build lasting trust." 
       />
-      <div className="animate-in fade-in zoom-in-[0.98] duration-500 ease-out" style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
+      <motion.div 
+        initial={{ opacity: 0, filter: 'blur(4px)' }} 
+        animate={{ opacity: 1, filter: 'blur(0px)' }} 
+        transition={{ duration: 0.5, ease: "easeOut" }} 
+        style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}
+      >
 
         {/* NAVBAR */}
         <nav style={{
@@ -155,7 +161,7 @@ const GaragePartnersPage = () => {
         <PartnerTermsModal isOpen={showPartnerTerms} onClose={() => setShowPartnerTerms(false)} />
         <PrivacyPolicyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} onAccept={() => {}} readOnly={true} />
         <AboutUsModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
-      </div>
+      </motion.div>
     </>
   );
 };
