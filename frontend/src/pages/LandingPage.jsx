@@ -179,6 +179,7 @@ const LandingPage = () => {
 
   /* navbar scroll */
   useEffect(() => {
+    window.scrollTo(0, 0);
     const fn = () => setScrolled(window.scrollY > 24);
     window.addEventListener('scroll', fn, { passive: true });
     return () => window.removeEventListener('scroll', fn);
@@ -199,11 +200,14 @@ const LandingPage = () => {
     .float{animation:floatY 7s ease-in-out infinite}
     .float2{animation:floatY2 9s 1s ease-in-out infinite}
     .shimmer-text{background:linear-gradient(90deg,#0d9488,#14b8a6,#0f766e,#0d9488);background-size:250% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 4.5s linear infinite}
+    .nav-a {
+      font-size: 15px; font-weight: 700; color: #191c1e; text-decoration: none; position: relative;
+    }
+    .nav-a:hover { color: #0d9488; }
     .glow-cta{animation:glowPulse 3s ease-in-out infinite;transition:transform .18s ease}
     .glow-cta:hover{transform:translateY(-3px) scale(1.03)!important}
     .card{transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;background:#fff;border:1px solid #e2e8f0;border-radius:20px}
     .card:hover{transform:translateY(-10px)!important;box-shadow:0 24px 60px rgba(13,148,136,.13)!important;border-color:rgba(13,148,136,.35)!important}
-    .nav-a{color:#475569;font-size:.88rem;font-weight:500;text-decoration:none;position:relative;transition:color .2s}
     .nav-a::after{content:'';position:absolute;width:0;height:2px;bottom:-5px;left:0;background:linear-gradient(90deg,#0d9488,#14b8a6);transition:width .3s ease}
     .nav-a:hover{color:#0d9488}.nav-a:hover::after{width:100%}
     .scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(13,148,136,.4),transparent);animation:scanline 2.5s linear infinite;pointer-events:none}
@@ -288,7 +292,7 @@ const LandingPage = () => {
         title="Smart Vehicle Driveportz & Service Tracker"
         description="Create a living driveportz of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance."
       />
-      <div style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
+      <div className="animate-in fade-in zoom-in-[0.98] duration-500 ease-out" style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
 
         {/* ════════════════════════════════
            NAVBAR

@@ -15,6 +15,7 @@ const FleetsPage = () => {
   const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const fn = () => setScrolled(window.scrollY > 24);
     window.addEventListener('scroll', fn, { passive: true });
     return () => window.removeEventListener('scroll', fn);
@@ -44,7 +45,7 @@ const FleetsPage = () => {
         title="Driveportz for Fleets" 
         description="Manage your entire fleet's health and value with Driveportz. Real-time dashboards, expense trends, and Vehicle IQ scores." 
       />
-      <div style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
+      <div className="animate-in fade-in zoom-in-[0.98] duration-500 ease-out" style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
 
         {/* NAVBAR */}
         <nav style={{

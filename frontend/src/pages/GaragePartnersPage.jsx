@@ -15,6 +15,7 @@ const GaragePartnersPage = () => {
   const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const fn = () => setScrolled(window.scrollY > 24);
     window.addEventListener('scroll', fn, { passive: true });
     return () => window.removeEventListener('scroll', fn);
@@ -39,7 +40,7 @@ const GaragePartnersPage = () => {
         title="Driveportz Garage Partners" 
         description="Grow your workshop online with Driveportz. Manage bookings, verify service claims, and build lasting trust." 
       />
-      <div style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
+      <div className="animate-in fade-in zoom-in-[0.98] duration-500 ease-out" style={{ color: '#191c1e', overflowX: 'hidden', lineHeight: 1 }}>
 
         {/* NAVBAR */}
         <nav style={{
