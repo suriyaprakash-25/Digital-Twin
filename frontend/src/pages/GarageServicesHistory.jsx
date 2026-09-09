@@ -2,6 +2,7 @@ import { API_BASE_URL } from '../utils/config';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Filter, Calendar, Info, MapPin, IndianRupee, Shield, Wrench, ArrowLeft, ArrowRight, X, FileText, CheckCircle2, Clock, Receipt, Edit3 } from 'lucide-react';
+import { getPhotoUrl } from '../utils/imageUrl';
 import InvoiceModal from '../components/invoice/InvoiceModal';
 import ReceiptModal from '../components/invoice/ReceiptModal';
 import GarageBillingModal from '../components/garage/GarageBillingModal';
@@ -175,8 +176,8 @@ const GarageServicesHistory = () => {
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Attached Bills</h4>
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {service.billPhotoUrls.map((url, idx) => (
-                    <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block w-24 h-24 rounded-lg border border-slate-200 overflow-hidden flex-shrink-0 hover:border-teal-400 transition-colors">
-                      <img src={url} alt={`Bill ${idx + 1}`} className="w-full h-full object-cover" />
+                    <a key={idx} href={getPhotoUrl(url)} target="_blank" rel="noopener noreferrer" className="block w-24 h-24 rounded-lg border border-slate-200 overflow-hidden flex-shrink-0 hover:border-teal-400 transition-colors">
+                      <img src={getPhotoUrl(url)} alt={`Bill ${idx + 1}`} className="w-full h-full object-cover" />
                     </a>
                   ))}
                 </div>

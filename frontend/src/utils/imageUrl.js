@@ -6,7 +6,7 @@ import { API_BASE_URL } from './config';
  */
 export const getPhotoUrl = (url) => {
   if (!url || typeof url !== 'string') return null;
-  const cleanUrl = url.trim();
+  const cleanUrl = url.trim().replace(/\\/g, '/');
   if (!cleanUrl) return null;
 
   const apiBase = (API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');

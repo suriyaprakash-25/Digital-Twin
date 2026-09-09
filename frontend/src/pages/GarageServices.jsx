@@ -346,7 +346,7 @@ const GarageServices = () => {
               {/* Photo preview or Colour accent bar */}
               {s.photoUrl ? (
                 <div className="h-36 w-full overflow-hidden bg-slate-100 relative">
-                  <img src={s.photoUrl} alt={s.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <img src={getPhotoUrl(s.photoUrl)} alt={s.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   <span className="absolute top-2 right-2 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-900/80 text-white backdrop-blur-sm">
                     {s.category || 'General'}
                   </span>

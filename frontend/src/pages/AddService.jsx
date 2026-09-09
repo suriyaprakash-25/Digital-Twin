@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../utils/config';
+import { getPhotoUrl } from '../utils/imageUrl';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
@@ -1159,7 +1160,7 @@ const AddService = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {billPhotos.map((src, idx) => (
                     <div key={idx} className="relative group rounded-xl overflow-hidden border-2 border-violet-100 shadow-sm aspect-square bg-slate-900 animate-in fade-in zoom-in duration-200">
-                      <img src={src} alt={`Bill ${idx + 1}`} className="w-full h-full object-cover" />
+                      <img src={getPhotoUrl(src)} alt={`Bill ${idx + 1}`} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-start justify-end p-1.5">
                         <button
                           type="button"

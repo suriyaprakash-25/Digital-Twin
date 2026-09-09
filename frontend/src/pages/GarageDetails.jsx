@@ -2,7 +2,7 @@ import { API_BASE_URL } from '../utils/config';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Search, SlidersHorizontal, Wrench, ShieldCheck, Star, Images, Info, MessageSquare, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Search, SlidersHorizontal, Wrench, ShieldCheck, Star, Images, Info, MessageSquare, AlertCircle, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import GarageHeader from '../components/garage/GarageHeader';
 import GarageGallery from '../components/garage/GarageGallery';
 import ServiceCard from '../components/garage/ServiceCard';

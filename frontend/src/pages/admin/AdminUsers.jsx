@@ -2,6 +2,7 @@ import { API_BASE_URL } from '../../utils/config';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Users, Search, ChevronLeft, ChevronRight, Eye, Car, Wrench, UserCircle2 } from 'lucide-react';
+import { getPhotoUrl } from '../../utils/imageUrl';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState([]);
@@ -161,7 +162,7 @@ const AdminUsers = () => {
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                                                         {user.photoUrl ? (
-                                                            <img src={user.photoUrl} alt="" className="w-full h-full object-cover" />
+                                                            <img src={getPhotoUrl(user.photoUrl)} alt="" className="w-full h-full object-cover" />
                                                         ) : (
                                                             <UserCircle2 className="h-5 w-5 text-slate-400" />
                                                         )}
@@ -292,7 +293,7 @@ const AdminUsers = () => {
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                                         {user.photoUrl
-                                            ? <img src={user.photoUrl} alt="" className="w-full h-full object-cover" />
+                                            ? <img src={getPhotoUrl(user.photoUrl)} alt="" className="w-full h-full object-cover" />
                                             : <UserCircle2 className="h-5 w-5 text-slate-400" />}
                                     </div>
                                     <div className="flex-1 min-w-0">

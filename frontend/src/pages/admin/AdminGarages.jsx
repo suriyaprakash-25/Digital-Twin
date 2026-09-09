@@ -5,6 +5,7 @@ import {
     Building2, Search, ChevronLeft, ChevronRight, ShieldCheck, ShieldX,
     Ban, CheckCircle2, XCircle, MapPin, Phone, IndianRupee, Wrench
 } from 'lucide-react';
+import { getPhotoUrl } from '../../utils/imageUrl';
 
 const AdminGarages = () => {
     const [garages, setGarages] = useState([]);
@@ -156,7 +157,7 @@ const AdminGarages = () => {
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                                                     {garage.photoUrl ? (
-                                                        <img src={garage.photoUrl} alt="" className="w-full h-full object-cover" />
+                                                        <img src={getPhotoUrl(garage.photoUrl)} alt="" className="w-full h-full object-cover" />
                                                     ) : (
                                                         <Building2 className="h-5 w-5 text-slate-400" />
                                                     )}
@@ -254,7 +255,7 @@ const AdminGarages = () => {
                             <div className="flex items-start gap-3">
                                 <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                                     {garage.photoUrl
-                                        ? <img src={garage.photoUrl} alt="" className="w-full h-full object-cover" />
+                                        ? <img src={getPhotoUrl(garage.photoUrl)} alt="" className="w-full h-full object-cover" />
                                         : <Building2 className="h-6 w-6 text-slate-400" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
