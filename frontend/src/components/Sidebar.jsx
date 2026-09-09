@@ -22,7 +22,6 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         { name: 'Add Vehicle', href: '/add-vehicle', icon: PlusCircle },
         { name: 'My Vehicles', href: '/my-vehicles', icon: Car },
         { name: 'Payment Center', href: '/payments', icon: CreditCard },
-        { name: 'My Disputes', href: '/disputes', icon: AlertTriangle },
         { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];
 
@@ -38,7 +37,6 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
             items: [
                 { name: 'Your Services', href: '/garage-services', icon: Wrench },
                 { name: 'Add Service', href: '/add-service', icon: PlusCircle },
-                { name: 'Customer Inquiries', href: '/garage/disputes', icon: AlertTriangle },
                 { name: 'Service History', href: '/garage-services-history', icon: ClipboardList }
             ]
         },

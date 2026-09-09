@@ -353,7 +353,7 @@ function DTCard({ icon: Icon, label, primaryValue, secondaryLine, tertiaryLine, 
 }
 
 /* ── Vehicle IQ Card (special with progress bar) ─────── */
-function VehicleIQCard({ delay }) {
+function VehicleIQCard({ delay, isMobile }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -366,8 +366,10 @@ function VehicleIQCard({ delay }) {
       className="dt-card-float"
       style={{
         position: 'absolute',
-        top: '6%',
-        left: '26%',
+        top: isMobile ? '2%' : '6%',
+        left: isMobile ? '50%' : '26%',
+        transform: isMobile ? 'translateX(-50%) scale(0.85)' : 'scale(1)',
+        transformOrigin: 'top center',
         zIndex: 20,
         opacity: visible ? 1 : 0,
         animation: visible ? `cardSlideIn 0.5s ease forwards` : 'none',
@@ -679,7 +681,7 @@ export default function DigitalTwinHero() {
         style={{
           position: 'relative',
           width: '100%',
-          minHeight: isMobile ? '480px' : '560px',
+          minHeight: isMobile ? '600px' : '560px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -830,7 +832,7 @@ export default function DigitalTwinHero() {
 
         {/* ── Data Cards ── */}
         {/* Vehicle IQ - top center-left */}
-        <VehicleIQCard delay={reducedMotion ? 0 : (modelReady ? 400 : 3000)} />
+        <VehicleIQCard delay={reducedMotion ? 0 : (modelReady ? 400 : 3000)} isMobile={isMobile} />
 
         {/* Service History - top right */}
         <DTCard
@@ -842,10 +844,12 @@ export default function DigitalTwinHero() {
           className="dt-card-float-alt"
           style={{
             position: 'absolute',
-            top: isMobile ? 'auto' : '4%',
+            top: isMobile ? '18%' : '4%',
             right: isMobile ? 'auto' : '2%',
-            bottom: isMobile ? '42%' : 'auto',
-            left: isMobile ? '5%' : 'auto',
+            bottom: isMobile ? 'auto' : 'auto',
+            left: isMobile ? '-2%' : 'auto',
+            transform: isMobile ? 'scale(0.8)' : 'scale(1)',
+            transformOrigin: 'left center',
             zIndex: 20,
             pointerEvents: 'none',
           }}
@@ -862,8 +866,10 @@ export default function DigitalTwinHero() {
           style={{
             position: 'absolute',
             top: isMobile ? 'auto' : '38%',
-            left: isMobile ? '5%' : '0%',
+            left: isMobile ? '-2%' : '0%',
             bottom: isMobile ? '24%' : 'auto',
+            transform: isMobile ? 'scale(0.8)' : 'scale(1)',
+            transformOrigin: 'left center',
             zIndex: 20,
             pointerEvents: 'none',
           }}
@@ -881,8 +887,10 @@ export default function DigitalTwinHero() {
           style={{
             position: 'absolute',
             top: isMobile ? 'auto' : '42%',
-            right: isMobile ? '5%' : '0%',
-            bottom: isMobile ? '8%' : 'auto',
+            right: isMobile ? '-2%' : '0%',
+            bottom: isMobile ? '28%' : 'auto',
+            transform: isMobile ? 'scale(0.8)' : 'scale(1)',
+            transformOrigin: 'right center',
             zIndex: 20,
             pointerEvents: 'none',
           }}
@@ -940,10 +948,13 @@ export default function DigitalTwinHero() {
         {isMobile && (
           <div
             style={{
+              position: 'absolute',
+              bottom: '-2%',
+              left: '50%',
+              transform: 'translateX(-50%) scale(0.9)',
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '16px',
-              marginTop: '24px',
+              gap: '12px',
               width: '100%',
               maxWidth: '320px',
               zIndex: 15,

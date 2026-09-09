@@ -39,9 +39,6 @@ import PaymentHistory from './pages/PaymentHistory';
 import GaragePayments from './pages/GaragePayments';
 import GarageEarnings from './pages/GarageEarnings';
 import GarageSettlements from './pages/GarageSettlements';
-import MyDisputes from './pages/MyDisputes';
-import DisputeDetails from './pages/DisputeDetails';
-import GarageDisputes from './pages/GarageDisputes';
 import GarageReports from './pages/GarageReports';
 
 import { ToastProvider } from './context/ToastContext';
@@ -161,8 +158,6 @@ function App() {
           <Route path="/payment-history" element={<PaymentHistory />} />
           <Route path="/payments" element={<PaymentCenter />} />
           <Route path="/customer/payments" element={<PaymentCenter />} />
-          <Route path="/disputes" element={<MyDisputes />} />
-          <Route path="/disputes/:id" element={<DisputeDetails />} />
           <Route path="/add-service" element={<AddService />} />
           <Route path="/garage/add-service" element={<AddService />} />
           <Route path="/service-history/:vehicleId" element={<ServiceHistory />} />
@@ -179,7 +174,6 @@ function App() {
           <Route path="/garage/settlements" element={<GarageSettlements />} />
           <Route path="/garage/reports" element={<GarageReports />} />
           <Route path="/garage/tax" element={<GarageTax />} />
-          <Route path="/garage/disputes" element={<GarageDisputes />} />
           <Route path="/garage-availability" element={<GarageAvailability />} />
           <Route path="/garages/:garageId" element={<GarageDetails />} />
           <Route path="/garage/reviews" element={<GarageReviewsPage />} />
