@@ -85,12 +85,12 @@ const FeedbackButton = () => {
         </span>
       </button>
 
-      {/* Mobile Floating Action Button (Bottom-Right, positioned above mobile bars) */}
+      {/* Mobile Floating Action Button (Bottom-Left, positioned above mobile bars) */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
         aria-label="Open feedback form"
-        className="flex md:hidden fixed right-4 bottom-24 z-40 bg-slate-900 hover:bg-teal-600 active:scale-95 text-white p-3.5 rounded-full shadow-xl shadow-slate-950/30 items-center justify-center transition-all duration-200 cursor-pointer border border-white/15"
+        className="flex md:hidden fixed left-4 bottom-24 z-40 bg-slate-900 hover:bg-teal-600 active:scale-95 text-white p-3.5 rounded-full shadow-xl shadow-slate-950/30 items-center justify-center transition-all duration-200 cursor-pointer border border-white/15"
         title="Share your feedback"
       >
         <MessageSquarePlus className="h-5 w-5 text-teal-400" />

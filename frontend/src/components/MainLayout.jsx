@@ -70,7 +70,7 @@ const MainLayout = () => {
                 </div>
 
                 <div className="flex-1 overflow-auto relative">
-                    <div className="mx-auto h-full p-3 md:p-6 lg:p-8 pb-24 lg:pb-8">
+                    <div className="mx-auto min-h-full p-3 md:p-6 lg:p-8 pb-24 lg:pb-8">
                         <Outlet />
                     </div>
                 </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, MessageSquare } from 'lucide-react';
+import { Bot, X } from 'lucide-react';
 
 const FloatingButton = ({ onClick, isOpen }) => {
   return (
@@ -27,7 +27,7 @@ const FloatingButton = ({ onClick, isOpen }) => {
         )}
 
         <div className="text-white">
-          {isOpen ? <MessageSquare className="w-6 h-6" /> : <Bot className="w-7 h-7" />}
+          {isOpen ? <X className="w-6 h-6" /> : <Bot className="w-7 h-7" />}
         </div>
       </button>
     </div>
