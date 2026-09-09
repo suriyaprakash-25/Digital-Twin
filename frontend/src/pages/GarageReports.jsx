@@ -219,23 +219,18 @@ export default function GarageReports() {
 
         {/* Financial KPI Summary Cards */}
         {summary && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-sm">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Gross Revenue</span>
               <span className="font-metric text-metric-lg text-slate-900">₹{parseFloat(summary.grossRevenue || 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-slate-500 block mt-1">{summary.paidInvoiceCount} Paid Invoices</span>
             </div>
 
-            <div className="bg-white border border-amber-200/70 p-4 rounded-2xl shadow-sm">
-              <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider block mb-1">Platform Fees</span>
-              <span className="font-metric text-metric-lg text-amber-600">₹{parseFloat(summary.platformCommission || 0).toLocaleString('en-IN')}</span>
-              <span className="text-[10px] text-slate-500 block mt-1">Platform Commission</span>
-            </div>
 
             <div className="bg-white border border-teal-200/70 p-4 rounded-2xl shadow-sm">
               <span className="text-[11px] font-bold text-teal-600 uppercase tracking-wider block mb-1">Net Earnings</span>
               <span className="font-metric text-metric-lg text-teal-600">₹{parseFloat(summary.garageNetRevenue || 0).toLocaleString('en-IN')}</span>
-              <span className="text-[10px] text-slate-500 block mt-1">Net of Platform Fee</span>
+              <span className="text-[10px] text-slate-500 block mt-1">Net Revenue</span>
             </div>
 
             <div className="bg-white border border-rose-200/70 p-4 rounded-2xl shadow-sm">
@@ -307,10 +302,6 @@ export default function GarageReports() {
                       <td className="px-4 py-3 text-right font-bold text-slate-900 font-mono">₹{statement.summary.grossRevenue.toLocaleString('en-IN')}</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-3 text-slate-600">Less: Platform Service Fee (Commission)</td>
-                      <td className="px-4 py-3 text-right font-bold text-amber-600 font-mono">- ₹{statement.summary.platformCommission.toLocaleString('en-IN')}</td>
-                    </tr>
-                    <tr>
                       <td className="px-4 py-3 text-slate-600">Less: Refund Adjustments</td>
                       <td className="px-4 py-3 text-right font-bold text-rose-600 font-mono">- ₹{statement.summary.refundAmount.toLocaleString('en-IN')}</td>
                     </tr>
@@ -351,7 +342,7 @@ export default function GarageReports() {
                   <th className="px-6 py-3.5">Invoice #</th>
                   <th className="px-6 py-3.5">Vehicle</th>
                   <th className="px-6 py-3.5">Gross</th>
-                  <th className="px-6 py-3.5">Platform Fee</th>
+
                   <th className="px-6 py-3.5">Net Earnings</th>
                   <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5 text-right">Date</th>
@@ -377,7 +368,7 @@ export default function GarageReports() {
                       <td className="px-6 py-3.5 font-mono text-teal-700 font-semibold">{tx.invoiceNumber || '—'}</td>
                       <td className="px-6 py-3.5 text-slate-900 font-medium">{tx.vehicleNumber || '—'}</td>
                       <td className="px-6 py-3.5 font-bold text-slate-900 font-mono">₹{parseFloat(tx.grossAmount || 0).toLocaleString('en-IN')}</td>
-                      <td className="px-6 py-3.5 text-amber-600 font-mono">₹{parseFloat(tx.platformCommission || 0).toLocaleString('en-IN')}</td>
+
                       <td className="px-6 py-3.5 font-bold text-teal-700 font-mono">₹{parseFloat(tx.finalNetAmount || tx.garageNetAmount || 0).toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${

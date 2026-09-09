@@ -136,7 +136,7 @@ const GarageEarnings = () => {
             Earnings & Revenue Ledger
           </h1>
           <p className="text-xs md:text-sm text-slate-500 font-medium mt-0.5">
-            Transparent revenue tracking, DrivePortz platform fees, and verified payout balances
+            Transparent revenue tracking and verified payout balances
           </p>
         </div>
 
@@ -169,7 +169,7 @@ const GarageEarnings = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* Gross Revenue */}
         <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Gross Revenue</span>
@@ -178,16 +178,6 @@ const GarageEarnings = () => {
             {Number(summary.totalGrossRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
           <p className="text-[10px] font-medium text-slate-400 mt-1">Total customer bills</p>
-        </div>
-
-        {/* DrivePortz Fee */}
-        <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 block mb-1">Platform Fee</span>
-          <div className="text-xl sm:text-2xl font-black text-red-700 tracking-tight flex items-center">
-            <IndianRupee className="h-4 w-4 text-red-400 mr-0.5" />
-            {Number(summary.platformCommission || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <p className="text-[10px] font-medium text-slate-400 mt-1">Platform commission</p>
         </div>
 
         {/* Net Garage Earnings */}
@@ -273,7 +263,7 @@ const GarageEarnings = () => {
             <Percent className="h-12 w-12 text-slate-300 mx-auto mb-3" />
             <h3 className="text-base font-bold text-slate-800">No Earnings Records Found</h3>
             <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-              When customers complete online bill settlements, your service earnings and platform commission snapshots will appear here.
+              When customers complete online bill settlements, your service earnings snapshots will appear here.
             </p>
           </div>
         ) : (
@@ -284,7 +274,7 @@ const GarageEarnings = () => {
                   <th className="py-3.5 px-4 pl-6">Invoice #</th>
                   <th className="py-3.5 px-4">Service & Vehicle</th>
                   <th className="py-3.5 px-4">Gross Bill</th>
-                  <th className="py-3.5 px-4">Fee ({earnings[0]?.commissionRate || 5}%)</th>
+
                   <th className="py-3.5 px-4">Net Earned</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Date</th>
@@ -315,9 +305,7 @@ const GarageEarnings = () => {
                       <td className="py-4 px-4 font-bold text-slate-900">
                         ₹{(parseFloat(e.grossAmount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="py-4 px-4 font-bold text-red-600">
-                        - ₹{(parseFloat(e.platformCommission) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </td>
+
                       <td className="py-4 px-4 font-black text-emerald-700">
                         ₹{(parseFloat(e.netAfterRefund !== undefined ? e.netAfterRefund : e.garageNetAmount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>

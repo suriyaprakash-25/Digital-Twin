@@ -244,7 +244,7 @@ export default function GarageFinancialCenter() {
             Treasury Intelligence & Liquidity Forecast
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl">
               <span className="text-[10px] font-semibold text-slate-500 uppercase">7-Day Projected</span>
               <p className="text-base font-bold text-teal-700 mt-1 font-mono">
@@ -266,12 +266,7 @@ export default function GarageFinancialCenter() {
               </p>
             </div>
 
-            <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl">
-              <span className="text-[10px] font-semibold text-slate-500 uppercase">Platform Fee</span>
-              <p className="text-base font-bold text-slate-700 mt-1 font-mono">
-                ₹{Number(summary?.platformCommission || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-              </p>
-            </div>
+
 
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl">
               <span className="text-[10px] font-semibold text-slate-500 uppercase">Payout Velocity</span>
