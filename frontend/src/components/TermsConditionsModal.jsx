@@ -1,7 +1,10 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 const TermsConditionsModal = ({ isOpen, onClose, onAccept, readOnly = false }) => {
+  useEscapeKey(onClose, isOpen);
+
   if (!isOpen) return null;
 
 

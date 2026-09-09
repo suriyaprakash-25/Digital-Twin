@@ -1,7 +1,10 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 const PartnerTermsModal = ({ isOpen, onClose }) => {
+  useEscapeKey(onClose, isOpen);
+
   if (!isOpen) return null;
 
 

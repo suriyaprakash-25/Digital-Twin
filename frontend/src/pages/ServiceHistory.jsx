@@ -8,9 +8,11 @@ import PaymentSuccessModal from '../components/payment/PaymentSuccessModal';
 import InvoiceModal from '../components/invoice/InvoiceModal';
 import ReceiptModal from '../components/invoice/ReceiptModal';
 import MediaManager from '../components/MediaManager';
+import { useToast } from '../context/ToastContext';
 
 const ServiceHistory = () => {
     const { vehicleId } = useParams();
+    const { showToast } = useToast();
     const [services, setServices] = useState([]);
     const [vehicle, setVehicle] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -76,7 +78,7 @@ const ServiceHistory = () => {
             setServices(services.filter(s => s.id !== serviceId));
         } catch (err) {
             console.error('Error deleting service:', err);
-            alert('Failed to delete service record. Please try again.');
+            showToast('Failed to delete service record. Please try again.', 'error');
         }
     };
 

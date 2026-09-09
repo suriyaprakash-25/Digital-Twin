@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Car, Bell, CheckCircle2, XCircle, Info, ChevronRight, Activity, CalendarClock } from 'lucide-react';
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/config';
+import { statusMeta } from '../utils/statusMeta';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -220,9 +221,10 @@ const UserDashboard = () => {
               </div>
             ) : (
               notifications.slice(0, 10).map((n) => {
-                const isAccepted = n.body.includes('ACCEPTED');
-                const isRejected = n.body.includes('REJECTED');
-                const isCompleted = n.body.includes('COMPLETED');
+                const type = n.data?.type || '';
+                const isAccepted = type.includes('ACCEPTED');
+                const isRejected = type.includes('REJECTED');
+                const isCompleted = type.includes('COMPLETED');
                 
                 let Icon = Info;
                 let iconColor = 'text-blue-500';
@@ -280,9 +282,15 @@ const UserDashboard = () => {
                   <div className="text-xs md:text-sm font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors">
                     {b.service?.title || 'Service'} • {b.garage?.name || 'Garage'}
                   </div>
-                  <div className="text-[10px] md:text-xs font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100 shadow-sm">
-                    {b.status}
-                  </div>
+                  {(() => {
+                    const meta = statusMeta[b.status] || { label: b.status, color: 'bg-slate-100 text-slate-600', icon: null };
+                    return (
+                      <div className={`text-[10px] md:text-xs font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full shadow-sm flex items-center gap-1.5 ${meta.color}`}>
+                        {meta.icon}
+                        {meta.label}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="text-xs md:text-sm text-slate-655 mt-1.5 flex items-center gap-2">
                   <span className="text-slate-400">Vehicle:</span>

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
@@ -72,6 +72,17 @@ import AdminFinancialOperationsDashboard from './pages/admin/AdminFinancialOpera
 import GarageTax from './pages/GarageTax';
 import PaymentCenter from './pages/PaymentCenter';
 import GarageFinancialCenter from './pages/GarageFinancialCenter';
+import { normalizeRole } from './utils/roles';
+
+const ENABLE_AI_DOCTOR = false; // Feature flag for AI Doctor modules
+
+const DashboardRedirect = () => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const role = normalizeRole(user.role);
+  if (role === 'ADMIN') return <Navigate to="/admin" replace />;
+  if (role === 'GARAGE') return <Navigate to="/garage-dashboard" replace />;
+  return <Navigate to="/user-dashboard" replace />;
+};
 
 function App() {
   return (
@@ -135,11 +146,15 @@ function App() {
           <Route path="/help-faq" element={<PartnerHelpFAQ />} />
 
           {/* AI Vehicle Doctor */}
-          <Route path="/vehicle-doctor" element={<VehicleDoctor />} />
-          <Route path="/vehicle-doctor/history" element={<DiagnosisHistory />} />
+          {ENABLE_AI_DOCTOR && (
+            <>
+              <Route path="/vehicle-doctor" element={<VehicleDoctor />} />
+              <Route path="/vehicle-doctor/history" element={<DiagnosisHistory />} />
+            </>
+          )}
 
           {/* Legacy driveportz routes */}
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<DashboardRedirect />} />
           <Route path="/add-vehicle" element={<AddVehicle />} />
           <Route path="/edit-vehicle/:id" element={<EditVehicle />} />
           <Route path="/my-vehicles" element={<MyVehicles />} />

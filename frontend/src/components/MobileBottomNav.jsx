@@ -2,11 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Car, Store, UserCircle2, Wrench, PieChart, Building2, Stethoscope } from 'lucide-react';
 import { FEATURES } from '../config/features';
 
-function normalizeRole(role) {
-    const r = String(role || '').trim().toLowerCase();
-    if (r === 'garage' || r === 'service_center' || r === 'servicecenter' || r === 'service center') return 'GARAGE';
-    return 'USER';
-}
+import { normalizeRole } from '../utils/roles';
+
 
 const MobileBottomNav = () => {
     const location = useLocation();

@@ -1,7 +1,10 @@
 import React from 'react';
 import { X, Heart, Eye, Target, Sparkles, ShieldAlert, Award } from 'lucide-react';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 const AboutUsModal = ({ isOpen, onClose }) => {
+  useEscapeKey(onClose, isOpen);
+
   if (!isOpen) return null;
 
   return (

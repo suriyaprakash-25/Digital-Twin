@@ -12,22 +12,10 @@ import {
 import { tryRegisterFcmToken } from '../utils/fcm';
 import MediaManager from '../components/MediaManager';
 
-function normalizeRole(role) {
-  const r = String(role || '').trim().toLowerCase();
-  if (r === 'garage' || r === 'service_center' || r === 'servicecenter' || r === 'service center') return 'GARAGE';
-  if (r === 'vehicle_owner' || r === 'vehicle owner' || r === 'user' || r === 'customer' || r === 'owner') return 'USER';
-  return role || 'USER';
-}
+import { normalizeRole } from '../utils/roles';
+import { statusMeta } from '../utils/statusMeta';
 
-const statusMeta = {
-  REQUESTED:   { label: 'Pending',     color: 'bg-amber-100 text-amber-700',    icon: <Clock className="h-3.5 w-3.5" /> },
-  PENDING:     { label: 'Pending',     color: 'bg-amber-100 text-amber-700',    icon: <Clock className="h-3.5 w-3.5" /> },
-  MORE_INFO_REQUIRED: { label: 'Need Info', color: 'bg-orange-100 text-orange-700', icon: <AlertTriangle className="h-3.5 w-3.5" /> },
-  ACCEPTED:    { label: 'Accepted',    color: 'bg-teal-100 text-teal-700',      icon: <CheckCircle className="h-3.5 w-3.5" /> },
-  IN_PROGRESS: { label: 'In Progress', color: 'bg-violet-100 text-violet-700',  icon: <Loader2 className="h-3.5 w-3.5" /> },
-  COMPLETED:   { label: 'Completed',   color: 'bg-emerald-100 text-emerald-700',icon: <CheckCircle className="h-3.5 w-3.5" /> },
-  REJECTED:    { label: 'Rejected',    color: 'bg-red-100 text-red-700',        icon: <XCircle className="h-3.5 w-3.5" /> },
-};
+
 
 const GarageDashboard = () => {
   const navigate = useNavigate();

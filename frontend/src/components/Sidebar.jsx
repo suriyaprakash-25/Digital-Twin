@@ -2,13 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope, ClipboardList, HelpCircle, Headphones, Info, Star, CreditCard, Percent, Receipt, AlertTriangle, FileSpreadsheet, DollarSign } from 'lucide-react';
 import { FEATURES } from '../config/features';
 
-function normalizeRole(role) {
-    const r = String(role || '').trim().toLowerCase();
-    if (r === 'garage' || r === 'service_center' || r === 'servicecenter' || r === 'service center') return 'GARAGE';
-    if (r === 'vehicle_owner' || r === 'vehicle owner' || r === 'user' || r === 'customer' || r === 'owner') return 'USER';
-    if (r === 'admin' || r === 'administrator') return 'ADMIN';
-    return role || 'USER';
-}
+import { normalizeRole } from '../utils/roles';
+
 
 const Sidebar = ({ onLogout, isOpen, onClose }) => {
     const location = useLocation();

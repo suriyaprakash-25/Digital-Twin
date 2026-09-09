@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../utils/config';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, Search, SlidersHorizontal, Wrench, ShieldCheck, Star, Images, Info, MessageSquare, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -39,6 +39,7 @@ const GarageDetails = () => {
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingStatus, setBookingStatus] = useState({ type: '', msg: '' });
   const [successBookingId, setSuccessBookingId] = useState(null);
+  const [successBookingType, setSuccessBookingType] = useState(null);
 
   // Custom Issue State
   const [isCustomIssueModalOpen, setIsCustomIssueModalOpen] = useState(false);
@@ -125,6 +126,27 @@ const GarageDetails = () => {
     return list;
   }, [garage, serviceCategoryFilter, serviceSearch, serviceSort]);
 
+  // Modals state reset and ESC handler
+  const closeModals = useCallback(() => {
+    setSelectedServiceForRequest(null);
+    setSuccessBookingId(null);
+    setSuccessBookingType(null);
+    setBookingStatus({ type: '', msg: '' });
+    setBookingDate('');
+    setBookingNotes('');
+    setIsCustomIssueModalOpen(false);
+    setCustomIssueDescription('');
+    setShowSafetyWarning(false);
+  }, []);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') closeModals();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [closeModals]);
+
   // Handle Request Booking Submission
   const handleRequestBooking = async (e) => {
     e.preventDefault();
@@ -161,6 +183,7 @@ const GarageDetails = () => {
 
       setBookingStatus({ type: 'success', msg: 'Booking request sent successfully!' });
       setSuccessBookingId(res.data.id);
+      setSuccessBookingType('SERVICE');
     } catch (err) {
       console.error('Booking request error:', err);
       setBookingStatus({
@@ -215,8 +238,8 @@ const GarageDetails = () => {
 
       setBookingStatus({ type: 'success', msg: 'Issue reported successfully!' });
       setSuccessBookingId(res.data.id);
+      setSuccessBookingType('CUSTOM_ISSUE');
       setIsCustomIssueModalOpen(false); // Move to success state
-      setSelectedServiceForRequest(true); // Reuse the success modal view
     } catch (err) {
       console.error('Custom issue request error:', err);
       setBookingStatus({
@@ -392,7 +415,7 @@ const GarageDetails = () => {
       </div>
 
       {/* Request Booking Modal */}
-      {selectedServiceForRequest && (
+      {(selectedServiceForRequest || successBookingId) && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
             {successBookingId ? (
@@ -408,26 +431,24 @@ const GarageDetails = () => {
                 <div className="border border-slate-100 bg-slate-50 rounded-xl p-4 text-left shadow-sm">
                     <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-3">
                         <Images className="h-4 w-4 text-teal-600" />
-                        {selectedServiceForRequest === true ? 'Vehicle Issue Photos' : 'Customer Damage Photos'}
+                        {successBookingType === 'CUSTOM_ISSUE' ? 'Vehicle Issue Photos' : 'Customer Damage Photos'}
                     </h4>
                     <p className="text-[10px] text-slate-500 mb-3">
-                      {selectedServiceForRequest === true 
+                      {successBookingType === 'CUSTOM_ISSUE' 
                         ? 'Upload photos demonstrating the problem you are experiencing (Optional).' 
                         : 'Upload photos of your vehicle\'s condition or specific damage before the service (Optional).'}
                     </p>
                     <MediaManager 
                       entityId={successBookingId} 
                       entityType="BOOKING" 
-                      category={selectedServiceForRequest === true ? 'CUSTOMER_ISSUE' : 'CUSTOMER_DAMAGE'} 
+                      category={successBookingType === 'CUSTOM_ISSUE' ? 'CUSTOMER_ISSUE' : 'CUSTOMER_DAMAGE'} 
                       label="Upload Photos" 
                     />
                 </div>
 
                 <button
                     onClick={() => {
-                        setSuccessBookingId(null);
-                        setSelectedServiceForRequest(null);
-                        setBookingStatus({ type: '', msg: '' });
+                        closeModals();
                         navigate('/user-dashboard');
                     }}
                     className="w-full py-3 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-sm hover:bg-slate-800 transition-colors"
@@ -437,9 +458,14 @@ const GarageDetails = () => {
               </div>
             ) : (
               <>
-                <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
-                  Request Service: {selectedServiceForRequest.title}
-                </h3>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Request Service: {selectedServiceForRequest.title}
+                  </h3>
+                  <button type="button" onClick={closeModals} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 transition-colors">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
 
                 {bookingStatus.msg && (
                   <div className={`p-3 rounded-xl text-xs font-semibold ${
@@ -488,7 +514,7 @@ const GarageDetails = () => {
                   <div className="flex gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => setSelectedServiceForRequest(null)}
+                      onClick={closeModals}
                       className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold"
                     >
                       Cancel
@@ -512,9 +538,14 @@ const GarageDetails = () => {
       {isCustomIssueModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">
-              Report a Vehicle Issue
-            </h3>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <h3 className="text-lg font-bold text-slate-900">
+                Report a Vehicle Issue
+              </h3>
+              <button type="button" onClick={closeModals} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
             {bookingStatus.msg && (
               <div className={`p-3 mb-4 rounded-xl text-xs font-semibold ${
@@ -599,7 +630,7 @@ const GarageDetails = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setIsCustomIssueModalOpen(false)}
+                  onClick={closeModals}
                   className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold"
                 >
                   Cancel

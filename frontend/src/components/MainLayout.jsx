@@ -6,6 +6,7 @@ import { Menu, LogOut } from 'lucide-react';
 import Copilot from './copilot/Copilot';
 import FeedbackButton from './feedback/FeedbackButton';
 import NotificationBell from './notifications/NotificationBell';
+import MobileBottomNav from './MobileBottomNav';
 
 const MainLayout = () => {
     const navigate = useNavigate();
@@ -69,7 +70,7 @@ const MainLayout = () => {
                 </div>
 
                 <div className="flex-1 overflow-auto relative">
-                    <div className="mx-auto h-full p-3 md:p-6 lg:p-8">
+                    <div className="mx-auto h-full p-3 md:p-6 lg:p-8 pb-24 lg:pb-8">
                         <Outlet />
                     </div>
                 </div>
@@ -81,6 +82,9 @@ const MainLayout = () => {
 
             {/* Global Feedback Button */}
             <FeedbackButton />
+
+            {/* Mobile Bottom Navigation */}
+            <MobileBottomNav />
         </div>
     );
 };
