@@ -980,7 +980,7 @@ const LandingPage = () => {
                 <a href="https://www.instagram.com/driveportz?utm_source=qr&igsh=cTl1NWFyNTRiampo" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
                   <Instagram size={16} />
                 </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
+                <a href="https://wa.me/916381509292" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors">
                   <MessageCircle size={16} />
                 </a>
               </div>

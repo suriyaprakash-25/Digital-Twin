@@ -19,3 +19,6 @@ frontend/.env.*
 backend/*firebase-adminsdk*.json
 backend/firebase-service-account*.json
 backend/garage-platform-cc42d-firebase-adminsdk-fbsvc-fbfa40d04a.json
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
