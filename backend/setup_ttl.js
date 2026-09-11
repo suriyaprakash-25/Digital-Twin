@@ -1,5 +1,6 @@
+require('dotenv').config();
 const { MongoClient } = require('mongodb');
-const uri = 'mongodb+srv://driveportz3_db_user:fwzxm2FYEfQBzCoe@cluster.x6gxbml.mongodb.net';
+const uri = process.env.MONGO_URI;
 const dbName = 'driveportz';
 
 async function setupTTL() {

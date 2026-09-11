@@ -1,6 +1,7 @@
+require('dotenv').config();
 const { MongoClient } = require('mongodb');
-const uri = 'mongodb+srv://driveportz3_db_user:fwzxm2FYEfQBzCoe@cluster.x6gxbml.mongodb.net';
-const dbName = 'driveportz';
+const uri = process.env.MONGO_URI;
+const dbName = process.env.MONGO_DB_NAME || 'driveportz';
 
 async function updateGarages() {
   console.log('Connecting to MongoDB...');

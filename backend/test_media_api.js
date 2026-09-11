@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 const API_URL = 'http://localhost:5001/api';
 
@@ -87,9 +88,10 @@ async function runTests() {
        // How do we know which DB? The server is running on localhost. It could be remote or local.
        // Let's just test with the booking that we insert directly via MongoDB, but using the user ID from the real API!
        const { MongoClient, ObjectId } = require('mongodb');
-       let client = new MongoClient('mongodb+srv://driveportz3_db_user:fwzxm2FYEfQBzCoe@cluster.x6gxbml.mongodb.net');
+       let client = new MongoClient(process.env.MONGO_URI);
        await client.connect();
-       const db = client.db('driveportz');
+       const dbName = process.env.MONGO_DB_NAME || 'driveportz';
+       const db = client.db(dbName);
        
        console.log('Connected to DB for setup...');
        vehicleId = new ObjectId().toString();
