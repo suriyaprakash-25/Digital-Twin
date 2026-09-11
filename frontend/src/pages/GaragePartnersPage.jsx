@@ -79,7 +79,7 @@ const GaragePartnersPage = () => {
         </nav>
 
         {/* HERO / FOR GARAGES */}
-        <section className="pt-32 pb-16 md:pt-40 md:pb-28 px-4 md:px-8 bg-teal-50/50 min-h-[80vh] flex flex-col justify-center">
+        <section className="pt-24 pb-10 md:pt-28 md:pb-16 px-4 md:px-8 bg-teal-50/50 min-h-[80vh] flex flex-col justify-center">
           <div className="max-w-[1100px] mx-auto text-center">
             <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#14b8a6', letterSpacing: '.12em', textTransform: 'uppercase' }}>FOR GARAGE PARTNERS</span>
             <h1 style={{ fontSize: 'clamp(2.5rem,5vw,4.5rem)', fontWeight: 900, marginTop: '1rem', letterSpacing: '-0.04em', marginBottom: '1.5rem', color: '#0f172a' }}>

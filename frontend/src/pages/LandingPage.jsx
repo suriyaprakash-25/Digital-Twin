@@ -425,10 +425,10 @@ const LandingPage = () => {
         {/* ════════════════════════════════
            FEATURES
       ════════════════════════════════ */}
-        <section id="features" ref={featRef} className="py-16 md:py-28 px-4 md:px-8 bg-slate-50 relative overflow-hidden">
+        <section id="features" ref={featRef} className="py-10 md:py-16 px-4 md:px-8 bg-slate-50 relative overflow-hidden">
           <div className="max-w-[1200px] mx-auto relative z-10">
             {/* Section heading */}
-            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#14b8a6', letterSpacing: '.12em', textTransform: 'uppercase' }}>
                 PLATFORM FEATURES
               </span>
@@ -500,10 +500,10 @@ const LandingPage = () => {
         {/* ════════════════════════════════
            HOW IT WORKS (VEHICLE → DATA → INTELLIGENCE JOURNEY)
       ════════════════════════════════ */}
-        <section id="how-it-works" ref={howRef} className="py-20 md:py-32 px-4 md:px-8 bg-white relative overflow-hidden">
+        <section id="how-it-works" ref={howRef} className="py-10 md:py-16 px-4 md:px-8 bg-white relative overflow-hidden">
           <div className="max-w-[1140px] mx-auto">
             {/* Section heading */}
-            <div style={{ textAlign: 'center', marginBottom: '4.5rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
               <span
                 style={{
                   fontSize: '.75rem',
@@ -684,7 +684,7 @@ const LandingPage = () => {
         {/* ════════════════════════════════
            SPOTLIGHT: Vehicle IQ Score
       ════════════════════════════════ */}
-        <section className="py-16 md:py-28 px-4 md:px-8 bg-slate-50">
+        <section className="py-10 md:py-16 px-4 md:px-8 bg-slate-50">
           <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             <div>
               <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#dc2626', letterSpacing: '.12em', textTransform: 'uppercase' }}>VEHICLE IQ INTELLIGENCE</span>
@@ -756,7 +756,7 @@ const LandingPage = () => {
         {/* ════════════════════════════════
            SPOTLIGHT: Fraud Detection
       ════════════════════════════════ */}
-        <section className="py-16 md:py-28 px-4 md:px-8 bg-white">
+        <section className="py-10 md:py-16 px-4 md:px-8 bg-white">
           <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             {/* Fraud visual */}
             <div className="float2 bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden order-2 lg:order-1 max-w-md mx-auto lg:max-w-none w-full">
@@ -827,7 +827,7 @@ const LandingPage = () => {
         {/* ════════════════════════════════
            RESALE VALUATION
       ════════════════════════════════ */}
-        <section className="py-16 md:py-28 px-4 md:px-8 bg-slate-50">
+        <section className="py-10 md:py-16 px-4 md:px-8 bg-slate-50">
           <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             <div>
               <span style={{ fontSize: '.75rem', fontWeight: 800, color: '#d97706', letterSpacing: '.12em', textTransform: 'uppercase' }}>RESALE INTELLIGENCE</span>
@@ -912,7 +912,7 @@ const LandingPage = () => {
         {/* ════════════════════════════════
            FINAL CTA
       ════════════════════════════════ */}
-        <section className="py-16 md:py-28 px-4 md:px-8 bg-gradient-to-br from-teal-50/30 via-slate-50 to-teal-50/30">
+        <section className="py-10 md:py-16 px-4 md:px-8 bg-gradient-to-br from-teal-50/30 via-slate-50 to-teal-50/30">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white border border-teal-200 rounded-[2rem] sm:rounded-[2.5rem] py-12 px-6 sm:p-16 md:p-24 text-center relative overflow-hidden shadow-xl w-full">
               <div style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle,rgba(13,148,136,.07) 0%,transparent 70%)', top: -170, right: -100, pointerEvents: 'none' }} />

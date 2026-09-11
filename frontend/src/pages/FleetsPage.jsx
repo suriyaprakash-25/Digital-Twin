@@ -84,7 +84,7 @@ const FleetsPage = () => {
         </nav>
 
         {/* HERO / FLEET ANALYTICS */}
-        <section className="pt-32 pb-16 md:pt-40 md:pb-28 px-4 md:px-8 bg-white min-h-[80vh] flex flex-col justify-center">
+        <section className="pt-24 pb-10 md:pt-28 md:pb-16 px-4 md:px-8 bg-white min-h-[80vh] flex flex-col justify-center">
           <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             
             <div className="order-1 lg:order-1">
