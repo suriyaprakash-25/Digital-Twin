@@ -28,7 +28,7 @@ function calculateResaleReport(vehicle, services) {
 
   let baseValue = purchasePrice * depreciationFactor;
 
-  let trustScore = 100;
+  let trustScore = 80;
   const trustFactors = [];
 
   // 1. Ownership count penalty
@@ -69,8 +69,11 @@ function calculateResaleReport(vehicle, services) {
   }
 
   // 5. No service records penalty
-  if (!services || services.length === 0) {
+  if ((!services || services.length === 0) && ageYears > 0) {
     trustScore -= 30;
+    trustFactors.push({ type: 'negative', reason: 'No service records available' });
+  } else if (!services || services.length === 0) {
+    trustScore -= 10;
     trustFactors.push({ type: 'negative', reason: 'No service records available' });
   }
 
@@ -112,7 +115,7 @@ function calculateResaleReport(vehicle, services) {
   if (isInsuranceValid) {
     trustFactors.push({ type: 'positive', reason: 'Active insurance policy' });
   } else {
-    trustScore -= 5;
+    trustScore -= 20;
     trustFactors.push({ type: 'negative', reason: 'Expired or missing insurance' });
   }
 
