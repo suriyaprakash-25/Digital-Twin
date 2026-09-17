@@ -1,24 +1,22 @@
 const express = require('express');
 const { ObjectId } = require('mongodb');
-const fs = require('fs');
-const path = require('path');
 
 const { getDb } = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { upload, uploadsDir } = require('../utils/uploads');
+const { createUploader } = require('../utils/uploads');
+const {
+  persistUploadedFile,
+  deletePersistedFile,
+  removeTemporaryFile
+} = require('../services/persistentFileStorage');
 
 const router = express.Router();
+const billUpload = createUploader(
+  ['application/pdf', 'image/png', 'image/jpeg'],
+  10 * 1024 * 1024
+);
 
-const ALLOWED_EXTENSIONS = new Set(['pdf', 'png', 'jpg', 'jpeg']);
-
-function isAllowed(filename) {
-  const parts = String(filename || '').split('.');
-  if (parts.length < 2) return false;
-  const ext = parts.pop().toLowerCase();
-  return ALLOWED_EXTENSIONS.has(ext);
-}
-
-router.post('/verify/:service_id', requireAuth, upload.single('billFile'), async (req, res) => {
+router.post('/verify/:service_id', requireAuth, billUpload.single('billFile'), async (req, res) => {
   const serviceId = req.params.service_id;
   const verifierId = req.user.id;
   const verifierRole = req.user.role || 'Garage';
@@ -27,9 +25,13 @@ router.post('/verify/:service_id', requireAuth, upload.single('billFile'), async
   const services = db.collection('services');
   const vehicles = db.collection('vehicles');
 
+  let persistedBill = null;
+  let billStoredOnService = false;
+
   try {
     const service = await services.findOne({ _id: new ObjectId(serviceId), isArchived: { $ne: true } });
     if (!service) {
+      removeTemporaryFile(req.file);
       return res.status(404).json({ msg: 'Service record not found' });
     }
 
@@ -43,25 +45,19 @@ router.post('/verify/:service_id', requireAuth, upload.single('billFile'), async
     if (garageReportedKm) {
       const gKm = parseInt(garageReportedKm, 10);
       const oKm = parseInt(service.odometerKm || 0, 10);
-      if (!Number.isNaN(gKm) && !Number.isNaN(oKm)) {
-        if (Math.abs(gKm - oKm) > 50) {
-          tamperFlag = true;
-          tamperReasons.push(`Odometer Mismatch: Owner reported ${oKm}km, Garage reported ${gKm}km`);
-        }
+      if (!Number.isNaN(gKm) && !Number.isNaN(oKm) && Math.abs(gKm - oKm) > 50) {
+        tamperFlag = true;
+        tamperReasons.push(`Odometer Mismatch: Owner reported ${oKm}km, Garage reported ${gKm}km`);
       }
     }
 
     let billUrl = service.billUrl;
-    if (req.file && req.file.filename) {
-      if (isAllowed(req.file.originalname)) {
-        billUrl = `/uploads/${req.file.filename}`;
-      } else {
-        try {
-          fs.unlinkSync(path.join(uploadsDir, req.file.filename));
-        } catch (e) {
-          // ignore
-        }
-      }
+    if (req.file) {
+      persistedBill = await persistUploadedFile(req.file, {
+        folder: 'driveportz/service-bills',
+        resourceType: 'auto'
+      });
+      billUrl = persistedBill.url;
     }
 
     const updateData = {
@@ -78,13 +74,33 @@ router.post('/verify/:service_id', requireAuth, upload.single('billFile'), async
       verifiedAt: new Date()
     };
 
+    if (persistedBill) {
+      updateData.billStorageProvider = persistedBill.storageProvider;
+      updateData.billStorageKey = persistedBill.storageKey;
+      updateData.billResourceType = persistedBill.resourceType || 'auto';
+    }
+
     await services.updateOne({ _id: new ObjectId(serviceId) }, { $set: updateData });
+    billStoredOnService = true;
+
+    if (persistedBill && service.billUrl && service.billUrl !== persistedBill.url) {
+      await deletePersistedFile({
+        url: service.billUrl,
+        storageProvider: service.billStorageProvider,
+        storageKey: service.billStorageKey,
+        resourceType: service.billResourceType || 'image'
+      });
+    }
 
     if (tamperFlag) {
       try {
-        await vehicles.updateOne({ _id: new ObjectId(String(service.vehicleId)) }, { $set: { hasTamperFlags: true } });
-      } catch (e) {
-        // ignore
+        await vehicles.updateOne(
+          { _id: new ObjectId(String(service.vehicleId)) },
+          { $set: { hasTamperFlags: true } }
+        );
+      } catch {
+        // Verification is already stored; vehicle flagging failure should not
+        // make the financial/service record appear unverified.
       }
     }
 
@@ -94,6 +110,11 @@ router.post('/verify/:service_id', requireAuth, upload.single('billFile'), async
       tamperReasons
     });
   } catch (e) {
+    if (!billStoredOnService && persistedBill) {
+      await deletePersistedFile(persistedBill);
+    } else if (!persistedBill) {
+      removeTemporaryFile(req.file);
+    }
     return res.status(500).json({ msg: 'Error verifying service', error: String(e && e.message ? e.message : e) });
   }
 });
@@ -116,8 +137,8 @@ router.get('/pending', requireAuth, async (req, res) => {
         if (v) {
           vehicleInfo = `${v.brand || ''} ${v.model || ''} (${v.vehicleNumber || ''})`.trim();
         }
-      } catch (e) {
-        // ignore
+      } catch {
+        // Preserve pending-list availability if an older vehicle reference is malformed.
       }
 
       results.push({
