@@ -34,12 +34,16 @@ function isSecureHttpUrl(value) {
   }
 }
 
+function isEnabled(value) {
+  return String(value || '').trim().toLowerCase() === 'true';
+}
+
 function validateEnvironment(env = process.env) {
   const nodeEnv = (env.NODE_ENV || 'development').toLowerCase();
   const isProduction = nodeEnv === 'production';
   const isStaging = nodeEnv === 'staging';
   const isStrict = isProduction || isStaging;
-  const enforceProductionReadiness = isProduction && String(env.ENFORCE_PRODUCTION_READINESS || '').toLowerCase() === 'true';
+  const enforceProductionReadiness = isProduction && isEnabled(env.ENFORCE_PRODUCTION_READINESS);
 
   const errors = [];
   const warnings = [];
@@ -84,7 +88,8 @@ function validateEnvironment(env = process.env) {
   // 4. Settlement Safety Gate
   const settlementMode = (env.SETTLEMENT_MODE || 'MOCK_TEST_MODE').toUpperCase();
   const settlementProvider = (env.SETTLEMENT_PROVIDER || 'mock').toLowerCase();
-  const allowMockSettlementsInProduction = String(env.ALLOW_MOCK_SETTLEMENTS_IN_PRODUCTION || '').toLowerCase() === 'true';
+  const allowMockSettlementsInProduction = isEnabled(env.ALLOW_MOCK_SETTLEMENTS_IN_PRODUCTION);
+  const financialJobsEnabled = isEnabled(env.FINANCIAL_JOBS_ENABLED);
 
   if (settlementMode !== 'MOCK_TEST_MODE' && settlementProvider === 'mock') {
     errors.push('Invalid configuration: live settlement mode cannot use the mock settlement provider.');
@@ -96,6 +101,13 @@ function validateEnvironment(env = process.env) {
 
   if (isProduction && settlementProvider === 'mock') {
     warnings.push('Production is running with mock settlements; garage payouts are not live.');
+  }
+
+  // The current repository has callable financial jobs, but no safe runtime
+  // scheduler that executes retry payouts through the provider. Keep the switch
+  // fail-closed until that path is implemented and tested end to end.
+  if (financialJobsEnabled) {
+    errors.push('FINANCIAL_JOBS_ENABLED=true is not supported yet. Automated financial jobs must remain disabled until payout retry execution is provider-backed and idempotent.');
   }
 
   // 5. Frontend URL & CORS origin
@@ -142,7 +154,8 @@ function validateEnvironment(env = process.env) {
     enforceProductionReadiness,
     settlementMode,
     settlementProvider,
-    allowMockSettlementsInProduction
+    allowMockSettlementsInProduction,
+    financialJobsEnabled
   };
 }
 
