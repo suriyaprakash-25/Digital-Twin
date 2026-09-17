@@ -14,13 +14,13 @@ import axios from 'axios';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
 
 const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutProfile, onSuccess }) => {
-  if (!isOpen) return null;
-
   const minAmount = 500;
   const [amount, setAmount] = useState(availableBalance > 0 ? String(availableBalance) : '');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  if (!isOpen) return null;
 
   const numAmount = parseFloat(amount) || 0;
   const isValid = numAmount >= minAmount && numAmount <= availableBalance;
