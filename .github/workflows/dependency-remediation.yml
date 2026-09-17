@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   remediate:
-    name: Apply non-breaking npm security fixes
+    name: Repair coverage and remediate dependencies
     runs-on: ubuntu-latest
 
     steps:
@@ -20,36 +20,56 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: production-hardening-2026-09-17
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Remediate backend dependencies without major upgrades
-        working-directory: backend
-        run: |
-          npm ci
-          npm audit fix || true
-          npm audit --omit=dev --audit-level=critical
-
-      - name: Remediate frontend dependencies without major upgrades
-        working-directory: frontend
-        run: |
-          npm ci
-          npm audit fix || true
-          npm audit --omit=dev --audit-level=critical
-
-      - name: Commit remediated dependency manifests
+      - name: Restore original Phase 5C/5D coverage with async XLSX assertion
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- backend/package.json backend/package-lock.json frontend/package.json frontend/package-lock.json; then
-            echo "No dependency manifest changes were required."
-            exit 0
-          fi
+          git show 04a2d0b7d51b8e39815e6ca9a2ada217c7bc532c:backend/test_phase5cd_suite.js > backend/test_phase5cd_suite.js
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('backend/test_phase5cd_suite.js')
+          text = path.read_text()
+          old = "const xlsxBuffer = convertToXLSX(sampleData, 'Transactions');"
+          new = "const xlsxBuffer = await convertToXLSX(sampleData, 'Transactions');"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one XLSX assertion to update, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Upgrade backend security-sensitive dependencies
+        working-directory: backend
+        run: |
+          npm ci
+          npm uninstall xlsx
+          npm install exceljs@latest firebase-admin@latest multer@latest nodemailer@latest
+          npm audit fix || true
+          npm audit --omit=dev --audit-level=critical
+
+      - name: Upgrade frontend security-sensitive dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+          npm install axios@latest firebase@latest react-router-dom@latest
+          npm audit fix || true
+          npm audit --omit=dev --audit-level=critical
+
+      - name: Commit repaired tests and dependency manifests
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add backend/package.json backend/package-lock.json frontend/package.json frontend/package-lock.json
-          git commit -m "chore: apply non-breaking npm security fixes"
+          git add backend/test_phase5cd_suite.js backend/package.json backend/package-lock.json frontend/package.json frontend/package-lock.json
+          if git diff --cached --quiet; then
+            echo "No remediation changes were required."
+            exit 0
+          fi
+          git commit -m "security: upgrade dependencies and preserve Phase 5C/5D coverage"
           git push origin HEAD:production-hardening-2026-09-17
