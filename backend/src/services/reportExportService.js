@@ -1,4 +1,4 @@
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const { getDb } = require('../db');
 const { generateExportNumber } = require('../utils/exportNumber');
 
@@ -29,13 +29,47 @@ function convertToCSV(data = []) {
 }
 
 /**
- * Converts array of JSON objects to XLSX binary buffer
+ * Converts array of JSON objects to an XLSX binary buffer using ExcelJS.
+ * Keeping workbook generation server-side avoids exposing raw report data to
+ * third-party spreadsheet services and replaces the unpatched SheetJS package.
  */
-function convertToXLSX(data = [], sheetName = 'Report') {
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+async function convertToXLSX(data = [], sheetName = 'Report') {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'DrivePortz';
+  workbook.created = new Date();
+
+  const safeSheetName = String(sheetName || 'Report').replace(/[\\/*?:[\]]/g, '_').slice(0, 31) || 'Report';
+  const worksheet = workbook.addWorksheet(safeSheetName);
+
+  if (data.length > 0) {
+    const headers = Object.keys(data[0]);
+    worksheet.columns = headers.map((header) => ({
+      header,
+      key: header,
+      width: Math.min(40, Math.max(12, String(header).length + 2))
+    }));
+
+    for (const row of data) {
+      const normalized = {};
+      for (const header of headers) {
+        const value = row[header];
+        normalized[header] = value !== null && typeof value === 'object'
+          ? JSON.stringify(value)
+          : value;
+      }
+      worksheet.addRow(normalized);
+    }
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+    worksheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: headers.length }
+    };
+  }
+
+  const arrayBuffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
 /**
@@ -69,7 +103,7 @@ async function generateReportExport({
   let fileExtension = 'csv';
 
   if (cleanFormat === 'xlsx') {
-    bufferOrString = convertToXLSX(data, reportType);
+    bufferOrString = await convertToXLSX(data, reportType);
     mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     fileExtension = 'xlsx';
   } else {
