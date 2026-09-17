@@ -90,6 +90,28 @@ async function persistUploadedFile(file, { folder = 'driveportz', resourceType =
   };
 }
 
+/**
+ * Persist multiple uploads as one logical operation. If any upload fails,
+ * already-persisted objects are deleted and any remaining temporary files are
+ * cleaned up so callers never receive a partially persisted gallery/batch.
+ */
+async function persistUploadedFiles(files = [], options = {}) {
+  const inputFiles = Array.isArray(files) ? files : [];
+  const persisted = [];
+
+  try {
+    for (const file of inputFiles) {
+      const asset = await persistUploadedFile(file, options);
+      if (asset) persisted.push(asset);
+    }
+    return persisted;
+  } catch (error) {
+    for (const file of inputFiles) removeTemporaryFile(file);
+    await Promise.allSettled(persisted.map((asset) => deletePersistedFile(asset)));
+    throw error;
+  }
+}
+
 async function deletePersistedFile({ url, storageProvider, storageKey, resourceType = 'image' } = {}) {
   if (storageProvider === 'cloudinary' && storageKey) {
     ensureCloudinaryConfigured();
@@ -113,6 +135,7 @@ module.exports = {
   isCloudinaryConfigured,
   ensureCloudinaryConfigured,
   persistUploadedFile,
+  persistUploadedFiles,
   deletePersistedFile,
   removeTemporaryFile
 };
