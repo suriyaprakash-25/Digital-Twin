@@ -13,6 +13,25 @@ const DiagnosisHistory = () => {
   const [selectedDiagnosis, setSelectedDiagnosis] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!FEATURES.AI_DOCTOR) return;
+
+    const fetchHistory = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${API_BASE_URL}/api/vehicle-doctor/history`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setHistory(res.data);
+      } catch (err) {
+        console.error('Failed to fetch history', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, []);
+
   if (!FEATURES.AI_DOCTOR) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -34,23 +53,6 @@ const DiagnosisHistory = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_BASE_URL}/api/vehicle-doctor/history`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setHistory(res.data);
-      } catch (err) {
-        console.error('Failed to fetch history', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHistory();
-  }, []);
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 md:space-y-8 animate-fade-in-up">
