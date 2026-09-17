@@ -45,6 +45,38 @@ function removeTemporaryFile(file) {
   }
 }
 
+function parseCloudinaryImageUrl(url) {
+  if (!url) return null;
+  try {
+    const parsed = new URL(String(url));
+    if (parsed.hostname !== 'res.cloudinary.com') return null;
+
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    const uploadIndex = segments.indexOf('upload');
+    if (uploadIndex < 1 || uploadIndex >= segments.length - 1) return null;
+
+    const resourceType = segments[uploadIndex - 1];
+    if (!['image', 'video'].includes(resourceType)) return null;
+
+    let assetSegments = segments.slice(uploadIndex + 1);
+    if (assetSegments[0] && /^v\d+$/.test(assetSegments[0])) {
+      assetSegments = assetSegments.slice(1);
+    }
+    if (assetSegments.length === 0) return null;
+
+    const finalSegment = assetSegments[assetSegments.length - 1];
+    assetSegments[assetSegments.length - 1] = finalSegment.replace(/\.[^.]+$/, '');
+
+    return {
+      storageProvider: 'cloudinary',
+      storageKey: decodeURIComponent(assetSegments.join('/')),
+      resourceType
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Persist a multer disk upload. In production Cloudinary is mandatory; in
  * development a local /uploads URL remains available for offline development.
@@ -113,11 +145,16 @@ async function persistUploadedFiles(files = [], options = {}) {
 }
 
 async function deletePersistedFile({ url, storageProvider, storageKey, resourceType = 'image' } = {}) {
-  if (storageProvider === 'cloudinary' && storageKey) {
+  const parsedCloudinary = !storageKey ? parseCloudinaryImageUrl(url) : null;
+  const provider = storageProvider || parsedCloudinary?.storageProvider;
+  const key = storageKey || parsedCloudinary?.storageKey;
+  const resolvedResourceType = resourceType || parsedCloudinary?.resourceType || 'image';
+
+  if (provider === 'cloudinary' && key) {
     ensureCloudinaryConfigured();
     try {
-      await cloudinary.uploader.destroy(storageKey, {
-        resource_type: resourceType || 'image',
+      await cloudinary.uploader.destroy(key, {
+        resource_type: resolvedResourceType,
         invalidate: true
       });
     } catch (error) {
@@ -134,6 +171,7 @@ async function deletePersistedFile({ url, storageProvider, storageKey, resourceT
 module.exports = {
   isCloudinaryConfigured,
   ensureCloudinaryConfigured,
+  parseCloudinaryImageUrl,
   persistUploadedFile,
   persistUploadedFiles,
   deletePersistedFile,
