@@ -1,0 +1,108 @@
+name: DrivePortz CI
+
+on:
+  push:
+    branches:
+      - main
+      - production-hardening-2026-09-17
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend-verification:
+    name: Backend verification
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: development
+      MONGO_URI: mongodb://127.0.0.1:27017
+      MONGO_DB_NAME: driveportz_ci
+      JWT_SECRET_KEY: ci-only-driveportz-secret-key-2026-min-32-chars
+      FRONTEND_URL: http://localhost:5173
+      EMAIL_PROVIDER: mock
+      SETTLEMENT_MODE: MOCK_TEST_MODE
+      SETTLEMENT_PROVIDER: mock
+      FINANCIAL_JOBS_ENABLED: false
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Audit backend production dependencies
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Run backend verification suites
+        run: npm test
+
+  frontend-verification:
+    name: Frontend security, lint and production build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Guard Vite build configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -En 'createRequire|child_process|spawn\(|eval\(|RPC_ENDPOINTS|NONCE_FANOUT|global\[|require\(' vite.config.js; then
+            echo 'Unexpected executable/network/process primitive found in frontend/vite.config.js.' >&2
+            exit 1
+          fi
+          if [ "$(wc -l < vite.config.js)" -gt 100 ]; then
+            echo 'frontend/vite.config.js is unexpectedly large; review for injected build-time code.' >&2
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Audit frontend production dependencies
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Lint frontend correctness rules
+        run: npm run lint
+
+      - name: Build frontend for production
+        run: npm run build

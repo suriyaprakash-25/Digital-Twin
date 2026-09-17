@@ -145,7 +145,6 @@ const MyProfile = () => {
     const formData = new FormData();
     formData.append('photo', file);
     setUploading(true);
-    setMessage({ type: '', text: '' });
 
     try {
       const res = await axios.post(`${API_BASE_URL}/api/auth/me/photo`, formData, {
@@ -174,7 +173,6 @@ const MyProfile = () => {
     const formData = new FormData();
     formData.append('license', file);
     setUploadingLicense(true);
-    setMessage({ type: '', text: '' });
 
     try {
       const res = await axios.post(`${API_BASE_URL}/api/auth/me/license`, formData, {

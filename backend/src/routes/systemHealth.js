@@ -4,6 +4,11 @@ const { getDb, getMongoStatus } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissionMiddleware');
 
+function financialJobsStatus() {
+  const requested = String(process.env.FINANCIAL_JOBS_ENABLED || '').trim().toLowerCase() === 'true';
+  return requested ? 'blocked_not_started' : 'disabled';
+}
+
 // Liveness Probe (process is alive)
 router.get('/live', (req, res) => {
   return res.status(200).json({
@@ -61,9 +66,9 @@ router.get('/', async (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     services: {
       database: healthy ? 'healthy' : 'degraded',
-      razorpay: process.env.RAZORPAY_KEY_ID ? 'configured' : 'mock_fallback',
+      razorpay: process.env.RAZORPAY_KEY_ID ? 'configured' : 'not_configured',
       settlement: process.env.SETTLEMENT_PROVIDER || 'mock',
-      scheduler: 'active'
+      financialJobs: financialJobsStatus()
     }
   });
 });
@@ -104,6 +109,7 @@ router.get('/detailed', requireAuth, requirePermission(PERMISSIONS.FINANCIAL_REP
       nodeEnv: process.env.NODE_ENV || 'development',
       settlementMode: process.env.SETTLEMENT_MODE || 'MOCK_TEST_MODE',
       settlementProvider: process.env.SETTLEMENT_PROVIDER || 'mock',
+      financialJobs: financialJobsStatus(),
       minSettlementAmount: process.env.MIN_SETTLEMENT_AMOUNT || 500,
       highValueThreshold: process.env.HIGH_VALUE_SETTLEMENT_THRESHOLD || 50000
     }

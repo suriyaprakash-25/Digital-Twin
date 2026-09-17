@@ -1,6 +1,6 @@
 /**
  * DrivePortz Environment & Configuration Validator
- * Ensures fail-fast behavior on missing or insecure environment settings
+ * Ensures fail-fast behavior on missing or insecure environment settings.
  */
 
 const INSECURE_JWT_SECRETS = [
@@ -15,11 +15,35 @@ const INSECURE_JWT_SECRETS = [
   'admin'
 ];
 
+function isPlaceholder(value) {
+  if (!value) return true;
+  const normalized = String(value).trim().toLowerCase();
+  return normalized.includes('placeholder') ||
+    normalized.includes('replace-with') ||
+    normalized.includes('<username>') ||
+    normalized.includes('<password>');
+}
+
+function isSecureHttpUrl(value) {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' && Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isEnabled(value) {
+  return String(value || '').trim().toLowerCase() === 'true';
+}
+
 function validateEnvironment(env = process.env) {
   const nodeEnv = (env.NODE_ENV || 'development').toLowerCase();
   const isProduction = nodeEnv === 'production';
   const isStaging = nodeEnv === 'staging';
   const isStrict = isProduction || isStaging;
+  const enforceProductionReadiness = isProduction && isEnabled(env.ENFORCE_PRODUCTION_READINESS);
 
   const errors = [];
   const warnings = [];
@@ -28,20 +52,22 @@ function validateEnvironment(env = process.env) {
   const jwtSecret = env.JWT_SECRET_KEY || env.JWT_SECRET;
   if (!jwtSecret) {
     errors.push('JWT_SECRET_KEY (or JWT_SECRET) is required');
-  } else if (INSECURE_JWT_SECRETS.includes(jwtSecret.toLowerCase())) {
+  } else if (INSECURE_JWT_SECRETS.includes(jwtSecret.toLowerCase()) || isPlaceholder(jwtSecret)) {
     if (isStrict) {
-      errors.push(`Insecure JWT_SECRET_KEY "${jwtSecret}" is strictly rejected in ${nodeEnv} mode.`);
+      errors.push('Insecure JWT_SECRET_KEY or placeholder value is strictly rejected in production/staging.');
     } else {
-      warnings.push(`Warning: JWT_SECRET_KEY is using a weak default "${jwtSecret}".`);
+      warnings.push('JWT_SECRET_KEY is using an insecure development value.');
     }
-  } else if (isStrict && jwtSecret.length < 24) {
-    errors.push('JWT_SECRET_KEY must be at least 24 characters long in production/staging environments.');
+  } else if (isStrict && jwtSecret.length < 32) {
+    errors.push('JWT_SECRET_KEY must be at least 32 characters long in production/staging environments.');
   }
 
   // 2. Database URI
   const mongoUri = env.MONGODB_URI || env.MONGO_URI;
   if (!mongoUri && isStrict) {
     errors.push('MONGODB_URI (or MONGO_URI) is required in production/staging.');
+  } else if (isStrict && isPlaceholder(mongoUri)) {
+    errors.push('MONGODB_URI (or MONGO_URI) cannot use placeholder credentials in production/staging.');
   }
 
   // 3. Razorpay Configuration
@@ -50,27 +76,72 @@ function validateEnvironment(env = process.env) {
   const razorpayWebhookSecret = env.RAZORPAY_WEBHOOK_SECRET;
 
   if (isProduction) {
-    if (!razorpayKeyId) errors.push('RAZORPAY_KEY_ID is required in production.');
-    if (!razorpayKeySecret) errors.push('RAZORPAY_KEY_SECRET is required in production.');
-    if (!razorpayWebhookSecret || razorpayWebhookSecret === 'placeholder_webhook_secret') {
-      warnings.push('RAZORPAY_WEBHOOK_SECRET is missing or set to placeholder. Webhook signature validation will reject events until a secret is configured.');
+    if (!razorpayKeyId || isPlaceholder(razorpayKeyId)) errors.push('A non-placeholder RAZORPAY_KEY_ID is required in production.');
+    if (!razorpayKeySecret || isPlaceholder(razorpayKeySecret)) errors.push('A non-placeholder RAZORPAY_KEY_SECRET is required in production.');
+    if (!razorpayWebhookSecret || isPlaceholder(razorpayWebhookSecret)) {
+      errors.push('A non-placeholder RAZORPAY_WEBHOOK_SECRET is required in production for webhook signature verification.');
     }
   } else if (!razorpayKeyId || !razorpayKeySecret) {
-    warnings.push('Razorpay credentials missing or incomplete; running with mock payment fallbacks where applicable.');
+    warnings.push('Razorpay credentials missing or incomplete; payment-gateway calls will not work.');
   }
 
   // 4. Settlement Safety Gate
   const settlementMode = (env.SETTLEMENT_MODE || 'MOCK_TEST_MODE').toUpperCase();
   const settlementProvider = (env.SETTLEMENT_PROVIDER || 'mock').toLowerCase();
+  const allowMockSettlementsInProduction = isEnabled(env.ALLOW_MOCK_SETTLEMENTS_IN_PRODUCTION);
+  const financialJobsEnabled = isEnabled(env.FINANCIAL_JOBS_ENABLED);
 
   if (settlementMode !== 'MOCK_TEST_MODE' && settlementProvider === 'mock') {
-    errors.push('Invalid configuration: Cannot run in LIVE settlement mode while using mock settlement provider.');
+    errors.push('Invalid configuration: live settlement mode cannot use the mock settlement provider.');
   }
 
-  // 5. Frontend URL & CORS Allowed Origins
+  if (enforceProductionReadiness && settlementProvider === 'mock' && !allowMockSettlementsInProduction) {
+    errors.push('SETTLEMENT_PROVIDER=mock is blocked by production-readiness enforcement unless ALLOW_MOCK_SETTLEMENTS_IN_PRODUCTION=true is explicitly set.');
+  }
+
+  if (isProduction && settlementProvider === 'mock') {
+    warnings.push('Production is running with mock settlements; garage payouts are not live.');
+  }
+
+  // The current repository has callable financial jobs, but no safe runtime
+  // scheduler that executes retry payouts through the provider. Keep the switch
+  // fail-closed until that path is implemented and tested end to end.
+  if (financialJobsEnabled) {
+    errors.push('FINANCIAL_JOBS_ENABLED=true is not supported yet. Automated financial jobs must remain disabled until payout retry execution is provider-backed and idempotent.');
+  }
+
+  // 5. Frontend URL & CORS origin
   const frontendUrl = env.FRONTEND_URL;
-  if (isProduction && (!frontendUrl || frontendUrl.includes('localhost'))) {
-    warnings.push(`FRONTEND_URL is set to "${frontendUrl}". Ensure this points to production domain (e.g. https://www.driveportz.com).`);
+  if (isProduction && (!isSecureHttpUrl(frontendUrl) || String(frontendUrl).includes('localhost'))) {
+    errors.push('FRONTEND_URL must be a valid HTTPS production URL (for example https://www.driveportz.com).');
+  }
+
+  // 6. Persistent file storage
+  const cloudinaryValues = [env.CLOUDINARY_CLOUD_NAME, env.CLOUDINARY_API_KEY, env.CLOUDINARY_API_SECRET];
+  const cloudinaryComplete = cloudinaryValues.every((value) => value && !isPlaceholder(value));
+  if (enforceProductionReadiness && !cloudinaryComplete) {
+    errors.push('Cloudinary persistence is required for production readiness: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET must all be configured.');
+  } else if (isProduction && !cloudinaryComplete) {
+    warnings.push('Cloudinary is incomplete; persistent user uploads are not production-ready.');
+  }
+
+  // 7. Google OAuth audience validation
+  if (enforceProductionReadiness && (!env.GOOGLE_CLIENT_ID || isPlaceholder(env.GOOGLE_CLIENT_ID))) {
+    errors.push('GOOGLE_CLIENT_ID is required for production readiness so Google ID tokens are audience-validated.');
+  } else if (isProduction && (!env.GOOGLE_CLIENT_ID || isPlaceholder(env.GOOGLE_CLIENT_ID))) {
+    warnings.push('GOOGLE_CLIENT_ID is missing; Google login is not production-ready.');
+  }
+
+  // 8. Email provider
+  const emailProvider = (env.EMAIL_PROVIDER || 'mock').toLowerCase();
+  if (enforceProductionReadiness && emailProvider === 'mock') {
+    errors.push('EMAIL_PROVIDER=mock is not allowed when production readiness is enforced.');
+  }
+  if (emailProvider === 'smtp' && isStrict) {
+    if (!env.SMTP_HOST) errors.push('SMTP_HOST is required when EMAIL_PROVIDER=smtp.');
+    if (!env.SMTP_USER || isPlaceholder(env.SMTP_USER)) errors.push('A non-placeholder SMTP_USER is required when EMAIL_PROVIDER=smtp.');
+    if (!env.SMTP_PASS || isPlaceholder(env.SMTP_PASS)) errors.push('A non-placeholder SMTP_PASS is required when EMAIL_PROVIDER=smtp.');
+    if (!env.SMTP_FROM_EMAIL) errors.push('SMTP_FROM_EMAIL is required when EMAIL_PROVIDER=smtp.');
   }
 
   return {
@@ -80,12 +151,16 @@ function validateEnvironment(env = process.env) {
     nodeEnv,
     isProduction,
     isStaging,
+    enforceProductionReadiness,
     settlementMode,
-    settlementProvider
+    settlementProvider,
+    allowMockSettlementsInProduction,
+    financialJobsEnabled
   };
 }
 
 module.exports = {
   INSECURE_JWT_SECRETS,
+  isPlaceholder,
   validateEnvironment
 };

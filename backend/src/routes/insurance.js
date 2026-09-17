@@ -2,16 +2,23 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { upload } = require('../utils/uploads');
+const { createUploader } = require('../utils/uploads');
+const {
+  persistUploadedFile,
+  deletePersistedFile,
+  removeTemporaryFile
+} = require('../services/persistentFileStorage');
 
 const router = express.Router();
+const insuranceUpload = createUploader(['application/pdf'], 10 * 1024 * 1024);
 
-// Add insurance policy with file upload (PDF)
-router.post('/add', requireAuth, upload.single('document'), async (req, res) => {
+// Add insurance policy with a persistent PDF upload.
+router.post('/add', requireAuth, insuranceUpload.single('document'), async (req, res) => {
   const { vehicleId, provider, policyNumber, startDate, expiryDate } = req.body || {};
   const docFile = req.file;
 
   if (!vehicleId || !provider || !policyNumber || !startDate || !expiryDate) {
+    removeTemporaryFile(docFile);
     return res.status(400).json({ msg: 'All text fields are required' });
   }
 
@@ -21,63 +28,89 @@ router.post('/add', requireAuth, upload.single('document'), async (req, res) => 
 
   const db = getDb();
 
-  // Validate vehicle exists and user owns it
   let vehicleObjectId;
   try {
     vehicleObjectId = new ObjectId(vehicleId);
-  } catch (e) {
+  } catch {
+    removeTemporaryFile(docFile);
     return res.status(400).json({ msg: 'Invalid vehicle ID' });
   }
 
+  let persistedDocument = null;
+  let policyStored = false;
+
   try {
-    const vehicle = await db.collection('vehicles').findOne({ _id: vehicleObjectId, ownerId: req.user.id });
+    const vehicle = await db.collection('vehicles').findOne({
+      _id: vehicleObjectId,
+      ownerId: req.user.id,
+      isArchived: { $ne: true }
+    });
     if (!vehicle) {
+      removeTemporaryFile(docFile);
       return res.status(404).json({ msg: 'Vehicle not found or unauthorized access' });
     }
 
-    const documentUrl = `/uploads/${docFile.filename}`;
+    persistedDocument = await persistUploadedFile(docFile, {
+      folder: 'driveportz/insurance',
+      resourceType: 'auto'
+    });
 
     const newInsurance = {
       vehicleId: String(vehicleId),
-      provider,
-      policyNumber,
+      ownerId: String(req.user.id),
+      provider: String(provider).trim(),
+      policyNumber: String(policyNumber).trim(),
       startDate,
       expiryDate,
-      documentUrl,
+      documentUrl: persistedDocument.url,
+      documentStorageProvider: persistedDocument.storageProvider,
+      documentStorageKey: persistedDocument.storageKey,
+      documentResourceType: persistedDocument.resourceType || 'auto',
       createdAt: new Date()
     };
 
-    await db.collection('insurance').insertOne(newInsurance);
+    const insertResult = await db.collection('insurance').insertOne(newInsurance);
+    newInsurance._id = insertResult.insertedId;
+    policyStored = true;
 
-    // Also update vehicle's current insurance provider, expiry date and doc url if this is the newest
-    // Fetch and check if this is the latest insurance policy
     const latestPolicy = await db.collection('insurance')
       .find({ vehicleId: String(vehicleId) })
       .sort({ expiryDate: -1 })
       .limit(1)
       .toArray();
 
-    if (latestPolicy.length === 0 || expiryDate >= latestPolicy[0].expiryDate) {
+    if (latestPolicy.length > 0 && String(latestPolicy[0]._id) === String(insertResult.insertedId)) {
       await db.collection('vehicles').updateOne(
-        { _id: vehicleObjectId },
+        { _id: vehicleObjectId, ownerId: req.user.id },
         {
           $set: {
-            insuranceProvider: provider,
+            insuranceProvider: newInsurance.provider,
             insuranceExpiry: expiryDate,
-            insuranceDocumentUrl: documentUrl
+            insuranceDocumentUrl: persistedDocument.url,
+            insuranceDocumentStorageProvider: persistedDocument.storageProvider,
+            insuranceDocumentStorageKey: persistedDocument.storageKey,
+            insuranceDocumentResourceType: persistedDocument.resourceType || 'auto'
           }
         }
       );
     }
 
-    return res.status(201).json({ msg: 'Insurance policy logged successfully', insurance: newInsurance });
+    return res.status(201).json({
+      msg: 'Insurance policy logged successfully',
+      insurance: newInsurance
+    });
   } catch (err) {
+    if (!policyStored && persistedDocument) {
+      await deletePersistedFile(persistedDocument);
+    } else if (!persistedDocument) {
+      removeTemporaryFile(docFile);
+    }
     console.error('Error logging insurance:', err);
-    return res.status(500).json({ msg: 'Server error logging insurance', error: String(err && err.message ? err.message : err) });
+    return res.status(500).json({ msg: 'Server error logging insurance' });
   }
 });
 
-// Get all insurance policies for a vehicle
+// Get all insurance policies for a vehicle.
 router.get('/:vehicleId', requireAuth, async (req, res) => {
   const { vehicleId } = req.params;
   const db = getDb();
@@ -85,26 +118,29 @@ router.get('/:vehicleId', requireAuth, async (req, res) => {
   let vehicleObjectId;
   try {
     vehicleObjectId = new ObjectId(vehicleId);
-  } catch (e) {
+  } catch {
     return res.status(400).json({ msg: 'Invalid vehicle ID' });
   }
 
   try {
-    // Validate vehicle ownership
-    const vehicle = await db.collection('vehicles').findOne({ _id: vehicleObjectId, ownerId: req.user.id });
+    const vehicle = await db.collection('vehicles').findOne({
+      _id: vehicleObjectId,
+      ownerId: req.user.id,
+      isArchived: { $ne: true }
+    });
     if (!vehicle) {
       return res.status(404).json({ msg: 'Vehicle not found or unauthorized access' });
     }
 
     const policies = await db.collection('insurance')
-      .find({ vehicleId: String(vehicleId) })
+      .find({ vehicleId: String(vehicleId), ownerId: String(req.user.id) })
       .sort({ expiryDate: -1 })
       .toArray();
 
     return res.status(200).json(policies);
   } catch (err) {
     console.error('Error fetching insurance policies:', err);
-    return res.status(500).json({ msg: 'Server error fetching policies', error: String(err && err.message ? err.message : err) });
+    return res.status(500).json({ msg: 'Server error fetching policies' });
   }
 });
 

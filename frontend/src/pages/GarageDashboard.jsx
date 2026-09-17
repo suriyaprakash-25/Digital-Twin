@@ -147,11 +147,6 @@ const GarageDashboard = () => {
         <p className="text-slate-500 text-sm max-w-sm mx-auto">
           You haven&apos;t created your garage profile yet. Set it up to start accepting bookings and managing your services.
         </p>
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">
-            {error}
-          </div>
-        )}
         <Link
           to="/garage-profile"
           className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-sm"

@@ -18,6 +18,8 @@ const { idempotencyMiddleware } = require('../middleware/idempotency');
 const { paymentCreationLimiter, refundLimiter } = require('../middleware/financialRateLimit');
 const { evaluateTransactionRisk } = require('../services/paymentRiskService');
 const { logFinancialAudit } = require('../services/auditService');
+const { beginWebhookEvent, markWebhookEventProcessed } = require('../models/PaymentWebhookEvent');
+const { isPaymentOrderAuthorized, isGarageUserAuthorizedForPayment } = require('../security/paymentAuthorization');
 
 const router = express.Router();
 
@@ -113,12 +115,11 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
       vehicle = await vehicles.findOne({ vehicleNumber: targetDoc.vehicleNumber, isArchived: { $ne: true } });
     }
 
-    const isOwner = (vehicle && String(vehicle.ownerId) === String(req.user.id)) ||
-                    (targetDoc.ownerId && String(targetDoc.ownerId) === String(req.user.id)) ||
-                    (targetDoc.userId && String(targetDoc.userId) === String(req.user.id)) ||
-                    (targetDoc.customerId && String(targetDoc.customerId) === String(req.user.id)) ||
-                    (req.user.role === 'ADMIN') ||
-                    (!targetDoc.userId && !targetDoc.ownerId && !targetDoc.customerId);
+    const isOwner = isPaymentOrderAuthorized({
+      user: req.user,
+      vehicle,
+      targetDoc
+    });
 
     if (!isOwner) {
       return res.status(403).json({ success: false, message: 'Forbidden: You are not authorized to pay for this invoice' });
@@ -564,10 +565,12 @@ router.post('/:paymentId/refund', requireAuth, refundLimiter, idempotencyMiddlew
       return res.status(404).json({ success: false, message: 'Payment record not found' });
     }
 
-    // Authorization: Garage owner who created the service OR Admin
-    const isAuthorized = (payment.garageId && String(payment.garageId) === String(req.user.id)) ||
-                         (req.user.role === 'ADMIN') ||
-                         (req.user.role === 'GARAGE' && String(payment.garageId) === String(req.user.id));
+    // Authorization: real garage owner or administrator.
+    const isAuthorized = await isGarageUserAuthorizedForPayment({
+      user: req.user,
+      payment,
+      db
+    });
 
     if (!isAuthorized) {
       return res.status(403).json({ success: false, message: 'Forbidden: You are not authorized to refund this payment' });
@@ -863,27 +866,37 @@ router.post('/webhook', async (req, res) => {
 
   const eventPayload = req.body || {};
   const eventName = eventPayload.event;
-  const eventId = eventPayload.event_id || (eventPayload.payload?.payment?.entity?.id ? `${eventPayload.payload.payment.entity.id}_${eventName}` : null);
+  const paymentEntity = eventPayload.payload?.payment?.entity;
+  const refundEntity = eventPayload.payload?.refund?.entity;
+  const orderId = paymentEntity?.order_id || refundEntity?.order_id;
+  const paymentId = paymentEntity?.id || refundEntity?.payment_id;
+  const eventId = eventPayload.event_id ||
+    (refundEntity?.id ? `${refundEntity.id}_${eventName}` : null) ||
+    (paymentEntity?.id ? `${paymentEntity.id}_${eventName}` : null) ||
+    (orderId ? `${orderId}_${eventName}` : null);
 
   const db = getDb();
-  const webhookEvents = db.collection('webhookEvents');
   const payments = db.collection('payments');
   const services = db.collection('services');
 
-  // Idempotency: skip already processed webhook events
-  if (eventId) {
-    const existing = await webhookEvents.findOne({ eventId });
-    if (existing) {
-      return res.status(200).json({ status: 'ok', message: 'Webhook already processed' });
+  try {
+    const claim = await beginWebhookEvent({
+      eventId,
+      eventType: eventName || 'unknown',
+      razorpayPaymentId: paymentId,
+      razorpayOrderId: orderId,
+      dbInstance: db
+    });
+
+    if (!claim.shouldProcess) {
+      return res.status(200).json({ status: 'ok', message: 'Webhook already processed or currently processing' });
     }
+  } catch (claimErr) {
+    console.error('Webhook idempotency claim failed:', claimErr);
+    return res.status(500).json({ error: 'Unable to establish webhook idempotency' });
   }
 
   try {
-    const paymentEntity = eventPayload.payload?.payment?.entity;
-    const refundEntity = eventPayload.payload?.refund?.entity;
-    const orderId = paymentEntity?.order_id || refundEntity?.order_id;
-    const paymentId = paymentEntity?.id || refundEntity?.payment_id;
-
     if (eventName === 'payment.captured' || eventName === 'order.paid') {
       if (orderId) {
         const paidAt = new Date(paymentEntity.created_at ? paymentEntity.created_at * 1000 : Date.now());
@@ -997,19 +1010,24 @@ router.post('/webhook', async (req, res) => {
       }
     }
 
-    // Record webhook event as processed
-    if (eventId) {
-      await webhookEvents.insertOne({
-        eventId,
-        event: eventName,
-        orderId,
-        paymentId,
-        createdAt: new Date()
-      });
-    }
+    await markWebhookEventProcessed(eventId, {
+      status: 'PROCESSED',
+      dbInstance: db
+    });
 
     return res.status(200).json({ status: 'ok' });
   } catch (err) {
+    if (eventId) {
+      try {
+        await markWebhookEventProcessed(eventId, {
+          status: 'FAILED',
+          failureReason: String(err?.message || err).slice(0, 500),
+          dbInstance: db
+        });
+      } catch (markErr) {
+        console.error('Failed to mark webhook event as failed:', markErr.message);
+      }
+    }
     console.error('Error handling webhook event:', err);
     return res.status(500).json({ error: 'Internal server error processing webhook' });
   }

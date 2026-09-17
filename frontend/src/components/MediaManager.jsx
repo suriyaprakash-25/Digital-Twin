@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Camera, UploadCloud } from 'lucide-react';
+import { API_BASE_URL } from '../utils/config';
+import { getPhotoUrl } from '../utils/imageUrl';
 
 /**
  * MediaManager Component
@@ -19,7 +21,7 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
   const [error, setError] = useState('');
 
   const token = localStorage.getItem('token');
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const baseUrl = API_BASE_URL;
 
   useEffect(() => {
     if (entityId) {
@@ -98,7 +100,7 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
         {media.map((m) => (
           <div key={m._id} className="relative group rounded-lg overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
             <img
-              src={`${baseUrl}${m.url}`}
+              src={getPhotoUrl(m.url) || ''}
               alt={`${category} photo`}
               className="w-full h-32 object-cover"
             />

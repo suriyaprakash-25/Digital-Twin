@@ -8,6 +8,7 @@ const cors = require('cors');
 const { loadConfig } = require('./src/config');
 const { connectToMongo, getMongoStatus, getDb } = require('./src/db');
 const { initFirebase, getFirebaseInitError } = require('./src/firebase');
+const { createCorsPolicy } = require('./src/security/corsPolicy');
 
 const authRoutes = require('./src/routes/auth');
 const vehicleRoutes = require('./src/routes/vehicles');
@@ -64,24 +65,30 @@ const config = loadConfig();
 
 app.use(requestCorrelationMiddleware);
 
-// Enable CORS
-const allowedOrigins = [
-  'https://www.driveportz.com',
-  'https://driveportz.com',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000'
-];
+// Strict CORS policy. Production accepts only DrivePortz origins plus explicitly
+// configured preview/staging origins from CORS_ALLOWED_ORIGINS.
+const corsPolicy = createCorsPolicy({
+  nodeEnv: config.nodeEnv,
+  frontendUrl: config.frontendUrl,
+  extraOrigins: process.env.CORS_ALLOWED_ORIGINS
+});
+
+// Reject untrusted browser origins before route handlers execute. Requests with
+// no Origin header remain valid for native clients, webhooks, health checks,
+// curl, and other server-to-server traffic.
+app.use((req, res, next) => {
+  const origin = req.get('Origin');
+  if (origin && !corsPolicy.isAllowed(origin)) {
+    return res.status(403).json({
+      error: 'CORS origin not allowed',
+      requestId: req.requestId || null
+    });
+  }
+  return next();
+});
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, server-to-server)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith('.driveportz.com') || origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
-    return callback(null, true); // Fallback allow to avoid unexpected blocking during domain transitions
-  },
+  origin: (origin, callback) => callback(null, corsPolicy.isAllowed(origin)),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Razorpay-Signature', 'Idempotency-Key', 'X-Idempotency-Key']

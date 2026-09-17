@@ -26,15 +26,15 @@ const CATEGORIES = [
 ];
 
 const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
-  if (!isOpen || !payment) return null;
-
   const [category, setCategory] = useState('INCORRECT_AMOUNT');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
-  const [disputedAmount, setDisputedAmount] = useState(payment.amount || '');
+  const [disputedAmount, setDisputedAmount] = useState(payment?.amount || '');
   const [evidenceFile, setEvidenceFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  if (!isOpen || !payment) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

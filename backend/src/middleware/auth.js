@@ -21,6 +21,16 @@ function normalizeRole(role) {
   return String(role || 'USER');
 }
 
+/**
+ * Normalize a role supplied by an unauthenticated registration flow.
+ * Public callers can choose between the two customer-facing account types,
+ * but can never self-register an administrative or unknown privileged role.
+ */
+function normalizePublicRole(role) {
+  const normalized = normalizeRole(role);
+  return normalized === 'GARAGE' ? 'GARAGE' : 'USER';
+}
+
 async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';
   const parts = authHeader.split(' ');
@@ -35,7 +45,7 @@ async function requireAuth(req, res, next) {
     const { getDb } = require('../db');
     const { ObjectId } = require('mongodb');
     const db = getDb();
-    
+
     const user = await db.collection('users').findOne({ _id: new ObjectId(String(payload.sub)) });
     if (!user) {
       return res.status(401).json({ msg: 'Missing or invalid token' });
@@ -67,4 +77,4 @@ function requireRole(allowedRoles) {
   };
 }
 
-module.exports = { requireAuth, requireRole, normalizeRole };
+module.exports = { requireAuth, requireRole, normalizeRole, normalizePublicRole };

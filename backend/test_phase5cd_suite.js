@@ -469,7 +469,7 @@ async function runPhase5CDTests() {
     const sampleData = [
       { Invoice: 'DP-INV-2026-001', Gross: 5000, Net: 4750 }
     ];
-    const xlsxBuffer = convertToXLSX(sampleData, 'Transactions');
+    const xlsxBuffer = await convertToXLSX(sampleData, 'Transactions');
 
     if (Buffer.isBuffer(xlsxBuffer) && xlsxBuffer.length > 100) {
       console.log(`✅ TEST 20 PASSED: XLSX binary workbook buffer generated (${xlsxBuffer.length} bytes).`);
