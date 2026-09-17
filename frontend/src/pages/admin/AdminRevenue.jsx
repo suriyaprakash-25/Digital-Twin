@@ -86,7 +86,7 @@ const AdminRevenue = () => {
             <div>
                 <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
                     <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 shadow-lg shadow-amber-500/20">
-                        <IndianRupee className="h-4.5 w-4.5 text-white" />
+                        <IndianRupee className="h-4.5 w-4.5 text-slate-900" />
                     </div>
                     Revenue Reports
                 </h1>
@@ -103,7 +103,7 @@ const AdminRevenue = () => {
                             <IndianRupee className="h-5 w-5 text-amber-600" />
                         </div>
                         <div>
-                            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Grand Total</p>
+                            <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Grand Total</p>
                             <p className="text-slate-900 text-xl font-extrabold">₹{(data?.grandTotal || 0).toLocaleString('en-IN')}</p>
                         </div>
                     </div>
@@ -114,7 +114,7 @@ const AdminRevenue = () => {
                             <TrendingUp className="h-5 w-5 text-emerald-600" />
                         </div>
                         <div>
-                            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Services</p>
+                            <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total Services</p>
                             <p className="text-slate-900 text-xl font-extrabold">{(data?.totalServices || 0).toLocaleString('en-IN')}</p>
                         </div>
                     </div>
@@ -125,7 +125,7 @@ const AdminRevenue = () => {
                             <Building2 className="h-5 w-5 text-teal-600" />
                         </div>
                         <div>
-                            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Earning Garages</p>
+                            <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Earning Garages</p>
                             <p className="text-slate-900 text-xl font-extrabold">{data?.totalGarages || 0}</p>
                         </div>
                     </div>
@@ -162,7 +162,7 @@ const AdminRevenue = () => {
                 {items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20">
                         <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mb-4">
-                            <IndianRupee className="h-8 w-8 text-slate-300" />
+                            <IndianRupee className="h-8 w-8 text-slate-600" />
                         </div>
                         <h3 className="text-slate-900 font-bold text-lg">No revenue data yet</h3>
                         <p className="text-slate-500 text-sm mt-1">Revenue will appear once bookings are completed</p>
@@ -193,7 +193,7 @@ const AdminRevenue = () => {
                                                     {index + 1}
                                                 </span>
                                             ) : (
-                                                <span className="text-slate-400 text-sm">{index + 1}</span>
+                                                <span className="text-slate-500 text-sm">{index + 1}</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4">

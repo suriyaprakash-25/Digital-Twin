@@ -133,12 +133,12 @@ const AdminPayments = () => {
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
                 <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Total Volume</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Total Volume</span>
                     <div className="text-xl sm:text-2xl font-black text-slate-900 flex items-center">
-                        <IndianRupee className="h-5 w-5 text-slate-400 mr-0.5" />
+                        <IndianRupee className="h-5 w-5 text-slate-500 mr-0.5" />
                         {(summary?.totalVolume || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </div>
-                    <span className="text-[11px] text-slate-400 font-medium mt-1 block">{summary?.totalTransactions || 0} Total Orders</span>
+                    <span className="text-[11px] text-slate-500 font-medium mt-1 block">{summary?.totalTransactions || 0} Total Orders</span>
                 </div>
 
                 <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
@@ -180,7 +180,7 @@ const AdminPayments = () => {
             {/* Filter & Search Bar */}
             <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
                 <form onSubmit={handleSearchSubmit} className="relative flex-1 w-full">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                     <input
                         type="text"
                         value={searchQuery}
@@ -198,7 +198,7 @@ const AdminPayments = () => {
                             onClick={() => { setStatusFilter(status); setCurrentPage(1); }}
                             className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                                 statusFilter === status
-                                    ? 'bg-slate-900 text-white shadow-sm'
+                                    ? 'bg-white text-slate-900 shadow-sm'
                                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60'
                             }`}
                         >
@@ -213,7 +213,7 @@ const AdminPayments = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50/75 border-b border-slate-100 text-[11px] font-black uppercase tracking-wider text-slate-400">
+                            <tr className="bg-slate-50/75 border-b border-slate-100 text-[11px] font-black uppercase tracking-wider text-slate-500">
                                 <th className="p-4 pl-6">Invoice & Gateway ID</th>
                                 <th className="p-4">Garage & Service</th>
                                 <th className="p-4">Vehicle</th>
@@ -226,17 +226,17 @@ const AdminPayments = () => {
                         <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="7" className="py-16 text-center text-slate-400">
+                                    <td colSpan="7" className="py-16 text-center text-slate-500">
                                         <div className="animate-spin h-7 w-7 border-3 border-teal-500 border-t-transparent rounded-full mx-auto mb-2" />
                                         <p className="text-xs font-bold uppercase tracking-wider">Loading transactions...</p>
                                     </td>
                                 </tr>
                             ) : payments.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="py-16 text-center text-slate-400">
-                                        <CreditCard className="h-10 w-10 mx-auto mb-2 text-slate-300 stroke-[1.5]" />
+                                    <td colSpan="7" className="py-16 text-center text-slate-500">
+                                        <CreditCard className="h-10 w-10 mx-auto mb-2 text-slate-600 stroke-[1.5]" />
                                         <p className="text-sm font-bold text-slate-700">No payment transactions found</p>
-                                        <p className="text-xs text-slate-400 mt-0.5">Try adjusting your search criteria or status filter.</p>
+                                        <p className="text-xs text-slate-500 mt-0.5">Try adjusting your search criteria or status filter.</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -244,11 +244,11 @@ const AdminPayments = () => {
                                     <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
                                         <td className="p-4 pl-6">
                                             <div className="font-mono font-bold text-slate-900">{p.invoiceNumber || '—'}</div>
-                                            <div className="font-mono text-[10px] text-slate-400 truncate max-w-[130px]">{p.paymentId || p.orderId}</div>
+                                            <div className="font-mono text-[10px] text-slate-500 truncate max-w-[130px]">{p.paymentId || p.orderId}</div>
                                         </td>
                                         <td className="p-4">
                                             <div className="font-bold text-slate-900 flex items-center gap-1.5 truncate max-w-[160px]">
-                                                <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                                <Building2 className="h-3.5 w-3.5 text-slate-500 shrink-0" />
                                                 {p.garageName}
                                             </div>
                                             <div className="text-[11px] text-slate-500 truncate max-w-[160px]">{p.serviceType}</div>
@@ -258,10 +258,10 @@ const AdminPayments = () => {
                                         </td>
                                         <td className="p-4">
                                             <div className="font-black text-slate-900 flex items-center">
-                                                <IndianRupee className="h-3.5 w-3.5 text-slate-400 mr-0.5" />
+                                                <IndianRupee className="h-3.5 w-3.5 text-slate-500 mr-0.5" />
                                                 {(parseFloat(p.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </div>
-                                            <div className="text-[10px] text-slate-400">{p.paymentMethod || 'Online'}</div>
+                                            <div className="text-[10px] text-slate-500">{p.paymentMethod || 'Online'}</div>
                                         </td>
                                         <td className="p-4">
                                             {getStatusBadge(p.status, p.totalRefundedAmount)}

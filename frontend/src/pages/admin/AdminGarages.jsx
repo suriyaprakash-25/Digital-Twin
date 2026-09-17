@@ -92,7 +92,7 @@ const AdminGarages = () => {
                 <div>
                     <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
                         <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 shadow-lg shadow-teal-500/20 shrink-0">
-                            <Building2 className="h-4 w-4 text-white" />
+                            <Building2 className="h-4 w-4 text-slate-900" />
                         </div>
                         Garage Management
                     </h1>
@@ -101,7 +101,7 @@ const AdminGarages = () => {
 
                 <form onSubmit={handleSearch} className="flex items-center gap-2">
                     <div className="relative flex-1 sm:flex-none">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                         <input
                             type="text"
                             placeholder="Search by name or city..."
@@ -131,7 +131,7 @@ const AdminGarages = () => {
                 ) : garages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
                         <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mb-4">
-                            <Building2 className="h-8 w-8 text-slate-300" />
+                            <Building2 className="h-8 w-8 text-slate-600" />
                         </div>
                         <h3 className="text-slate-900 font-bold text-lg">No garages found</h3>
                         <p className="text-slate-500 text-sm mt-1">Try adjusting your search criteria</p>
@@ -159,7 +159,7 @@ const AdminGarages = () => {
                                                     {garage.photoUrl ? (
                                                         <img src={getPhotoUrl(garage.photoUrl)} alt="" className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <Building2 className="h-5 w-5 text-slate-400" />
+                                                        <Building2 className="h-5 w-5 text-slate-500" />
                                                     )}
                                                 </div>
                                                 <div>
@@ -168,7 +168,7 @@ const AdminGarages = () => {
                                                         {garage.verified && <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />}
                                                     </p>
                                                     {garage.phone && (
-                                                        <p className="text-slate-400 text-xs flex items-center gap-1">
+                                                        <p className="text-slate-500 text-xs flex items-center gap-1">
                                                             <Phone className="h-3 w-3" /> {garage.phone}
                                                         </p>
                                                     )}
@@ -177,11 +177,11 @@ const AdminGarages = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="text-slate-900 text-sm">{garage.ownerName || '—'}</p>
-                                            <p className="text-slate-400 text-xs">{garage.ownerEmail || ''}</p>
+                                            <p className="text-slate-500 text-xs">{garage.ownerEmail || ''}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="text-slate-600 text-sm flex items-center gap-1.5">
-                                                <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                                                <MapPin className="h-3.5 w-3.5 text-slate-500" />
                                                 {garage.city || '—'}
                                             </span>
                                         </td>
@@ -245,7 +245,7 @@ const AdminGarages = () => {
                     </div>
                 ) : garages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-slate-200">
-                        <Building2 className="h-10 w-10 text-slate-300 mb-3" />
+                        <Building2 className="h-10 w-10 text-slate-600 mb-3" />
                         <h3 className="text-slate-900 font-bold">No garages found</h3>
                         <p className="text-slate-500 text-sm mt-1">Try adjusting your search</p>
                     </div>
@@ -256,7 +256,7 @@ const AdminGarages = () => {
                                 <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                                     {garage.photoUrl
                                         ? <img src={getPhotoUrl(garage.photoUrl)} alt="" className="w-full h-full object-cover" />
-                                        : <Building2 className="h-6 w-6 text-slate-400" />}
+                                        : <Building2 className="h-6 w-6 text-slate-500" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between gap-2">
@@ -323,7 +323,7 @@ const AdminGarages = () => {
 
             {totalPages > 1 && (
                 <div className="flex items-center justify-between">
-                    <p className="text-slate-400 text-sm">Page {page} of {totalPages} · {total} garages</p>
+                    <p className="text-slate-500 text-sm">Page {page} of {totalPages} · {total} garages</p>
                     <div className="flex items-center gap-2">
                         <button onClick={() => fetchGarages(page - 1, search)} disabled={page <= 1}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">

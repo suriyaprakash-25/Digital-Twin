@@ -81,18 +81,18 @@ export default function AdminTaxCompliance() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-8 space-y-8">
       
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-500 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-amber-500/20">
               <FileCheck2 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">Tax Compliance & Regulatory Ledger</h1>
-              <p className="text-xs text-slate-400">GST, CGST, SGST, IGST, credit notes, immutable snapshots, and authoritative tax reporting</p>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">Tax Compliance & Regulatory Ledger</h1>
+              <p className="text-xs text-slate-500">GST, CGST, SGST, IGST, credit notes, immutable snapshots, and authoritative tax reporting</p>
             </div>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function AdminTaxCompliance() {
           <select
             value={period}
             onChange={(e) => { setPeriod(e.target.value); setPage(1); }}
-            className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white"
+            className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900"
           >
             <option value="TODAY">Today</option>
             <option value="7_DAYS">Last 7 Days</option>
@@ -113,14 +113,14 @@ export default function AdminTaxCompliance() {
 
           <button
             onClick={() => handleExport('csv')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
           >
             <Download className="w-3.5 h-3.5" />
             CSV
           </button>
           <button
             onClick={() => handleExport('xlsx')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
           >
             <Download className="w-3.5 h-3.5" />
             XLSX
@@ -130,37 +130,37 @@ export default function AdminTaxCompliance() {
 
       {/* 6 Summary KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Taxable Volume</span>
-          <span className="text-xl font-black text-white">₹{((summary?.taxableAmount || 0)).toLocaleString('en-IN')}</span>
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Taxable Volume</span>
+          <span className="text-xl font-black text-slate-900">₹{((summary?.taxableAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">{summary?.invoiceCount || 0} Invoices</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-blue-900/40 p-4 rounded-2xl">
+        <div className="bg-white border border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider block mb-1">CGST (9%)</span>
           <span className="text-xl font-black text-blue-400">₹{((summary?.cgstAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">Intrastate Central</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-cyan-900/40 p-4 rounded-2xl">
+        <div className="bg-white border border-cyan-100 bg-cyan-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block mb-1">SGST (9%)</span>
           <span className="text-xl font-black text-cyan-400">₹{((summary?.sgstAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">Intrastate State</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-purple-900/40 p-4 rounded-2xl">
+        <div className="bg-white border border-purple-100 bg-purple-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider block mb-1">IGST (18%)</span>
           <span className="text-xl font-black text-purple-400">₹{((summary?.igstAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">Interstate Integrated</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-amber-900/40 p-4 rounded-2xl">
+        <div className="bg-white border border-amber-100 bg-amber-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">Credit Notes Tax</span>
           <span className="text-xl font-black text-amber-400">-₹{((summary?.creditNotesTaxAdjustmentAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">{summary?.creditNoteCount || 0} Credit Notes</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-emerald-900/40 p-4 rounded-2xl">
+        <div className="bg-white border border-emerald-100 bg-emerald-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">Net Tax Liability</span>
           <span className="text-xl font-black text-emerald-400">₹{((summary?.netTaxLiabilityAmount || 0)).toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">Total Remittance</span>
@@ -168,10 +168,10 @@ export default function AdminTaxCompliance() {
       </div>
 
       {/* Tax Invoices Table */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+            <thead className="bg-slate-100/90 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th className="px-6 py-3.5">Invoice #</th>
                 <th className="px-6 py-3.5">Date</th>
@@ -185,14 +185,14 @@ export default function AdminTaxCompliance() {
             <tbody className="divide-y divide-slate-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-400" />
                     Loading tax compliance records...
                   </td>
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
                     No finalized tax invoices in this period.
                   </td>
                 </tr>
@@ -205,17 +205,17 @@ export default function AdminTaxCompliance() {
                   const totalTax = inv.taxSnapshot ? inv.taxSnapshot.totalTaxAmount : (gross - parseFloat(taxable)).toFixed(2);
 
                   return (
-                    <tr key={inv._id} className="hover:bg-slate-800/40 transition">
+                    <tr key={inv._id} className="hover:bg-slate-100/40 transition">
                       <td className="px-6 py-3.5 font-mono font-semibold text-amber-400">{inv.invoiceNumber}</td>
-                      <td className="px-6 py-3.5 text-slate-400">
+                      <td className="px-6 py-3.5 text-slate-500">
                         {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : '—'}
                       </td>
-                      <td className="px-6 py-3.5 font-semibold text-white">₹{parseFloat(taxable).toLocaleString('en-IN')}</td>
-                      <td className="px-6 py-3.5 text-slate-400 text-[11px]">
+                      <td className="px-6 py-3.5 font-semibold text-slate-900">₹{parseFloat(taxable).toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-3.5 text-slate-500 text-[11px]">
                         CGST: ₹{cgst} | SGST: ₹{sgst}
                       </td>
                       <td className="px-6 py-3.5 font-semibold text-amber-300">₹{parseFloat(totalTax).toLocaleString('en-IN')}</td>
-                      <td className="px-6 py-3.5 font-bold text-white">₹{gross.toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-3.5 font-bold text-slate-900">₹{gross.toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5">
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400">
                           {inv.status}
@@ -231,25 +231,25 @@ export default function AdminTaxCompliance() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-slate-400">
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <span className="text-xs text-slate-500">
               Showing {(page - 1) * 20 + 1}–{Math.min(page * 20, totalCount)} of {totalCount} entries
             </span>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-xs font-semibold text-slate-300 px-2">
+              <span className="text-xs font-semibold text-slate-600 px-2">
                 Page {page} of {totalPages}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

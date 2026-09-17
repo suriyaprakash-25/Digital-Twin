@@ -90,7 +90,7 @@ const AdminUsers = () => {
                 <div>
                     <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
                         <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 shadow-lg shadow-teal-500/20 shrink-0">
-                            <Users className="h-4 w-4 text-white" />
+                            <Users className="h-4 w-4 text-slate-900" />
                         </div>
                         User Management
                     </h1>
@@ -99,7 +99,7 @@ const AdminUsers = () => {
 
                 <form onSubmit={handleSearch} className="flex items-center gap-2">
                     <div className="relative flex-1 sm:flex-none">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                         <input
                             type="text"
                             placeholder="Search by name or email..."
@@ -132,7 +132,7 @@ const AdminUsers = () => {
                 ) : users.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
                         <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mb-4">
-                            <Users className="h-8 w-8 text-slate-300" />
+                            <Users className="h-8 w-8 text-slate-600" />
                         </div>
                         <h3 className="text-slate-900 font-bold text-lg">No users found</h3>
                         <p className="text-slate-500 text-sm mt-1">Try adjusting your search criteria</p>
@@ -164,12 +164,12 @@ const AdminUsers = () => {
                                                         {user.photoUrl ? (
                                                             <img src={getPhotoUrl(user.photoUrl)} alt="" className="w-full h-full object-cover" />
                                                         ) : (
-                                                            <UserCircle2 className="h-5 w-5 text-slate-400" />
+                                                            <UserCircle2 className="h-5 w-5 text-slate-500" />
                                                         )}
                                                     </div>
                                                     <div>
                                                         <p className="text-slate-900 text-sm font-semibold">{user.name || 'Unnamed'}</p>
-                                                        <p className="text-slate-400 text-xs">{user.email}</p>
+                                                        <p className="text-slate-500 text-xs">{user.email}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -196,7 +196,7 @@ const AdminUsers = () => {
                                             <td className="px-6 py-4 text-center">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleExpand(user.id); }}
-                                                    className="p-2 rounded-lg hover:bg-teal-50 text-slate-400 hover:text-teal-600 transition-colors"
+                                                    className="p-2 rounded-lg hover:bg-teal-50 text-slate-500 hover:text-teal-600 transition-colors"
                                                     title="View details"
                                                 >
                                                     <Eye className="h-4 w-4" />
@@ -224,13 +224,13 @@ const AdminUsers = () => {
                                                                             <div key={v.id} className="flex items-center justify-between bg-white rounded-lg px-4 py-2.5 border border-slate-100">
                                                                                 <div>
                                                                                     <p className="text-slate-900 text-sm font-medium">{v.brand} {v.model}</p>
-                                                                                    <p className="text-slate-400 text-xs">{v.vehicleNumber} · {v.fuelType} · {v.year}</p>
+                                                                                    <p className="text-slate-500 text-xs">{v.vehicleNumber} · {v.fuelType} · {v.year}</p>
                                                                                 </div>
                                                                             </div>
                                                                         ))}
                                                                     </div>
                                                                 ) : (
-                                                                    <p className="text-slate-400 text-sm">No vehicles registered</p>
+                                                                    <p className="text-slate-500 text-sm">No vehicles registered</p>
                                                                 )}
                                                             </div>
                                                             <div>
@@ -244,19 +244,19 @@ const AdminUsers = () => {
                                                                             <div key={s.id} className="flex items-center justify-between bg-white rounded-lg px-4 py-2.5 border border-slate-100">
                                                                                 <div>
                                                                                     <p className="text-slate-900 text-sm font-medium">{s.serviceType || s.serviceCategory}</p>
-                                                                                    <p className="text-slate-400 text-xs">{s.garageName || 'Self-service'} · {formatDate(s.serviceDate)}</p>
+                                                                                    <p className="text-slate-500 text-xs">{s.garageName || 'Self-service'} · {formatDate(s.serviceDate)}</p>
                                                                                 </div>
                                                                                 <span className="text-amber-600 text-sm font-bold">₹{(s.totalCost || 0).toLocaleString('en-IN')}</span>
                                                                             </div>
                                                                         ))}
                                                                     </div>
                                                                 ) : (
-                                                                    <p className="text-slate-400 text-sm">No service records</p>
+                                                                    <p className="text-slate-500 text-sm">No service records</p>
                                                                 )}
                                                             </div>
                                                         </div>
                                                     ) : (
-                                                        <p className="text-slate-400 text-sm">Could not load details</p>
+                                                        <p className="text-slate-500 text-sm">Could not load details</p>
                                                     )}
                                                 </td>
                                             </tr>
@@ -279,7 +279,7 @@ const AdminUsers = () => {
                     </div>
                 ) : users.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-slate-200">
-                        <Users className="h-10 w-10 text-slate-300 mb-3" />
+                        <Users className="h-10 w-10 text-slate-600 mb-3" />
                         <h3 className="text-slate-900 font-bold">No users found</h3>
                         <p className="text-slate-500 text-sm mt-1">Try adjusting your search</p>
                     </div>
@@ -294,7 +294,7 @@ const AdminUsers = () => {
                                     <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                                         {user.photoUrl
                                             ? <img src={getPhotoUrl(user.photoUrl)} alt="" className="w-full h-full object-cover" />
-                                            : <UserCircle2 className="h-5 w-5 text-slate-400" />}
+                                            : <UserCircle2 className="h-5 w-5 text-slate-500" />}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2">
@@ -303,7 +303,7 @@ const AdminUsers = () => {
                                                 {user.role}
                                             </span>
                                         </div>
-                                        <p className="text-slate-400 text-xs truncate">{user.email}</p>
+                                        <p className="text-slate-500 text-xs truncate">{user.email}</p>
                                         <div className="flex items-center gap-3 mt-1.5">
                                             <span className="inline-flex items-center gap-1 text-xs text-slate-600">
                                                 <Car className="h-3 w-3 text-sky-500" /> {user.vehicleCount} vehicles
@@ -311,10 +311,10 @@ const AdminUsers = () => {
                                             <span className="inline-flex items-center gap-1 text-xs text-slate-600">
                                                 <Wrench className="h-3 w-3 text-emerald-500" /> {user.serviceCount} services
                                             </span>
-                                            <span className="text-xs text-slate-400">{formatDate(user.createdAt)}</span>
+                                            <span className="text-xs text-slate-500">{formatDate(user.createdAt)}</span>
                                         </div>
                                     </div>
-                                    <Eye className={`h-4 w-4 shrink-0 ${expandedUser === user.id ? 'text-teal-600' : 'text-slate-300'}`} />
+                                    <Eye className={`h-4 w-4 shrink-0 ${expandedUser === user.id ? 'text-teal-600' : 'text-slate-600'}`} />
                                 </div>
                             </button>
 
@@ -335,11 +335,11 @@ const AdminUsers = () => {
                                                         {userDetail.vehicles.map((v) => (
                                                             <div key={v.id} className="bg-white rounded-lg px-3 py-2 border border-slate-100">
                                                                 <p className="text-slate-900 text-sm font-medium">{v.brand} {v.model}</p>
-                                                                <p className="text-slate-400 text-xs">{v.vehicleNumber} · {v.fuelType} · {v.year}</p>
+                                                                <p className="text-slate-500 text-xs">{v.vehicleNumber} · {v.fuelType} · {v.year}</p>
                                                             </div>
                                                         ))}
                                                     </div>
-                                                ) : <p className="text-slate-400 text-xs">No vehicles</p>}
+                                                ) : <p className="text-slate-500 text-xs">No vehicles</p>}
                                             </div>
                                             <div>
                                                 <h4 className="text-slate-900 font-bold text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -351,16 +351,16 @@ const AdminUsers = () => {
                                                             <div key={s.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-slate-100">
                                                                 <div>
                                                                     <p className="text-slate-900 text-xs font-medium">{s.serviceType || s.serviceCategory}</p>
-                                                                    <p className="text-slate-400 text-xs">{formatDate(s.serviceDate)}</p>
+                                                                    <p className="text-slate-500 text-xs">{formatDate(s.serviceDate)}</p>
                                                                 </div>
                                                                 <span className="text-amber-600 text-xs font-bold">₹{(s.totalCost || 0).toLocaleString('en-IN')}</span>
                                                             </div>
                                                         ))}
                                                     </div>
-                                                ) : <p className="text-slate-400 text-xs">No service records</p>}
+                                                ) : <p className="text-slate-500 text-xs">No service records</p>}
                                             </div>
                                         </div>
-                                    ) : <p className="text-slate-400 text-sm">Could not load details</p>}
+                                    ) : <p className="text-slate-500 text-sm">Could not load details</p>}
                                 </div>
                             )}
                         </div>
@@ -371,7 +371,7 @@ const AdminUsers = () => {
             {/* Pagination */}
             {totalPages > 1 && (
                 <div className="flex items-center justify-between">
-                    <p className="text-slate-400 text-sm">
+                    <p className="text-slate-500 text-sm">
                         Page {page} of {totalPages} · {total} users
                     </p>
                     <div className="flex items-center gap-2">

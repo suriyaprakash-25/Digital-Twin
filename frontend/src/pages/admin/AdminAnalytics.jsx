@@ -111,7 +111,7 @@ const AdminAnalytics = () => {
 
     const EmptyChart = ({ message }) => (
         <div className="flex items-center justify-center h-full">
-            <p className="text-slate-400 text-sm">{message}</p>
+            <p className="text-slate-500 text-sm">{message}</p>
         </div>
     );
 
@@ -121,7 +121,7 @@ const AdminAnalytics = () => {
             <div>
                 <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
                     <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 shadow-lg shadow-teal-500/20">
-                        <BarChart3 className="h-4.5 w-4.5 text-white" />
+                        <BarChart3 className="h-4.5 w-4.5 text-slate-900" />
                     </div>
                     Platform Analytics
                 </h1>

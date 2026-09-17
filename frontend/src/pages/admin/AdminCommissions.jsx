@@ -102,12 +102,12 @@ const AdminCommissions = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Gross Volume</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Gross Volume</span>
           <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center">
-            <IndianRupee className="h-4 w-4 text-slate-400 mr-0.5" />
+            <IndianRupee className="h-4 w-4 text-slate-500 mr-0.5" />
             {Number(summary.totalGrossVolume || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-[10px] font-medium text-slate-400 mt-1">Total bill volume</p>
+          <p className="text-[10px] font-medium text-slate-500 mt-1">Total bill volume</p>
         </div>
 
         <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
@@ -125,40 +125,40 @@ const AdminCommissions = () => {
             <IndianRupee className="h-4 w-4 text-emerald-500 mr-0.5" />
             {Number(summary.todayPlatformCommission || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-[10px] font-medium text-slate-400 mt-1">Earned today</p>
+          <p className="text-[10px] font-medium text-slate-500 mt-1">Earned today</p>
         </div>
 
         <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block mb-1">This Month</span>
           <div className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center">
-            <IndianRupee className="h-4 w-4 text-slate-400 mr-0.5" />
+            <IndianRupee className="h-4 w-4 text-slate-500 mr-0.5" />
             {Number(summary.monthPlatformCommission || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-[10px] font-medium text-slate-400 mt-1">Current month fee</p>
+          <p className="text-[10px] font-medium text-slate-500 mt-1">Current month fee</p>
         </div>
 
         <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block mb-1">Garage Payouts</span>
           <div className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center">
-            <IndianRupee className="h-4 w-4 text-slate-400 mr-0.5" />
+            <IndianRupee className="h-4 w-4 text-slate-500 mr-0.5" />
             {Number(summary.totalGarageEarnings || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-[10px] font-medium text-slate-400 mt-1">Net garage share</p>
+          <p className="text-[10px] font-medium text-slate-500 mt-1">Net garage share</p>
         </div>
 
         <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Total Logs</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Total Logs</span>
           <div className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
             {summary.totalEarningRecords}
           </div>
-          <p className="text-[10px] font-medium text-slate-400 mt-1">Settled transactions</p>
+          <p className="text-[10px] font-medium text-slate-500 mt-1">Settled transactions</p>
         </div>
       </div>
 
       {/* Search and Filters */}
       <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:max-w-md">
-          <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
@@ -176,7 +176,7 @@ const AdminCommissions = () => {
               onClick={() => setStatusFilter(status)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 statusFilter === status
-                  ? 'bg-slate-900 text-white shadow-sm'
+                  ? 'bg-white text-slate-900 shadow-sm'
                   : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/60'
               }`}
             >
@@ -194,9 +194,9 @@ const AdminCommissions = () => {
           </div>
         ) : commissions.length === 0 ? (
           <div className="text-center py-16 px-4">
-            <Percent className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+            <Percent className="h-12 w-12 text-slate-600 mx-auto mb-3" />
             <h3 className="text-base font-bold text-slate-800">No Commission Records Found</h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               Transactions captured by the system will appear here with automatic platform fee breakdowns.
             </p>
           </div>
@@ -204,7 +204,7 @@ const AdminCommissions = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   <th className="py-3.5 px-4 pl-6">Invoice #</th>
                   <th className="py-3.5 px-4">Garage</th>
                   <th className="py-3.5 px-4">Service & Vehicle</th>
@@ -228,7 +228,7 @@ const AdminCommissions = () => {
                     </td>
                     <td className="py-4 px-4">
                       <div className="font-bold text-slate-900">{c.serviceType}</div>
-                      <div className="text-[11px] text-slate-400">{c.vehicleNumber}</div>
+                      <div className="text-[11px] text-slate-500">{c.vehicleNumber}</div>
                     </td>
                     <td className="py-4 px-4 font-bold text-slate-900">
                       ₹{(parseFloat(c.grossAmount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}

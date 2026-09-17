@@ -97,29 +97,29 @@ export default function AdminFinancialAudit() {
     if (action.startsWith('SETTLEMENT_REJECTED') || action.startsWith('DISPUTE_')) {
       return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/30">{action}</span>;
     }
-    return <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">{action}</span>;
+    return <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">{action}</span>;
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-8 space-y-8">
       
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-cyan-500/20">
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">Financial Audit Ledger</h1>
-              <p className="text-xs text-slate-400">Append-only immutable record of all financial mutations, approvals, and administrative actions</p>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">Financial Audit Ledger</h1>
+              <p className="text-xs text-slate-500">Append-only immutable record of all financial mutations, approvals, and administrative actions</p>
             </div>
           </div>
         </div>
 
         <button
           onClick={() => { fetchSummary(); fetchAuditLogs(); }}
-          className="flex items-center gap-2 px-3.5 py-2 bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition"
+          className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Refresh
@@ -128,31 +128,31 @@ export default function AdminFinancialAudit() {
 
       {/* 5 KPI Badges */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Total Audit Records</span>
-          <span className="text-xl font-black text-white">{summary.totalLogs.toLocaleString('en-IN')}</span>
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Audit Records</span>
+          <span className="text-xl font-black text-slate-900">{summary.totalLogs.toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">Immutable Entries</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-blue-900/40 p-4 rounded-2xl">
+        <div className="bg-white border border-blue-100 bg-blue-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider block mb-1">Settlement Actions</span>
           <span className="text-xl font-black text-blue-400">{summary.settlementActions.toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">Approvals, Payouts, Holds</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-amber-900/40 p-4 rounded-2xl">
+        <div className="bg-white border border-amber-100 bg-amber-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">Refund Actions</span>
           <span className="text-xl font-black text-amber-400">{summary.refundActions.toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">Adjustments & Payouts</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-emerald-900/40 p-4 rounded-2xl">
+        <div className="bg-white border border-emerald-100 bg-emerald-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">Payment Verifications</span>
           <span className="text-xl font-black text-emerald-400">{summary.paymentActions.toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">Gateway Captures</span>
         </div>
 
-        <div className="bg-slate-900/60 border border-purple-900/40 p-4 rounded-2xl">
+        <div className="bg-white border border-purple-100 bg-purple-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider block mb-1">Dispute Actions</span>
           <span className="text-xl font-black text-purple-400">{summary.disputeActions.toLocaleString('en-IN')}</span>
           <span className="text-[10px] text-slate-500 block mt-1">Claims & Resolutions</span>
@@ -160,23 +160,23 @@ export default function AdminFinancialAudit() {
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-64">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search ID, actor, action..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500"
+              className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-500"
             />
           </div>
 
           <select
             value={actionFilter}
             onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-            className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white"
+            className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900"
           >
             <option value="ALL">All Actions</option>
             <option value="SETTLEMENT_CREATED">SETTLEMENT_CREATED</option>
@@ -195,23 +195,23 @@ export default function AdminFinancialAudit() {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 text-xs text-white"
+            className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900"
           />
           <span className="text-slate-500 text-xs">to</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 text-xs text-white"
+            className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900"
           />
         </div>
       </div>
 
       {/* Logs Table */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+            <thead className="bg-slate-100/90 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th className="px-6 py-3.5">Timestamp</th>
                 <th className="px-6 py-3.5">Actor</th>
@@ -224,21 +224,21 @@ export default function AdminFinancialAudit() {
             <tbody className="divide-y divide-slate-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
                     Loading audit trail records...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                     No financial audit records matching your criteria.
                   </td>
                 </tr>
               ) : (
                 logs.map((log) => (
-                  <tr key={log._id} className="hover:bg-slate-800/40 transition">
-                    <td className="px-6 py-3.5 text-slate-400 font-mono text-[11px]">
+                  <tr key={log._id} className="hover:bg-slate-100/40 transition">
+                    <td className="px-6 py-3.5 text-slate-500 font-mono text-[11px]">
                       {new Date(log.createdAt).toLocaleDateString('en-IN', {
                         month: 'short',
                         day: 'numeric',
@@ -249,9 +249,9 @@ export default function AdminFinancialAudit() {
                     </td>
                     <td className="px-6 py-3.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-white">{log.actorId || 'SYSTEM'}</span>
+                        <span className="font-semibold text-slate-900">{log.actorId || 'SYSTEM'}</span>
                         {log.actorRole && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-800 text-slate-400">
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-500">
                             {log.actorRole}
                           </span>
                         )}
@@ -261,8 +261,8 @@ export default function AdminFinancialAudit() {
                     <td className="px-6 py-3.5 font-mono text-cyan-400">
                       {log.settlementId || log.resourceId || '—'}
                     </td>
-                    <td className="px-6 py-3.5 text-slate-400 text-[11px] font-mono">{log.ip || '127.0.0.1'}</td>
-                    <td className="px-6 py-3.5 text-slate-300 text-[11px] max-w-xs truncate">
+                    <td className="px-6 py-3.5 text-slate-500 text-[11px] font-mono">{log.ip || '127.0.0.1'}</td>
+                    <td className="px-6 py-3.5 text-slate-600 text-[11px] max-w-xs truncate">
                       {log.afterState ? JSON.stringify(log.afterState) : '—'}
                     </td>
                   </tr>
@@ -274,25 +274,25 @@ export default function AdminFinancialAudit() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-slate-400">
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <span className="text-xs text-slate-500">
               Showing {(page - 1) * 20 + 1}–{Math.min(page * 20, totalCount)} of {totalCount} entries
             </span>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-xs font-semibold text-slate-300 px-2">
+              <span className="text-xs font-semibold text-slate-600 px-2">
                 Page {page} of {totalPages}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

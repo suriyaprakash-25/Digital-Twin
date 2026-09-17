@@ -109,18 +109,18 @@ export default function AdminFinancialReports() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-8 space-y-8">
       
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-cyan-500/20">
               <TrendingUp className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">Platform Financial Reports & Analytics</h1>
-              <p className="text-xs text-slate-400">Authoritative GMV aggregation, historical commission audits & multi-format exports</p>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">Platform Financial Reports & Analytics</h1>
+              <p className="text-xs text-slate-500">Authoritative GMV aggregation, historical commission audits & multi-format exports</p>
             </div>
           </div>
         </div>
@@ -130,7 +130,7 @@ export default function AdminFinancialReports() {
           <button
             onClick={() => handleExport('TRANSACTIONS', 'csv')}
             disabled={isExporting}
-            className="flex items-center gap-2 px-3.5 py-2 bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition shadow-sm"
+            className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5" />
             Export Transactions (CSV)
@@ -147,10 +147,10 @@ export default function AdminFinancialReports() {
       </div>
 
       {/* Date Range Selector */}
-      <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-cyan-400" />
-          <span className="text-xs font-bold text-slate-300">Period:</span>
+          <span className="text-xs font-bold text-slate-600">Period:</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -169,7 +169,7 @@ export default function AdminFinancialReports() {
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                 period === p.id
                   ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20'
-                  : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                  : 'bg-white text-slate-500 hover:text-slate-900 border border-slate-200'
               }`}
             >
               {p.label}
@@ -183,14 +183,14 @@ export default function AdminFinancialReports() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 text-xs text-white"
+              className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900"
             />
             <span className="text-slate-500 text-xs">to</span>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 text-xs text-white"
+              className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900"
             />
           </div>
         )}
@@ -199,43 +199,43 @@ export default function AdminFinancialReports() {
       {/* Platform Financial KPI Summary Cards */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-          <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Total GMV</span>
-            <span className="text-xl font-black text-white">₹{parseFloat(summary.totalGMV || 0).toLocaleString('en-IN')}</span>
+          <div className="bg-white border border-slate-200 p-4 rounded-2xl">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Total GMV</span>
+            <span className="text-xl font-black text-slate-900">₹{parseFloat(summary.totalGMV || 0).toLocaleString('en-IN')}</span>
             <span className="text-[10px] text-slate-500 block mt-1">Gross Platform Volume</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-cyan-900/40 p-4 rounded-2xl">
+          <div className="bg-white border border-cyan-100 bg-cyan-50/30 p-4 rounded-2xl">
             <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block mb-1">Platform Commission</span>
             <span className="text-xl font-black text-cyan-400">₹{parseFloat(summary.platformCommission || 0).toLocaleString('en-IN')}</span>
             <span className="text-[10px] text-slate-500 block mt-1">Net Platform Revenue</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-indigo-900/40 p-4 rounded-2xl">
+          <div className="bg-white border border-indigo-900/40 p-4 rounded-2xl">
             <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider block mb-1">Garage Payouts</span>
             <span className="text-xl font-black text-indigo-400">₹{parseFloat(summary.garageNetEarnings || 0).toLocaleString('en-IN')}</span>
             <span className="text-[10px] text-slate-500 block mt-1">Net Partner Earnings</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-red-900/40 p-4 rounded-2xl">
+          <div className="bg-white border border-red-100 bg-red-50/30 p-4 rounded-2xl">
             <span className="text-[11px] font-bold text-red-400 uppercase tracking-wider block mb-1">Total Refunds</span>
             <span className="text-xl font-black text-red-400">₹{parseFloat(summary.totalRefunds || 0).toLocaleString('en-IN')}</span>
             <span className="text-[10px] text-slate-500 block mt-1">Processed Refunds</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-emerald-900/40 p-4 rounded-2xl">
+          <div className="bg-white border border-emerald-100 bg-emerald-50/30 p-4 rounded-2xl">
             <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">Total Settled</span>
             <span className="text-xl font-black text-emerald-400">₹{parseFloat(summary.totalSettlements || 0).toLocaleString('en-IN')}</span>
             <span className="text-[10px] text-slate-500 block mt-1">Paid to Garages</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-amber-900/40 p-4 rounded-2xl">
+          <div className="bg-white border border-amber-100 bg-amber-50/30 p-4 rounded-2xl">
             <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">Pending Settlement</span>
             <span className="text-xl font-black text-amber-400">₹{parseFloat(summary.pendingSettlements || 0).toLocaleString('en-IN')}</span>
             <span className="text-[10px] text-slate-500 block mt-1">In Processing</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-purple-900/40 p-4 rounded-2xl">
+          <div className="bg-white border border-purple-100 bg-purple-50/30 p-4 rounded-2xl">
             <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider block mb-1">Disputes Impact</span>
             <span className="text-xl font-black text-purple-400">₹{parseFloat(summary.totalDisputedAmount || 0).toLocaleString('en-IN')}</span>
             <span className="text-[10px] text-slate-500 block mt-1">{summary.totalDisputesCount} Raised ({summary.resolvedDisputesCount} Resolved)</span>
@@ -244,7 +244,7 @@ export default function AdminFinancialReports() {
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800">
+      <div className="flex items-center gap-2 border-b border-slate-200">
         {[
           { id: 'COMMISSIONS', label: 'Platform Commissions Ledger', icon: Percent },
           { id: 'TRANSACTIONS', label: 'Platform Transactions', icon: Receipt },
@@ -258,7 +258,7 @@ export default function AdminFinancialReports() {
               className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition ${
                 activeTab === tab.id
                   ? 'border-cyan-400 text-cyan-400'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  : 'border-transparent text-slate-500 hover:text-slate-500'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -270,11 +270,11 @@ export default function AdminFinancialReports() {
 
       {/* TAB CONTENT 1: COMMISSIONS */}
       {activeTab === 'COMMISSIONS' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-bold text-white">Historical Commission Snapshots</h2>
-              <p className="text-xs text-slate-400">All commissions calculated based on immutable rates captured at transaction time</p>
+              <h2 className="text-sm font-bold text-slate-900">Historical Commission Snapshots</h2>
+              <p className="text-xs text-slate-500">All commissions calculated based on immutable rates captured at transaction time</p>
             </div>
             {commissionSummary && (
               <span className="text-xs font-mono font-bold text-cyan-400">
@@ -285,7 +285,7 @@ export default function AdminFinancialReports() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+              <thead className="bg-slate-100/90 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-3.5">Invoice #</th>
                   <th className="px-6 py-3.5">Garage</th>
@@ -299,20 +299,20 @@ export default function AdminFinancialReports() {
               <tbody className="divide-y divide-slate-800/60">
                 {commissions.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
                       No commission records found for this period.
                     </td>
                   </tr>
                 ) : (
                   commissions.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-800/40 transition">
+                    <tr key={c.id} className="hover:bg-slate-100/40 transition">
                       <td className="px-6 py-3.5 font-mono font-semibold text-cyan-400">{c.invoiceNumber || '—'}</td>
-                      <td className="px-6 py-3.5 text-white">{c.garageName || 'Authorized Garage'}</td>
-                      <td className="px-6 py-3.5 font-bold text-white">₹{parseFloat(c.grossAmount || 0).toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-3.5 text-slate-900">{c.garageName || 'Authorized Garage'}</td>
+                      <td className="px-6 py-3.5 font-bold text-slate-900">₹{parseFloat(c.grossAmount || 0).toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5 font-semibold text-amber-400">{c.commissionRate}%</td>
                       <td className="px-6 py-3.5 font-bold text-cyan-300">₹{parseFloat(c.platformCommission || 0).toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5 text-emerald-400">₹{parseFloat(c.garageNetAmount || 0).toLocaleString('en-IN')}</td>
-                      <td className="px-6 py-3.5 text-right text-slate-400 text-[11px]">
+                      <td className="px-6 py-3.5 text-right text-slate-500 text-[11px]">
                         {new Date(c.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
                       </td>
                     </tr>
@@ -326,14 +326,14 @@ export default function AdminFinancialReports() {
 
       {/* TAB CONTENT 2: TRANSACTIONS */}
       {activeTab === 'TRANSACTIONS' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white">Platform Transactions</h2>
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-900">Platform Transactions</h2>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+              <thead className="bg-slate-100/90 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-3.5">Invoice #</th>
                   <th className="px-6 py-3.5">Garage</th>
@@ -347,16 +347,16 @@ export default function AdminFinancialReports() {
               <tbody className="divide-y divide-slate-800/60">
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
                       No transactions found for this period.
                     </td>
                   </tr>
                 ) : (
                   transactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-slate-800/40 transition">
+                    <tr key={tx.id} className="hover:bg-slate-100/40 transition">
                       <td className="px-6 py-3.5 font-mono text-cyan-400">{tx.invoiceNumber || '—'}</td>
-                      <td className="px-6 py-3.5 text-white">{tx.garageName}</td>
-                      <td className="px-6 py-3.5 font-bold text-white">₹{parseFloat(tx.grossAmount || 0).toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-3.5 text-slate-900">{tx.garageName}</td>
+                      <td className="px-6 py-3.5 font-bold text-slate-900">₹{parseFloat(tx.grossAmount || 0).toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5 text-amber-400">₹{parseFloat(tx.platformCommission || 0).toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5 font-bold text-cyan-300">₹{parseFloat(tx.finalNetAmount || tx.garageNetAmount || 0).toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5">
@@ -366,7 +366,7 @@ export default function AdminFinancialReports() {
                           {tx.status}
                         </span>
                       </td>
-                      <td className="px-6 py-3.5 text-right text-slate-400 text-[11px]">
+                      <td className="px-6 py-3.5 text-right text-slate-500 text-[11px]">
                         {new Date(tx.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
                       </td>
                     </tr>
@@ -380,11 +380,11 @@ export default function AdminFinancialReports() {
 
       {/* TAB CONTENT 3: TRENDS */}
       {activeTab === 'TRENDS' && summary?.trendData && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden p-6 space-y-4">
-          <h2 className="text-sm font-bold text-white">Daily GMV & Commission Summary</h2>
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden p-6 space-y-4">
+          <h2 className="text-sm font-bold text-slate-900">Daily GMV & Commission Summary</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+              <thead className="bg-slate-100/90 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-3.5">Date</th>
                   <th className="px-6 py-3.5">Gross Volume (GMV)</th>
@@ -396,15 +396,15 @@ export default function AdminFinancialReports() {
               <tbody className="divide-y divide-slate-800/60">
                 {summary.trendData.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
                       No daily trend entries in this period.
                     </td>
                   </tr>
                 ) : (
                   summary.trendData.map((d, i) => (
-                    <tr key={i} className="hover:bg-slate-800/40 transition">
-                      <td className="px-6 py-3.5 font-semibold text-white">{d.date}</td>
-                      <td className="px-6 py-3.5 font-bold text-white">₹{d.gmv.toLocaleString('en-IN')}</td>
+                    <tr key={i} className="hover:bg-slate-100/40 transition">
+                      <td className="px-6 py-3.5 font-semibold text-slate-900">{d.date}</td>
+                      <td className="px-6 py-3.5 font-bold text-slate-900">₹{d.gmv.toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5 font-bold text-cyan-400">₹{d.commission.toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5 text-emerald-400">₹{d.net.toLocaleString('en-IN')}</td>
                       <td className="px-6 py-3.5 text-red-400">₹{d.refunds.toLocaleString('en-IN')}</td>

@@ -183,7 +183,7 @@ const AdminFeedback = () => {
             className={`h-3.5 w-3.5 ${
               star <= rating
                 ? 'fill-amber-400 text-amber-400'
-                : 'text-slate-200 stroke-1'
+                : 'text-slate-500 stroke-1'
             }`}
           />
         ))}
@@ -220,7 +220,7 @@ const AdminFeedback = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Feedback</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Feedback</p>
             <p className="text-2xl font-black text-slate-900 mt-1">{metrics.totalFeedback}</p>
           </div>
           <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
@@ -230,10 +230,10 @@ const AdminFeedback = () => {
 
         <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Avg Rating</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Avg Rating</p>
             <div className="flex items-baseline gap-1.5 mt-1">
               <span className="text-2xl font-black text-amber-600">{metrics.averageRating || '0.0'}</span>
-              <span className="text-xs text-slate-400 font-bold">/ 5.0</span>
+              <span className="text-xs text-slate-500 font-bold">/ 5.0</span>
             </div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
@@ -243,7 +243,7 @@ const AdminFeedback = () => {
 
         <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">New Unreviewed</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">New Unreviewed</p>
             <p className="text-2xl font-black text-emerald-600 mt-1">{metrics.newFeedback}</p>
           </div>
           <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
@@ -253,7 +253,7 @@ const AdminFeedback = () => {
 
         <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Bug Reports</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Bug Reports</p>
             <p className="text-2xl font-black text-rose-600 mt-1">{metrics.bugReports}</p>
           </div>
           <div className="w-11 h-11 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
@@ -263,7 +263,7 @@ const AdminFeedback = () => {
 
         <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Feature Requests</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Feature Requests</p>
             <p className="text-2xl font-black text-indigo-600 mt-1">{metrics.featureRequests}</p>
           </div>
           <div className="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
@@ -277,19 +277,19 @@ const AdminFeedback = () => {
         <div className="flex flex-col md:flex-row items-center gap-3">
           {/* Search Bar */}
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by user, email, message text, or page name..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 p-1"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -408,15 +408,15 @@ const AdminFeedback = () => {
             <tbody className="divide-y divide-slate-100 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
                     <RefreshCw className="h-6 w-6 animate-spin mx-auto text-teal-600 mb-2" />
                     Loading feedback submissions...
                   </td>
                 </tr>
               ) : feedbacks.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <MessageSquare className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <MessageSquare className="h-8 w-8 mx-auto text-slate-600 mb-2" />
                     No feedback found matching the current filters.
                   </td>
                 </tr>
@@ -428,12 +428,12 @@ const AdminFeedback = () => {
                       {/* User Info */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-slate-900 flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                             {(item.name || 'U').charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <p className="font-bold text-slate-900 truncate max-w-[140px]">{item.name || 'Anonymous'}</p>
-                            <p className="text-[11px] text-slate-400 truncate max-w-[140px]">{item.email || 'No email'}</p>
+                            <p className="text-[11px] text-slate-500 truncate max-w-[140px]">{item.email || 'No email'}</p>
                             <span className="inline-block mt-0.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
                               {item.role || 'USER'}
                             </span>
@@ -478,7 +478,7 @@ const AdminFeedback = () => {
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div>
                           <p className="font-semibold text-slate-800">{item.pageName || 'App'}</p>
-                          <p className="text-[10px] font-mono text-slate-400">{item.pageUrl || '/'}</p>
+                          <p className="text-[10px] font-mono text-slate-500">{item.pageUrl || '/'}</p>
                         </div>
                       </td>
 
@@ -504,7 +504,7 @@ const AdminFeedback = () => {
                           month: 'short',
                           year: 'numeric'
                         }) : 'N/A'}
-                        <div className="text-[10px] text-slate-400">
+                        <div className="text-[10px] text-slate-500">
                           {item.createdAt ? new Date(item.createdAt).toLocaleTimeString('en-IN', {
                             hour: '2-digit',
                             minute: '2-digit'
@@ -518,7 +518,7 @@ const AdminFeedback = () => {
                           <button
                             type="button"
                             onClick={() => setSelectedItem(item)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors cursor-pointer"
                             title="View full feedback details"
                           >
                             <Eye className="h-4 w-4" />
@@ -527,7 +527,7 @@ const AdminFeedback = () => {
                             type="button"
                             disabled={deletingId === item._id}
                             onClick={() => handleDelete(item._id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                             title="Delete feedback"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -577,7 +577,7 @@ const AdminFeedback = () => {
 
       {/* Feedback Details Modal */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/50 backdrop-blur-xs">
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-h-[90vh] flex flex-col">
             {/* Modal Header */}
             <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
@@ -593,7 +593,7 @@ const AdminFeedback = () => {
               <button
                 type="button"
                 onClick={() => setSelectedItem(null)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -604,19 +604,19 @@ const AdminFeedback = () => {
               {/* User Metadata Header */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">User</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">User</p>
                   <p className="text-xs font-bold text-slate-800 truncate">{selectedItem.name || 'Anonymous'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Email</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">Email</p>
                   <p className="text-xs font-bold text-slate-800 truncate">{selectedItem.email || 'N/A'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Role</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">Role</p>
                   <p className="text-xs font-bold text-teal-700">{selectedItem.role || 'USER'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Submitted</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">Submitted</p>
                   <p className="text-xs font-bold text-slate-800">
                     {new Date(selectedItem.createdAt).toLocaleDateString()}
                   </p>
@@ -647,7 +647,7 @@ const AdminFeedback = () => {
                 <div className="flex items-center gap-2 truncate">
                   <Compass className="h-4 w-4 text-teal-600 shrink-0" />
                   <span className="font-bold text-slate-800 truncate">{selectedItem.pageName}</span>
-                  <span className="text-slate-400 font-mono text-[11px] truncate">({selectedItem.pageUrl})</span>
+                  <span className="text-slate-500 font-mono text-[11px] truncate">({selectedItem.pageUrl})</span>
                 </div>
               </div>
 
@@ -666,7 +666,7 @@ const AdminFeedback = () => {
                       alt="Feedback attachment"
                       className="max-h-64 object-contain rounded-2xl"
                     />
-                    <div className="absolute inset-0 bg-slate-950/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5">
+                    <div className="absolute inset-0 bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-slate-900 text-xs font-bold gap-1.5">
                       <Eye className="h-4 w-4" /> Click to enlarge
                     </div>
                   </div>
@@ -696,13 +696,13 @@ const AdminFeedback = () => {
       {lightboxImage && (
         <div
           onClick={() => setLightboxImage(null)}
-          className="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-60 bg-slate-100/90 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
         >
           <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-3xl overflow-hidden p-2 shadow-2xl">
             <button
               type="button"
               onClick={() => setLightboxImage(null)}
-              className="absolute top-4 right-4 p-2 bg-slate-900/70 text-white hover:bg-slate-900 rounded-full shadow-lg"
+              className="absolute top-4 right-4 p-2 bg-white/70 text-slate-900 hover:bg-white rounded-full shadow-lg"
             >
               <X className="h-5 w-5" />
             </button>

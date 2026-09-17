@@ -134,30 +134,30 @@ export default function AdminPaymentRisk() {
       case 'ESCALATED':
         return <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/30">ESCALATED</span>;
       default:
-        return <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 text-slate-400">{status}</span>;
+        return <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-500">{status}</span>;
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-8 space-y-8">
       
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-red-500 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-red-500/20">
               <ShieldAlert className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">Payment Risk & Security Console</h1>
-              <p className="text-xs text-slate-400">Deterministic fraud scoring, signal monitoring & financial audit protection</p>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">Payment Risk & Security Console</h1>
+              <p className="text-xs text-slate-500">Deterministic fraud scoring, signal monitoring & financial audit protection</p>
             </div>
           </div>
         </div>
 
         <button
           onClick={() => { fetchSummary(); fetchRiskEvents(); }}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition shadow-sm"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh Data
@@ -166,34 +166,34 @@ export default function AdminPaymentRisk() {
 
       {/* KPI Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Total Flagged</span>
-          <span className="text-2xl font-black text-white">{summary.totalFlagged}</span>
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Flagged</span>
+          <span className="text-2xl font-black text-slate-900">{summary.totalFlagged}</span>
         </div>
-        <div className="bg-slate-900/60 border border-red-900/30 p-4 rounded-2xl">
+        <div className="bg-white border border-red-100 bg-red-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-red-400 uppercase tracking-wider block mb-1">Critical Risk</span>
           <span className="text-2xl font-black text-red-400">{summary.criticalCount}</span>
         </div>
-        <div className="bg-slate-900/60 border border-orange-900/30 p-4 rounded-2xl">
+        <div className="bg-white border border-orange-100 bg-orange-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider block mb-1">High Risk</span>
           <span className="text-2xl font-black text-orange-400">{summary.highCount}</span>
         </div>
-        <div className="bg-slate-900/60 border border-amber-900/30 p-4 rounded-2xl">
+        <div className="bg-white border border-amber-100 bg-amber-50/30 p-4 rounded-2xl">
           <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">Medium Risk</span>
           <span className="text-2xl font-black text-amber-400">{summary.mediumCount}</span>
         </div>
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Open Reviews</span>
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Open Reviews</span>
           <span className="text-2xl font-black text-cyan-400">{summary.openCount}</span>
         </div>
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Resolved</span>
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Resolved</span>
           <span className="text-2xl font-black text-emerald-400">{summary.reviewedCount}</span>
         </div>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
         <form onSubmit={handleSearchSubmit} className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -201,49 +201,49 @@ export default function AdminPaymentRisk() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search payment ID, invoice, user..."
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
           />
         </form>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Level Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400">Risk:</span>
+          <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+            <span className="text-xs text-slate-500">Risk:</span>
             <select
               value={levelFilter}
               onChange={(e) => { setLevelFilter(e.target.value); setPage(1); }}
-              className="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
             >
-              <option value="ALL" className="bg-slate-900">All Levels</option>
-              <option value="CRITICAL" className="bg-slate-900">Critical</option>
-              <option value="HIGH" className="bg-slate-900">High</option>
-              <option value="MEDIUM" className="bg-slate-900">Medium</option>
+              <option value="ALL" className="bg-white">All Levels</option>
+              <option value="CRITICAL" className="bg-white">Critical</option>
+              <option value="HIGH" className="bg-white">High</option>
+              <option value="MEDIUM" className="bg-white">Medium</option>
             </select>
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400">Status:</span>
+          <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+            <span className="text-xs text-slate-500">Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-semibold text-slate-900 focus:outline-none cursor-pointer"
             >
-              <option value="ALL" className="bg-slate-900">All Statuses</option>
-              <option value="OPEN" className="bg-slate-900">Open</option>
-              <option value="REVIEWED" className="bg-slate-900">Reviewed</option>
-              <option value="CLEARED" className="bg-slate-900">Cleared</option>
-              <option value="ESCALATED" className="bg-slate-900">Escalated</option>
+              <option value="ALL" className="bg-white">All Statuses</option>
+              <option value="OPEN" className="bg-white">Open</option>
+              <option value="REVIEWED" className="bg-white">Reviewed</option>
+              <option value="CLEARED" className="bg-white">Cleared</option>
+              <option value="ESCALATED" className="bg-white">Escalated</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Risk Events Table */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+            <thead className="bg-slate-100/90 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th className="px-6 py-4">Transaction / ID</th>
                 <th className="px-6 py-4">Amount</th>
@@ -257,26 +257,26 @@ export default function AdminPaymentRisk() {
             <tbody className="divide-y divide-slate-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
                     Loading risk events...
                   </td>
                 </tr>
               ) : riskEvents.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
                     <ShieldCheck className="w-8 h-8 mx-auto mb-2 text-emerald-400 opacity-60" />
                     No risk events found matching the specified filters.
                   </td>
                 </tr>
               ) : (
                 riskEvents.map((evt) => (
-                  <tr key={evt.id} className="hover:bg-slate-800/40 transition">
+                  <tr key={evt.id} className="hover:bg-slate-100/40 transition">
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-white uppercase text-[11px] mb-0.5">{evt.operation || 'PAYMENT'}</div>
+                      <div className="font-semibold text-slate-900 uppercase text-[11px] mb-0.5">{evt.operation || 'PAYMENT'}</div>
                       <div className="font-mono text-[11px] text-cyan-400">{evt.invoiceId || evt.paymentId || evt.id}</div>
                     </td>
-                    <td className="px-6 py-4 font-bold text-white">
+                    <td className="px-6 py-4 font-bold text-slate-900">
                       ₹{parseFloat(evt.amount || 0).toLocaleString('en-IN')}
                     </td>
                     <td className="px-6 py-4">
@@ -286,7 +286,7 @@ export default function AdminPaymentRisk() {
                       {evt.riskFlags && evt.riskFlags.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {evt.riskFlags.map((flag, idx) => (
-                            <span key={idx} className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300">
+                            <span key={idx} className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
                               {flag.replace(/_/g, ' ')}
                             </span>
                           ))}
@@ -298,7 +298,7 @@ export default function AdminPaymentRisk() {
                     <td className="px-6 py-4">
                       {getStatusBadge(evt.status)}
                     </td>
-                    <td className="px-6 py-4 text-slate-400 text-[11px]">
+                    <td className="px-6 py-4 text-slate-500 text-[11px]">
                       {new Date(evt.createdAt).toLocaleDateString('en-IN', {
                         month: 'short',
                         day: 'numeric',
@@ -323,25 +323,25 @@ export default function AdminPaymentRisk() {
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-slate-400">
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <span className="text-xs text-slate-500">
               Showing {(page - 1) * 15 + 1}–{Math.min(page * 15, totalCount)} of {totalCount} events
             </span>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-xs font-semibold text-slate-300 px-2">
+              <span className="text-xs font-semibold text-slate-600 px-2">
                 Page {page} of {totalPages}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
