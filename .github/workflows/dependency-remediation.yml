@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout hardening branch
+      - name: Checkout latest hardening branch
         uses: actions/checkout@v4
         with:
           ref: production-hardening-2026-09-17
