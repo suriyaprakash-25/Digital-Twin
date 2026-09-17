@@ -1,0 +1,55 @@
+name: DrivePortz Dependency Remediation
+
+on:
+  push:
+    branches:
+      - production-hardening-2026-09-17
+    paths:
+      - .github/workflows/dependency-remediation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    name: Apply non-breaking npm security fixes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout hardening branch
+        uses: actions/checkout@v4
+        with:
+          ref: production-hardening-2026-09-17
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Remediate backend dependencies without major upgrades
+        working-directory: backend
+        run: |
+          npm ci
+          npm audit fix
+          npm audit --omit=dev --audit-level=critical
+
+      - name: Remediate frontend dependencies without major upgrades
+        working-directory: frontend
+        run: |
+          npm ci
+          npm audit fix
+          npm audit --omit=dev --audit-level=critical
+
+      - name: Commit remediated dependency manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- backend/package.json backend/package-lock.json frontend/package.json frontend/package-lock.json; then
+            echo "No dependency manifest changes were required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/package.json backend/package-lock.json frontend/package.json frontend/package-lock.json
+          git commit -m "chore: apply non-breaking npm security fixes"
+          git push origin HEAD:production-hardening-2026-09-17
