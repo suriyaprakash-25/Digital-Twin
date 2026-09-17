@@ -30,14 +30,14 @@ jobs:
         working-directory: backend
         run: |
           npm ci
-          npm audit fix
+          npm audit fix || true
           npm audit --omit=dev --audit-level=critical
 
       - name: Remediate frontend dependencies without major upgrades
         working-directory: frontend
         run: |
           npm ci
-          npm audit fix
+          npm audit fix || true
           npm audit --omit=dev --audit-level=critical
 
       - name: Commit remediated dependency manifests
