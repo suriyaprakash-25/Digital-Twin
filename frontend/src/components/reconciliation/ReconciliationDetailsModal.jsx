@@ -18,11 +18,11 @@ import axios from 'axios';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
 
 const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolved }) => {
-  if (!isOpen || !reconciliation) return null;
-
   const [resolutionNote, setResolutionNote] = useState('');
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
+
+  if (!isOpen || !reconciliation) return null;
 
   const isMatched = reconciliation.reconciliationStatus === 'MATCHED';
   const isMismatch = reconciliation.reconciliationStatus === 'MISMATCH';
