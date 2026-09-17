@@ -2,7 +2,12 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { upload, removeUploadByUrl } = require('../utils/uploads');
+const { upload } = require('../utils/uploads');
+const {
+  persistUploadedFile,
+  deletePersistedFile,
+  removeTemporaryFile
+} = require('../services/persistentFileStorage');
 
 const router = express.Router();
 
@@ -24,18 +29,15 @@ async function isAuthorizedForEntity(req, entityType, entityId) {
 
   if (entityType === 'VEHICLE') {
     const vehicle = await db.collection('vehicles').findOne({ _id: objId });
-    console.log('VEHICLE CHECK:', { objId, vehicle, reqUserId: req.user.id });
     if (!vehicle) return false;
     return String(vehicle.ownerId) === String(req.user.id);
   }
 
   if (entityType === 'BOOKING') {
     const booking = await db.collection('bookings').findOne({ _id: objId });
-    console.log('BOOKING CHECK:', { objId, booking, reqUserId: req.user.id });
     if (!booking) return false;
     if (String(booking.userId) === String(req.user.id)) return true;
-    
-    // Check if garage owner
+
     if (req.user.role === 'GARAGE') {
       const garage = await db.collection('garages').findOne({ _id: booking.garageId });
       return garage && String(garage.ownerUserId) === String(req.user.id);
@@ -47,11 +49,9 @@ async function isAuthorizedForEntity(req, entityType, entityId) {
     const service = await db.collection('services').findOne({ _id: objId });
     if (!service) return false;
     if (String(service.ownerId) === String(req.user.id)) return true;
-    
-    // Check if garage owner
-    if (req.user.role === 'GARAGE') {
-      // In services, createdBy is usually the garage owner ID if logged by garage
-      if (String(service.createdBy) === String(req.user.id)) return true;
+
+    if (req.user.role === 'GARAGE' && String(service.createdBy) === String(req.user.id)) {
+      return true;
     }
     return false;
   }
@@ -68,6 +68,8 @@ router.post('/upload', requireAuth, (req, res, next) => {
     next();
   });
 }, async (req, res) => {
+  let persisted = null;
+
   try {
     if (!req.file) {
       return res.status(400).json({ msg: 'No file uploaded' });
@@ -75,46 +77,47 @@ router.post('/upload', requireAuth, (req, res, next) => {
 
     const { entityId, entityType, category } = req.body;
     if (!entityId || !entityType || !category) {
-      removeUploadByUrl(`/uploads/${req.file.filename}`);
+      removeTemporaryFile(req.file);
       return res.status(400).json({ msg: 'entityId, entityType, and category are required' });
     }
 
-    const isAuthorized = await isAuthorizedForEntity(req, entityType, entityId);
+    const normalizedEntityType = String(entityType).toUpperCase();
+    const normalizedCategory = String(category).toUpperCase();
+    const isAuthorized = await isAuthorizedForEntity(req, normalizedEntityType, entityId);
     if (!isAuthorized) {
-      removeUploadByUrl(`/uploads/${req.file.filename}`);
-      
-      const db = getDb();
-      let debugInfo = { reqUserId: req.user.id };
-      if (entityType === 'VEHICLE') {
-         const v = await db.collection('vehicles').findOne({ _id: toObjectId(entityId) });
-         debugInfo.vehicle = v;
-      }
-      if (entityType === 'BOOKING') {
-         const b = await db.collection('bookings').findOne({ _id: toObjectId(entityId) });
-         debugInfo.booking = b;
-      }
-      
-      return res.status(403).json({ msg: 'Forbidden: You do not have permission to attach media to this entity', debug: debugInfo });
+      removeTemporaryFile(req.file);
+      return res.status(403).json({ msg: 'Forbidden: You do not have permission to attach media to this entity' });
     }
+
+    persisted = await persistUploadedFile(req.file, {
+      folder: `driveportz/media/${normalizedEntityType.toLowerCase()}`,
+      resourceType: 'image'
+    });
 
     const db = getDb();
     const mediaCollection = db.collection('media');
-
     const newMedia = {
-      entityId,
-      entityType,
-      category,
-      url: `/uploads/${req.file.filename}`,
+      entityId: String(entityId),
+      entityType: normalizedEntityType,
+      category: normalizedCategory,
+      url: persisted.url,
+      storageProvider: persisted.storageProvider,
+      storageKey: persisted.storageKey,
+      resourceType: persisted.resourceType || 'image',
       uploadedBy: req.user.id,
       role: req.user.role,
       createdAt: new Date()
     };
 
     const result = await mediaCollection.insertOne(newMedia);
-    return res.status(201).json({ msg: 'File uploaded successfully', media: { _id: result.insertedId, ...newMedia } });
+    return res.status(201).json({
+      msg: 'File uploaded successfully',
+      media: { _id: result.insertedId, ...newMedia }
+    });
   } catch (err) {
-    console.error('Upload Error:', err);
-    if (req.file) removeUploadByUrl(`/uploads/${req.file.filename}`);
+    console.error('Upload Error:', err.message);
+    if (!persisted) removeTemporaryFile(req.file);
+    if (persisted) await deletePersistedFile(persisted);
     return res.status(500).json({ msg: 'Server error during upload' });
   }
 });
@@ -122,20 +125,19 @@ router.post('/upload', requireAuth, (req, res, next) => {
 // Get media by entity
 router.get('/:entityType/:entityId', requireAuth, async (req, res) => {
   try {
-    const { entityType, entityId } = req.params;
-    
+    const entityType = String(req.params.entityType).toUpperCase();
+    const entityId = req.params.entityId;
+
     const isAuthorized = await isAuthorizedForEntity(req, entityType, entityId);
     if (!isAuthorized) {
       return res.status(403).json({ msg: 'Forbidden: You do not have permission to view media for this entity' });
     }
 
     const db = getDb();
-    const query = { entityType, entityId };
-    
-    const media = await db.collection('media').find(query).toArray();
+    const media = await db.collection('media').find({ entityType, entityId: String(entityId) }).toArray();
     return res.status(200).json(media);
   } catch (err) {
-    console.error('Fetch Media Error:', err);
+    console.error('Fetch Media Error:', err.message);
     return res.status(500).json({ msg: 'Server error while fetching media' });
   }
 });
@@ -143,29 +145,32 @@ router.get('/:entityType/:entityId', requireAuth, async (req, res) => {
 // Delete media
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    const mediaId = req.params.id;
-    let objId = toObjectId(mediaId);
+    const objId = toObjectId(req.params.id);
     if (!objId) return res.status(400).json({ msg: 'Invalid media ID' });
 
     const db = getDb();
     const mediaCollection = db.collection('media');
-    
     const mediaDoc = await mediaCollection.findOne({ _id: objId });
     if (!mediaDoc) {
       return res.status(404).json({ msg: 'Media not found' });
     }
 
     const isAuthorized = await isAuthorizedForEntity(req, mediaDoc.entityType, mediaDoc.entityId);
-    if (!isAuthorized && mediaDoc.uploadedBy !== req.user.id) {
-       return res.status(403).json({ msg: 'Forbidden: You do not have permission to delete this media' });
+    if (!isAuthorized && String(mediaDoc.uploadedBy) !== String(req.user.id)) {
+      return res.status(403).json({ msg: 'Forbidden: You do not have permission to delete this media' });
     }
 
-    removeUploadByUrl(mediaDoc.url);
+    await deletePersistedFile({
+      url: mediaDoc.url,
+      storageProvider: mediaDoc.storageProvider,
+      storageKey: mediaDoc.storageKey,
+      resourceType: mediaDoc.resourceType || 'image'
+    });
     await mediaCollection.deleteOne({ _id: objId });
 
     return res.status(200).json({ msg: 'Media deleted successfully' });
   } catch (err) {
-    console.error('Delete Media Error:', err);
+    console.error('Delete Media Error:', err.message);
     return res.status(500).json({ msg: 'Server error while deleting media' });
   }
 });
