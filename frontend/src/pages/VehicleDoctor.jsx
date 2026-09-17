@@ -19,6 +19,23 @@ const VehicleDoctor = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!FEATURES.AI_DOCTOR) return;
+
+    const fetchVehicles = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setVehicles(res.data);
+      } catch (err) {
+        console.error('Failed to fetch vehicles', err);
+      }
+    };
+    fetchVehicles();
+  }, []);
+
   if (!FEATURES.AI_DOCTOR) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -40,21 +57,6 @@ const VehicleDoctor = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    const fetchVehicles = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setVehicles(res.data);
-      } catch (err) {
-        console.error('Failed to fetch vehicles', err);
-      }
-    };
-    fetchVehicles();
-  }, []);
 
   const handleToggleSymptom = (symptom) => {
     setSelectedSymptoms(prev => 
@@ -120,7 +122,6 @@ const VehicleDoctor = () => {
           <Stethoscope className="w-64 h-64" />
         </div>
         <div className="relative z-10 max-w-2xl">
-
           <h1 className="text-4xl font-extrabold mb-4">AI Vehicle Doctor</h1>
           <p className="text-teal-100/80 text-lg leading-relaxed">
             Describe your vehicle's symptoms and get an instant AI-powered preliminary diagnosis, repair cost estimate, and recommendations.
@@ -141,7 +142,7 @@ const VehicleDoctor = () => {
       <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl text-amber-800 text-sm flex gap-3 shadow-sm">
         <Stethoscope className="w-5 h-5 text-amber-600 shrink-0" />
         <div>
-          <strong className="font-bold block mb-1">Medical Disclaimer</strong>
+          <strong className="font-bold block mb-1">Vehicle Diagnosis Disclaimer</strong>
           This AI diagnosis is for informational purposes only and should not replace a professional mechanical inspection. Always consult a certified mechanic before making repair decisions.
         </div>
       </div>
