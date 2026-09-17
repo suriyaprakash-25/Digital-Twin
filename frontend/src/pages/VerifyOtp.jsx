@@ -2,7 +2,7 @@ import { API_BASE_URL } from '../utils/config';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { KeyRound, ArrowLeft, Loader2, CheckCircle2, RefreshCw } from 'lucide-react';
+import { KeyRound, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 function VerifyOtp() {
@@ -10,7 +10,7 @@ function VerifyOtp() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
@@ -61,7 +61,6 @@ function VerifyOtp() {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <main className="flex-grow flex items-center justify-center p-6">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-teal-900/5 p-8 border border-slate-100 relative overflow-hidden">
-          
           <div className="absolute top-0 right-0 -mt-16 -mr-16 w-32 h-32 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-32 h-32 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -89,7 +88,7 @@ function VerifyOtp() {
                   required
                   maxLength={6}
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} // only allow numbers
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                   className="block w-full py-4 text-center text-3xl tracking-[1em] font-mono bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
                   placeholder="------"
                 />
@@ -97,7 +96,7 @@ function VerifyOtp() {
 
               <button
                 type="submit"
-                disabled={loading || otp.length < 6 || message.includes('Redirecting')}
+                disabled={loading || otp.length < 6}
                 className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
               >
                 {loading ? (
@@ -124,8 +123,8 @@ function VerifyOtp() {
                 </button>
               </div>
               <div>
-                <Link 
-                  to="/forgot-password" 
+                <Link
+                  to="/forgot-password"
                   className="inline-flex items-center text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4 mr-1" />
