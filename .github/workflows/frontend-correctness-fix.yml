@@ -1,0 +1,122 @@
+name: DrivePortz Frontend Correctness Fix
+
+on:
+  push:
+    branches:
+      - production-hardening-2026-09-17
+    paths:
+      - .github/workflows/frontend-correctness-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    name: Fix blocking frontend correctness errors
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout latest hardening branch
+        uses: actions/checkout@v4
+        with:
+          ref: production-hardening-2026-09-17
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply exact correctness fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              p.write_text(text.replace(old, new, 1))
+
+          # Copilot: keep malformed localStorage recovery explicit instead of an empty catch.
+          replace_once(
+              'frontend/src/components/copilot/Copilot.jsx',
+              '          } catch (e) {}',
+              "          } catch (error) {\n            console.warn('Ignoring malformed cached user data:', error);\n          }",
+              'copilot cached-user catch'
+          )
+
+          # Garage dashboard load failures already surface through toast; remove stale undefined state block.
+          replace_once(
+              'frontend/src/pages/GarageDashboard.jsx',
+              '''        {error && (\n          <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">\n            {error}\n          </div>\n        )}\n''',
+              '',
+              'garage dashboard stale error block'
+          )
+
+          # Garage profile: do not silently swallow failed remote gallery deletion.
+          replace_once(
+              'frontend/src/pages/GarageProfile.jsx',
+              '                        } catch (err) {}',
+              "                        } catch (err) {\n                          console.warn('Failed to delete gallery photo:', err);\n                        }",
+              'garage profile gallery delete catch'
+          )
+
+          # Garage services: use the shared production-safe image URL resolver.
+          replace_once(
+              'frontend/src/pages/GarageServices.jsx',
+              "import { API_BASE_URL } from '../utils/config';",
+              "import { API_BASE_URL } from '../utils/config';\nimport { getPhotoUrl } from '../utils/imageUrl';",
+              'garage services getPhotoUrl import'
+          )
+
+          # MyProfile uses toast feedback; stale message state no longer exists.
+          profile_path = Path('frontend/src/pages/MyProfile.jsx')
+          profile = profile_path.read_text()
+          stale = "    setMessage({ type: '', text: '' });\n"
+          count = profile.count(stale)
+          if count != 2:
+              raise SystemExit(f'my profile stale message setters: expected 2, found {count}')
+          profile_path.write_text(profile.replace(stale, ''))
+          PY
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Verify frontend dependency security
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Verify frontend lint correctness
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Verify production build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Commit verified frontend fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            frontend/src/components/copilot/Copilot.jsx \
+            frontend/src/pages/GarageDashboard.jsx \
+            frontend/src/pages/GarageProfile.jsx \
+            frontend/src/pages/GarageServices.jsx \
+            frontend/src/pages/MyProfile.jsx
+          if git diff --cached --quiet; then
+            echo "No frontend correctness changes were required."
+            exit 0
+          fi
+          git commit -m "fix: clear remaining frontend correctness blockers"
+          git push origin HEAD:production-hardening-2026-09-17
