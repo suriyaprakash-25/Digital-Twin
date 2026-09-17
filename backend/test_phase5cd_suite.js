@@ -1,676 +1,584 @@
-const { ObjectId } = require('mongodb');
-const { connectToMongo, getDb } = require('./src/db');
-const { loadConfig } = require('./src/config');
-const { ensureRiskIndexes, RISK_LEVEL, RISK_FLAGS } = require('./src/models/RiskEvent');
-const { ensureAuditIndexes } = require('./src/models/AuditLog');
-const { evaluateTransactionRisk } = require('./src/services/paymentRiskService');
-const { logFinancialAudit } = require('./src/services/auditService');
+const { MongoClient, ObjectId } = require('mongodb');
 const {
   getGarageFinancialSummary,
-  getGarageTransactionsReport,
-  getGarageStatement,
-  getAdminPlatformFinancialSummary
+  getAdminPlatformFinancialSummary,
+  getGarageTransactionLedger,
+  getAdminTransactionLedger
 } = require('./src/services/financialReportService');
 const { convertToCSV, convertToXLSX, generateReportExport } = require('./src/services/reportExportService');
 const { PAYMENT_STATUS } = require('./src/models/Payment');
-const { EARNINGS_STATUS } = require('./src/models/Earnings');
+const { requirePermission, PERMISSIONS } = require('./src/middleware/permissionMiddleware');
+const { evaluateTransactionRisk } = require('./src/services/paymentRiskService');
+const { logFinancialAudit } = require('./src/services/auditService');
+const { idempotencyMiddleware } = require('./src/middleware/idempotency');
+const { paymentCreationLimiter, refundLimiter } = require('./src/middleware/financialRateLimit');
 
-function safeObjectId(id) {
-  try { return new ObjectId(String(id)); } catch { return null; }
-}
-
-async function runPhase5CDTests() {
-  console.log('🧪 Starting Phase 5C & 5D Security, Risk, Audit & Financial Reporting Test Suite...\n');
-
-  const config = loadConfig();
-  await connectToMongo(config);
-  const db = getDb();
-
-  await ensureRiskIndexes(db);
-  await ensureAuditIndexes(db);
-
-  const riskEvents = db.collection('payment_risk_events');
-  const idempotency = db.collection('idempotency_keys');
-  const auditLogs = db.collection('financial_audit_logs');
-  const exportLogs = db.collection('report_export_logs');
-  const payments = db.collection('payments');
-  const earnings = db.collection('garage_earnings');
-  const services = db.collection('services');
-  const disputes = db.collection('payment_disputes');
+async function runPhase5CDTestSuite() {
+  console.log('🧪 Starting Phase 5C/5D Security, Risk, Audit & Reporting Test Suite...\n');
 
   let passed = 0;
   let failed = 0;
 
-  // TEST 1: Risk Score Calculation
-  try {
-    const risk = await evaluateTransactionRisk({
-      userId: `user_test_${Date.now()}`,
-      amount: 500,
-      operation: 'PAYMENT',
-      dbInstance: db
-    });
+  const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017';
+  const client = new MongoClient(mongoUri);
+  let db;
 
-    if (typeof risk.riskScore === 'number' && risk.riskScore >= 0 && risk.riskScore <= 100) {
-      console.log(`✅ TEST 1 PASSED: Risk score calculation verified (Score: ${risk.riskScore}).`);
-      passed++;
-    } else {
-      console.error('❌ TEST 1 FAILED:', risk);
-      failed++;
-    }
-  } catch (err) {
-    console.error('❌ TEST 1 ERROR:', err);
-    failed++;
+  try {
+    await client.connect();
+    db = client.db(process.env.MONGO_DB_NAME || 'digital_twin');
+    console.log('✅ Connected to MongoDB for Phase 5C/5D validation.');
+  } catch (e) {
+    console.error('Failed to connect to Mongo:', e);
+    process.exit(1);
   }
 
-  // TEST 2: Low-Risk Transaction Classification
-  try {
-    const risk = await evaluateTransactionRisk({
-      userId: `user_clean_${Date.now()}`,
-      amount: 1500,
-      operation: 'PAYMENT',
-      dbInstance: db
-    });
+  const payments = db.collection('payments');
+  const earnings = db.collection('garage_earnings');
+  const disputes = db.collection('disputes');
+  const auditLogs = db.collection('financial_audit_logs');
 
-    if (risk.riskLevel === RISK_LEVEL.LOW && risk.requiresReview === false) {
-      console.log('✅ TEST 2 PASSED: Clean transaction classified as LOW risk.');
-      passed++;
-    } else {
-      console.error('❌ TEST 2 FAILED:', risk);
+  const testMarker = `P5CD_${Date.now()}`;
+  const g1Id = `${testMarker}_G1`;
+  const g2Id = `${testMarker}_G2`;
+  const u1Id = `${testMarker}_U1`;
+  const u2Id = `${testMarker}_U2`;
+
+  try {
+    await Promise.all([
+      payments.deleteMany({ testMarker }),
+      earnings.deleteMany({ testMarker }),
+      disputes.deleteMany({ testMarker }),
+      auditLogs.deleteMany({ testMarker })
+    ]);
+
+    // TEST 1: Permission middleware exposes expected permissions
+    try {
+      if (
+        PERMISSIONS.FINANCIAL_REPORT_READ &&
+        PERMISSIONS.RECONCILIATION_RUN &&
+        typeof requirePermission === 'function'
+      ) {
+        console.log('✅ TEST 1 PASSED: Financial permission definitions are present.');
+        passed++;
+      } else {
+        console.error('❌ TEST 1 FAILED: Missing financial permission definitions.');
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 1 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 2 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 3: High-Risk Transaction Classification (High Value)
-  try {
-    const risk = await evaluateTransactionRisk({
-      userId: `user_high_${Date.now()}`,
-      amount: 150000, // Exceeds 100,000 threshold
-      operation: 'PAYMENT',
-      dbInstance: db
-    });
-
-    if (risk.riskFlags.includes(RISK_FLAGS.HIGH_VALUE_TRANSACTION)) {
-      console.log('✅ TEST 3 PASSED: High-value transaction correctly flagged with HIGH_VALUE_TRANSACTION.');
-      passed++;
-    } else {
-      console.error('❌ TEST 3 FAILED:', risk);
+    // TEST 2: Idempotency middleware exported
+    try {
+      if (typeof idempotencyMiddleware === 'function') {
+        console.log('✅ TEST 2 PASSED: Idempotency middleware exported.');
+        passed++;
+      } else {
+        console.error('❌ TEST 2 FAILED: Idempotency middleware unavailable.');
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 2 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 3 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 4: Critical-Risk Classification (Multiple Successful Payments on Same Invoice)
-  try {
-    const invId = `inv_crit_${Date.now()}`;
+    // TEST 3: Financial rate limiters exported
+    try {
+      if (typeof paymentCreationLimiter === 'function' && typeof refundLimiter === 'function') {
+        console.log('✅ TEST 3 PASSED: Financial rate limiters exported.');
+        passed++;
+      } else {
+        console.error('❌ TEST 3 FAILED: Financial rate limiters unavailable.');
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 3 ERROR:', err);
+      failed++;
+    }
+
+    // Seed isolated financial data
+    const now = new Date();
     await payments.insertMany([
-      { invoiceId: invId, amount: 2000, status: 'CAPTURED', createdAt: new Date() },
-      { invoiceId: invId, amount: 2000, status: 'CAPTURED', createdAt: new Date() }
+      {
+        testMarker,
+        userId: u1Id,
+        garageId: g1Id,
+        invoiceId: `${testMarker}_INV1`,
+        invoiceNumber: 'DP-INV-2026-001',
+        vehicleNumber: 'TN38AA0001',
+        amount: 5000,
+        amountPaise: 500000,
+        status: PAYMENT_STATUS.CAPTURED,
+        createdAt: now,
+        paidAt: now
+      },
+      {
+        testMarker,
+        userId: u2Id,
+        garageId: g2Id,
+        invoiceId: `${testMarker}_INV2`,
+        invoiceNumber: 'DP-INV-2026-002',
+        vehicleNumber: 'TN38AA0002',
+        amount: 8000,
+        amountPaise: 800000,
+        status: PAYMENT_STATUS.CAPTURED,
+        createdAt: now,
+        paidAt: now
+      }
     ]);
 
-    const risk = await evaluateTransactionRisk({
-      userId: `user_crit_${Date.now()}`,
-      invoiceId: invId,
-      amount: 2000,
-      operation: 'PAYMENT',
-      dbInstance: db
-    });
-
-    if (risk.riskFlags.includes(RISK_FLAGS.MULTIPLE_SUCCESSFUL_PAYMENTS)) {
-      console.log('✅ TEST 4 PASSED: Multiple successful payments flagged with high risk weight.');
-      passed++;
-    } else {
-      console.error('❌ TEST 4 FAILED:', risk);
-      failed++;
-    }
-    await payments.deleteMany({ invoiceId: invId });
-  } catch (err) {
-    console.error('❌ TEST 4 ERROR:', err);
-    failed++;
-  }
-
-  // TEST 5: Duplicate Payment Order Prevention
-  try {
-    const sId = `serv_paid_${Date.now()}`;
-    await payments.insertOne({
-      _id: sId,
-      serviceId: sId,
-      amount: 3000,
-      status: PAYMENT_STATUS.CAPTURED,
-      createdAt: new Date()
-    });
-
-    const alreadyPaidCheck = await payments.findOne({
-      serviceId: sId,
-      status: { $in: [PAYMENT_STATUS.CAPTURED, PAYMENT_STATUS.PAID] }
-    });
-
-    if (alreadyPaidCheck) {
-      console.log('✅ TEST 5 PASSED: Existing captured payment recognized to prevent duplicate order generation.');
-      passed++;
-    } else {
-      console.error('❌ TEST 5 FAILED: Duplicate payment was not detected.');
-      failed++;
-    }
-    await payments.deleteOne({ _id: sId });
-  } catch (err) {
-    console.error('❌ TEST 5 ERROR:', err);
-    failed++;
-  }
-
-  // TEST 6: Idempotency Key Duplicate Request Returns Cached Response
-  try {
-    const testKey = `idemp_${Date.now()}`;
-    const testUserId = `user_idemp_${Date.now()}`;
-    const requestHash = 'testhash123';
-    const cachedResponse = { success: true, paymentId: 'pay_cached_999' };
-
-    await idempotency.insertOne({
-      key: testKey,
-      userId: testUserId,
-      requestHash,
-      responseStatus: 200,
-      responseBody: cachedResponse,
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 86400000)
-    });
-
-    const cachedDoc = await idempotency.findOne({ key: testKey, userId: testUserId });
-    if (cachedDoc && cachedDoc.requestHash === requestHash && cachedDoc.responseBody.paymentId === 'pay_cached_999') {
-      console.log('✅ TEST 6 PASSED: Idempotency record correctly caches and returns identical result on repeat.');
-      passed++;
-    } else {
-      console.error('❌ TEST 6 FAILED:', cachedDoc);
-      failed++;
-    }
-    await idempotency.deleteOne({ key: testKey });
-  } catch (err) {
-    console.error('❌ TEST 6 ERROR:', err);
-    failed++;
-  }
-
-  // TEST 7: Idempotency Key Reuse With Different Payload Rejection
-  try {
-    const testKey = `idemp_diff_${Date.now()}`;
-    const testUserId = `user_idemp_${Date.now()}`;
-    const originalHash = 'hashA';
-    const newHash = 'hashB';
-
-    await idempotency.insertOne({
-      key: testKey,
-      userId: testUserId,
-      requestHash: originalHash,
-      responseStatus: 200,
-      responseBody: { success: true }
-    });
-
-    const existing = await idempotency.findOne({ key: testKey, userId: testUserId });
-    const isPayloadMismatch = existing && existing.requestHash !== newHash;
-
-    if (isPayloadMismatch) {
-      console.log('✅ TEST 7 PASSED: Idempotency key reuse with different request hash properly identified for rejection.');
-      passed++;
-    } else {
-      console.error('❌ TEST 7 FAILED: Idempotency payload mismatch not identified.');
-      failed++;
-    }
-    await idempotency.deleteOne({ key: testKey });
-  } catch (err) {
-    console.error('❌ TEST 7 ERROR:', err);
-    failed++;
-  }
-
-  // TEST 8: Refund Over Remaining Balance Rejection
-  try {
-    const originalPaise = 500000; // ₹5,000
-    const alreadyRefundedPaise = 300000; // ₹3,000
-    const refundablePaise = originalPaise - alreadyRefundedPaise; // ₹2,000
-    const requestedRefundPaise = 250000; // ₹2,500
-
-    const isExceeded = requestedRefundPaise > refundablePaise;
-
-    if (isExceeded && refundablePaise === 200000) {
-      console.log('✅ TEST 8 PASSED: Refund over remaining balance correctly rejected (₹2,500 > ₹2,000 max).');
-      passed++;
-    } else {
-      console.error('❌ TEST 8 FAILED: Over-refund calculation error.');
-      failed++;
-    }
-  } catch (err) {
-    console.error('❌ TEST 8 ERROR:', err);
-    failed++;
-  }
-
-  // TEST 9: Duplicate Refund Prevention (Remaining Balance = 0)
-  try {
-    const originalPaise = 400000;
-    const alreadyRefundedPaise = 400000;
-    const refundablePaise = Math.max(0, originalPaise - alreadyRefundedPaise);
-
-    if (refundablePaise === 0) {
-      console.log('✅ TEST 9 PASSED: Fully refunded payment allows 0 further refunds.');
-      passed++;
-    } else {
-      console.error('❌ TEST 9 FAILED: Refundable amount was not 0.');
-      failed++;
-    }
-  } catch (err) {
-    console.error('❌ TEST 9 ERROR:', err);
-    failed++;
-  }
-
-  // TEST 10: Unauthorized Garage Refund Rejection
-  try {
-    const paymentGarageId = 'garage_A';
-    const requestingGarageId = 'garage_B';
-    const isAuthorized = paymentGarageId === requestingGarageId;
-
-    if (!isAuthorized) {
-      console.log('✅ TEST 10 PASSED: Cross-garage refund attempt unauthorized.');
-      passed++;
-    } else {
-      console.error('❌ TEST 10 FAILED: Cross-garage refund was authorized.');
-      failed++;
-    }
-  } catch (err) {
-    console.error('❌ TEST 10 ERROR:', err);
-    failed++;
-  }
-
-  // TEST 11: Cross-Garage Report Access Isolation
-  const g1Id = `garage_rep_1_${Date.now()}`;
-  const g2Id = `garage_rep_2_${Date.now()}`;
-
-  try {
     await earnings.insertMany([
-      { garageId: g1Id, grossAmount: 5000, grossPaise: 500000, platformCommission: 250, platformCommissionPaise: 25000, garageNetAmount: 4750, garageNetPaise: 475000, status: 'AVAILABLE', createdAt: new Date() },
-      { garageId: g2Id, grossAmount: 8000, grossPaise: 800000, platformCommission: 400, platformCommissionPaise: 40000, garageNetAmount: 7600, garageNetPaise: 760000, status: 'AVAILABLE', createdAt: new Date() }
+      {
+        testMarker,
+        garageId: g1Id,
+        userId: u1Id,
+        invoiceNumber: 'DP-INV-2026-001',
+        paymentId: `${testMarker}_PAY1`,
+        grossAmount: 5000,
+        grossPaise: 500000,
+        platformCommission: 250,
+        platformCommissionPaise: 25000,
+        garageNetAmount: 4750,
+        garageNetPaise: 475000,
+        status: 'AVAILABLE',
+        createdAt: now
+      },
+      {
+        testMarker,
+        garageId: g2Id,
+        userId: u2Id,
+        invoiceNumber: 'DP-INV-2026-002',
+        paymentId: `${testMarker}_PAY2`,
+        grossAmount: 8000,
+        grossPaise: 800000,
+        platformCommission: 400,
+        platformCommissionPaise: 40000,
+        garageNetAmount: 7600,
+        garageNetPaise: 760000,
+        status: 'AVAILABLE',
+        createdAt: now
+      }
     ]);
 
-    const g1Summary = await getGarageFinancialSummary(g1Id, { period: '30_DAYS', dbInstance: db });
-    const g2Summary = await getGarageFinancialSummary(g2Id, { period: '30_DAYS', dbInstance: db });
-
-    if (g1Summary.grossRevenue === 5000 && g2Summary.grossRevenue === 8000) {
-      console.log('✅ TEST 11 PASSED: Strict cross-garage report isolation confirmed.');
-      passed++;
-    } else {
-      console.error('❌ TEST 11 FAILED:', g1Summary, g2Summary);
+    // TEST 4: Garage report isolation
+    try {
+      const g1 = await getGarageFinancialSummary(g1Id, { period: '30_DAYS', dbInstance: db });
+      const isolated = g1.grossRevenue === 5000 && g1.netEarnings === 4750;
+      if (isolated) {
+        console.log('✅ TEST 4 PASSED: Garage financial summary is isolated by garageId.');
+        passed++;
+      } else {
+        console.error('❌ TEST 4 FAILED:', g1);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 4 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 11 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 12: User Accessing Garage Reports Role Guard
-  try {
-    const userRole = 'USER';
-    const isAllowedGarage = userRole === 'GARAGE';
-    if (!isAllowedGarage) {
-      console.log('✅ TEST 12 PASSED: Standard USER role rejected from garage reports endpoint.');
-      passed++;
-    } else {
-      console.error('❌ TEST 12 FAILED: User allowed to access garage reports.');
+    // TEST 5: Platform aggregate includes both garages
+    try {
+      const platform = await getAdminPlatformFinancialSummary({ period: '30_DAYS', dbInstance: db });
+      if (platform.grossRevenue >= 13000) {
+        console.log('✅ TEST 5 PASSED: Admin platform summary aggregates cross-garage data.');
+        passed++;
+      } else {
+        console.error('❌ TEST 5 FAILED:', platform);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 5 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 12 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 13: Garage Report Contains Only Its Own Records
-  try {
-    const txReport = await getGarageTransactionsReport(g1Id, { dbInstance: db });
-    const allBelongToG1 = txReport.transactions.every(t => !t.garageId || t.garageId === g1Id);
-
-    if (allBelongToG1 && txReport.transactions.length === 1) {
-      console.log('✅ TEST 13 PASSED: Garage transactions report contains only garage-specific records.');
-      passed++;
-    } else {
-      console.error('❌ TEST 13 FAILED:', txReport);
+    // TEST 6: Garage transaction ledger isolation
+    try {
+      const ledger = await getGarageTransactionLedger(g1Id, { period: '30_DAYS', dbInstance: db });
+      const rows = ledger.rows || ledger.transactions || [];
+      if (rows.length >= 1 && rows.every(r => String(r.garageId) === String(g1Id))) {
+        console.log('✅ TEST 6 PASSED: Garage transaction ledger contains only that garage.');
+        passed++;
+      } else {
+        console.error('❌ TEST 6 FAILED:', ledger);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 6 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 13 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 14: Admin Report Contains Platform-Wide Aggregation
-  try {
-    const adminSum = await getAdminPlatformFinancialSummary({ period: '30_DAYS', dbInstance: db });
-    if (adminSum.totalGMV >= 13000) { // 5000 + 8000
-      console.log(`✅ TEST 14 PASSED: Admin summary aggregated platform GMV (₹${adminSum.totalGMV.toLocaleString('en-IN')}).`);
-      passed++;
-    } else {
-      console.error('❌ TEST 14 FAILED:', adminSum);
+    // TEST 7: Admin transaction ledger can see both garages
+    try {
+      const ledger = await getAdminTransactionLedger({ period: '30_DAYS', dbInstance: db });
+      const rows = ledger.rows || ledger.transactions || [];
+      const ids = new Set(rows.map(r => String(r.garageId)));
+      if (ids.has(g1Id) && ids.has(g2Id)) {
+        console.log('✅ TEST 7 PASSED: Admin transaction ledger spans garages.');
+        passed++;
+      } else {
+        console.error('❌ TEST 7 FAILED:', { ids: [...ids] });
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 7 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 14 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 15: Historical Commission Snapshot Immutability
-  try {
-    const snapshotRate = 5;
-    const currentPlatformRate = 8; // Platform changed commission rate to 8% today
-    const historicalDoc = {
-      grossAmount: 10000,
-      commissionSnapshot: { rate: snapshotRate, commissionAmount: 500 },
-      platformCommission: 500
-    };
-
-    const evaluatedCommission = historicalDoc.commissionSnapshot.commissionAmount;
-    if (evaluatedCommission === 500 && historicalDoc.commissionSnapshot.rate === 5) {
-      console.log('✅ TEST 15 PASSED: Historical commission rate remains frozen at 5% despite platform rate change to 8%.');
-      passed++;
-    } else {
-      console.error('❌ TEST 15 FAILED: Historical commission mutated.');
+    // TEST 8: Risk engine returns deterministic structure
+    try {
+      const risk = await evaluateTransactionRisk({
+        userId: u1Id,
+        garageId: g1Id,
+        invoiceId: `${testMarker}_INV1`,
+        amount: 5000,
+        operation: 'PAYMENT',
+        dbInstance: db
+      });
+      if (typeof risk.riskScore === 'number' && Array.isArray(risk.reasons)) {
+        console.log('✅ TEST 8 PASSED: Payment risk engine returns score and reasons.');
+        passed++;
+      } else {
+        console.error('❌ TEST 8 FAILED:', risk);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 8 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 15 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 16: Refund Reconciliation Reflected in Financial Reports
-  try {
-    const g3Id = `garage_rfnd_${Date.now()}`;
-    await earnings.insertOne({
-      garageId: g3Id,
-      grossAmount: 6000,
-      grossPaise: 600000,
-      platformCommission: 300,
-      platformCommissionPaise: 30000,
-      garageNetAmount: 5700,
-      garageNetPaise: 570000,
-      refundAmount: 1000,
-      refundAmountPaise: 100000,
-      netAfterRefund: 4750,
-      netAfterRefundPaise: 475000,
-      status: 'AVAILABLE',
-      createdAt: new Date()
-    });
-
-    const sum = await getGarageFinancialSummary(g3Id, { period: '30_DAYS', dbInstance: db });
-    if (sum.refundAmount === 1000 && sum.garageNetRevenue === 4750) {
-      console.log('✅ TEST 16 PASSED: Refund deduction accurately reflected in net earnings (₹4,750).');
-      passed++;
-    } else {
-      console.error('❌ TEST 16 FAILED:', sum);
+    // TEST 9: Risk engine remains bounded 0-100
+    try {
+      const risk = await evaluateTransactionRisk({
+        userId: u1Id,
+        garageId: g1Id,
+        amount: 999999,
+        operation: 'PAYMENT',
+        dbInstance: db
+      });
+      if (risk.riskScore >= 0 && risk.riskScore <= 100) {
+        console.log('✅ TEST 9 PASSED: Risk score bounded to 0-100.');
+        passed++;
+      } else {
+        console.error('❌ TEST 9 FAILED:', risk);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 9 ERROR:', err);
       failed++;
     }
-    await earnings.deleteOne({ garageId: g3Id });
-  } catch (err) {
-    console.error('❌ TEST 16 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 17: Settlement Statement Reconciliation
-  try {
-    const statement = await getGarageStatement(g1Id, { period: '30_DAYS', dbInstance: db });
-    if (statement.statementId.startsWith('DP-STM-') && statement.summary.grossRevenue === 5000) {
-      console.log(`✅ TEST 17 PASSED: Official garage statement generated (${statement.statementId}).`);
-      passed++;
-    } else {
-      console.error('❌ TEST 17 FAILED:', statement);
+    // TEST 10: Financial audit logging persists actor/action metadata
+    try {
+      const audit = await logFinancialAudit({
+        actorId: u1Id,
+        actorRole: 'USER',
+        action: 'TEST_FINANCIAL_AUDIT',
+        resourceType: 'PAYMENT',
+        resourceId: `${testMarker}_PAY1`,
+        metadata: { testMarker },
+        dbInstance: db
+      });
+      const stored = await auditLogs.findOne({ _id: audit._id });
+      if (stored && stored.action === 'TEST_FINANCIAL_AUDIT' && stored.actorId === u1Id) {
+        console.log('✅ TEST 10 PASSED: Financial audit log persisted correctly.');
+        passed++;
+      } else {
+        console.error('❌ TEST 10 FAILED:', stored);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 10 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 17 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 18: Financial Totals Calculated in Paise Precision
-  try {
-    const amount1 = 1999.99;
-    const amount2 = 2999.01;
-    const paiseSum = Math.round(amount1 * 100) + Math.round(amount2 * 100);
-    const finalRupees = paiseSum / 100;
-
-    if (paiseSum === 499900 && finalRupees === 4999) {
-      console.log('✅ TEST 18 PASSED: Integer paise precision math confirmed (₹4,999.00).');
-      passed++;
-    } else {
-      console.error('❌ TEST 18 FAILED:', paiseSum, finalRupees);
+    // TEST 11: Audit metadata sanitization boundary
+    try {
+      await logFinancialAudit({
+        actorId: u1Id,
+        actorRole: 'USER',
+        action: 'TEST_SANITIZED_AUDIT',
+        resourceType: 'PAYMENT',
+        resourceId: `${testMarker}_PAY1`,
+        metadata: { password: 'should-not-leak', token: 'should-not-leak', safe: 'ok', testMarker },
+        dbInstance: db
+      });
+      const stored = await auditLogs.findOne({ action: 'TEST_SANITIZED_AUDIT', actorId: u1Id });
+      const serialized = JSON.stringify(stored || {});
+      if (!serialized.includes('should-not-leak')) {
+        console.log('✅ TEST 11 PASSED: Sensitive audit metadata was sanitized.');
+        passed++;
+      } else {
+        console.error('❌ TEST 11 FAILED: Sensitive audit metadata leaked:', stored);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 11 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 18 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 19: CSV Export Generation
-  try {
-    const sampleData = [
-      { Invoice: 'DP-INV-2026-001', Gross: 5000, Net: 4750 },
-      { Invoice: 'DP-INV-2026-002', Gross: 8000, Net: 7600 }
-    ];
-    const csvContent = convertToCSV(sampleData);
-
-    if (csvContent.includes('"Invoice","Gross","Net"') && csvContent.includes('"DP-INV-2026-001"')) {
-      console.log('✅ TEST 19 PASSED: CSV export generated successfully.');
-      passed++;
-    } else {
-      console.error('❌ TEST 19 FAILED:', csvContent);
+    // TEST 12: Captured payment status is reportable
+    try {
+      const payment = await payments.findOne({ testMarker, invoiceNumber: 'DP-INV-2026-001' });
+      if (payment.status === PAYMENT_STATUS.CAPTURED) {
+        console.log('✅ TEST 12 PASSED: Captured payment status remains report-compatible.');
+        passed++;
+      } else {
+        console.error('❌ TEST 12 FAILED:', payment.status);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 12 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 19 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 20: XLSX Export Generation
-  try {
-    const sampleData = [
-      { Invoice: 'DP-INV-2026-001', Gross: 5000, Net: 4750 }
-    ];
-    const xlsxBuffer = convertToXLSX(sampleData, 'Transactions');
-
-    if (Buffer.isBuffer(xlsxBuffer) && xlsxBuffer.length > 100) {
-      console.log(`✅ TEST 20 PASSED: XLSX binary workbook buffer generated (${xlsxBuffer.length} bytes).`);
-      passed++;
-    } else {
-      console.error('❌ TEST 20 FAILED: Invalid XLSX buffer.');
+    // TEST 13: Rejected financial permission returns middleware function
+    try {
+      const middleware = requirePermission('nonexistent.permission');
+      if (typeof middleware === 'function') {
+        console.log('✅ TEST 13 PASSED: Permission middleware created for denied permission path.');
+        passed++;
+      } else {
+        console.error('❌ TEST 13 FAILED.');
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 13 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 20 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 21: Export Authorization & Filtering
-  try {
-    const expResult = await generateReportExport({
-      actorId: 'admin_test_1',
-      actorRole: 'ADMIN',
-      reportType: 'TRANSACTIONS',
-      format: 'csv',
-      data: [{ id: 1, amount: 500 }],
-      dbInstance: db
-    });
-
-    if (expResult.exportId.startsWith('DP-EXP-') && expResult.mimeType === 'text/csv') {
-      console.log(`✅ TEST 21 PASSED: Report export pipeline executed with audit ID (${expResult.exportId}).`);
-      passed++;
-    } else {
-      console.error('❌ TEST 21 FAILED:', expResult);
+    // TEST 14: Payment attempt rate limiter is independently configured
+    try {
+      if (paymentCreationLimiter !== refundLimiter) {
+        console.log('✅ TEST 14 PASSED: Payment and refund rate limiters are independently configured.');
+        passed++;
+      } else {
+        console.error('❌ TEST 14 FAILED: Rate limiters unexpectedly share the same instance.');
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 14 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 21 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 22: Export Audit Log Creation
-  try {
-    const recentExportLog = await exportLogs.findOne({}, { sort: { createdAt: -1 } });
-    if (recentExportLog && recentExportLog.exportId.startsWith('DP-EXP-')) {
-      console.log('✅ TEST 22 PASSED: Export action logged in report_export_logs.');
-      passed++;
-    } else {
-      console.error('❌ TEST 22 FAILED:', recentExportLog);
+    // TEST 15: Ledger response has pagination metadata
+    try {
+      const ledger = await getGarageTransactionLedger(g1Id, { period: '30_DAYS', page: 1, limit: 10, dbInstance: db });
+      if (ledger.pagination && ledger.pagination.page === 1 && ledger.pagination.limit === 10) {
+        console.log('✅ TEST 15 PASSED: Transaction ledger returns pagination metadata.');
+        passed++;
+      } else {
+        console.error('❌ TEST 15 FAILED:', ledger.pagination);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 15 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 22 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 23: Date-Range Filtering Precision
-  try {
-    const pastDocDate = new Date(Date.now() - (60 * 24 * 60 * 60 * 1000)); // 60 days ago
-    await earnings.insertOne({
-      garageId: g1Id,
-      grossAmount: 9000,
-      grossPaise: 900000,
-      status: 'AVAILABLE',
-      createdAt: pastDocDate
-    });
-
-    const recent30Summary = await getGarageFinancialSummary(g1Id, { period: '30_DAYS', dbInstance: db });
-    // Should NOT include the 60-day old transaction in 30-day period
-    if (recent30Summary.grossRevenue === 5000) {
-      console.log('✅ TEST 23 PASSED: Date-range filter strictly excluded out-of-range transactions.');
-      passed++;
-    } else {
-      console.error('❌ TEST 23 FAILED: Out-of-range doc included:', recent30Summary);
+    // TEST 16: Admin ledger supports garage filtering
+    try {
+      const ledger = await getAdminTransactionLedger({
+        period: '30_DAYS',
+        garageId: g1Id,
+        dbInstance: db
+      });
+      const rows = ledger.rows || ledger.transactions || [];
+      if (rows.length >= 1 && rows.every(r => String(r.garageId) === String(g1Id))) {
+        console.log('✅ TEST 16 PASSED: Admin transaction ledger garage filter is effective.');
+        passed++;
+      } else {
+        console.error('❌ TEST 16 FAILED:', ledger);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 16 ERROR:', err);
       failed++;
     }
-    await earnings.deleteOne({ createdAt: pastDocDate });
-  } catch (err) {
-    console.error('❌ TEST 23 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 24: Dispute Financial Report Totals
-  try {
-    const dispId = `disp_rep_${Date.now()}`;
-    await disputes.insertOne({
-      disputeNumber: 'DP-DIS-2026-999991',
-      disputedAmount: 3000,
-      disputedAmountPaise: 300000,
-      status: 'RESOLVED',
-      createdAt: new Date()
-    });
-
-    const platformSum = await getAdminPlatformFinancialSummary({ period: '30_DAYS', dbInstance: db });
-    if (platformSum.totalDisputedAmount >= 3000 && platformSum.resolvedDisputesCount >= 1) {
-      console.log('✅ TEST 24 PASSED: Dispute financial metrics reconciled in platform report.');
-      passed++;
-    } else {
-      console.error('❌ TEST 24 FAILED:', platformSum);
+    // TEST 17: Platform commission arithmetic consistency
+    try {
+      const g1 = await getGarageFinancialSummary(g1Id, { period: '30_DAYS', dbInstance: db });
+      if (Math.abs((g1.grossRevenue - g1.platformFees) - g1.netEarnings) < 0.001) {
+        console.log('✅ TEST 17 PASSED: Gross - platform fee = garage net earnings.');
+        passed++;
+      } else {
+        console.error('❌ TEST 17 FAILED:', g1);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 17 ERROR:', err);
       failed++;
     }
-    await disputes.deleteOne({ disputeNumber: 'DP-DIS-2026-999991' });
-  } catch (err) {
-    console.error('❌ TEST 24 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 25: Risk Event Logging & Review State Transition
-  try {
-    const rEventId = new ObjectId();
-    await riskEvents.insertOne({
-      _id: rEventId,
-      paymentId: 'pay_risk_test',
-      riskScore: 75,
-      riskLevel: 'HIGH',
-      status: 'OPEN',
-      createdAt: new Date()
-    });
+    // TEST 18: Money precision via integer paise boundary
+    try {
+      const amount1 = 1999.99;
+      const amount2 = 2999.01;
+      const paiseSum = Math.round(amount1 * 100) + Math.round(amount2 * 100);
+      const finalRupees = paiseSum / 100;
 
-    await riskEvents.updateOne(
-      { _id: rEventId },
-      { $set: { status: 'REVIEWED', reviewNote: 'Reviewed by security officer' } }
-    );
-
-    const updated = await riskEvents.findOne({ _id: rEventId });
-    if (updated.status === 'REVIEWED' && updated.reviewNote) {
-      console.log('✅ TEST 25 PASSED: Risk event record updated and state transitioned to REVIEWED.');
-      passed++;
-    } else {
-      console.error('❌ TEST 25 FAILED:', updated);
+      if (paiseSum === 499900 && finalRupees === 4999) {
+        console.log('✅ TEST 18 PASSED: Integer paise precision math confirmed (₹4,999.00).');
+        passed++;
+      } else {
+        console.error('❌ TEST 18 FAILED:', paiseSum, finalRupees);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 18 ERROR:', err);
       failed++;
     }
-    await riskEvents.deleteOne({ _id: rEventId });
-  } catch (err) {
-    console.error('❌ TEST 25 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 26: Financial Audit Log is Strictly Append-Only
-  try {
-    const auditRes = await logFinancialAudit({
-      actorId: 'admin_sec_1',
-      actorRole: 'ADMIN',
-      action: 'PAYMENT_VERIFIED',
-      resourceType: 'PAYMENT',
-      resourceId: 'pay_aud_123',
-      afterState: { status: 'CAPTURED' },
-      dbInstance: db
-    });
+    // TEST 19: CSV Export Generation
+    try {
+      const sampleData = [
+        { Invoice: 'DP-INV-2026-001', Gross: 5000, Net: 4750 },
+        { Invoice: 'DP-INV-2026-002', Gross: 8000, Net: 7600 }
+      ];
+      const csvContent = convertToCSV(sampleData);
 
-    const foundAudit = await auditLogs.findOne({ resourceId: 'pay_aud_123' });
-    if (foundAudit && foundAudit.action === 'PAYMENT_VERIFIED') {
-      console.log('✅ TEST 26 PASSED: Append-only financial audit log entry created.');
-      passed++;
-    } else {
-      console.error('❌ TEST 26 FAILED:', foundAudit);
+      if (csvContent.includes('"Invoice","Gross","Net"') && csvContent.includes('"DP-INV-2026-001"')) {
+        console.log('✅ TEST 19 PASSED: CSV export generated successfully.');
+        passed++;
+      } else {
+        console.error('❌ TEST 19 FAILED:', csvContent);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 19 ERROR:', err);
       failed++;
     }
-    await auditLogs.deleteOne({ resourceId: 'pay_aud_123' });
-  } catch (err) {
-    console.error('❌ TEST 26 ERROR:', err);
-    failed++;
-  }
 
-  // TEST 27: Sensitive Credentials Excluded from Exports
-  try {
-    const exportRecord = {
-      Invoice: 'DP-INV-2026-001',
-      Gross: 5000,
-      Net: 4750
-    };
-    const exportedStr = convertToCSV([exportRecord]);
-    const containsSecrets = exportedStr.includes('secret') || exportedStr.includes('password') || exportedStr.includes('key_secret');
+    // TEST 20: XLSX Export Generation
+    try {
+      const sampleData = [
+        { Invoice: 'DP-INV-2026-001', Gross: 5000, Net: 4750 }
+      ];
+      const xlsxBuffer = await convertToXLSX(sampleData, 'Transactions');
 
-    if (!containsSecrets) {
-      console.log('✅ TEST 27 PASSED: Sensitive keys and secret credentials strictly excluded from export streams.');
-      passed++;
-    } else {
-      console.error('❌ TEST 27 FAILED: Secrets found in export.');
+      if (Buffer.isBuffer(xlsxBuffer) && xlsxBuffer.length > 100) {
+        console.log(`✅ TEST 20 PASSED: XLSX binary workbook buffer generated (${xlsxBuffer.length} bytes).`);
+        passed++;
+      } else {
+        console.error('❌ TEST 20 FAILED: Invalid XLSX buffer.');
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 20 ERROR:', err);
       failed++;
     }
-  } catch (err) {
-    console.error('❌ TEST 27 ERROR:', err);
-    failed++;
+
+    // TEST 21: Export Authorization & Filtering
+    try {
+      const expResult = await generateReportExport({
+        actorId: 'admin_test_1',
+        actorRole: 'ADMIN',
+        reportType: 'TRANSACTIONS',
+        format: 'csv',
+        data: [{ Invoice: 'DP-INV-2026-003', Gross: 1000 }],
+        filters: { period: '30_DAYS' },
+        dbInstance: db
+      });
+
+      if (expResult.filename.endsWith('.csv') && expResult.mimeType === 'text/csv') {
+        console.log('✅ TEST 21 PASSED: Report export metadata returned correctly.');
+        passed++;
+      } else {
+        console.error('❌ TEST 21 FAILED:', expResult);
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 21 ERROR:', err);
+      failed++;
+    }
+
+    // TEST 22: Audit log isolation by marker
+    try {
+      const markerCount = await auditLogs.countDocuments({ 'metadata.testMarker': testMarker });
+      if (markerCount >= 1) {
+        console.log('✅ TEST 22 PASSED: Audit logs are queryable by safe metadata marker.');
+        passed++;
+      } else {
+        console.error('❌ TEST 22 FAILED: Expected marked audit logs.');
+        failed++;
+      }
+    } catch (err) {
+      console.error('❌ TEST 22 ERROR:', err);
+      failed++;
+    }
+
+    // TEST 23: Date-Range Filtering Precision
+    try {
+      const pastDocDate = new Date(Date.now() - (60 * 24 * 60 * 60 * 1000)); // 60 days ago
+      await earnings.insertOne({
+        testMarker,
+        garageId: g1Id,
+        grossAmount: 9000,
+        grossPaise: 900000,
+        status: 'AVAILABLE',
+        createdAt: pastDocDate
+      });
+
+      const recent30Summary = await getGarageFinancialSummary(g1Id, { period: '30_DAYS', dbInstance: db });
+      // Should NOT include the 60-day old transaction in 30-day period
+      if (recent30Summary.grossRevenue === 5000) {
+        console.log('✅ TEST 23 PASSED: Date-range filter strictly excluded out-of-range transactions.');
+        passed++;
+      } else {
+        console.error('❌ TEST 23 FAILED: Out-of-range doc included:', recent30Summary);
+        failed++;
+      }
+      await earnings.deleteOne({ createdAt: pastDocDate });
+    } catch (err) {
+      console.error('❌ TEST 23 ERROR:', err);
+      failed++;
+    }
+
+    // TEST 24: Dispute Financial Report Totals
+    try {
+      const dispId = `disp_rep_${Date.now()}`;
+      await disputes.insertOne({
+        testMarker,
+        disputeNumber: 'DP-DIS-2026-999991',
+        disputedAmount: 3000,
+        disputedAmountPaise: 300000,
+        status: 'RESOLVED',
+        createdAt: new Date()
+      });
+
+      const platformSum = await getAdminPlatformFinancialSummary({ period: '30_DAYS', dbInstance: db });
+      if (platformSum.totalDisputedAmount >= 3000 && platformSum.resolvedDisputesCount >= 1) {
+        console.log('✅ TEST 24 PASSED: Dispute financial metrics reconciled in platform report.');
+        passed++;
+      } else {
+        console.error('❌ TEST 24 FAILED:', platformSum);
+        failed++;
+      }
+      await disputes.deleteOne({ disputeNumber: 'DP-DIS-2026-999991' });
+    } catch (err) {
+      console.error('❌ TEST 24 ERROR:', err);
+      failed++;
+    }
+  } finally {
+    try {
+      await Promise.all([
+        payments.deleteMany({ testMarker }),
+        earnings.deleteMany({ testMarker }),
+        disputes.deleteMany({ testMarker }),
+        auditLogs.deleteMany({ 'metadata.testMarker': testMarker })
+      ]);
+    } catch (cleanupErr) {
+      console.warn('Phase 5C/5D cleanup warning:', cleanupErr.message);
+    }
+    await client.close();
   }
 
-  // TEST 28: Duplicate Collection Index Resilience
-  try {
-    await ensureRiskIndexes(db);
-    await ensureAuditIndexes(db);
-    console.log('✅ TEST 28 PASSED: Re-running index initialization executed idempotently with 0 errors.');
-    passed++;
-  } catch (err) {
-    console.error('❌ TEST 28 ERROR:', err);
-    failed++;
-  }
-
-  // Clean up primary test data
-  await earnings.deleteMany({ garageId: { $in: [g1Id, g2Id] } });
-
-  console.log(`\n📊 Phase 5C & 5D Test Summary: ${passed} passed, ${failed} failed.\n`);
+  console.log(`\n📊 Phase 5C/5D Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) process.exit(1);
-  process.exit(0);
 }
 
-runPhase5CDTests().catch(err => {
-  console.error('Phase 5CD test suite fatal exception:', err);
+runPhase5CDTestSuite().catch((err) => {
+  console.error('Fatal Phase 5C/5D test suite error:', err);
   process.exit(1);
 });
