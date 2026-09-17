@@ -56,15 +56,15 @@ const FeedbackButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
-  // If feature flag is off, do not render
-  if (!FEATURES.FEEDBACK) {
-    return null;
-  }
-
   const currentPage = useMemo(() => ({
     pageUrl: location.pathname,
     pageName: getPageName(location.pathname)
   }), [location.pathname]);
+
+  // Keep hooks unconditional even while this feature is disabled.
+  if (!FEATURES.FEEDBACK) {
+    return null;
+  }
 
   return (
     <>
