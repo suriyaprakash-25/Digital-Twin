@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../utils/config';
+import { getPhotoUrl } from '../utils/imageUrl';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';

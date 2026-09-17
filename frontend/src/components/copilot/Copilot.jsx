@@ -26,7 +26,9 @@ const Copilot = () => {
             const parsed = JSON.parse(storedUser);
             setUserName(parsed.name);
             setUserRole(parsed.role || 'USER');
-          } catch (e) {}
+          } catch (error) {
+            console.warn('Ignoring malformed cached user data:', error);
+          }
         }
 
         const res = await axios.get(`${API_BASE_URL}/api/copilot/history`, {
