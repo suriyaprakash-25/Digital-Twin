@@ -39,6 +39,7 @@ function validateEnvironment(env = process.env) {
   const isProduction = nodeEnv === 'production';
   const isStaging = nodeEnv === 'staging';
   const isStrict = isProduction || isStaging;
+  const enforceProductionReadiness = isProduction && String(env.ENFORCE_PRODUCTION_READINESS || '').toLowerCase() === 'true';
 
   const errors = [];
   const warnings = [];
@@ -49,7 +50,7 @@ function validateEnvironment(env = process.env) {
     errors.push('JWT_SECRET_KEY (or JWT_SECRET) is required');
   } else if (INSECURE_JWT_SECRETS.includes(jwtSecret.toLowerCase()) || isPlaceholder(jwtSecret)) {
     if (isStrict) {
-      errors.push('Insecure or placeholder JWT_SECRET_KEY is strictly rejected in production/staging.');
+      errors.push('Insecure JWT_SECRET_KEY or placeholder value is strictly rejected in production/staging.');
     } else {
       warnings.push('JWT_SECRET_KEY is using an insecure development value.');
     }
@@ -89,12 +90,12 @@ function validateEnvironment(env = process.env) {
     errors.push('Invalid configuration: live settlement mode cannot use the mock settlement provider.');
   }
 
-  if (isProduction && settlementProvider === 'mock' && !allowMockSettlementsInProduction) {
-    errors.push('SETTLEMENT_PROVIDER=mock is blocked in production unless ALLOW_MOCK_SETTLEMENTS_IN_PRODUCTION=true is explicitly set.');
+  if (enforceProductionReadiness && settlementProvider === 'mock' && !allowMockSettlementsInProduction) {
+    errors.push('SETTLEMENT_PROVIDER=mock is blocked by production-readiness enforcement unless ALLOW_MOCK_SETTLEMENTS_IN_PRODUCTION=true is explicitly set.');
   }
 
-  if (isProduction && settlementProvider === 'mock' && allowMockSettlementsInProduction) {
-    warnings.push('Production is intentionally running with mock settlements; garage payouts are not live.');
+  if (isProduction && settlementProvider === 'mock') {
+    warnings.push('Production is running with mock settlements; garage payouts are not live.');
   }
 
   // 5. Frontend URL & CORS origin
@@ -106,19 +107,23 @@ function validateEnvironment(env = process.env) {
   // 6. Persistent file storage
   const cloudinaryValues = [env.CLOUDINARY_CLOUD_NAME, env.CLOUDINARY_API_KEY, env.CLOUDINARY_API_SECRET];
   const cloudinaryComplete = cloudinaryValues.every((value) => value && !isPlaceholder(value));
-  if (isProduction && !cloudinaryComplete) {
-    errors.push('Cloudinary persistence is required in production: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET must all be configured.');
+  if (enforceProductionReadiness && !cloudinaryComplete) {
+    errors.push('Cloudinary persistence is required for production readiness: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET must all be configured.');
+  } else if (isProduction && !cloudinaryComplete) {
+    warnings.push('Cloudinary is incomplete; persistent user uploads are not production-ready.');
   }
 
   // 7. Google OAuth audience validation
-  if (isProduction && (!env.GOOGLE_CLIENT_ID || isPlaceholder(env.GOOGLE_CLIENT_ID))) {
-    errors.push('GOOGLE_CLIENT_ID is required in production so Google ID tokens are audience-validated.');
+  if (enforceProductionReadiness && (!env.GOOGLE_CLIENT_ID || isPlaceholder(env.GOOGLE_CLIENT_ID))) {
+    errors.push('GOOGLE_CLIENT_ID is required for production readiness so Google ID tokens are audience-validated.');
+  } else if (isProduction && (!env.GOOGLE_CLIENT_ID || isPlaceholder(env.GOOGLE_CLIENT_ID))) {
+    warnings.push('GOOGLE_CLIENT_ID is missing; Google login is not production-ready.');
   }
 
   // 8. Email provider
   const emailProvider = (env.EMAIL_PROVIDER || 'mock').toLowerCase();
-  if (isProduction && emailProvider === 'mock') {
-    errors.push('EMAIL_PROVIDER=mock is not allowed in production because password-reset emails would not be delivered.');
+  if (enforceProductionReadiness && emailProvider === 'mock') {
+    errors.push('EMAIL_PROVIDER=mock is not allowed when production readiness is enforced.');
   }
   if (emailProvider === 'smtp' && isStrict) {
     if (!env.SMTP_HOST) errors.push('SMTP_HOST is required when EMAIL_PROVIDER=smtp.');
@@ -134,6 +139,7 @@ function validateEnvironment(env = process.env) {
     nodeEnv,
     isProduction,
     isStaging,
+    enforceProductionReadiness,
     settlementMode,
     settlementProvider,
     allowMockSettlementsInProduction
