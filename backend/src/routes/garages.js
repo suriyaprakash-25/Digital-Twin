@@ -1,10 +1,10 @@
 const express = require('express');
-const fs = require('fs');
 const { ObjectId } = require('mongodb');
 
 const { getDb } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
-const { upload, createUploader, removeUploadByUrl } = require('../utils/uploads');
+const { createUploader } = require('../utils/uploads');
+const { persistUploadedFile, persistUploadedFiles, deletePersistedFile, removeTemporaryFile } = require('../services/persistentFileStorage');
 
 const galleryUploader = createUploader();
 
@@ -89,33 +89,49 @@ router.post('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
 });
 
 router.post('/gallery', requireAuth, requireRole('GARAGE'), galleryUploader.array('photos', 10), async (req, res) => {
-  if (!req.files || req.files.length === 0) {
+  const files = Array.isArray(req.files) ? req.files : [];
+  if (files.length === 0) {
     return res.status(400).json({ msg: 'No photos provided' });
   }
 
-  try {
-    const db = getDb();
-    const garages = db.collection('garages');
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id) });
+  const db = getDb();
+  const garages = db.collection('garages');
+  let persisted = [];
+  let stored = false;
 
+  try {
+    const garage = await garages.findOne({ ownerUserId: String(req.user.id) });
     if (!garage) {
+      files.forEach(removeTemporaryFile);
       return res.status(404).json({ msg: 'Garage profile not found' });
     }
 
-    // Process new uploaded files
-    const newPhotos = req.files.map(f => `/uploads/${f.filename}`);
+    persisted = await persistUploadedFiles(files, {
+      folder: 'driveportz/garages/gallery',
+      resourceType: 'image'
+    });
+    const newPhotos = persisted.map((asset) => asset.url);
 
-    // Update garage with new photos
     const result = await garages.findOneAndUpdate(
       { _id: garage._id },
-      { $push: { galleryPhotos: { $each: newPhotos } } },
+      { $push: { galleryPhotos: { $each: newPhotos } }, $set: { updatedAt: new Date() } },
       { returnDocument: 'after' }
     );
+    stored = true;
 
-    return res.status(200).json({ msg: 'Photos uploaded successfully', galleryPhotos: result.galleryPhotos });
+    return res.status(200).json({
+      msg: 'Photos uploaded successfully',
+      photoUrls: newPhotos,
+      galleryPhotos: result?.galleryPhotos || [...(garage.galleryPhotos || []), ...newPhotos]
+    });
   } catch (err) {
-    console.error('Error uploading gallery photos:', err);
-    return res.status(500).json({ msg: 'Server error uploading photos', error: err.message });
+    if (!stored && persisted.length > 0) {
+      await Promise.allSettled(persisted.map((asset) => deletePersistedFile(asset)));
+    } else if (persisted.length === 0) {
+      files.forEach(removeTemporaryFile);
+    }
+    console.error('Error uploading gallery photos:', err.message);
+    return res.status(500).json({ msg: 'Server error uploading photos' });
   }
 });
 
@@ -124,26 +140,52 @@ router.post('/photo', requireAuth, requireRole('GARAGE'), galleryUploader.single
     return res.status(400).json({ msg: 'No photo provided' });
   }
 
-  try {
-    const db = getDb();
-    const garages = db.collection('garages');
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id) });
+  const db = getDb();
+  const garages = db.collection('garages');
+  let persisted = null;
+  let stored = false;
 
+  try {
+    const garage = await garages.findOne({ ownerUserId: String(req.user.id) });
     if (!garage) {
+      removeTemporaryFile(req.file);
       return res.status(404).json({ msg: 'Garage profile not found' });
     }
 
-    if (garage.photoUrl) {
-      removeUploadByUrl(garage.photoUrl);
+    persisted = await persistUploadedFile(req.file, {
+      folder: 'driveportz/garages/profile',
+      resourceType: 'image'
+    });
+
+    await garages.updateOne(
+      { _id: garage._id },
+      {
+        $set: {
+          photoUrl: persisted.url,
+          photoStorageProvider: persisted.storageProvider,
+          photoStorageKey: persisted.storageKey,
+          photoResourceType: persisted.resourceType || 'image',
+          updatedAt: new Date()
+        }
+      }
+    );
+    stored = true;
+
+    if (garage.photoUrl && garage.photoUrl !== persisted.url) {
+      await deletePersistedFile({
+        url: garage.photoUrl,
+        storageProvider: garage.photoStorageProvider,
+        storageKey: garage.photoStorageKey,
+        resourceType: garage.photoResourceType || 'image'
+      });
     }
 
-    const photoUrl = `/uploads/${req.file.filename}`;
-    await garages.updateOne({ _id: garage._id }, { $set: { photoUrl } });
-
-    return res.status(200).json({ msg: 'Photo uploaded successfully', photoUrl });
+    return res.status(200).json({ msg: 'Photo uploaded successfully', photoUrl: persisted.url });
   } catch (err) {
-    console.error('Error uploading garage photo:', err);
-    return res.status(500).json({ msg: 'Server error uploading photo', error: err.message });
+    if (!stored && persisted) await deletePersistedFile(persisted);
+    if (!persisted) removeTemporaryFile(req.file);
+    console.error('Error uploading garage photo:', err.message);
+    return res.status(500).json({ msg: 'Server error uploading photo' });
   }
 });
 
@@ -317,97 +359,9 @@ router.delete('/me/services/:serviceId', requireAuth, requireRole('GARAGE'), asy
   }
 });
 
-// POST /api/garages/photo — garage owner uploads a profile photo
-router.post('/photo', requireAuth, requireRole('GARAGE'), upload.single('photo'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ msg: 'No photo uploaded' });
-  }
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  if (!allowedTypes.includes(req.file.mimetype)) {
-    fs.unlinkSync(req.file.path);
-    return res.status(400).json({ msg: 'Only image files (JPEG, PNG, WebP) are allowed' });
-  }
 
-  const db = getDb();
-  const garages = db.collection('garages');
 
-  try {
-    let garage = await garages.findOne({
-      $or: [
-        { ownerUserId: String(req.user.id) },
-        { ownerUserId: req.user.id }
-      ]
-    });
 
-    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-
-    if (!garage) {
-      const newGarage = {
-        ownerUserId: String(req.user.id),
-        name: 'My Garage',
-        photoUrl,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      await garages.insertOne(newGarage);
-      return res.status(200).json({ msg: 'Photo uploaded', photoUrl });
-    }
-
-    if (garage.photoUrl) {
-      removeUploadByUrl(garage.photoUrl);
-    }
-
-    await garages.updateOne({ _id: garage._id }, { $set: { photoUrl, updatedAt: new Date() } });
-
-    return res.status(200).json({ msg: 'Photo uploaded', photoUrl });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error uploading photo', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-// POST /api/garages/gallery — garage owner uploads gallery photos
-router.post('/gallery', requireAuth, requireRole('GARAGE'), upload.array('photos', 10), async (req, res) => {
-  const files = req.files || (req.file ? [req.file] : []);
-  if (!files || files.length === 0) {
-    return res.status(400).json({ msg: 'No photos uploaded' });
-  }
-
-  const db = getDb();
-  const garages = db.collection('garages');
-
-  try {
-    let garage = await garages.findOne({
-      $or: [
-        { ownerUserId: String(req.user.id) },
-        { ownerUserId: req.user.id }
-      ]
-    });
-
-    const newPhotoUrls = files.map(f => `${req.protocol}://${req.get('host')}/uploads/${f.filename}`);
-
-    if (!garage) {
-      const newGarage = {
-        ownerUserId: String(req.user.id),
-        name: 'My Garage',
-        galleryPhotos: newPhotoUrls,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      await garages.insertOne(newGarage);
-      return res.status(200).json({ msg: 'Photos uploaded successfully', photoUrls: newPhotoUrls, galleryPhotos: newPhotoUrls });
-    }
-
-    const updatedGallery = [...(Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []), ...newPhotoUrls];
-
-    await garages.updateOne({ _id: garage._id }, { $set: { galleryPhotos: updatedGallery, updatedAt: new Date() } });
-
-    return res.status(200).json({ msg: 'Photos uploaded successfully', photoUrls: newPhotoUrls, galleryPhotos: updatedGallery });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error uploading gallery photos', error: String(e && e.message ? e.message : e) });
-  }
-});
 
 // DELETE /api/garages/gallery — remove photo from garage gallery
 router.delete('/gallery', requireAuth, requireRole('GARAGE'), async (req, res) => {
@@ -422,7 +376,7 @@ router.delete('/gallery', requireAuth, requireRole('GARAGE'), async (req, res) =
     if (!garage) return res.status(404).json({ msg: 'Garage profile not found' });
 
     const updatedGallery = (Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []).filter(u => u !== photoUrl);
-    removeUploadByUrl(photoUrl);
+    await deletePersistedFile({ url: photoUrl });
 
     await garages.updateOne({ _id: garage._id }, { $set: { galleryPhotos: updatedGallery, updatedAt: new Date() } });
 

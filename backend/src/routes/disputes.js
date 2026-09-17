@@ -14,6 +14,7 @@ const { notifyUser } = require('../services/notifications');
 const { idempotencyMiddleware } = require('../middleware/idempotency');
 const { disputeLimiter } = require('../middleware/financialRateLimit');
 const { logFinancialAudit } = require('../services/auditService');
+const { persistUploadedFile, removeTemporaryFile } = require('../services/persistentFileStorage');
 
 const config = loadConfig();
 
@@ -55,32 +56,16 @@ function safeObjectId(id) {
 async function processEvidenceUpload(file) {
   if (!file) return null;
 
-  if (config.cloudinary && config.cloudinary.cloudName) {
-    try {
-      const result = await cloudinary.uploader.upload(file.path, {
-        folder: 'driveportz_disputes',
-        resource_type: 'auto'
-      });
-
-      if (fs.existsSync(file.path)) {
-        try { fs.unlinkSync(file.path); } catch {}
-      }
-
-      return {
-        url: result.secure_url,
-        cloudinaryPublicId: result.public_id,
-        originalName: file.originalname,
-        mimeType: file.mimetype,
-        uploadedAt: new Date()
-      };
-    } catch (err) {
-      console.warn('Cloudinary upload error in dispute attachment:', err.message);
-    }
-  }
+  const persisted = await persistUploadedFile(file, {
+    folder: 'driveportz/disputes',
+    resourceType: 'auto'
+  });
 
   return {
-    url: `/uploads/${path.basename(file.path)}`,
-    cloudinaryPublicId: null,
+    url: persisted.url,
+    storageProvider: persisted.storageProvider,
+    storageKey: persisted.storageKey,
+    resourceType: persisted.resourceType || 'auto',
     originalName: file.originalname,
     mimeType: file.mimetype,
     uploadedAt: new Date()
@@ -98,6 +83,7 @@ userDisputeRouter.post('/', requireAuth, disputeLimiter, idempotencyMiddleware, 
   const { paymentId, category, subject, description, disputedAmount } = req.body || {};
 
   if (!paymentId || !description) {
+    removeTemporaryFile(req.file);
     return res.status(400).json({ success: false, message: 'Payment ID and description are required' });
   }
 

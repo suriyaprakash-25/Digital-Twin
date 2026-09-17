@@ -1,5 +1,4 @@
 const express = require('express');
-const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { ObjectId } = require('mongodb');
@@ -7,7 +6,8 @@ const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { loadConfig } = require('../config');
 const { requireAuth, normalizeRole } = require('../middleware/auth');
-const { upload, createUploader, removeUploadByUrl } = require('../utils/uploads');
+const { upload, createUploader } = require('../utils/uploads');
+const { persistUploadedFile, deletePersistedFile, removeTemporaryFile } = require('../services/persistentFileStorage');
 const documentUpload = createUploader(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
 const rateLimit = require('express-rate-limit');
 
@@ -205,32 +205,52 @@ router.post('/me/photo', requireAuth, upload.single('photo'), async (req, res) =
     return res.status(400).json({ msg: 'No photo uploaded' });
   }
 
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  if (!allowedTypes.includes(req.file.mimetype)) {
-    fs.unlinkSync(req.file.path);
-    return res.status(400).json({ msg: 'Only image files (JPEG, PNG, WebP) are allowed' });
-  }
-
   const db = getDb();
   const users = db.collection('users');
+  let persisted = null;
+  let stored = false;
 
   try {
     const user = await users.findOne({ _id: new ObjectId(String(req.user.id)) });
     if (!user) {
-      fs.unlinkSync(req.file.path);
+      removeTemporaryFile(req.file);
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    if (user.photoUrl) {
-      removeUploadByUrl(user.photoUrl);
+    persisted = await persistUploadedFile(req.file, {
+      folder: 'driveportz/users/profile',
+      resourceType: 'image'
+    });
+
+    await users.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          photoUrl: persisted.url,
+          photoStorageProvider: persisted.storageProvider,
+          photoStorageKey: persisted.storageKey,
+          photoResourceType: persisted.resourceType || 'image',
+          updatedAt: new Date()
+        }
+      }
+    );
+    stored = true;
+
+    if (user.photoUrl && user.photoUrl !== persisted.url) {
+      await deletePersistedFile({
+        url: user.photoUrl,
+        storageProvider: user.photoStorageProvider,
+        storageKey: user.photoStorageKey,
+        resourceType: user.photoResourceType || 'image'
+      });
     }
 
-    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    await users.updateOne({ _id: user._id }, { $set: { photoUrl, updatedAt: new Date() } });
-
-    return res.status(200).json({ msg: 'Photo uploaded', photoUrl });
+    return res.status(200).json({ msg: 'Photo uploaded', photoUrl: persisted.url });
   } catch (e) {
-    return res.status(500).json({ msg: 'Error uploading photo', error: String(e && e.message ? e.message : e) });
+    if (!stored && persisted) await deletePersistedFile(persisted);
+    if (!persisted) removeTemporaryFile(req.file);
+    console.error('Profile photo upload failed:', e.message);
+    return res.status(500).json({ msg: 'Error uploading photo' });
   }
 });
 
@@ -239,32 +259,52 @@ router.post('/me/license', requireAuth, documentUpload.single('license'), async 
     return res.status(400).json({ msg: 'No license document uploaded' });
   }
 
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
-  if (!allowedTypes.includes(req.file.mimetype)) {
-    fs.unlinkSync(req.file.path);
-    return res.status(400).json({ msg: 'Only PDF or image files are allowed for the license document' });
-  }
-
   const db = getDb();
   const users = db.collection('users');
+  let persisted = null;
+  let stored = false;
 
   try {
     const user = await users.findOne({ _id: new ObjectId(String(req.user.id)) });
     if (!user) {
-      fs.unlinkSync(req.file.path);
+      removeTemporaryFile(req.file);
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    if (user.licenseDocumentUrl) {
-      removeUploadByUrl(user.licenseDocumentUrl);
+    persisted = await persistUploadedFile(req.file, {
+      folder: 'driveportz/users/licenses',
+      resourceType: 'auto'
+    });
+
+    await users.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          licenseDocumentUrl: persisted.url,
+          licenseStorageProvider: persisted.storageProvider,
+          licenseStorageKey: persisted.storageKey,
+          licenseResourceType: persisted.resourceType || 'auto',
+          updatedAt: new Date()
+        }
+      }
+    );
+    stored = true;
+
+    if (user.licenseDocumentUrl && user.licenseDocumentUrl !== persisted.url) {
+      await deletePersistedFile({
+        url: user.licenseDocumentUrl,
+        storageProvider: user.licenseStorageProvider,
+        storageKey: user.licenseStorageKey,
+        resourceType: user.licenseResourceType || 'image'
+      });
     }
 
-    const licenseDocumentUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    await users.updateOne({ _id: user._id }, { $set: { licenseDocumentUrl, updatedAt: new Date() } });
-
-    return res.status(200).json({ msg: 'License uploaded', licenseDocumentUrl });
+    return res.status(200).json({ msg: 'License uploaded', licenseDocumentUrl: persisted.url });
   } catch (e) {
-    return res.status(500).json({ msg: 'Error uploading license', error: String(e && e.message ? e.message : e) });
+    if (!stored && persisted) await deletePersistedFile(persisted);
+    if (!persisted) removeTemporaryFile(req.file);
+    console.error('License upload failed:', e.message);
+    return res.status(500).json({ msg: 'Error uploading license' });
   }
 });
 
