@@ -1,0 +1,79 @@
+name: DrivePortz Payment Hardening Migration
+
+on:
+  push:
+    branches:
+      - production-hardening-2026-09-17
+    paths:
+      - .github/workflows/payment-hardening-migration.yml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-and-verify:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: development
+      MONGO_URI: mongodb://127.0.0.1:27017
+      MONGO_DB_NAME: driveportz_payment_hardening_ci
+      JWT_SECRET_KEY: payment-hardening-ci-secret-key-min-32-chars
+      FRONTEND_URL: http://localhost:5173
+      EMAIL_PROVIDER: mock
+      SETTLEMENT_MODE: MOCK_TEST_MODE
+      SETTLEMENT_PROVIDER: mock
+      FINANCIAL_JOBS_ENABLED: false
+
+    steps:
+      - name: Checkout hardening branch
+        uses: actions/checkout@v4
+        with:
+          ref: production-hardening-2026-09-17
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Apply deterministic payment migration
+        run: node scripts/harden-payments.cjs
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Audit backend production dependencies
+        working-directory: backend
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Run complete backend verification suite
+        working-directory: backend
+        run: npm test
+
+      - name: Commit verified payment hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/src/routes/payments.js
+          if git diff --cached --quiet; then
+            echo "Payment route was already hardened."
+            exit 0
+          fi
+          git commit -m "security: harden payment authorization and webhook idempotency"
+          git push origin HEAD:production-hardening-2026-09-17
