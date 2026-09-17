@@ -5,7 +5,7 @@ const { ObjectId } = require('mongodb');
 
 const { getDb } = require('../db');
 const { loadConfig } = require('../config');
-const { requireAuth, normalizeRole } = require('../middleware/auth');
+const { requireAuth, normalizeRole, normalizePublicRole } = require('../middleware/auth');
 const { upload, createUploader } = require('../utils/uploads');
 const { persistUploadedFile, deletePersistedFile, removeTemporaryFile } = require('../services/persistentFileStorage');
 const documentUpload = createUploader(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
@@ -53,7 +53,7 @@ router.post('/signup', async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(String(password), 10);
 
-  const normalizedRole = normalizeRole(role);
+  const normalizedRole = normalizePublicRole(role);
 
   const newUser = {
     name,
@@ -364,7 +364,7 @@ router.post('/google', async (req, res) => {
       }
 
       isNewUser = true;
-      const normalizedRole = normalizeRole(role || 'USER');
+      const normalizedRole = normalizePublicRole(role);
       const randomPassword = await bcrypt.hash(Math.random().toString(36).slice(-10), 10);
       user = {
         name,

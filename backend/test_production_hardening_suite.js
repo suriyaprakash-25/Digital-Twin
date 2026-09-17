@@ -5,6 +5,7 @@ const {
   createCorsPolicy
 } = require('./src/security/corsPolicy');
 const { validateEnvironment } = require('./src/config/envValidator');
+const { normalizePublicRole } = require('./src/middleware/auth');
 
 let passed = 0;
 let failed = 0;
@@ -93,6 +94,19 @@ test('production environment validation rejects insecure JWT secrets', () => {
 
   assert.strictEqual(result.valid, false);
   assert.ok(result.errors.some((error) => error.includes('Insecure JWT_SECRET_KEY')));
+});
+
+
+test('public registration cannot self-assign ADMIN role', () => {
+  assert.strictEqual(normalizePublicRole('admin'), 'USER');
+  assert.strictEqual(normalizePublicRole('administrator'), 'USER');
+});
+
+test('public registration preserves supported customer-facing roles', () => {
+  assert.strictEqual(normalizePublicRole('garage'), 'GARAGE');
+  assert.strictEqual(normalizePublicRole('service_center'), 'GARAGE');
+  assert.strictEqual(normalizePublicRole('user'), 'USER');
+  assert.strictEqual(normalizePublicRole(undefined), 'USER');
 });
 
 console.log(`\nProduction hardening suite: ${passed} passed, ${failed} failed.`);
