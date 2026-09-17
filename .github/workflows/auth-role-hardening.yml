@@ -1,0 +1,117 @@
+name: DrivePortz Auth Role Hardening
+
+on:
+  push:
+    branches:
+      - production-hardening-2026-09-17
+    paths:
+      - .github/workflows/auth-role-hardening.yml
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    name: Harden public registration roles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout latest hardening branch
+        uses: actions/checkout@v4
+        with:
+          ref: production-hardening-2026-09-17
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Patch registration role handling and regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              return text.replace(old, new, 1)
+
+          auth_path = Path('backend/src/routes/auth.js')
+          auth = auth_path.read_text()
+          auth = replace_once(
+              auth,
+              "const { requireAuth, normalizeRole } = require('../middleware/auth');",
+              "const { requireAuth, normalizeRole, normalizePublicRole } = require('../middleware/auth');",
+              'auth middleware import'
+          )
+          auth = replace_once(
+              auth,
+              'const normalizedRole = normalizeRole(role);',
+              'const normalizedRole = normalizePublicRole(role);',
+              'password signup public role'
+          )
+          auth = replace_once(
+              auth,
+              "const normalizedRole = normalizeRole(role || 'USER');",
+              'const normalizedRole = normalizePublicRole(role);',
+              'google signup public role'
+          )
+          auth_path.write_text(auth)
+
+          test_path = Path('backend/test_production_hardening_suite.js')
+          tests = test_path.read_text()
+          tests = replace_once(
+              tests,
+              "const { validateEnvironment } = require('./src/config/envValidator');",
+              "const { validateEnvironment } = require('./src/config/envValidator');\nconst { normalizePublicRole } = require('./src/middleware/auth');",
+              'hardening test role import'
+          )
+          insertion = """
+
+test('public registration cannot self-assign ADMIN role', () => {
+  assert.strictEqual(normalizePublicRole('admin'), 'USER');
+  assert.strictEqual(normalizePublicRole('administrator'), 'USER');
+});
+
+test('public registration preserves supported customer-facing roles', () => {
+  assert.strictEqual(normalizePublicRole('garage'), 'GARAGE');
+  assert.strictEqual(normalizePublicRole('service_center'), 'GARAGE');
+  assert.strictEqual(normalizePublicRole('user'), 'USER');
+  assert.strictEqual(normalizePublicRole(undefined), 'USER');
+});
+"""
+          marker = "\nconsole.log(`\\nProduction hardening suite: ${passed} passed, ${failed} failed.`);"
+          if tests.count(marker) != 1:
+              raise SystemExit(f'hardening test footer: expected one marker, found {tests.count(marker)}')
+          tests = tests.replace(marker, insertion + marker, 1)
+          test_path.write_text(tests)
+          PY
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run production hardening regression suite
+        working-directory: backend
+        env:
+          NODE_ENV: development
+          JWT_SECRET_KEY: auth-role-hardening-ci-secret-key-min-32-chars
+        run: npm run test:hardening
+
+      - name: Commit auth hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/src/routes/auth.js backend/test_production_hardening_suite.js
+          if git diff --cached --quiet; then
+            echo "No auth hardening changes were required."
+            exit 0
+          fi
+          git commit -m "security: block privileged roles in public registration"
+          git push origin HEAD:production-hardening-2026-09-17
