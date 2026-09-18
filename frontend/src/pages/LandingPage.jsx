@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import SEO from '../components/SEO';
 import {
   ArrowRight, ShieldCheck, Zap, Activity, Clock, FileText, ChevronRight, CheckCircle2, Layout, Database, Wrench, Menu, X, Globe, Smartphone, ArrowUpRight, Facebook, Instagram, Twitter, Linkedin, MessageCircle,
@@ -13,23 +13,6 @@ import PartnerTermsModal from '../components/PartnerTermsModal';
 
 /* ── Lazy-load DigitalTwinHero ── */
 const DigitalTwinHero = lazy(() => import('../components/DigitalTwinHero'));
-
-/* ── Animated counter hook ────────────────────────────── */
-function useCounter(end, duration = 2000, active = false) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!active) return;
-    let start = null;
-    const raf = (ts) => {
-      if (!start) start = ts;
-      const pct = Math.min((ts - start) / duration, 1);
-      setCount(Math.floor(pct * end));
-      if (pct < 1) requestAnimationFrame(raf);
-    };
-    requestAnimationFrame(raf);
-  }, [end, duration, active]);
-  return count;
-}
 
 /* ── Intersection observer hook ──────────────────────── */
 function useVisible(threshold = 0.25) {
@@ -147,19 +130,13 @@ function FeatureInteractiveCard({ f, i, featVisible }) {
 const LandingPage = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPartnerTerms, setShowPartnerTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
-  const [statsRef, statsVisible] = useVisible(0.3);
   const [featRef, featVisible] = useVisible(0.1);
   const [howRef, howVisible] = useVisible(0.2);
 
-  const c1 = useCounter(50000, 2200, statsVisible);
-  const c2 = useCounter(2500, 2200, statsVisible);
-  const c3 = useCounter(98, 1800, statsVisible);
-  const c4 = useCounter(240, 2200, statsVisible);
 
 
 
@@ -293,7 +270,7 @@ const LandingPage = () => {
         title="Smart Vehicle Driveportz & Service Tracker"
         description="Create a living driveportz of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance."
       />
-      <motion.div 
+      <Motion.div 
         initial={{ opacity: 0, filter: 'blur(4px)' }} 
         animate={{ opacity: 1, filter: 'blur(0px)' }} 
         transition={{ duration: 0.5, ease: "easeOut" }} 
@@ -1016,7 +993,7 @@ const LandingPage = () => {
           isOpen={showAbout}
           onClose={() => setShowAbout(false)}
         />
-      </motion.div>
+      </Motion.div>
     </>
   );
 };

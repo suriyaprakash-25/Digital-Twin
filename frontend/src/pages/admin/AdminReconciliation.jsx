@@ -250,7 +250,6 @@ const AdminReconciliation = () => {
                   const isMatched = r.reconciliationStatus === 'MATCHED';
                   const isMismatch = r.reconciliationStatus === 'MISMATCH';
                   const isMissing = r.reconciliationStatus === 'MISSING';
-                  const isResolved = r.reconciliationStatus === 'RESOLVED';
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">

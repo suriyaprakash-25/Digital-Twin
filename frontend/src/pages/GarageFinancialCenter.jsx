@@ -29,7 +29,7 @@ const SETTLEMENT_STEPS = [
 ];
 
 export default function GarageFinancialCenter() {
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [forecast, setForecast] = useState(null);
   const [settlements, setSettlements] = useState([]);
@@ -93,7 +93,7 @@ export default function GarageFinancialCenter() {
       } else {
         setMessage({ type: 'error', text: data.message || 'Unable to request settlement' });
       }
-    } catch (err) {
+    } catch {
       setMessage({ type: 'error', text: 'Network error requesting settlement' });
     } finally {
       setRequestingSettlement(false);

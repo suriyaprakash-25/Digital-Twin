@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import GarageLocationPicker from '../components/GarageLocationPicker';
 import { getPhotoUrl } from '../utils/imageUrl';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextCore';
 
 const Field = ({ label, icon, children }) => (
   <div className="space-y-1.5 pb-1 lg:pb-2">

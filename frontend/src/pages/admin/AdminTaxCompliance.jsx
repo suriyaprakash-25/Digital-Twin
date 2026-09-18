@@ -14,7 +14,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 
 export default function AdminTaxCompliance() {
   const { showSuccess, showError } = useToast();
@@ -22,8 +22,8 @@ export default function AdminTaxCompliance() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30_DAYS');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateFrom] = useState('');
+  const [dateTo] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -50,12 +50,12 @@ export default function AdminTaxCompliance() {
         setTotalPages(txRes.data.totalPages || 1);
         setTotalCount(txRes.data.totalCount || 0);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load tax compliance data');
     } finally {
       setLoading(false);
     }
-  }, [period, dateFrom, dateTo, page]);
+  }, [period, dateFrom, dateTo, page, showError]);
 
   useEffect(() => {
     fetchTaxData();
@@ -75,7 +75,7 @@ export default function AdminTaxCompliance() {
       link.download = `DrivePortz_TAX_REPORT_${new Date().toISOString().split('T')[0]}.${format}`;
       link.click();
       showSuccess(`Tax report ${format.toUpperCase()} export downloaded`);
-    } catch (err) {
+    } catch {
       showError('Export failed');
     }
   };

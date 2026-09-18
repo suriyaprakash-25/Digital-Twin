@@ -52,6 +52,7 @@ import AdminGarages from './pages/admin/AdminGarages';
 import AdminRevenue from './pages/admin/AdminRevenue';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminFeedback from './pages/admin/AdminFeedback';
+import AdminPilotOperations from './pages/admin/AdminPilotOperations';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminCommissions from './pages/admin/AdminCommissions';
 import AdminSettlements from './pages/admin/AdminSettlements';
@@ -129,6 +130,7 @@ function App() {
           <Route path="/admin/analytics" element={<AdminAnalytics />} />
           <Route path="/admin/revenue" element={<AdminRevenue />} />
           <Route path="/admin/feedback" element={<AdminFeedback />} />
+          <Route path="/admin/pilot-operations" element={<AdminPilotOperations />} />
         </Route>
 
         {/* Protected Dashboard Routes — pathless layout */}

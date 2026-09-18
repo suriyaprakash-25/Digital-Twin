@@ -9,6 +9,10 @@ const FEEDBACK_STATUS = {
 
 const FEEDBACK_CATEGORIES = [
   'General Feedback',
+  'Booking Issue',
+  'Payment Issue',
+  'Garage Complaint',
+  'Account Issue',
   'Bug Report',
   'Feature Request',
   'UI / Design',

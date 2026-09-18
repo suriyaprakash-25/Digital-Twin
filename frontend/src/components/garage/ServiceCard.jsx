@@ -5,7 +5,7 @@ import { getPhotoUrl } from '../../utils/imageUrl';
 const ServiceCard = ({ service, onRequestClick }) => {
   if (!service) return null;
 
-  const { title, description, price, durationMins, category, photoUrl, whatsIncluded = [], isPackage } = service;
+  const { title, description, price, durationMins, category, photoUrl, whatsIncluded = [] } = service;
 
   return (
     <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">

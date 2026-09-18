@@ -14,7 +14,7 @@ import {
   Check
 } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 
 export default function AdminFinancialAlerts() {
   const { showSuccess, showError } = useToast();
@@ -54,12 +54,12 @@ export default function AdminFinancialAlerts() {
       if (sumRes.data?.success) {
         setSummary(sumRes.data.summary);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load financial alerts');
     } finally {
       setLoading(false);
     }
-  }, [page, severityFilter, statusFilter]);
+  }, [page, severityFilter, statusFilter, showError]);
 
   useEffect(() => {
     fetchAlerts();

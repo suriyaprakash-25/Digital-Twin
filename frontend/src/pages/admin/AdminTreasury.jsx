@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
   Landmark,
@@ -16,7 +16,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 
 export default function AdminTreasury() {
   const { showError } = useToast();
@@ -26,7 +26,7 @@ export default function AdminTreasury() {
   const [search, setSearch] = useState('');
   const [selectedBucket, setSelectedBucket] = useState('ALL');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [fRes, aRes] = await Promise.all([
@@ -36,16 +36,16 @@ export default function AdminTreasury() {
 
       if (fRes.data?.success) setForecast(fRes.data.forecast);
       if (aRes.data?.success) setAging(aRes.data.aging);
-    } catch (err) {
+    } catch {
       showError('Failed to load treasury operations data');
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const detailedRecords = aging?.detailedAgingRecords || [];
   const filteredRecords = detailedRecords.filter(r => {

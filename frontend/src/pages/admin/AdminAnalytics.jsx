@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../../utils/config';
-import { useEffect, useState } from 'react';
+import { createElement, useEffect, useState } from 'react';
 import axios from 'axios';
 import { BarChart3, Users, Car, Wrench, TrendingUp, Award } from 'lucide-react';
 import {
@@ -32,10 +32,10 @@ const CustomTooltip = ({ active, payload, label }) => {
     );
 };
 
-const ChartCard = ({ title, icon: Icon, iconColor, children }) => (
+const ChartCard = ({ title, icon, iconColor, children }) => (
     <div className="rounded-2xl bg-white border border-slate-200 p-6" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
         <h3 className="text-slate-900 font-bold text-base mb-6 flex items-center gap-2">
-            <Icon className={`h-4 w-4 ${iconColor}`} />
+            {createElement(icon, { className: `h-4 w-4 ${iconColor}` })}
             {title}
         </h3>
         <div className="h-72">

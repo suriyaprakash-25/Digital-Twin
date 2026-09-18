@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { ArrowRight, Globe, Users, Award } from 'lucide-react';
 import SEO from '../components/SEO';
 import TermsConditionsModal from '../components/TermsConditionsModal';
@@ -41,7 +41,7 @@ const GaragePartnersPage = () => {
         title="Driveportz Garage Partners" 
         description="Grow your workshop online with Driveportz. Manage bookings, verify service claims, and build lasting trust." 
       />
-      <motion.div 
+      <Motion.div 
         initial={{ opacity: 0, filter: 'blur(4px)' }} 
         animate={{ opacity: 1, filter: 'blur(0px)' }} 
         transition={{ duration: 0.5, ease: "easeOut" }} 
@@ -161,7 +161,7 @@ const GaragePartnersPage = () => {
         <PartnerTermsModal isOpen={showPartnerTerms} onClose={() => setShowPartnerTerms(false)} />
         <PrivacyPolicyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} onAccept={() => {}} readOnly={true} />
         <AboutUsModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
-      </motion.div>
+      </Motion.div>
     </>
   );
 };

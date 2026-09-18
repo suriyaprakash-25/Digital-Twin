@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MapPin, Navigation, Search, X, ShieldCheck, AlertTriangle } from 'lucide-react';
 import SEO from '../components/SEO';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextCore';
 import { getPhotoUrl } from '../utils/imageUrl';
 import MediaManager from '../components/MediaManager';
 
@@ -81,7 +81,7 @@ const Marketplace = () => {
     };
   }, [headers]);
 
-  const requestBooking = async ({ garageId, serviceId, serviceTitle, garageName }) => {
+  const requestBooking = async ({ garageId, serviceId, serviceTitle }) => {
     setError('');
     setMessage('');
 

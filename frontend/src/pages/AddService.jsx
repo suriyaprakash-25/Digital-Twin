@@ -30,7 +30,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextCore';
 import InvoiceModal from '../components/invoice/InvoiceModal';
 import MediaManager from '../components/MediaManager';
 
@@ -44,7 +44,6 @@ const AddService = () => {
   const serviceIdParam = searchParams.get('serviceId') || '';
 
   const [vehicles, setVehicles] = useState([]);
-  const [isGarage, setIsGarage] = useState(false);
   const [prefilledData, setPrefilledData] = useState(null);
   const [isLoadingPrefill, setIsLoadingPrefill] = useState(completionMode);
 
@@ -100,7 +99,6 @@ const AddService = () => {
       const userRaw = localStorage.getItem('user');
       const user = userRaw ? JSON.parse(userRaw) : null;
       const checkGarage = user && (user.role === 'GARAGE' || user.role === 'garage' || user.role === 'service_center' || user.role === 'servicecenter');
-      setIsGarage(!!checkGarage);
 
       if (completionMode && (bookingIdParam || serviceIdParam)) {
         setIsLoadingPrefill(true);
@@ -172,7 +170,7 @@ const AddService = () => {
     };
 
     initPage();
-  }, [completionMode, bookingIdParam, serviceIdParam]);
+  }, [completionMode, bookingIdParam, serviceIdParam, showToast]);
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -332,7 +330,7 @@ const AddService = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-    } catch (err) {
+    } catch {
       setCameraError('Could not access camera. Please allow camera permission or use "Choose File".');
     }
   }, [facingMode, stopStream]);

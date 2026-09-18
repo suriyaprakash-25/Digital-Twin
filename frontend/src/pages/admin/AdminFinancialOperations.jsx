@@ -19,11 +19,11 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 import SettlementReviewModal from '../../components/settlement/SettlementReviewModal';
 
 export default function AdminFinancialOperations() {
-  const { showSuccess, showError } = useToast();
+  const { showError } = useToast();
   const [summary, setSummary] = useState({
     pendingAmount: 0,
     pendingCount: 0,
@@ -46,7 +46,7 @@ export default function AdminFinancialOperations() {
   const [selectedSettlement, setSelectedSettlement] = useState(null);
   const [search, setSearch] = useState('');
 
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/admin/financial-operations/summary`, { headers: getAuthHeaders() });
       if (res.data?.success) {
@@ -55,7 +55,7 @@ export default function AdminFinancialOperations() {
     } catch (err) {
       console.error('Error loading operations summary:', err);
     }
-  };
+  }, []);
 
   const fetchSettlements = useCallback(async () => {
     setLoading(true);
@@ -68,12 +68,12 @@ export default function AdminFinancialOperations() {
       if (res.data?.success) {
         setSettlements(res.data.settlements || []);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load settlements');
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, showError]);
 
   useEffect(() => {
     fetchSummary();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     Bell, 
@@ -18,10 +18,9 @@ const NotificationBell = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [loading, setLoading] = useState(false);
     const dropdownRef = useRef(null);
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const [listRes, countRes] = await Promise.allSettled([
                 apiGet('/notifications?limit=15'),
@@ -34,16 +33,21 @@ const NotificationBell = () => {
             if (countRes.status === 'fulfilled' && countRes.value?.success) {
                 setUnreadCount(countRes.value.count || 0);
             }
-        } catch (err) {
+        } catch {
             // Non-blocking
         }
-    };
+    }, []);
 
     useEffect(() => {
-        fetchNotifications();
+        const initial = setTimeout(() => {
+            fetchNotifications();
+        }, 0);
         const interval = setInterval(fetchNotifications, 20000); // 20s poll
-        return () => clearInterval(interval);
-    }, []);
+        return () => {
+            clearTimeout(initial);
+            clearInterval(interval);
+        };
+    }, [fetchNotifications]);
 
     // Close dropdown on outside click
     useEffect(() => {

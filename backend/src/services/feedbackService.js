@@ -1,21 +1,12 @@
-const path = require('path');
-const fs = require('fs');
 const { ObjectId } = require('mongodb');
-const cloudinary = require('cloudinary').v2;
-const { loadConfig } = require('../config');
 const { getDb } = require('../db');
 const { FEEDBACK_STATUS, validateFeedbackInput } = require('../models/Feedback');
-
-const config = loadConfig();
-
-// Configure Cloudinary if credentials are present
-if (config.cloudinary && config.cloudinary.cloudName) {
-  cloudinary.config({
-    cloud_name: config.cloudinary.cloudName,
-    api_key: config.cloudinary.apiKey,
-    api_secret: config.cloudinary.apiSecret
-  });
-}
+const {
+  persistUploadedFile,
+  deletePersistedFile,
+  removeTemporaryFile
+} = require('./persistentFileStorage');
+const { getSupportDefaults } = require('./pilotSupportService');
 
 function safeObjectId(id) {
   try {
@@ -25,52 +16,42 @@ function safeObjectId(id) {
   }
 }
 
-/**
- * Handle screenshot upload: uses Cloudinary if available, otherwise local uploads folder.
- */
 async function processScreenshotUpload(file) {
-  if (!file) return { screenshotUrl: null, cloudinaryPublicId: null };
-
-  // If Cloudinary is configured, upload to Cloudinary
-  if (config.cloudinary && config.cloudinary.cloudName) {
-    try {
-      const result = await cloudinary.uploader.upload(file.path, {
-        folder: 'driveportz_feedback',
-        resource_type: 'image'
-      });
-      // Remove temporary local file if it was created in a temp dir
-      if (fs.existsSync(file.path)) {
-        try { fs.unlinkSync(file.path); } catch {}
-      }
-      return {
-        screenshotUrl: result.secure_url,
-        cloudinaryPublicId: result.public_id
-      };
-    } catch (err) {
-      console.error('Cloudinary upload error in feedbackService:', err);
-    }
+  if (!file) {
+    return {
+      screenshotUrl: null,
+      screenshotStorageProvider: null,
+      screenshotStorageKey: null,
+      screenshotResourceType: null
+    };
   }
 
-  // Fallback: local storage in /uploads/
-  const relativeUrl = `/uploads/${path.basename(file.path)}`;
+  const asset = await persistUploadedFile(file, {
+    folder: 'driveportz/feedback',
+    resourceType: 'image'
+  });
+
   return {
-    screenshotUrl: relativeUrl,
-    cloudinaryPublicId: null
+    screenshotUrl: asset?.url || null,
+    screenshotStorageProvider: asset?.storageProvider || null,
+    screenshotStorageKey: asset?.storageKey || null,
+    screenshotResourceType: asset?.resourceType || 'image'
   };
 }
 
-/**
- * Create a new feedback record.
- */
 async function createFeedback({ user, rating, category, message, pageUrl, pageName, file }) {
   const db = getDb();
-  
+
   const validation = validateFeedbackInput({ rating, category, message });
   if (!validation.isValid) {
-    throw { statusCode: 400, message: validation.errors.join(' ') };
+    removeTemporaryFile(file);
+    const error = new Error(validation.errors.join(' '));
+    error.statusCode = 400;
+    throw error;
   }
 
-  const { screenshotUrl, cloudinaryPublicId } = await processScreenshotUpload(file);
+  const upload = await processScreenshotUpload(file);
+  const support = getSupportDefaults(category);
 
   const doc = {
     userId: user?.id ? safeObjectId(user.id) : null,
@@ -82,9 +63,15 @@ async function createFeedback({ user, rating, category, message, pageUrl, pageNa
     message: message.trim(),
     pageUrl: (pageUrl || '').trim() || '/',
     pageName: (pageName || '').trim() || 'DrivePortz App',
-    screenshotUrl,
-    cloudinaryPublicId,
+    ...upload,
     status: FEEDBACK_STATUS.NEW,
+    supportQueue: support.supportQueue,
+    supportPriority: support.supportPriority,
+    supportSlaHours: support.supportSlaHours,
+    assignedTo: null,
+    acknowledgedAt: null,
+    resolvedAt: null,
+    resolutionNote: '',
     createdAt: new Date(),
     updatedAt: new Date()
   };
@@ -96,9 +83,6 @@ async function createFeedback({ user, rating, category, message, pageUrl, pageNa
   };
 }
 
-/**
- * Get paginated feedbacks with filters, search, and summary metrics.
- */
 async function getFeedbackList({
   page = 1,
   limit = 10,
@@ -118,7 +102,7 @@ async function getFeedbackList({
 
   if (rating) {
     const r = Number(rating);
-    if (!isNaN(r) && r >= 1 && r <= 5) {
+    if (!Number.isNaN(r) && r >= 1 && r <= 5) {
       filter.rating = r;
     }
   }
@@ -152,7 +136,9 @@ async function getFeedbackList({
       { email: { $regex: s, $options: 'i' } },
       { message: { $regex: s, $options: 'i' } },
       { pageName: { $regex: s, $options: 'i' } },
-      { pageUrl: { $regex: s, $options: 'i' } }
+      { pageUrl: { $regex: s, $options: 'i' } },
+      { supportQueue: { $regex: s, $options: 'i' } },
+      { assignedTo: { $regex: s, $options: 'i' } }
     ];
   }
 
@@ -179,12 +165,9 @@ async function getFeedbackList({
   };
 }
 
-/**
- * Get aggregate metrics for feedback dashboard cards.
- */
 async function getFeedbackMetrics() {
   const db = getDb();
-  
+
   const [
     totalFeedback,
     newFeedback,
@@ -219,9 +202,6 @@ async function getFeedbackMetrics() {
   };
 }
 
-/**
- * Get feedback detail by ID.
- */
 async function getFeedbackById(id) {
   const db = getDb();
   const objectId = safeObjectId(id);
@@ -230,66 +210,60 @@ async function getFeedbackById(id) {
   return db.collection('feedbacks').findOne({ _id: objectId });
 }
 
-/**
- * Update feedback status.
- */
 async function updateFeedbackStatus(id, newStatus) {
   const db = getDb();
   const objectId = safeObjectId(id);
   if (!objectId) {
-    throw { statusCode: 400, message: 'Invalid feedback ID' };
+    const error = new Error('Invalid feedback ID');
+    error.statusCode = 400;
+    throw error;
   }
 
   const validStatuses = Object.values(FEEDBACK_STATUS);
   if (!validStatuses.includes(newStatus)) {
-    throw { statusCode: 400, message: `Status must be one of: ${validStatuses.join(', ')}` };
+    const error = new Error(`Status must be one of: ${validStatuses.join(', ')}`);
+    error.statusCode = 400;
+    throw error;
   }
+
+  const set = {
+    status: newStatus,
+    updatedAt: new Date()
+  };
+  if (newStatus === FEEDBACK_STATUS.REVIEWED) set.acknowledgedAt = new Date();
+  if (newStatus === FEEDBACK_STATUS.RESOLVED) set.resolvedAt = new Date();
 
   const result = await db.collection('feedbacks').findOneAndUpdate(
     { _id: objectId },
-    {
-      $set: {
-        status: newStatus,
-        updatedAt: new Date()
-      }
-    },
+    { $set: set },
     { returnDocument: 'after' }
   );
 
-  return result.value || result;
+  return result?.value || result;
 }
 
-/**
- * Delete a feedback item.
- */
 async function deleteFeedback(id) {
   const db = getDb();
   const objectId = safeObjectId(id);
   if (!objectId) {
-    throw { statusCode: 400, message: 'Invalid feedback ID' };
+    const error = new Error('Invalid feedback ID');
+    error.statusCode = 400;
+    throw error;
   }
 
   const doc = await db.collection('feedbacks').findOne({ _id: objectId });
   if (!doc) {
-    throw { statusCode: 404, message: 'Feedback not found' };
+    const error = new Error('Feedback not found');
+    error.statusCode = 404;
+    throw error;
   }
 
-  // If local file, optionally remove from disk
-  if (doc.screenshotUrl && doc.screenshotUrl.startsWith('/uploads/')) {
-    const filename = doc.screenshotUrl.replace('/uploads/', '');
-    const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
-    const localPath = path.join(uploadsDir, filename);
-    if (fs.existsSync(localPath)) {
-      try { fs.unlinkSync(localPath); } catch {}
-    }
-  }
-
-  // If Cloudinary, optionally remove from Cloudinary
-  if (doc.cloudinaryPublicId && config.cloudinary && config.cloudinary.cloudName) {
-    try {
-      await cloudinary.uploader.destroy(doc.cloudinaryPublicId);
-    } catch {}
-  }
+  await deletePersistedFile({
+    url: doc.screenshotUrl,
+    storageProvider: doc.screenshotStorageProvider,
+    storageKey: doc.screenshotStorageKey,
+    resourceType: doc.screenshotResourceType || 'image'
+  });
 
   await db.collection('feedbacks').deleteOne({ _id: objectId });
   return { success: true };
@@ -301,5 +275,6 @@ module.exports = {
   getFeedbackById,
   updateFeedbackStatus,
   deleteFeedback,
-  getFeedbackMetrics
+  getFeedbackMetrics,
+  processScreenshotUpload
 };

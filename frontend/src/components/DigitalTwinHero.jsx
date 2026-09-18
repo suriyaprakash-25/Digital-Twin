@@ -17,8 +17,8 @@
  *
  * Model: Ferrari 458 Italia (CC-BY, by vicent091036 via Three.js examples)
  */
-import { useRef, useState, useEffect, useCallback, Suspense, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { createElement, useRef, useState, useEffect, useCallback, Suspense } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -75,13 +75,6 @@ const heroStyles = `
 /** Teal glowing platform rings rendered in 3D */
 function GlowingPlatform() {
   const groupRef = useRef();
-  const ringMaterial = useMemo(() => new THREE.MeshBasicMaterial({
-    color: new THREE.Color('#0d9488'),
-    transparent: true,
-    opacity: 0.3,
-    side: THREE.DoubleSide,
-  }), []);
-
   useFrame((state) => {
     if (groupRef.current) {
       const t = state.clock.elapsedTime;
@@ -210,12 +203,10 @@ function VehicleModel({ onLoaded }) {
 
 /** Camera rig that responds to mouse position */
 function CameraRig({ mousePos, isMobile }) {
-  const { camera } = useThree();
-
-  useFrame(() => {
+  useFrame((state) => {
     if (isMobile) return;
 
-    // Smooth camera offset based on mouse
+    const camera = state.camera;
     const targetX = 4.5 + mousePos.x * 0.8;
     const targetY = 2.2 + mousePos.y * -0.4;
     const targetZ = 6 + mousePos.y * 0.3;
@@ -247,7 +238,7 @@ useGLTF.preload('/models/sedan.glb');
 ═══════════════════════════════════════════════════════ */
 
 /* ── Data Card Component ─────────────────────────────── */
-function DTCard({ icon: Icon, label, primaryValue, secondaryLine, tertiaryLine, accentColor, delay, className, style }) {
+function DTCard({ icon, label, primaryValue, secondaryLine, tertiaryLine, accentColor, delay, className, style }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -291,7 +282,7 @@ function DTCard({ icon: Icon, label, primaryValue, secondaryLine, tertiaryLine, 
               flexShrink: 0,
             }}
           >
-            <Icon size={16} color="#0d9488" strokeWidth={2.2} />
+            {createElement(icon, { size: 16, color: '#0d9488', strokeWidth: 2.2 })}
           </div>
           <span
             style={{
@@ -509,7 +500,7 @@ function ConnectionLines({ visible }) {
 }
 
 /* ── Ecosystem Feature Icon ──────────────────────────── */
-function EcoIcon({ icon: Icon, label, delay }) {
+function EcoIcon({ icon, label, delay }) {
   const [visible, setVisible] = useState(false);
   const [hovered, setHovered] = useState(false);
 
@@ -547,7 +538,7 @@ function EcoIcon({ icon: Icon, label, delay }) {
           transform: hovered ? 'scale(1.08)' : 'scale(1)',
         }}
       >
-        <Icon size={20} color="#0d9488" strokeWidth={1.8} />
+        {createElement(icon, { size: 20, color: '#0d9488', strokeWidth: 1.8 })}
       </div>
       <span
         style={{
@@ -609,32 +600,30 @@ function LoadingOverlay({ visible }) {
 export default function DigitalTwinHero() {
   const containerRef = useRef(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isMobile, setIsMobile] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const [reducedMotion, setReducedMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
   const [modelReady, setModelReady] = useState(false);
   const [webglFailed, setWebglFailed] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [linesVisible, setLinesVisible] = useState(false);
   const rafRef = useRef(null);
 
-  // Detect capabilities & check WebGL support upfront
+  // Track responsive/reduced-motion capabilities and start the line entrance sequence.
   useEffect(() => {
-    const mobile = window.innerWidth < 768;
-    setIsMobile(mobile);
-    setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
+    const handleMotionChange = (event) => setReducedMotion(event.matches);
 
-    // Start entrance sequence
-    const t1 = setTimeout(() => setLoaded(true), 300);
-    const t2 = setTimeout(() => setLinesVisible(true), 2100);
+    window.addEventListener('resize', handleResize);
+    motionQuery.addEventListener?.('change', handleMotionChange);
+    const lineTimer = setTimeout(() => setLinesVisible(true), 2100);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      clearTimeout(t1);
-      clearTimeout(t2);
+      motionQuery.removeEventListener?.('change', handleMotionChange);
+      clearTimeout(lineTimer);
     };
   }, []);
 

@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../../utils/config';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import {
     Building2, Search, ChevronLeft, ChevronRight, ShieldCheck, ShieldX,
@@ -20,7 +20,7 @@ const AdminGarages = () => {
 
     const token = localStorage.getItem('token');
 
-    const fetchGarages = async (p = 1, q = '') => {
+    const fetchGarages = useCallback(async (p = 1, q = '') => {
         setLoading(true);
         try {
             const res = await axios.get(`${API_BASE_URL}/api/admin/garages`, {
@@ -36,11 +36,11 @@ const AdminGarages = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchGarages(1, search);
-    }, [search]);
+    }, [search, fetchGarages]);
 
     const handleSearch = (e) => {
         e.preventDefault();

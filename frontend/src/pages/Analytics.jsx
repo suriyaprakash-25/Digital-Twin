@@ -13,7 +13,15 @@ const Analytics = () => {
     const [data, setData] = useState(null);
     const [garageData, setGarageData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [userRole, setUserRole] = useState('USER');
+    const [userRole] = useState(() => {
+        if (typeof window === 'undefined') return 'USER';
+        try {
+            const stored = localStorage.getItem('user');
+            return stored ? (JSON.parse(stored).role || 'USER') : 'USER';
+        } catch {
+            return 'USER';
+        }
+    });
     const [dateRange, setDateRange] = useState('all');
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
@@ -30,29 +38,34 @@ const Analytics = () => {
     }, []);
 
     useEffect(() => {
-        const stored = localStorage.getItem('user');
-        let role = 'USER';
-        try {
-            role = stored ? (JSON.parse(stored).role || 'USER') : 'USER';
-        } catch { /* ignore */ }
-        setUserRole(role);
-
+        let cancelled = false;
         const token = localStorage.getItem('token');
         const headers = { Authorization: `Bearer ${token}` };
-
-        setLoading(true);
-        const url = role === 'GARAGE'
+        const url = userRole === 'GARAGE'
             ? `${API_BASE_URL}/api/analytics/garage?days=${dateRange}`
             : `${API_BASE_URL}/api/analytics`;
 
-        axios.get(url, { headers })
-            .then((res) => {
-                if (role === 'GARAGE') setGarageData(res.data);
-                else setData(res.data);
-            })
-            .catch((err) => console.error('Error fetching analytics:', err))
-            .finally(() => setLoading(false));
-    }, [dateRange]);
+        const timer = setTimeout(() => {
+            setLoading(true);
+            axios.get(url, { headers })
+                .then((res) => {
+                    if (cancelled) return;
+                    if (userRole === 'GARAGE') setGarageData(res.data);
+                    else setData(res.data);
+                })
+                .catch((err) => {
+                    if (!cancelled) console.error('Error fetching analytics:', err);
+                })
+                .finally(() => {
+                    if (!cancelled) setLoading(false);
+                });
+        }, 0);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [dateRange, userRole]);
 
     if (loading) {
         return (
@@ -71,7 +84,7 @@ const Analytics = () => {
                 <div className="text-center py-12 px-4">
                     <Activity className="h-10 w-10 md:h-16 md:w-16 text-slate-300 mx-auto mb-3" />
                     <h3 className="text-base md:text-xl font-bold text-slate-900 mb-1">Analytics Unavailable</h3>
-                    <p className="text-2xs md:text-sm text-slate-550 font-medium max-w-sm mx-auto">Complete your garage profile and start accepting bookings to see analytics.</p>
+                    <p className="text-2xs md:text-sm text-slate-500 font-medium max-w-sm mx-auto">Complete your garage profile and start accepting bookings to see analytics.</p>
                 </div>
             );
         }
@@ -304,7 +317,7 @@ const Analytics = () => {
             <div className="text-center py-12 px-4">
                 <Activity className="h-10 w-10 md:h-16 md:w-16 text-slate-300 mx-auto mb-3" />
                 <h3 className="text-base md:text-xl font-bold text-slate-900 mb-1">Analytics Unavailable</h3>
-                <p className="text-2xs md:text-sm text-slate-550 font-medium max-w-sm mx-auto">Add vehicles and service records to generate insights.</p>
+                <p className="text-2xs md:text-sm text-slate-500 font-medium max-w-sm mx-auto">Add vehicles and service records to generate insights.</p>
             </div>
         );
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { ShieldCheck, FileText, Upload, Calendar, ArrowLeft, Building2, Plus, Info, AlertCircle, FileUp, Sparkles, ExternalLink } from 'lucide-react';
@@ -21,9 +21,12 @@ const Insurance = () => {
   const [documentConsent, setDocumentConsent] = useState(false);
 
   const token = localStorage.getItem('token');
-  const headers = { headers: { Authorization: `Bearer ${token}` } };
+  const headers = useMemo(
+    () => ({ headers: { Authorization: `Bearer ${token}` } }),
+    [token]
+  );
 
-  const fetchInsuranceData = async () => {
+  const fetchInsuranceData = useCallback(async () => {
     try {
       const [vRes, iRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers),
@@ -38,11 +41,11 @@ const Insurance = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers, vehicleId]);
 
   useEffect(() => {
     fetchInsuranceData();
-  }, [vehicleId]);
+  }, [fetchInsuranceData]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

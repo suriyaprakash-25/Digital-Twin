@@ -17,7 +17,7 @@ import {
   User,
   Percent
 } from 'lucide-react';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 
 const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
   const { showToast } = useToast();

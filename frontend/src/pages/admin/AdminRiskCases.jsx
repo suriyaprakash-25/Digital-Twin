@@ -20,7 +20,7 @@ import {
   FileText
 } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 
 export default function AdminRiskCases() {
   const { showSuccess, showError } = useToast();
@@ -54,12 +54,12 @@ export default function AdminRiskCases() {
         setTotalPages(res.data.totalPages || 1);
         setTotalCount(res.data.totalCount || 0);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load risk cases');
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, levelFilter, search]);
+  }, [page, statusFilter, levelFilter, search, showError]);
 
   useEffect(() => {
     fetchCases();

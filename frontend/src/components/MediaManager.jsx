@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Camera, UploadCloud } from 'lucide-react';
 import { API_BASE_URL } from '../utils/config';
@@ -23,13 +23,7 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
   const token = localStorage.getItem('token');
   const baseUrl = API_BASE_URL;
 
-  useEffect(() => {
-    if (entityId) {
-      fetchMedia();
-    }
-  }, [entityId, entityType, category]);
-
-  const fetchMedia = async () => {
+  const fetchMedia = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${baseUrl}/api/media/${entityType}/${entityId}`, {
@@ -45,7 +39,13 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
     } finally {
       setLoading(false);
     }
-  };
+  }, [baseUrl, entityType, entityId, token, category]);
+
+  useEffect(() => {
+    if (entityId) {
+      fetchMedia();
+    }
+  }, [entityId, fetchMedia]);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];

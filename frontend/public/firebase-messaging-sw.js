@@ -1,12 +1,10 @@
-/* eslint-disable no-restricted-globals */
-
 // Generic Push handler (works for FCM webpush payloads as well)
 self.addEventListener('push', (event) => {
   let payload = {};
 
   try {
     payload = event.data ? event.data.json() : {};
-  } catch (e) {
+  } catch {
     payload = {};
   }
 

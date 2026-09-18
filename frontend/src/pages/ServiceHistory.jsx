@@ -8,7 +8,7 @@ import PaymentSuccessModal from '../components/payment/PaymentSuccessModal';
 import InvoiceModal from '../components/invoice/InvoiceModal';
 import ReceiptModal from '../components/invoice/ReceiptModal';
 import MediaManager from '../components/MediaManager';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextCore';
 
 const ServiceHistory = () => {
     const { vehicleId } = useParams();
@@ -135,7 +135,7 @@ const ServiceHistory = () => {
                 </div>
             ) : (
                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-10 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                    {services.map((service, idx) => {
+                    {services.map((service) => {
                         const isExpanded = expandedService === service.id;
                         return (
                             <div

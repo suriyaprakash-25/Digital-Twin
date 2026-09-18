@@ -4,9 +4,8 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Car, CheckCircle, Hash, Calendar, Fuel, FileText, User, Phone, IndianRupee, Activity, Tag, Shield, FileCheck, Layers, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import MediaManager from '../components/MediaManager';
-const EditVehicle = () => {
-    const { id } = useParams();
-    const [formData, setFormData] = useState({
+
+const INITIAL_FORM_DATA = {
         // Identity
         vehicleNumber: '', brand: '', model: '', variant: '', vehicleType: 'Car', fuelType: 'Petrol', color: '', year: '', registrationDate: '', registeredRTO: '',
         // Ownership
@@ -17,7 +16,11 @@ const EditVehicle = () => {
         chassisNumber: '', engineNumber: '',
         // Usage
         currentOdometerKm: '', averageMonthlyKm: ''
-    });
+    };
+
+const EditVehicle = () => {
+    const { id } = useParams();
+    const [formData, setFormData] = useState(INITIAL_FORM_DATA);
     const [rcBookFile, setRcBookFile] = useState(null);
     const [insuranceFile, setInsuranceFile] = useState(null);
     const [status, setStatus] = useState({ type: '', message: '' });
@@ -36,7 +39,7 @@ const EditVehicle = () => {
                 if (vehicle) {
                     // Map backend to form
                     const mapped = {};
-                    Object.keys(formData).forEach(key => {
+                    Object.keys(INITIAL_FORM_DATA).forEach(key => {
                         if (vehicle[key] !== null && vehicle[key] !== undefined) {
                             // format dates to YYYY-MM-DD
                             if (['registrationDate', 'purchaseDate', 'insuranceExpiry', 'pucExpiry', 'rcExpiry', 'roadTaxValidTill', 'fitnessExpiry'].includes(key) && vehicle[key]) {
@@ -50,7 +53,7 @@ const EditVehicle = () => {
                 } else {
                     setStatus({ type: 'error', message: 'Vehicle not found' });
                 }
-            } catch (err) {
+            } catch {
                 setStatus({ type: 'error', message: 'Failed to fetch vehicle details' });
             } finally {
                 setInitialLoading(false);

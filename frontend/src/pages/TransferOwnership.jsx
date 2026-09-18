@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../utils/config';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, UserPlus, Mail, AlertTriangle, ShieldCheck, Info } from 'lucide-react';
@@ -14,7 +14,10 @@ const TransferOwnership = () => {
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
-  const headers = { headers: { Authorization: `Bearer ${token}` } };
+  const headers = useMemo(
+    () => ({ headers: { Authorization: `Bearer ${token}` } }),
+    [token]
+  );
 
   useEffect(() => {
     const fetchVehicle = async () => {
@@ -30,7 +33,7 @@ const TransferOwnership = () => {
       }
     };
     fetchVehicle();
-  }, [vehicleId]);
+  }, [vehicleId, headers]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -16,11 +16,11 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 import RiskDetailsModal from '../../components/risk/RiskDetailsModal';
 
 export default function AdminPaymentRisk() {
-  const { showSuccess, showError } = useToast();
+  const { showError } = useToast();
   const [summary, setSummary] = useState({
     totalFlagged: 0,
     criticalCount: 0,
@@ -69,12 +69,12 @@ export default function AdminPaymentRisk() {
         setTotalPages(res.data.totalPages || 1);
         setTotalCount(res.data.totalCount || 0);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load risk events');
     } finally {
       setLoading(false);
     }
-  }, [page, levelFilter, statusFilter, search]);
+  }, [page, levelFilter, statusFilter, search, showError]);
 
   useEffect(() => {
     fetchSummary();

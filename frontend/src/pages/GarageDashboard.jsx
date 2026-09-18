@@ -2,7 +2,7 @@ import { API_BASE_URL } from '../utils/config';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextCore';
 import {
   Bell, Store, Wrench, Phone, MessageSquare, Filter,
   CalendarCheck, Clock, CheckCircle, XCircle, Loader2,
@@ -157,7 +157,6 @@ const GarageDashboard = () => {
     );
   }
 
-  const pendingCount = bookings.filter(b => b.status === 'PENDING' || b.status === 'REQUESTED').length;
   const inProgressCount = bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length;
   const completedCount = bookings.filter(b => b.status === 'COMPLETED').length;
 

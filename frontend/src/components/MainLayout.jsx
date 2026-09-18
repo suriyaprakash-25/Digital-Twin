@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
 import { tryRegisterFcmToken } from '../utils/fcm';
@@ -9,7 +9,6 @@ import NotificationBell from './notifications/NotificationBell';
 import MobileBottomNav from './MobileBottomNav';
 
 const MainLayout = () => {
-    const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {

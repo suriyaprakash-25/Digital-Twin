@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { X, ShieldAlert, AlertTriangle, CheckCircle, Clock, FileText, User, Building2, CreditCard, ArrowRight } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 
 export default function RiskDetailsModal({ event, onClose, onUpdated }) {
   const { showSuccess, showError } = useToast();

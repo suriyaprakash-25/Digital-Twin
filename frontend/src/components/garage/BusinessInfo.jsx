@@ -10,10 +10,6 @@ const BusinessInfo = ({ garage }) => {
     businessHours = {},
     currentStatus = 'AVAILABLE',
     currentTime = '',
-    phone,
-    email,
-    address,
-    city,
     garageLocation,
     facilities = {},
     paymentMethods = ['Cash', 'UPI', 'Credit/Debit Card']

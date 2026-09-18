@@ -1,16 +1,7 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useState, useCallback, useMemo } from 'react';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { CheckCircle2, XCircle, AlertCircle, Info, X } from 'lucide-react';
-
-const ToastContext = createContext(null);
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-};
+import { ToastContext } from './toastContextCore';
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
@@ -28,8 +19,27 @@ export const ToastProvider = ({ children }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const showSuccess = useCallback((message, duration = 4000) => {
+    showToast(message, 'success', duration);
+  }, [showToast]);
+
+  const showError = useCallback((message, duration = 5000) => {
+    showToast(message, 'error', duration);
+  }, [showToast]);
+
+  const showWarning = useCallback((message, duration = 4500) => {
+    showToast(message, 'warning', duration);
+  }, [showToast]);
+
+  const toastApi = useMemo(() => ({
+    showToast,
+    showSuccess,
+    showError,
+    showWarning
+  }), [showToast, showSuccess, showError, showWarning]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={toastApi}>
       {children}
       
       {/* Toast Container */}
@@ -60,7 +70,7 @@ export const ToastProvider = ({ children }) => {
             }
 
             return (
-              <motion.div
+              <Motion.div
                 key={toast.id}
                 initial={{ opacity: 0, y: -20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -84,13 +94,13 @@ export const ToastProvider = ({ children }) => {
                 </button>
 
                 {/* Animated active progress bar */}
-                <motion.div
+                <Motion.div
                   initial={{ width: '100%' }}
                   animate={{ width: '0%' }}
                   transition={{ duration: toast.duration / 1000, ease: 'linear' }}
                   className={`absolute bottom-0 left-0 h-1 ${progressBg}`}
                 />
-              </motion.div>
+              </Motion.div>
             );
           })}
         </AnimatePresence>
