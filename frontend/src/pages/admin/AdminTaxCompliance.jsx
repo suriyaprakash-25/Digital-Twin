@@ -14,7 +14,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 
 export default function AdminTaxCompliance() {
   const { showSuccess, showError } = useToast();
