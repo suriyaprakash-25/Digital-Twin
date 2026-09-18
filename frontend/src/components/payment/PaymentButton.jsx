@@ -4,7 +4,7 @@ import axios from 'axios';
 import { CreditCard, CheckCircle, Loader2, IndianRupee, AlertCircle } from 'lucide-react';
 import { loadRazorpayScript } from '../../utils/loadRazorpay';
 
-const PaymentButton = ({ service, vehicle, onPaymentSuccess, className = '' }) => {
+const PaymentButton = ({ service, onPaymentSuccess, className = '' }) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
