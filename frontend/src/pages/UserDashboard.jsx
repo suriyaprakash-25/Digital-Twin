@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Car, Bell, CheckCircle2, XCircle, Info, ChevronRight, Activity, CalendarClock } from 'lucide-react';
 import axios from 'axios';
@@ -25,7 +25,7 @@ const UserDashboard = () => {
     [token]
   );
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [vRes, bRes, nRes, pRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers),
@@ -33,6 +33,7 @@ const UserDashboard = () => {
         axios.get(`${API_BASE_URL}/api/notifications?limit=20`, headers),
         axios.get(`${API_BASE_URL}/api/ownership/pending`, headers)
       ]);
+      setError('');
       setVehicles(Array.isArray(vRes.data) ? vRes.data : []);
       setBookings(Array.isArray(bRes.data) ? bRes.data : []);
       setNotifications(Array.isArray(nRes.data) ? nRes.data : []);
@@ -40,12 +41,11 @@ const UserDashboard = () => {
     } catch (e) {
       setError(e.response?.data?.msg || 'Failed to load dashboard');
     }
-  };
+  }, [headers]);
 
   useEffect(() => {
-    setError('');
     loadData();
-  }, [headers]);
+  }, [loadData]);
 
   const handleProvideInfo = (bookingId) => {
     setProvideInfoModal({ isOpen: true, bookingId, message: '' });
