@@ -69,12 +69,12 @@ export default function AdminFinancialAudit() {
         setTotalPages(res.data.totalPages || 1);
         setTotalCount(res.data.totalCount || 0);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load financial audit logs');
     } finally {
       setLoading(false);
     }
-  }, [page, actionFilter, dateFrom, dateTo, search]);
+  }, [page, actionFilter, dateFrom, dateTo, search, showError]);
 
   useEffect(() => {
     fetchSummary();
