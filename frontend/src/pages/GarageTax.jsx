@@ -19,8 +19,8 @@ export default function GarageTax() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30_DAYS');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateFrom] = useState('');
+  const [dateTo] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -47,12 +47,12 @@ export default function GarageTax() {
         setTotalPages(txRes.data.totalPages || 1);
         setTotalCount(txRes.data.totalCount || 0);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load garage tax data');
     } finally {
       setLoading(false);
     }
-  }, [period, dateFrom, dateTo, page]);
+  }, [period, dateFrom, dateTo, page, showError]);
 
   useEffect(() => {
     fetchTaxData();
@@ -72,7 +72,7 @@ export default function GarageTax() {
       link.download = `Garage_Tax_Report_${new Date().toISOString().split('T')[0]}.${format}`;
       link.click();
       showSuccess(`Tax report ${format.toUpperCase()} downloaded`);
-    } catch (err) {
+    } catch {
       showError('Export failed');
     }
   };
