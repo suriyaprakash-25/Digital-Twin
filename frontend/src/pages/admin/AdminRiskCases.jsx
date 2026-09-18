@@ -20,7 +20,7 @@ import {
   FileText
 } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 
 export default function AdminRiskCases() {
   const { showSuccess, showError } = useToast();
