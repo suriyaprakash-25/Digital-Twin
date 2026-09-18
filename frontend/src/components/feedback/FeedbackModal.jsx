@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { X, MessageSquareHeart } from 'lucide-react';
 import FeedbackForm from './FeedbackForm';
@@ -7,23 +7,21 @@ import FeedbackSuccess from './FeedbackSuccess';
 const FeedbackModal = ({ isOpen, onClose, currentPage }) => {
   const [submitted, setSubmitted] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setSubmitted(false);
+    onClose();
+  }, [onClose]);
+
   // Close on Escape key press
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        handleClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Reset submitted state when modal is closed/reopened
-  useEffect(() => {
-    if (isOpen) {
-      setSubmitted(false);
-    }
-  }, [isOpen]);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
 
@@ -35,7 +33,7 @@ const FeedbackModal = ({ isOpen, onClose, currentPage }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={handleClose}
           className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs transition-opacity"
           aria-hidden="true"
         />
@@ -69,7 +67,7 @@ const FeedbackModal = ({ isOpen, onClose, currentPage }) => {
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
               aria-label="Close modal"
             >
@@ -80,7 +78,7 @@ const FeedbackModal = ({ isOpen, onClose, currentPage }) => {
           {/* Modal Body */}
           <div className="p-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
             {submitted ? (
-              <FeedbackSuccess onClose={onClose} />
+              <FeedbackSuccess onClose={handleClose} />
             ) : (
               <FeedbackForm
                 currentPage={currentPage}
