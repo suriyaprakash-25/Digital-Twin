@@ -10,7 +10,7 @@ const ServiceTimeline = ({ data }) => {
       </h4>
       
       <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-        {data.map((service, index) => (
+        {data.map((service) => (
           <div key={service._id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
             <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-white bg-blue-100 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
               <CheckCircle2 className="w-3 h-3 text-blue-600" />
