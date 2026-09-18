@@ -26,7 +26,7 @@ import { useToast } from '../../context/ToastContext';
 
 export default function AdminFinancialOperationsDashboard() {
   const { showError } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [health, setHealth] = useState(null);
   const [forecast, setForecast] = useState(null);
   const [alertsSummary, setAlertsSummary] = useState(null);
@@ -49,12 +49,12 @@ export default function AdminFinancialOperationsDashboard() {
       if (aRes.data?.success) setAlertsSummary(aRes.data.summary);
       if (iRes.data?.success) setIntegritySummary(iRes.data.summary);
       if (tRes.data?.success) setTaxSummary(tRes.data.summary);
-    } catch (err) {
+    } catch {
       showError('Failed to load command center operations data');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     fetchDashboardData();
