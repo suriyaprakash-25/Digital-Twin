@@ -1,6 +1,6 @@
 const { loadConfig } = require('../src/config');
 const { connectToMongo } = require('../src/db');
-const { sendEmail, getEmailProvider } = require('../src/services/emailService');
+const { sendOtpEmail, getEmailProvider } = require('../src/services/emailService');
 const { notifyUser } = require('../src/services/notifications');
 
 const EXECUTE = process.argv.includes('--execute');
@@ -37,33 +37,46 @@ async function main() {
   const config = loadConfig();
   await connectToMongo(config);
 
-  const emailResult = await sendEmail({
-    to: email,
-    subject: 'DrivePortz Pilot Notification Verification',
-    text: 'This is a controlled DrivePortz pilot notification verification message. No action is required.',
-    html: '<p>This is a controlled <strong>DrivePortz pilot notification verification</strong> message. No action is required.</p>'
-  });
+  const emailResult = await sendOtpEmail(email, process.env.PILOT_NOTIFICATION_TEST_OTP || '654321');
 
-  const notificationResult = await notifyUser(userId, {
-    title: 'DrivePortz Pilot Test',
-    body: 'Notification delivery verification completed.',
-    data: {
-      type: 'PILOT_NOTIFICATION_VERIFICATION',
-      timestamp: new Date().toISOString()
+  const notificationScenarios = [
+    {
+      title: 'Booking Accepted',
+      body: 'Pilot notification check: your garage booking was accepted.',
+      data: { type: 'BOOKING_ACCEPTED' }
+    },
+    {
+      title: 'Service Completed',
+      body: 'Pilot notification check: your vehicle service is complete.',
+      data: { type: 'SERVICE_COMPLETED' }
+    },
+    {
+      title: 'Payment Received',
+      body: 'Pilot notification check: your payment was recorded successfully.',
+      data: { type: 'PAYMENT_SUCCESS' }
     }
-  });
+  ];
+
+  const notificationResults = [];
+  for (const scenario of notificationScenarios) {
+    notificationResults.push(await notifyUser(userId, {
+      ...scenario,
+      data: { ...scenario.data, pilotVerification: 'true', timestamp: new Date().toISOString() }
+    }));
+  }
 
   console.log(JSON.stringify({
-    email: {
+    otpEmail: {
       success: Boolean(emailResult?.success),
       provider: emailResult?.provider || null,
       messageId: emailResult?.messageId || null
     },
-    inApp: {
-      stored: Boolean(notificationResult?.stored),
-      pushed: Boolean(notificationResult?.pushed),
-      pushReason: notificationResult?.reason || null
-    }
+    notifications: notificationResults.map((result, index) => ({
+      type: notificationScenarios[index].data.type,
+      stored: Boolean(result?.stored),
+      pushed: Boolean(result?.pushed),
+      pushReason: result?.reason || null
+    }))
   }, null, 2));
 }
 
