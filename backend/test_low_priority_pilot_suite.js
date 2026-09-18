@@ -87,6 +87,7 @@ async function main() {
       { garageId: garageA, status: 'COMPLETED', createdAt: recent, completedAt: recent, updatedAt: recent },
       { garageId: garageA, status: 'COMPLETED', createdAt: recent, completedAt: recent, updatedAt: recent },
       { garageId: garageA, status: 'REQUESTED', createdAt: recent, updatedAt: recent },
+      { garageId: garageA, status: 'COMPLETED', createdAt: old, completedAt: recent, updatedAt: recent },
       { garageId: garageB, status: 'COMPLETED', createdAt: old, completedAt: old, updatedAt: old }
     ]);
 
@@ -107,13 +108,17 @@ async function main() {
       { severity: 'WARN', timestamp: recent },
       { severity: 'ERROR', timestamp: old }
     ]);
-    await db.collection('services').insertOne({ garageId: garageA, createdAt: recent });
+    await db.collection('services').insertMany([
+      { garageId: garageA, createdAt: recent },
+      { garageOwnerUserId: 'ga-owner', createdAt: recent }
+    ]);
 
     const analytics = await getPilotAnalytics({ days: 30 }, db);
     assert.strictEqual(analytics.users.total, 3);
     assert.strictEqual(analytics.users.new, 2);
     assert.strictEqual(analytics.bookings.created, 3);
-    assert.strictEqual(analytics.bookings.completed, 2);
+    assert.strictEqual(analytics.bookings.completed, 3);
+    assert.strictEqual(analytics.bookings.convertedFromCreated, 2);
     assert.strictEqual(analytics.bookings.conversionRate, 66.7);
     assert.strictEqual(analytics.payments.attempts, 3);
     assert.strictEqual(analytics.payments.successful, 2);
