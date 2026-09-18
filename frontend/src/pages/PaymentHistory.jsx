@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../utils/config';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -31,6 +31,8 @@ const PaymentHistory = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const searchRef = useRef(search);
+  searchRef.current = search;
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [error, setError] = useState('');
 
@@ -40,7 +42,7 @@ const PaymentHistory = () => {
   const [selectedPaymentForDetails, setSelectedPaymentForDetails] = useState(null);
   const [selectedPaymentForDispute, setSelectedPaymentForDispute] = useState(null);
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -48,7 +50,7 @@ const PaymentHistory = () => {
       const apiBaseUrl = API_BASE_URL;
 
       const res = await axios.get(
-        `${apiBaseUrl}/api/payments/history?status=${statusFilter}&search=${encodeURIComponent(search)}`,
+        `${apiBaseUrl}/api/payments/history?status=${statusFilter}&search=${encodeURIComponent(searchRef.current)}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -63,11 +65,11 @@ const PaymentHistory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchPayments();
-  }, [statusFilter]);
+  }, [fetchPayments]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -184,7 +186,7 @@ const PaymentHistory = () => {
           {search && (
             <button
               type="button"
-              onClick={() => { setSearch(''); fetchPayments(); }}
+              onClick={() => { searchRef.current = ''; setSearch(''); fetchPayments(); }}
               className="text-xs font-bold text-slate-400 hover:text-slate-600 px-2.5 py-1 bg-slate-100 rounded-lg shrink-0"
             >
               Clear
