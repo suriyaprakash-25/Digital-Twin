@@ -2,7 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { useEscapeKey } from '../hooks/useEscapeKey';
 
-const PrivacyPolicyModal = ({ isOpen, onClose, readOnly = false }) => {
+const PrivacyPolicyModal = ({ isOpen, onClose }) => {
   useEscapeKey(onClose, isOpen);
 
   if (!isOpen) return null;
