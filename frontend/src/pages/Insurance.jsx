@@ -104,6 +104,7 @@ const Insurance = () => {
       setStartDate('');
       setExpiryDate('');
       setSelectedFile(null);
+      setDocumentConsent(false);
       
       // Refresh list
       fetchInsuranceData();
