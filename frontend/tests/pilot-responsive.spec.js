@@ -34,7 +34,7 @@ for (const target of targets) {
     }
 
     test('protected dashboards fail safely to authentication when signed out', async ({ page }) => {
-      for (const route of ['/user-dashboard', '/garage-dashboard', '/admin', '/payments']) {
+      for (const route of ['/user-dashboard', '/garage-dashboard', '/admin', '/admin/pilot-operations', '/payments']) {
         await page.goto(route, { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(100);
         await assertNoHorizontalOverflow(page);
