@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../utils/config';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { MessageSquare, Star, Send, Search, Filter, ShieldCheck, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -23,27 +23,7 @@ const GarageReviewsPage = () => {
 
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
-  useEffect(() => {
-    fetchGarageProfile();
-  }, [token]);
-
-  const fetchGarageProfile = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API_BASE_URL}/api/garages/me`, headers);
-      if (res.data?.exists) {
-        setProfile(res.data);
-        fetchReviews(res.data.id, sortOption);
-      } else {
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-      setLoading(false);
-    }
-  };
-
-  const fetchReviews = async (garageId, sort) => {
+  const fetchReviews = useCallback(async (garageId, sort) => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/garages/${garageId}/reviews?sort=${sort}`, headers);
       setReviewsData(res.data);
@@ -52,7 +32,27 @@ const GarageReviewsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [headers]);
+
+  const fetchGarageProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/garages/me`, headers);
+      if (res.data?.exists) {
+        setProfile(res.data);
+        await fetchReviews(res.data.id, 'newest');
+      } else {
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setLoading(false);
+    }
+  }, [headers, fetchReviews]);
+
+  useEffect(() => {
+    fetchGarageProfile();
+  }, [fetchGarageProfile]);
 
   const handleSortChange = (newSort) => {
     setSortOption(newSort);
