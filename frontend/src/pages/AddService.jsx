@@ -30,7 +30,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextCore';
 import InvoiceModal from '../components/invoice/InvoiceModal';
 import MediaManager from '../components/MediaManager';
 
