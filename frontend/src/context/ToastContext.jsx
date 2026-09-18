@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { CheckCircle2, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
 const ToastContext = createContext(null);
@@ -60,7 +60,7 @@ export const ToastProvider = ({ children }) => {
             }
 
             return (
-              <motion.div
+              <Motion.div
                 key={toast.id}
                 initial={{ opacity: 0, y: -20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -84,13 +84,13 @@ export const ToastProvider = ({ children }) => {
                 </button>
 
                 {/* Animated active progress bar */}
-                <motion.div
+                <Motion.div
                   initial={{ width: '100%' }}
                   animate={{ width: '0%' }}
                   transition={{ duration: toast.duration / 1000, ease: 'linear' }}
                   className={`absolute bottom-0 left-0 h-1 ${progressBg}`}
                 />
-              </motion.div>
+              </Motion.div>
             );
           })}
         </AnimatePresence>
