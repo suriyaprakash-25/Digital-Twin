@@ -18,7 +18,6 @@ const NotificationBell = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [loading, setLoading] = useState(false);
     const dropdownRef = useRef(null);
 
     const fetchNotifications = async () => {
@@ -34,7 +33,7 @@ const NotificationBell = () => {
             if (countRes.status === 'fulfilled' && countRes.value?.success) {
                 setUnreadCount(countRes.value.count || 0);
             }
-        } catch (err) {
+        } catch {
             // Non-blocking
         }
     };
