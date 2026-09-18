@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { motion as Motion } from 'framer-motion';
 import SEO from '../components/SEO';
 import {
   ArrowRight, ShieldCheck, Zap, Activity, Clock, FileText, ChevronRight, CheckCircle2, Layout, Database, Wrench, Menu, X, Globe, Smartphone, ArrowUpRight, Facebook, Instagram, Twitter, Linkedin, MessageCircle,
@@ -269,7 +270,7 @@ const LandingPage = () => {
         title="Smart Vehicle Driveportz & Service Tracker"
         description="Create a living driveportz of your vehicle. Track maintenance, get predictive alerts, and book top-rated garages with AI assistance."
       />
-      <motion.div 
+      <Motion.div 
         initial={{ opacity: 0, filter: 'blur(4px)' }} 
         animate={{ opacity: 1, filter: 'blur(0px)' }} 
         transition={{ duration: 0.5, ease: "easeOut" }} 
@@ -992,7 +993,7 @@ const LandingPage = () => {
           isOpen={showAbout}
           onClose={() => setShowAbout(false)}
         />
-      </motion.div>
+      </Motion.div>
     </>
   );
 };
