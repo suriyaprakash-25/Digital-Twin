@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ArrowRight, Zap } from 'lucide-react';
 import SEO from '../components/SEO';
 import TermsConditionsModal from '../components/TermsConditionsModal';
@@ -22,10 +21,6 @@ const FleetsPage = () => {
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
-  const scrollTo = (id) => (e) => {
-    e.preventDefault();
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
 
   const css = `
     *{box-sizing:border-box;}
