@@ -130,6 +130,14 @@ async function analyzeSymptoms(req, res) {
 
     const aiResponse = await groqService.analyzeVehicleSymptoms(diagnosisInput);
 
+    if (aiResponse?.unavailable) {
+      return res.status(503).json({
+        msg: aiResponse.summary,
+        retryable: true,
+        safetyNote: aiResponse.safetyNote
+      });
+    }
+
     const diagnosisData = {
       userId,
       vehicleId: String(vehicleId),
