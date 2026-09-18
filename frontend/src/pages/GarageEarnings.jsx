@@ -286,7 +286,6 @@ const GarageEarnings = () => {
                   const isAvailable = e.status === 'AVAILABLE';
                   const isSettled = e.status === 'SETTLED';
                   const isPending = e.status === 'SETTLEMENT_PENDING' || e.status === 'PENDING_SETTLEMENT';
-                  const isRefund = e.status === 'REFUND_ADJUSTMENT' || e.status === 'CANCELLED';
 
                   return (
                     <tr key={e.id} className="hover:bg-slate-50/60 transition-colors">
