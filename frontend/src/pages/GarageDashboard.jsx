@@ -157,7 +157,6 @@ const GarageDashboard = () => {
     );
   }
 
-  const pendingCount = bookings.filter(b => b.status === 'PENDING' || b.status === 'REQUESTED').length;
   const inProgressCount = bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'IN_PROGRESS').length;
   const completedCount = bookings.filter(b => b.status === 'COMPLETED').length;
 
