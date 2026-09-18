@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { 
     CreditCard, 
     Search, 
@@ -30,6 +30,8 @@ const AdminPayments = () => {
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
+    const searchQueryRef = useRef(searchQuery);
+    searchQueryRef.current = searchQuery;
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
@@ -40,12 +42,12 @@ const AdminPayments = () => {
     const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
     const [selectedReceiptId, setSelectedReceiptId] = useState(null);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const [summaryRes, listRes] = await Promise.allSettled([
                 apiGet('/admin/payments/summary'),
-                apiGet(`/admin/payments/all?page=${currentPage}&limit=15&status=${statusFilter}&search=${encodeURIComponent(searchQuery)}`)
+                apiGet(`/admin/payments/all?page=${currentPage}&limit=15&status=${statusFilter}&search=${encodeURIComponent(searchQueryRef.current)}`)
             ]);
 
             if (summaryRes.status === 'fulfilled' && summaryRes.value?.success) {
@@ -61,11 +63,11 @@ const AdminPayments = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, statusFilter]);
 
     useEffect(() => {
         fetchData();
-    }, [currentPage, statusFilter]);
+    }, [fetchData]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
