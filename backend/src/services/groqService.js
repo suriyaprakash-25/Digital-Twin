@@ -45,4 +45,39 @@ async function analyzeWithGroq({ systemInstruction, prompt }) {
   }
 }
 
-module.exports = { analyzeWithGroq };
+async function analyzeVehicleSymptoms(input = {}) {
+  const vehicle = input.vehicleDetails || {};
+  const prompt = [
+    'Analyze the following vehicle symptoms for a DrivePortz user.',
+    'Return ONLY valid JSON with these fields:',
+    '{"summary":"string","urgency":"LOW|MEDIUM|HIGH|EMERGENCY","possibleCauses":[{"title":"string","description":"string","confidence":0}],"recommendedActions":["string"],"estimatedRepairCost":"string","safetyNote":"string"}',
+    '',
+    `Vehicle: ${vehicle.brand || vehicle.make || 'Unknown'} ${vehicle.model || ''}`,
+    `Year: ${vehicle.manufacturingYear || vehicle.year || 'Unknown'}`,
+    `Odometer: ${vehicle.currentOdometerKm || vehicle.currentMileage || 'Unknown'} km`,
+    `Vehicle health score: ${input.vehicleIQ ?? 'Unknown'}`,
+    `Free-text symptoms: ${input.symptoms || 'None supplied'}`,
+    `Selected symptoms: ${JSON.stringify(input.selectedSymptoms || [])}`,
+    `Recent services: ${JSON.stringify(input.lastServices || [])}`
+  ].join('\n');
+
+  const response = await analyzeWithGroq({
+    systemInstruction: 'You are DrivePortz Vehicle Doctor. Provide cautious automotive guidance. Never claim certainty without inspection. If symptoms suggest immediate danger, recommend stopping the vehicle safely and seeking professional assistance. Return only the requested JSON.',
+    prompt
+  });
+
+  if (response && typeof response === 'object') return response;
+
+  return {
+    summary: typeof response === 'string' && response.trim()
+      ? response.trim()
+      : 'Unable to produce a structured diagnosis.',
+    urgency: 'MEDIUM',
+    possibleCauses: [],
+    recommendedActions: ['Arrange a qualified vehicle inspection if the symptom persists.'],
+    estimatedRepairCost: 'Inspection required',
+    safetyNote: 'Do not rely on AI guidance for safety-critical vehicle decisions.'
+  };
+}
+
+module.exports = { analyzeWithGroq, analyzeVehicleSymptoms };
