@@ -73,7 +73,7 @@ const AdminPayments = () => {
         fetchData();
     };
 
-    const getStatusBadge = (status, totalRefunded = 0) => {
+    const getStatusBadge = (status) => {
         if (status === 'CAPTURED' || status === 'PAID') {
             return (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
