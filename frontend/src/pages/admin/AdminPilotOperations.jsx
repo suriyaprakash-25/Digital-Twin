@@ -152,7 +152,7 @@ export default function AdminPilotOperations() {
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard label="Total users" value={a.users?.total ?? 0} helper={`${a.users?.new ?? 0} new in period`} icon={Users} />
-          <KpiCard label="Bookings created" value={a.bookings?.created ?? 0} helper={`${a.bookings?.completed ?? 0} completed • ${a.bookings?.conversionRate ?? 0}% conversion`} icon={Wrench} />
+          <KpiCard label="Bookings created" value={a.bookings?.created ?? 0} helper={`${a.bookings?.completed ?? 0} completed in period • ${a.bookings?.conversionRate ?? 0}% created→completed`} icon={Wrench} />
           <KpiCard label="Payment success" value={`${a.payments?.successRate ?? 0}%`} helper={`${a.payments?.successful ?? 0} captured • ${a.payments?.failed ?? 0} failed`} icon={CreditCard} />
           <KpiCard label="AI usage" value={a.ai?.totalUses ?? 0} helper={`${a.ai?.vehicleDoctorUses ?? 0} Doctor • ${a.ai?.copilotMessages ?? 0} CoPilot`} icon={Bot} />
           <KpiCard label="Errors" value={a.reliability?.errors ?? 0} helper="Recorded ERROR events in period" icon={AlertTriangle} />
