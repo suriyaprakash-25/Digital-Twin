@@ -59,12 +59,12 @@ export default function GarageReports() {
         setTotalPages(txRes.data.totalPages || 1);
         setTotalCount(txRes.data.totalCount || 0);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load garage reports');
     } finally {
       setLoading(false);
     }
-  }, [period, dateFrom, dateTo, page]);
+  }, [period, dateFrom, dateTo, page, showError]);
 
   useEffect(() => {
     fetchReports();
@@ -82,7 +82,7 @@ export default function GarageReports() {
         setStatement(res.data.statement);
         setStatementView(true);
       }
-    } catch (err) {
+    } catch {
       showError('Error generating statement');
     }
   };
@@ -115,7 +115,7 @@ export default function GarageReports() {
       window.URL.revokeObjectURL(url);
 
       showSuccess(`Exported ${format.toUpperCase()} report successfully`);
-    } catch (err) {
+    } catch {
       showError('Failed to export financial report');
     } finally {
       setIsExporting(false);
