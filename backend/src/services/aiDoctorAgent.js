@@ -1,4 +1,4 @@
-const { db } = require('../db');
+const { getDb } = require('../db');
 const { ObjectId } = require('mongodb');
 const { analyzeWithGroq } = require('./groqService');
 
@@ -7,7 +7,8 @@ async function handleDiagnosisRequest(userId, message, activeVehicleId, imageBas
   
   if (activeVehicleId) {
     try {
-      const vehicle = await db.collection('vehicles').findOne({ _id: new ObjectId(activeVehicleId) });
+      const db = getDb();
+      const vehicle = await db.collection('vehicles').findOne({ _id: new ObjectId(activeVehicleId), $or: [{ ownerId: String(userId) }, { userId: String(userId) }, { createdBy: String(userId) }] });
       if (vehicle) {
         const services = await db.collection('serviceHistory').find({ vehicleId: new ObjectId(activeVehicleId) }).sort({ date: -1 }).limit(3).toArray();
         vehicleContext = `
