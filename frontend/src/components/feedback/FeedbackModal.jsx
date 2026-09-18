@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { X, MessageSquareHeart } from 'lucide-react';
 import FeedbackForm from './FeedbackForm';
 import FeedbackSuccess from './FeedbackSuccess';
@@ -31,7 +31,7 @@ const FeedbackModal = ({ isOpen, onClose, currentPage }) => {
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
         {/* Backdrop */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -41,7 +41,7 @@ const FeedbackModal = ({ isOpen, onClose, currentPage }) => {
         />
 
         {/* Modal Dialog */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -88,7 +88,7 @@ const FeedbackModal = ({ isOpen, onClose, currentPage }) => {
               />
             )}
           </div>
-        </motion.div>
+        </Motion.div>
       </div>
     </AnimatePresence>
   );
