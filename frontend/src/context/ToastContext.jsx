@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { CheckCircle2, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
@@ -28,8 +28,27 @@ export const ToastProvider = ({ children }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const showSuccess = useCallback((message, duration = 4000) => {
+    showToast(message, 'success', duration);
+  }, [showToast]);
+
+  const showError = useCallback((message, duration = 5000) => {
+    showToast(message, 'error', duration);
+  }, [showToast]);
+
+  const showWarning = useCallback((message, duration = 4500) => {
+    showToast(message, 'warning', duration);
+  }, [showToast]);
+
+  const toastApi = useMemo(() => ({
+    showToast,
+    showSuccess,
+    showError,
+    showWarning
+  }), [showToast, showSuccess, showError, showWarning]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={toastApi}>
       {children}
       
       {/* Toast Container */}
