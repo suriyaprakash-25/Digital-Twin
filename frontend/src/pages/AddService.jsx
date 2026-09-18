@@ -170,7 +170,7 @@ const AddService = () => {
     };
 
     initPage();
-  }, [completionMode, bookingIdParam, serviceIdParam]);
+  }, [completionMode, bookingIdParam, serviceIdParam, showToast]);
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
