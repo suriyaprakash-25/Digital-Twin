@@ -16,7 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 import RiskDetailsModal from '../../components/risk/RiskDetailsModal';
 
 export default function AdminPaymentRisk() {
