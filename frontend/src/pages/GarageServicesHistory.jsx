@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../utils/config';
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Search, Filter, Calendar, Info, MapPin, IndianRupee, Shield, Wrench, ArrowLeft, ArrowRight, X, FileText, CheckCircle2, Clock, Receipt, Edit3 } from 'lucide-react';
 import { getPhotoUrl } from '../utils/imageUrl';
@@ -40,11 +40,7 @@ const GarageServicesHistory = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    fetchServices();
-  }, [page, debouncedSearch, category, sortBy, sortOrder]);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -70,7 +66,11 @@ const GarageServicesHistory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, debouncedSearch, category, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const ServiceModal = ({ service, onClose }) => {
     if (!service) return null;
