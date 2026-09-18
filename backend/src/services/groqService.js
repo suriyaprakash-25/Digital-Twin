@@ -46,7 +46,7 @@ async function analyzeWithGroq({ systemInstruction, prompt }) {
   }
 }
 
-async function analyzeVehicleSymptoms(input = {}) {
+async function analyzeVehicleSymptoms(input = {}, analyzer = analyzeWithGroq) {
   const vehicle = input.vehicleDetails || {};
   const prompt = [
     'Analyze the following vehicle symptoms for a DrivePortz user.',
@@ -62,23 +62,36 @@ async function analyzeVehicleSymptoms(input = {}) {
     `Recent services: ${JSON.stringify(input.lastServices || [])}`
   ].join('\n');
 
-  const response = await analyzeWithGroq({
-    systemInstruction: 'You are DrivePortz Vehicle Doctor. Provide cautious automotive guidance. Never claim certainty without inspection. If symptoms suggest immediate danger, recommend stopping the vehicle safely and seeking professional assistance. Return only the requested JSON.',
-    prompt
-  });
+  try {
+    const response = await analyzer({
+      systemInstruction: 'You are DrivePortz Vehicle Doctor. Provide cautious automotive guidance. Never claim certainty without inspection. If symptoms suggest immediate danger, recommend stopping the vehicle safely and seeking professional assistance. Return only the requested JSON.',
+      prompt
+    });
 
-  if (response && typeof response === 'object') return response;
+    if (response && typeof response === 'object') return response;
 
-  return {
-    summary: typeof response === 'string' && response.trim()
-      ? response.trim()
-      : 'Unable to produce a structured diagnosis.',
-    urgency: 'MEDIUM',
-    possibleCauses: [],
-    recommendedActions: ['Arrange a qualified vehicle inspection if the symptom persists.'],
-    estimatedRepairCost: 'Inspection required',
-    safetyNote: 'Do not rely on AI guidance for safety-critical vehicle decisions.'
-  };
+    return {
+      summary: typeof response === 'string' && response.trim()
+        ? response.trim()
+        : 'Unable to produce a structured diagnosis.',
+      urgency: 'MEDIUM',
+      possibleCauses: [],
+      recommendedActions: ['Arrange a qualified vehicle inspection if the symptom persists.'],
+      estimatedRepairCost: 'Inspection required',
+      safetyNote: 'Do not rely on AI guidance for safety-critical vehicle decisions.'
+    };
+  } catch (error) {
+    return {
+      unavailable: true,
+      summary: 'Vehicle Doctor AI is temporarily unavailable.',
+      urgency: 'UNKNOWN',
+      possibleCauses: [],
+      recommendedActions: ['Try again later or consult a qualified mechanic if the issue is urgent.'],
+      estimatedRepairCost: 'Unavailable',
+      safetyNote: 'Do not delay urgent safety action because the AI provider is unavailable.',
+      providerError: error?.message || 'AI provider unavailable'
+    };
+  }
 }
 
 module.exports = { analyzeWithGroq, analyzeVehicleSymptoms };
