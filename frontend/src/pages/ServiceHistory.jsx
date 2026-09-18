@@ -135,7 +135,7 @@ const ServiceHistory = () => {
                 </div>
             ) : (
                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-10 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                    {services.map((service, idx) => {
+                    {services.map((service) => {
                         const isExpanded = expandedService === service.id;
                         return (
                             <div
