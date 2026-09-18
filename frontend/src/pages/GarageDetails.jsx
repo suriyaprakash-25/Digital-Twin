@@ -24,7 +24,7 @@ const GarageDetails = () => {
 
   // Service Filtering & Sorting
   const [serviceSearch, setServiceSearch] = useState('');
-  const [serviceCategoryFilter, setServiceCategoryFilter] = useState('ALL');
+  const [serviceCategoryFilter] = useState('ALL');
   const [serviceSort, setServiceSort] = useState('price_low');
 
   // Review Sorting
