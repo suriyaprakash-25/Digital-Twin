@@ -57,6 +57,7 @@ const systemHealthRoutes = require('./src/routes/systemHealth');
 const operationalMonitoringRoutes = require('./src/routes/operationalMonitoring');
 const financialAlertsRouter = require('./src/routes/financialAlerts');
 const financialIntegrityRouter = require('./src/routes/financialIntegrity');
+const pilotAdminRoutes = require('./src/routes/pilotAdminRoutes');
 const { ensureWebhookEventIndexes } = require('./src/models/PaymentWebhookEvent');
 const { ensureJobRegistryIndexes } = require('./src/jobs/jobRegistry');
 const { ensureFinancialAlertIndexes } = require('./src/services/financialAlertService');
@@ -199,6 +200,7 @@ app.use('/api/admin/risk-cases', riskCasesRouter);
 app.use('/api/admin/alerts', financialAlertsRouter);
 app.use('/api/admin/financial-integrity', financialIntegrityRouter);
 app.use('/api/admin/monitoring', operationalMonitoringRoutes);
+app.use('/api/admin/pilot', pilotAdminRoutes);
 app.use('/api/media', mediaRoutes);
 
 // Start after DB connects
