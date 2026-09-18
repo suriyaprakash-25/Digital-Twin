@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ShieldCheck, Mail, ArrowLeft, Loader2 } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextCore';
 
 function ForgotPassword() {
   const { showToast } = useToast();
