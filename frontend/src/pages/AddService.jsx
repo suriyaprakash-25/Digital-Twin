@@ -44,7 +44,6 @@ const AddService = () => {
   const serviceIdParam = searchParams.get('serviceId') || '';
 
   const [vehicles, setVehicles] = useState([]);
-  const [isGarage, setIsGarage] = useState(false);
   const [prefilledData, setPrefilledData] = useState(null);
   const [isLoadingPrefill, setIsLoadingPrefill] = useState(completionMode);
 
@@ -100,7 +99,6 @@ const AddService = () => {
       const userRaw = localStorage.getItem('user');
       const user = userRaw ? JSON.parse(userRaw) : null;
       const checkGarage = user && (user.role === 'GARAGE' || user.role === 'garage' || user.role === 'service_center' || user.role === 'servicecenter');
-      setIsGarage(!!checkGarage);
 
       if (completionMode && (bookingIdParam || serviceIdParam)) {
         setIsLoadingPrefill(true);
@@ -332,7 +330,7 @@ const AddService = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-    } catch (err) {
+    } catch {
       setCameraError('Could not access camera. Please allow camera permission or use "Choose File".');
     }
   }, [facingMode, stopStream]);
