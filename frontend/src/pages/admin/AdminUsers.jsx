@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../../utils/config';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Users, Search, ChevronLeft, ChevronRight, Eye, Car, Wrench, UserCircle2 } from 'lucide-react';
 import { getPhotoUrl } from '../../utils/imageUrl';
@@ -19,7 +19,7 @@ const AdminUsers = () => {
 
     const token = localStorage.getItem('token');
 
-    const fetchUsers = async (p = 1, q = '') => {
+    const fetchUsers = useCallback(async (p = 1, q = '') => {
         setLoading(true);
         try {
             const res = await axios.get(`${API_BASE_URL}/api/admin/users`, {
@@ -35,11 +35,11 @@ const AdminUsers = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchUsers(1, search);
-    }, [search]);
+    }, [search, fetchUsers]);
 
     const handleSearch = (e) => {
         e.preventDefault();
