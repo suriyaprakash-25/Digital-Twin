@@ -27,7 +27,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { getPhotoUrl } from '../../utils/imageUrl';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toastContextCore';
 
 const STATUS_CONFIG = {
   NEW: { label: 'New', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: Clock },
