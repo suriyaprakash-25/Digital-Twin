@@ -12,7 +12,9 @@
     "test:payment-security": "node test_payment_security_suite.js",
     "test:contracts": "node test_frontend_backend_contract_suite.js",
     "test:phases": "node test_phase5cd_suite.js && node test_phase6ab_suite.js && node test_phase6c_suite.js && node test_phase6d_suite.js && node test_phase6e_suite.js && node test_phase7_suite.js && node test_phase8_suite.js",
-    "test:ci": "npm run test:hardening && npm run test:payment-security && npm run test:contracts && npm run test:phases"
+    "test:ci": "npm run test:hardening && npm run test:payment-security && npm run test:monitoring && npm run test:pilot-journey && npm run test:contracts && npm run test:phases",
+    "test:monitoring": "node test_operational_monitoring_suite.js",
+    "test:pilot-journey": "node test_service_completion_payment_flow.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
