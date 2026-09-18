@@ -44,7 +44,10 @@ const UserDashboard = () => {
   }, [headers]);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadData]);
 
   const handleProvideInfo = (bookingId) => {
