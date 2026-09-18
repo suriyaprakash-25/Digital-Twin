@@ -52,18 +52,22 @@ const { ensureRiskIndexes } = require('./src/models/RiskEvent');
 const { ensureAuditIndexes } = require('./src/models/AuditLog');
 const { ensureSettlementOperationIndexes } = require('./src/models/SettlementSchedule');
 const { requestCorrelationMiddleware } = require('./src/middleware/requestCorrelation');
+const { operationalMonitoringMiddleware, registerProcessErrorMonitoring } = require('./src/middleware/operationalMonitoring');
 const systemHealthRoutes = require('./src/routes/systemHealth');
+const operationalMonitoringRoutes = require('./src/routes/operationalMonitoring');
 const financialAlertsRouter = require('./src/routes/financialAlerts');
 const financialIntegrityRouter = require('./src/routes/financialIntegrity');
 const { ensureWebhookEventIndexes } = require('./src/models/PaymentWebhookEvent');
 const { ensureJobRegistryIndexes } = require('./src/jobs/jobRegistry');
 const { ensureFinancialAlertIndexes } = require('./src/services/financialAlertService');
 const { ensureFinancialNotificationIndexes } = require('./src/services/financialNotificationService');
+const { ensureOperationalMonitoringIndexes } = require('./src/services/operationalMonitoringService');
 
 const app = express();
 const config = loadConfig();
 
 app.use(requestCorrelationMiddleware);
+app.use(operationalMonitoringMiddleware);
 
 // Strict CORS policy. Production accepts only DrivePortz origins plus explicitly
 // configured preview/staging origins from CORS_ALLOWED_ORIGINS.
@@ -194,6 +198,7 @@ app.use('/api/admin/tax', adminTaxRouter);
 app.use('/api/admin/risk-cases', riskCasesRouter);
 app.use('/api/admin/alerts', financialAlertsRouter);
 app.use('/api/admin/financial-integrity', financialIntegrityRouter);
+app.use('/api/admin/monitoring', operationalMonitoringRoutes);
 app.use('/api/media', mediaRoutes);
 
 // Start after DB connects
@@ -211,6 +216,8 @@ app.use('/api/media', mediaRoutes);
   await ensureJobRegistryIndexes();
   await ensureFinancialAlertIndexes();
   await ensureFinancialNotificationIndexes();
+  await ensureOperationalMonitoringIndexes();
+  registerProcessErrorMonitoring();
   app.listen(config.port, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://localhost:${config.port}`);
