@@ -29,7 +29,6 @@ const GarageServices = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [newInclusion, setNewInclusion] = useState('');
-  const [newBundleItem, setNewBundleItem] = useState('');
   const { showToast } = useToast();
   const flash = (type, text) => {
     showToast(text, type);
