@@ -50,21 +50,7 @@ const GarageDetails = () => {
 
   const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
-  useEffect(() => {
-    fetchGarageDetails();
-    fetchReviews();
-    if (token) {
-      axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers)
-        .then(res => {
-          const list = Array.isArray(res.data) ? res.data : [];
-          setUserVehicles(list);
-          if (list.length > 0) setBookingVehicleId(list[0].id);
-        })
-        .catch(() => {});
-    }
-  }, [garageId, token, headers]);
-
-  const fetchGarageDetails = async () => {
+  const fetchGarageDetails = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -76,9 +62,9 @@ const GarageDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [garageId]);
 
-  const fetchReviews = async (sort = reviewSort) => {
+  const fetchReviews = useCallback(async (sort = reviewSort) => {
     try {
       const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
       const res = await axios.get(`${API_BASE_URL}/api/garages/${garageId}/reviews?sort=${sort}`, config);
@@ -86,11 +72,28 @@ const GarageDetails = () => {
     } catch (err) {
       console.error('Error fetching reviews:', err);
     }
-  };
+  }, [garageId, reviewSort, token]);
+
+  useEffect(() => {
+    fetchGarageDetails();
+
+    if (token) {
+      axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers)
+        .then(res => {
+          const list = Array.isArray(res.data) ? res.data : [];
+          setUserVehicles(list);
+          if (list.length > 0) setBookingVehicleId(list[0].id);
+        })
+        .catch(() => {});
+    }
+  }, [fetchGarageDetails, token, headers]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleReviewSortChange = (newSort) => {
     setReviewSort(newSort);
-    fetchReviews(newSort);
   };
 
   const handleReviewSubmitted = (newReview, newAvg, newTotal) => {
