@@ -1,5 +1,6 @@
 const Groq = require('groq-sdk');
 const { loadConfig } = require('../config');
+const { withTimeout } = require('../utils/resilience');
 
 const config = loadConfig();
 
@@ -20,7 +21,7 @@ async function analyzeWithGroq({ systemInstruction, prompt }) {
     throw new Error('GROQ API key is not configured.');
   }
 
-  const chatCompletion = await groqClient.chat.completions.create({
+  const chatCompletion = await withTimeout(groqClient.chat.completions.create({
     messages: [
       { role: 'system', content: systemInstruction },
       { role: 'user', content: prompt }
@@ -28,7 +29,7 @@ async function analyzeWithGroq({ systemInstruction, prompt }) {
     model: 'qwen/qwen3.8-27b',
     temperature: 0.7,
     max_tokens: 2048,
-  });
+  }), Number(process.env.AI_PROVIDER_TIMEOUT_MS || 20000), 'Groq AI provider');
 
   const responseText = chatCompletion.choices[0]?.message?.content || '';
 
