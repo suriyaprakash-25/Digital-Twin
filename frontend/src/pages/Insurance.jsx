@@ -18,6 +18,7 @@ const Insurance = () => {
   const [startDate, setStartDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [documentConsent, setDocumentConsent] = useState(false);
 
   const token = localStorage.getItem('token');
   const headers = { headers: { Authorization: `Bearer ${token}` } };
@@ -50,6 +51,7 @@ const Insurance = () => {
       setStatus({ type: '', message: '' });
     } else {
       setSelectedFile(null);
+      setDocumentConsent(false);
       setStatus({ type: 'error', message: 'Please select a valid PDF document.' });
     }
   };
@@ -65,6 +67,11 @@ const Insurance = () => {
 
     if (!selectedFile) {
       setStatus({ type: 'error', message: 'Please upload the policy PDF document.' });
+      return;
+    }
+
+    if (!documentConsent) {
+      setStatus({ type: 'error', message: 'Please confirm that you are authorised to upload this policy document.' });
       return;
     }
 
@@ -236,9 +243,21 @@ const Insurance = () => {
               </div>
             </div>
 
+            <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] md:text-xs text-slate-600 leading-relaxed">
+              <input
+                type="checkbox"
+                checked={documentConsent}
+                onChange={(e) => setDocumentConsent(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+              />
+              <span>
+                I confirm that I am authorised to upload this insurance document and consent to DrivePortz storing and processing it for vehicle insurance management. See the <Link to="/privacy" className="font-bold text-teal-700 hover:underline">Privacy & Data Handling Notice</Link>.
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !documentConsent}
               className="w-full py-2.5 md:py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 text-xs md:text-sm"
             >
               {submitting ? 'Uploading PDF...' : <><Upload className="h-4 w-4 md:h-4.5 md:w-4.5" /> Save Policy</>}
@@ -288,7 +307,7 @@ const Insurance = () => {
                     </div>
 
                     <a
-                      href={`${API_BASE_URL}${policy.documentUrl}`}
+                      href={policy.documentUrl?.startsWith('http') ? policy.documentUrl : `${API_BASE_URL}${policy.documentUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 w-full sm:w-auto"
