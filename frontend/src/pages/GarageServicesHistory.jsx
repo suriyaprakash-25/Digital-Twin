@@ -12,7 +12,7 @@ const GarageServicesHistory = () => {
   const [services, setServices] = useState([]);
   const [stats, setStats] = useState({ totalRevenue: 0, totalServices: 0 });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [, setError] = useState('');
 
   // Pagination & Filtering
   const [page, setPage] = useState(1);
