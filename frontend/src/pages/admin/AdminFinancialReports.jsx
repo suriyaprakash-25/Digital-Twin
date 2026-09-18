@@ -29,7 +29,7 @@ export default function AdminFinancialReports() {
   const [commissions, setCommissions] = useState([]);
   const [commissionSummary, setCommissionSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
   // Active sub-tab: 'COMMISSIONS' | 'TRANSACTIONS' | 'TRENDS'
@@ -62,12 +62,12 @@ export default function AdminFinancialReports() {
       if (txRes.data?.success) {
         setTransactions(txRes.data.transactions || []);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load platform financial reports');
     } finally {
       setLoading(false);
     }
-  }, [period, dateFrom, dateTo]);
+  }, [period, dateFrom, dateTo, showError]);
 
   useEffect(() => {
     fetchFinancialReports();
@@ -101,7 +101,7 @@ export default function AdminFinancialReports() {
       window.URL.revokeObjectURL(url);
 
       showSuccess(`Exported ${reportType} (${format.toUpperCase()}) successfully`);
-    } catch (err) {
+    } catch {
       showError('Failed to export platform report');
     } finally {
       setIsExporting(false);
