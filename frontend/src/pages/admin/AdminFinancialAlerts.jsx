@@ -54,12 +54,12 @@ export default function AdminFinancialAlerts() {
       if (sumRes.data?.success) {
         setSummary(sumRes.data.summary);
       }
-    } catch (err) {
+    } catch {
       showError('Failed to load financial alerts');
     } finally {
       setLoading(false);
     }
-  }, [page, severityFilter, statusFilter]);
+  }, [page, severityFilter, statusFilter, showError]);
 
   useEffect(() => {
     fetchAlerts();
