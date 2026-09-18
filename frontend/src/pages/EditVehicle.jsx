@@ -50,7 +50,7 @@ const EditVehicle = () => {
                 } else {
                     setStatus({ type: 'error', message: 'Vehicle not found' });
                 }
-            } catch (err) {
+            } catch {
                 setStatus({ type: 'error', message: 'Failed to fetch vehicle details' });
             } finally {
                 setInitialLoading(false);
