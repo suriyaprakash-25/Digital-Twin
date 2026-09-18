@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../../utils/config';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { CalendarClock, Activity, AlertCircle, Save, Clock, CheckCircle } from 'lucide-react';
 
@@ -24,13 +24,7 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
     }), {})
   );
 
-  useEffect(() => {
-    if (garageId && token) {
-      fetchAvailability();
-    }
-  }, [garageId, token]);
-
-  const fetchAvailability = async () => {
+  const fetchAvailability = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/garage/availability/${garageId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -48,7 +42,13 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
       console.error('Error fetching availability:', err);
       setLoading(false);
     }
-  };
+  }, [garageId, token]);
+
+  useEffect(() => {
+    if (garageId && token) {
+      fetchAvailability();
+    }
+  }, [garageId, token, fetchAvailability]);
 
   const saveAvailability = async () => {
     setSaving(true);
