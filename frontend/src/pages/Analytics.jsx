@@ -71,7 +71,7 @@ const Analytics = () => {
                 <div className="text-center py-12 px-4">
                     <Activity className="h-10 w-10 md:h-16 md:w-16 text-slate-300 mx-auto mb-3" />
                     <h3 className="text-base md:text-xl font-bold text-slate-900 mb-1">Analytics Unavailable</h3>
-                    <p className="text-2xs md:text-sm text-slate-550 font-medium max-w-sm mx-auto">Complete your garage profile and start accepting bookings to see analytics.</p>
+                    <p className="text-2xs md:text-sm text-slate-500 font-medium max-w-sm mx-auto">Complete your garage profile and start accepting bookings to see analytics.</p>
                 </div>
             );
         }
@@ -304,7 +304,7 @@ const Analytics = () => {
             <div className="text-center py-12 px-4">
                 <Activity className="h-10 w-10 md:h-16 md:w-16 text-slate-300 mx-auto mb-3" />
                 <h3 className="text-base md:text-xl font-bold text-slate-900 mb-1">Analytics Unavailable</h3>
-                <p className="text-2xs md:text-sm text-slate-550 font-medium max-w-sm mx-auto">Add vehicles and service records to generate insights.</p>
+                <p className="text-2xs md:text-sm text-slate-500 font-medium max-w-sm mx-auto">Add vehicles and service records to generate insights.</p>
             </div>
         );
     }
