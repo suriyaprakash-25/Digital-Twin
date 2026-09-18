@@ -1,16 +1,7 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { CheckCircle2, XCircle, AlertCircle, Info, X } from 'lucide-react';
-
-const ToastContext = createContext(null);
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-};
+import { ToastContext } from './toastContextCore';
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
