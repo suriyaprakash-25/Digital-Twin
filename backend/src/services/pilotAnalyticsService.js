@@ -68,12 +68,15 @@ async function getPilotAnalytics({ days = 30 } = {}, dbInstance) {
       .project({ name: 1, ownerUserId: 1 }).toArray()
   ]);
 
-  const bookingsCreated = bookings.filter((booking) => inWindow(booking.createdAt, cutoff)).length;
-  const completedBookings = bookings.filter((booking) => {
+  const createdBookings = bookings.filter((booking) => inWindow(booking.createdAt, cutoff));
+  const bookingsCreated = createdBookings.length;
+  const bookingsCompleted = bookings.filter((booking) => {
     if (String(booking.status || '').toUpperCase() !== 'COMPLETED') return false;
     return inWindow(booking.completedAt || booking.updatedAt || booking.createdAt, cutoff);
-  });
-  const bookingsCompleted = completedBookings.length;
+  }).length;
+  const convertedFromCreated = createdBookings.filter(
+    (booking) => String(booking.status || '').toUpperCase() === 'COMPLETED'
+  ).length;
 
   const paymentSuccess = payments.filter((payment) => String(payment.status || '').toUpperCase() === 'CAPTURED').length;
   const paymentFailed = payments.filter((payment) => String(payment.status || '').toUpperCase() === 'FAILED').length;
@@ -81,24 +84,32 @@ async function getPilotAnalytics({ days = 30 } = {}, dbInstance) {
 
   const activeGarageIds = new Set();
   const garageBookingCounts = new Map();
+  const canonicalGarageIdByAnyId = new Map();
+  const garageNameById = new Map();
+
+  for (const garage of garages) {
+    const canonicalId = String(garage._id);
+    canonicalGarageIdByAnyId.set(canonicalId, canonicalId);
+    garageNameById.set(canonicalId, garage.name || 'Garage');
+    if (garage.ownerUserId) {
+      canonicalGarageIdByAnyId.set(String(garage.ownerUserId), canonicalId);
+    }
+  }
 
   for (const booking of bookings) {
     if (!inWindow(booking.createdAt || booking.updatedAt || booking.completedAt, cutoff)) continue;
     if (!booking.garageId) continue;
-    const id = String(booking.garageId);
-    activeGarageIds.add(id);
-    garageBookingCounts.set(id, (garageBookingCounts.get(id) || 0) + 1);
+    const canonicalId = canonicalGarageIdByAnyId.get(String(booking.garageId));
+    if (!canonicalId) continue;
+    activeGarageIds.add(canonicalId);
+    garageBookingCounts.set(canonicalId, (garageBookingCounts.get(canonicalId) || 0) + 1);
   }
 
   for (const service of services) {
-    const id = service.garageId || service.garageOwnerUserId;
-    if (id) activeGarageIds.add(String(id));
-  }
-
-  const garageNameById = new Map();
-  for (const garage of garages) {
-    garageNameById.set(String(garage._id), garage.name || 'Garage');
-    if (garage.ownerUserId) garageNameById.set(String(garage.ownerUserId), garage.name || 'Garage');
+    const rawId = service.garageId || service.garageOwnerUserId;
+    if (!rawId) continue;
+    const canonicalId = canonicalGarageIdByAnyId.get(String(rawId));
+    if (canonicalId) activeGarageIds.add(canonicalId);
   }
 
   const topGarages = [...garageBookingCounts.entries()]
@@ -121,7 +132,8 @@ async function getPilotAnalytics({ days = 30 } = {}, dbInstance) {
     bookings: {
       created: bookingsCreated,
       completed: bookingsCompleted,
-      conversionRate: percent(bookingsCompleted, bookingsCreated)
+      convertedFromCreated,
+      conversionRate: percent(convertedFromCreated, bookingsCreated)
     },
     payments: {
       attempts: paymentAttempts,
