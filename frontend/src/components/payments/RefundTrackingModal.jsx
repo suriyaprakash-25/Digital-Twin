@@ -15,6 +15,7 @@ export default function RefundTrackingModal({ payment, onClose }) {
   const refundedAmount = Number(payment.totalRefundedAmount || (payment.refunds || []).reduce((sum, r) => sum + Number(r.amount || 0), 0));
   const remainingAmount = Math.max(0, originalAmount - refundedAmount);
   const primaryRefund = (payment.refunds && payment.refunds[0]) || {};
+  const initiatedAt = primaryRefund.createdAt || payment.refundedAt || payment.date || null;
 
   // Determine active stage
   let activeStageIndex = 0;
@@ -82,7 +83,7 @@ export default function RefundTrackingModal({ payment, onClose }) {
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Initiated On:</span>
-              <span className="text-slate-800 font-medium">{new Date(primaryRefund.createdAt || payment.refundedAt || payment.date || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="text-slate-800 font-medium">{initiatedAt ? new Date(initiatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Reason:</span>
