@@ -1,4 +1,3 @@
-const path = require('path');
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
 const { loadConfig } = require('../config');
@@ -9,7 +8,6 @@ const { createDiagnosis, getDiagnosesByUser } = require('../models/Diagnosis');
 
 const config = loadConfig();
 
-// Configure Cloudinary
 if (config.cloudinary && config.cloudinary.cloudName) {
   cloudinary.config({
     cloud_name: config.cloudinary.cloudName,
@@ -18,10 +16,8 @@ if (config.cloudinary && config.cloudinary.cloudName) {
   });
 }
 
-// Helper to upload to cloudinary
 async function uploadToCloudinary(filePath) {
   if (!config.cloudinary || !config.cloudinary.cloudName) {
-    // If not configured, just return a local placeholder or skip
     return null;
   }
   try {
@@ -35,72 +31,122 @@ async function uploadToCloudinary(filePath) {
   }
 }
 
-async function analyzeSymptoms(req, res) {
-  try {
-    const { vehicleId, symptoms, selectedSymptoms } = req.body;
-    const userId = req.user.id;
-    
-    const parsedSelectedSymptoms = selectedSymptoms ? JSON.parse(selectedSymptoms) : [];
+function cleanupTempFiles(files = []) {
+  for (const file of files || []) {
+    if (!file?.path) continue;
+    try {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+    } catch (err) {
+      console.warn('Vehicle Doctor temp cleanup failed:', err.message);
+    }
+  }
+}
 
-    if (!vehicleId || (!symptoms && parsedSelectedSymptoms.length === 0)) {
+function parseSelectedSymptoms(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return null;
+  }
+}
+
+async function analyzeSymptoms(req, res) {
+  const uploadedFiles = Array.isArray(req.files) ? req.files : [];
+
+  try {
+    const { vehicleId, symptoms, selectedSymptoms } = req.body || {};
+    const userId = String(req.user.id);
+    const role = String(req.user.role || 'USER').toUpperCase();
+    const parsedSelectedSymptoms = parseSelectedSymptoms(selectedSymptoms);
+
+    if (parsedSelectedSymptoms === null) {
+      cleanupTempFiles(uploadedFiles);
+      return res.status(400).json({ msg: 'Selected symptoms must be a valid JSON array.' });
+    }
+
+    if (!vehicleId || (!String(symptoms || '').trim() && parsedSelectedSymptoms.length === 0)) {
+      cleanupTempFiles(uploadedFiles);
       return res.status(400).json({ msg: 'Vehicle ID and symptoms are required.' });
     }
 
-    // Handle uploaded files
-    const imageUrls = [];
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const url = await uploadToCloudinary(file.path);
-        if (url) {
-          imageUrls.push(url);
-        }
-        // Cleanup local file
-        fs.unlinkSync(file.path);
-      }
+    if (!ObjectId.isValid(String(vehicleId))) {
+      cleanupTempFiles(uploadedFiles);
+      return res.status(400).json({ msg: 'Invalid vehicle ID.' });
     }
 
     const db = getDb();
-    
-    // Fetch Vehicle Details
-    const vehicle = await db.collection('vehicles').findOne({ _id: new ObjectId(vehicleId) });
-    if (!vehicle) {
-      return res.status(404).json({ msg: 'Vehicle not found.' });
+    const vehicleQuery = { _id: new ObjectId(String(vehicleId)) };
+
+    if (role !== 'ADMIN') {
+      vehicleQuery.$or = [
+        { ownerId: userId },
+        { userId },
+        { createdBy: userId }
+      ];
     }
 
-    // Fetch Last Service Records
+    const vehicle = await db.collection('vehicles').findOne(vehicleQuery);
+    if (!vehicle) {
+      cleanupTempFiles(uploadedFiles);
+      return res.status(404).json({ msg: 'Vehicle not found or access denied.' });
+    }
+
     const services = await db.collection('services')
-      .find({ vehicleId: new ObjectId(vehicleId) })
-      .sort({ date: -1 })
+      .find({
+        $or: [
+          { vehicleId: new ObjectId(String(vehicleId)) },
+          { vehicleId: String(vehicleId) }
+        ]
+      })
+      .sort({ serviceDate: -1, date: -1 })
       .limit(3)
       .toArray();
 
-    // Compile inputs for AI
+    const imageUrls = [];
+    for (const file of uploadedFiles) {
+      const url = await uploadToCloudinary(file.path);
+      if (url) imageUrls.push(url);
+      try {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      } catch (err) {
+        console.warn('Vehicle Doctor temp cleanup failed:', err.message);
+      }
+    }
+
     const diagnosisInput = {
       vehicleDetails: vehicle,
-      vehicleIQ: vehicle.healthScore || 85, // Fallback if missing
-      symptoms: symptoms,
+      vehicleIQ: vehicle.healthScore || 85,
+      symptoms: String(symptoms || '').trim(),
       selectedSymptoms: parsedSelectedSymptoms,
-      lastServices: services.map(s => ({ type: s.type, date: s.date, cost: s.cost }))
+      lastServices: services.map((service) => ({
+        type: service.type || service.serviceType || service.serviceCategory,
+        date: service.date || service.serviceDate,
+        cost: service.cost || service.totalCost || service.totalAmount
+      }))
     };
 
-    // Call Groq API
     const aiResponse = await groqService.analyzeVehicleSymptoms(diagnosisInput);
 
-    // Save Diagnosis to DB
     const diagnosisData = {
       userId,
-      vehicleId,
-      symptoms,
+      vehicleId: String(vehicleId),
+      symptoms: diagnosisInput.symptoms,
       selectedSymptoms: parsedSelectedSymptoms,
       imageUrls,
       aiResponse
     };
-    const savedDiagnosis = await createDiagnosis(diagnosisData);
 
-    res.status(200).json(savedDiagnosis);
+    const savedDiagnosis = await createDiagnosis(diagnosisData);
+    return res.status(200).json(savedDiagnosis);
   } catch (error) {
+    cleanupTempFiles(uploadedFiles);
     console.error('Analyze Symptoms Error:', error);
-    res.status(500).json({ msg: 'Unable to analyze currently. Please try again.', error: error.message });
+    return res.status(503).json({
+      msg: 'Vehicle Doctor is temporarily unavailable. Please try again later or consult a qualified mechanic for urgent concerns.'
+    });
   }
 }
 
@@ -108,25 +154,39 @@ async function getHistory(req, res) {
   try {
     const userId = req.user.id;
     const history = await getDiagnosesByUser(userId);
-    
-    // Enhance with vehicle details
     const db = getDb();
+
     const enrichedHistory = await Promise.all(history.map(async (diag) => {
-      const vehicle = await db.collection('vehicles').findOne({ _id: new ObjectId(diag.vehicleId) });
+      if (!ObjectId.isValid(String(diag.vehicleId))) {
+        return { ...diag, vehicleDetails: null };
+      }
+
+      const vehicle = await db.collection('vehicles').findOne({
+        _id: new ObjectId(String(diag.vehicleId)),
+        $or: [
+          { ownerId: String(userId) },
+          { userId: String(userId) },
+          { createdBy: String(userId) }
+        ]
+      });
+
       return {
         ...diag,
-        vehicleDetails: vehicle ? { brand: vehicle.brand, model: vehicle.model, number: vehicle.vehicleNumber } : null
+        vehicleDetails: vehicle
+          ? { brand: vehicle.brand, model: vehicle.model, number: vehicle.vehicleNumber }
+          : null
       };
     }));
 
-    res.status(200).json(enrichedHistory);
+    return res.status(200).json(enrichedHistory);
   } catch (error) {
     console.error('Get Diagnosis History Error:', error);
-    res.status(500).json({ msg: 'Server Error' });
+    return res.status(500).json({ msg: 'Server Error' });
   }
 }
 
 module.exports = {
   analyzeSymptoms,
-  getHistory
+  getHistory,
+  parseSelectedSymptoms
 };
