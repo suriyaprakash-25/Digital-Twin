@@ -7,7 +7,7 @@ const PartnerSupport = () => {
       <div className="bg-white shadow rounded-lg p-6 sm:p-10 border border-slate-200">
         <h1 className="text-3xl font-extrabold text-slate-900 mb-4">Partner Support</h1>
         <p className="text-slate-600 mb-8 text-lg">
-          We are committed to providing timely, reliable support to every garage partner on the Driveportz platform.
+          We are committed to providing timely, reliable support to every garage partner on the DrivePortz platform.
           Please use the channel most appropriate to your query below.
         </p>
 
@@ -37,7 +37,7 @@ const PartnerSupport = () => {
             <h2 className="text-2xl font-bold text-slate-900">Submit a Support Request</h2>
           </div>
           <p className="text-slate-600 mb-6">
-            For non-urgent matters, please submit a request with the following details:
+            For non-urgent matters, use the in-app Feedback button and choose Booking Issue, Payment Issue, Garage Complaint, Account Issue, or Bug Report. Include the details below:
           </p>
           <div className="overflow-x-auto rounded-lg border border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
@@ -72,7 +72,7 @@ const PartnerSupport = () => {
             </table>
           </div>
           <p className="mt-4 text-sm italic text-slate-500">
-            We aim to respond to all inquiries within 24 hours. Urgent booking-related matters are prioritized accordingly.
+            Pilot issues are automatically routed by category. Payment issues target a 2-hour response, booking issues 4 hours, garage/account issues 8 hours, and technical reports 8–12 hours.
           </p>
         </div>
 
