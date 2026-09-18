@@ -1,18 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import ImageUploader from './AIDoctor/ImageUploader';
 import { FEATURES } from '../../config/features';
 const ChatInput = ({ onSendMessage, isLoading }) => {
-  const [message, setMessage] = useState('');
-  const textareaRef = useRef(null);
-
-  const adjustHeight = () => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
-    }
-  };
   const [inputText, setInputText] = useState('');
   const [imageBase64, setImageBase64] = useState(null);
 
