@@ -39,6 +39,10 @@ const STATUS_CONFIG = {
 const CATEGORIES = [
   'ALL',
   'General Feedback',
+  'Booking Issue',
+  'Payment Issue',
+  'Garage Complaint',
+  'Account Issue',
   'Bug Report',
   'Feature Request',
   'UI / Design',
