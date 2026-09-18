@@ -14,13 +14,16 @@ const emergencyAgent = require('../services/emergencyAgent');
 
 const processMessage = async (req, res) => {
   try {
-    const { message, activeVehicleId, imageBase64 } = req.body;
+    const { message, activeVehicleId, imageBase64 } = req.body || {};
     const userId = req.user.id;
-    const db = getDb();
 
+    // Validate the request before touching external dependencies. Invalid input
+    // should fail deterministically even if MongoDB or an AI provider is down.
     if (!message && !imageBase64) {
       return res.status(400).json({ success: false, error: 'Message or image is required' });
     }
+
+    const db = getDb();
 
     // Determine Intent (pass imageBase64 as well, since an image alone might mean diagnosis)
     let intent = detectIntent(message, imageBase64);
