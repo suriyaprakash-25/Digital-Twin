@@ -1,0 +1,40 @@
+{
+  "admins": [
+    {
+      "name": "CHANGE_ME Pilot Admin",
+      "email": "CHANGE_ME@example.org",
+      "password": "CHANGE_ME_Use_A_Strong_12+_Character_Password",
+      "phone": "",
+      "city": ""
+    }
+  ],
+  "customers": [
+    {
+      "name": "CHANGE_ME Pilot Customer",
+      "email": "CHANGE_ME@example.org",
+      "password": "CHANGE_ME_Use_A_Strong_12+_Character_Password",
+      "phone": "",
+      "city": ""
+    }
+  ],
+  "garages": [
+    {
+      "owner": {
+        "name": "CHANGE_ME Garage Owner",
+        "email": "CHANGE_ME@example.org",
+        "password": "CHANGE_ME_Use_A_Strong_12+_Character_Password",
+        "phone": "",
+        "city": ""
+      },
+      "garage": {
+        "name": "CHANGE_ME Trusted Pilot Garage",
+        "email": "CHANGE_ME@example.org",
+        "phone": "",
+        "address": "CHANGE_ME",
+        "city": "CHANGE_ME",
+        "state": "Tamil Nadu",
+        "isVerified": false
+      }
+    }
+  ]
+}

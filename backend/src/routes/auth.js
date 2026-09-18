@@ -65,7 +65,9 @@ router.post('/signup', async (req, res) => {
     privacyAccepted: true,
     termsAcceptedAt: new Date(),
     privacyAcceptedAt: new Date(),
-    termsVersionAccepted: "v1.0"
+    termsVersionAccepted: "pilot-2026-09-v1",
+    privacyVersionAccepted: "pilot-2026-09-v1",
+    legalVersionAccepted: "pilot-2026-09-v1"
   };
 
   try {
@@ -377,7 +379,9 @@ router.post('/google', async (req, res) => {
         privacyAccepted: true,
         termsAcceptedAt: new Date(),
         privacyAcceptedAt: new Date(),
-        termsVersionAccepted: "v1.0"
+        termsVersionAccepted: "pilot-2026-09-v1",
+        privacyVersionAccepted: "pilot-2026-09-v1",
+        legalVersionAccepted: "pilot-2026-09-v1"
       };
       const result = await users.insertOne(user);
       user._id = result.insertedId;
