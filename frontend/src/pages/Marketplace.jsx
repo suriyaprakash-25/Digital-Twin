@@ -81,7 +81,7 @@ const Marketplace = () => {
     };
   }, [headers]);
 
-  const requestBooking = async ({ garageId, serviceId, serviceTitle, garageName }) => {
+  const requestBooking = async ({ garageId, serviceId, serviceTitle }) => {
     setError('');
     setMessage('');
 
