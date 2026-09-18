@@ -19,7 +19,7 @@ import {
   User,
   Wrench
 } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextCore';
 
 const StatCard = ({ label, value, tone }) => (
   <div className={`rounded-xl md:rounded-2xl border p-2 md:p-4 flex flex-col justify-between min-w-0 ${tone}`}>
