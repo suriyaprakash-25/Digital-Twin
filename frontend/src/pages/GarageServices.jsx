@@ -7,7 +7,7 @@ import {
   ArrowLeft, Plus, Wrench, IndianRupee, Clock, Trash2,
   CheckCircle, AlertCircle, PackageOpen, Tag, Pencil, Image as ImageIcon, Check, ListChecks, Filter, Layers
 } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toastContextCore';
 
 const empty = {
   title: '', description: '', price: '', durationMins: '',
