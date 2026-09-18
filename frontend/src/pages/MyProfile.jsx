@@ -86,7 +86,7 @@ const MyProfile = () => {
     return () => {
       cancelled = true;
     };
-  }, [headers]);
+  }, [headers, showToast]);
 
   const initials = profile.name
     ? profile.name.split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase()
