@@ -5,8 +5,8 @@
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "node api.js && node server.js",
+    "dev": "node api.js && nodemon server.js",
     "test": "npm run test:ci",
     "test:hardening": "node test_production_hardening_suite.js",
     "test:payment-security": "node test_payment_security_suite.js",
