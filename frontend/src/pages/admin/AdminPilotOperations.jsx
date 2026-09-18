@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
   Activity,
@@ -33,7 +33,7 @@ const priorityClass = {
   LOW: 'bg-slate-50 text-slate-600 border-slate-200'
 };
 
-function KpiCard({ label, value, helper, icon: Icon }) {
+function KpiCard({ label, value, helper, icon }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -43,7 +43,7 @@ function KpiCard({ label, value, helper, icon: Icon }) {
           {helper && <p className="mt-1 text-xs text-slate-500">{helper}</p>}
         </div>
         <div className="rounded-xl bg-teal-50 p-2.5 text-teal-700">
-          <Icon className="h-5 w-5" />
+          {createElement(icon, { className: 'h-5 w-5' })}
         </div>
       </div>
     </div>
