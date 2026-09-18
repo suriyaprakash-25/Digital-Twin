@@ -15,6 +15,10 @@ import ScreenshotUploader from './ScreenshotUploader';
 
 const CATEGORIES = [
   'General Feedback',
+  'Booking Issue',
+  'Payment Issue',
+  'Garage Complaint',
+  'Account Issue',
   'Bug Report',
   'Feature Request',
   'UI / Design',
@@ -99,7 +103,7 @@ const FeedbackForm = ({
       const res = await axios.post(`${apiUrl}/api/feedback`, formData, { headers });
 
       if (res.data && res.data.success) {
-        onSuccess(res.data.feedback);
+        onSuccess?.(res.data.feedback);
       } else {
         setErrorMsg(res.data?.msg || 'Failed to submit feedback. Please try again.');
       }
@@ -207,7 +211,7 @@ const FeedbackForm = ({
             if (errorMsg.includes('characters')) setErrorMsg('');
           }}
           disabled={submitting}
-          placeholder="Describe your experience, suggestion, problem, or idea..."
+          placeholder="Describe the issue, bug, complaint, suggestion, or idea with enough detail for the pilot team..."
           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs md:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none font-medium leading-relaxed"
         />
         <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
