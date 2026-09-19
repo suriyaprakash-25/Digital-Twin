@@ -55,8 +55,7 @@ Set the following in `frontend/.env` (locally) and under **Environment Variables
 
 | Variable | Description | Example |
 |---|---|---|
-| `VITE_API_URL` | Backend Render API Base URL | `https://driveportz.onrender.com` |
-| `VITE_RAZORPAY_KEY_ID` | Razorpay Public Key ID only | `rzp_test_xxxxxxxxxxxxxx` |
+| `VITE_API_URL` | Backend Render API origin (no `/api` suffix) | `https://driveportz.onrender.com` |
 
 > [!NOTE]
 > Vite environment variables (`VITE_*`) are embedded during frontend build. When updating environment variables on Vercel, trigger a redeployment.
@@ -69,8 +68,8 @@ Set the following in `frontend/.env` (locally) and under **Environment Variables
 2. Switch to **Test Mode** (toggle switch in the top header).
 3. Navigate to **Account & Settings** -> **API Keys** -> **Generate Key**.
 4. Copy the generated **Key ID** and **Key Secret**.
-5. Add `Key ID` to backend and frontend environment variables.
-6. Add `Key Secret` to backend environment variables only.
+5. Add the `Key ID` and `Key Secret` to the backend environment only.
+6. The authenticated `/api/payments/create-order` response returns the public checkout Key ID to the frontend when a payment order is created.
 
 ---
 
@@ -125,5 +124,6 @@ When ready to accept real customer payments:
 2. Toggle from **Test Mode** to **Live Mode** in the Razorpay Dashboard.
 3. Generate **Live API Keys** (`rzp_live_...`).
 4. Update `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in Render.
-5. Update `VITE_RAZORPAY_KEY_ID` in Vercel and redeploy frontend.
+5. Do not add a Razorpay key or secret to Vercel; the backend supplies the public checkout Key ID only after an authorized order is created.
 6. Create a live webhook pointing to `https://driveportz.onrender.com/api/payments/webhook` with a live secret.
+7. Run the **DrivePortz Production Smoke** workflow after both Render and Vercel deployments complete.
