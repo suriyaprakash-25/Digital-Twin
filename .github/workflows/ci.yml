@@ -67,6 +67,10 @@ jobs:
     name: Frontend security, lint and production build
     runs-on: ubuntu-latest
 
+    env:
+      VITE_API_URL: https://ci-api.invalid
+      VITE_GOOGLE_CLIENT_ID: ci-driveportz-client.apps.googleusercontent.com
+
     defaults:
       run:
         working-directory: frontend
@@ -104,12 +108,16 @@ jobs:
       - name: Lint frontend correctness rules
         run: npm run lint
 
-      - name: Build frontend for production
-        run: npm run build
+      - name: Build frontend using Vercel production contract
+        run: npm run build:production
 
   responsive-browser-smoke:
     name: Responsive browser smoke
     runs-on: ubuntu-latest
+
+    env:
+      VITE_API_URL: https://ci-api.invalid
+      VITE_GOOGLE_CLIENT_ID: ci-driveportz-client.apps.googleusercontent.com
 
     defaults:
       run:
@@ -135,8 +143,8 @@ jobs:
       - name: Install Chromium runtime
         run: npx playwright install --with-deps chromium msedge
 
-      - name: Build frontend
-        run: npm run build
+      - name: Build frontend using Vercel production contract
+        run: npm run build:production
 
       - name: Start production preview
         shell: bash
