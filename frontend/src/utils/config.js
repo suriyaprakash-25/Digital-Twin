@@ -1,8 +1,16 @@
-const rawEnvUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
+const rawEnvUrl = import.meta.env.VITE_API_URL;
+
+function normalizeApiBaseUrl(value) {
+  return String(value || '').trim().replace(/\/$/, '').replace(/\/api$/, '');
+}
 
 function resolveApiBaseUrl() {
   if (rawEnvUrl && rawEnvUrl.trim()) {
-    return rawEnvUrl.trim().replace(/\/$/, '').replace(/\/api$/, '');
+    return normalizeApiBaseUrl(rawEnvUrl);
+  }
+
+  if (import.meta.env.PROD) {
+    throw new Error('VITE_API_URL is required in production. Configure it in the Vercel Production environment.');
   }
 
   if (typeof window !== 'undefined' && window.location) {
@@ -10,16 +18,13 @@ function resolveApiBaseUrl() {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://localhost:5000';
     }
-    // Handle local network access (e.g., from mobile devices scanning local QR codes)
     if (hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
       return `http://${hostname}:5000`;
     }
   }
 
-  // Production Render backend
-  return 'https://driveportz.onrender.com';
+  return 'http://localhost:5000';
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
 export const API_ROOT_URL = `${API_BASE_URL}/api`;
-
