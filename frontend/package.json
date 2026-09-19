@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node init && vite",
+    "build": "node init && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:production": "node scripts/validate-production-env.mjs && vite build"
+    "build:production": "node init && node scripts/validate-production-env.mjs && vite build"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
