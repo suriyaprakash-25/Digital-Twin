@@ -1,0 +1,39 @@
+name: DrivePortz Production Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      frontend_url:
+        description: Production frontend origin
+        required: true
+        default: https://www.driveportz.com
+        type: string
+      backend_url:
+        description: Production backend origin
+        required: true
+        default: https://driveportz.onrender.com
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  production-smoke:
+    name: Production deployment smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify Vercel + Render production
+        env:
+          FRONTEND_URL: ${{ inputs.frontend_url }}
+          BACKEND_URL: ${{ inputs.backend_url }}
+        run: node scripts/verify-production-deployment.mjs

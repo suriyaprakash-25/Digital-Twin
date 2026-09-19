@@ -94,7 +94,10 @@ export default function PaymentCenter() {
       }
 
       const orderData = res.data.order;
-      const razorpayKey = orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TSSWBNcFmDPpRK';
+      const razorpayKey = orderData.keyId;
+      if (!razorpayKey) {
+        throw new Error('Payment gateway configuration is unavailable. Please contact support.');
+      }
 
       // 3. Configure Razorpay Standard Checkout
       const options = {

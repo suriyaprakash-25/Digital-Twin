@@ -67,7 +67,10 @@ const PaymentButton = ({ service, onPaymentSuccess, className = '' }) => {
         throw new Error(resData?.message || 'Failed to obtain payment order ID');
       }
 
-      const razorpayKey = orderData.keyId || resData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TSSWBNcFmDPpRK';
+      const razorpayKey = orderData.keyId || resData.keyId;
+      if (!razorpayKey) {
+        throw new Error('Payment gateway configuration is unavailable. Please contact support.');
+      }
       const amountPaise = orderData.amount || resData.amount || Math.round(totalCost * 100);
 
       // 3. Configure Razorpay Standard Checkout
