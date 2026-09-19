@@ -71,13 +71,17 @@ VITE_FIREBASE_VAPID_KEY=<firebase web-push VAPID public key>
 
 The Vercel production build fails closed when `VITE_API_URL` or the Google OAuth client ID is invalid. Partial Firebase core configuration is also rejected.
 
-### Vercel Preview environment
+### Vercel Preview / staging policy
 
-Preview deployments must not receive backend secrets.
+To avoid unnecessary Hobby-plan build consumption, automatic Vercel Git deployments are enabled only for:
+- `main` → Production;
+- `staging` → controlled Preview/Staging.
 
-For authenticated/integration testing, point Preview `VITE_API_URL` to a **separate staging backend and staging database**. Until that exists, treat Vercel previews as UI-only validation.
+Ordinary feature branches do **not** automatically deploy to Vercel. GitHub CI and the Chromium/Edge browser-smoke suite remain the required validation path for those branches.
 
-Do not loosen the production backend CORS policy to wildcard `*.vercel.app` just to make arbitrary previews work.
+The `staging` Vercel environment must not receive production backend secrets. For authenticated integration testing, point its `VITE_API_URL` to a separate staging backend and staging database.
+
+Until a staging backend exists, keep the `staging` deployment limited to UI validation and do not loosen production CORS to wildcard `*.vercel.app`.
 
 ---
 
