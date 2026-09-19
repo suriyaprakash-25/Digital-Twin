@@ -29,6 +29,9 @@ function main() {
   assert.strictEqual(vercel.installCommand, 'npm ci');
   assert.strictEqual(vercel.buildCommand, 'npm run build:production');
   assert.strictEqual(vercel.outputDirectory, 'dist');
+  assert.strictEqual(vercel.git?.deploymentEnabled?.main, true);
+  assert.strictEqual(vercel.git?.deploymentEnabled?.staging, true);
+  assert.strictEqual(vercel.git?.deploymentEnabled?.['*'], false);
   assert(
     Array.isArray(vercel.rewrites) &&
       vercel.rewrites.some((rule) => rule.source === '/(.*)' && rule.destination === '/index.html'),
