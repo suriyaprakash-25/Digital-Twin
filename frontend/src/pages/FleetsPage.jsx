@@ -63,6 +63,7 @@ const FleetsPage = () => {
             <img src="/logo-removebg-preview.png" alt="Logo" style={{ height: 86, marginBottom: '-20px' }} />
           </Link>
           <div className="hidden md:flex gap-6 lg:gap-9 items-center">
+            <button onClick={(e) => { e.preventDefault(); setShowAbout(true); }} className="nav-a" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>About Us</button>
             <Link to="/" className="nav-a">For Owners</Link>
             <Link to="/garage-partners" className="nav-a">For Garages</Link>
           </div>
