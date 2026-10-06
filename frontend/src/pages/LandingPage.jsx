@@ -306,6 +306,7 @@ const LandingPage = () => {
             {[['features', 'Features'], ['how-it-works', 'How It Works']].map(([id, label]) => (
               <button key={id} onClick={scrollTo(id)} className="nav-a" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{label}</button>
             ))}
+            <button onClick={(e) => { e.preventDefault(); setShowAbout(true); }} className="nav-a" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>About Us</button>
             <Link to="/fleets" className="nav-a">For Fleets</Link>
             <Link to="/garage-partners" className="nav-a">For Garages</Link>
           </div>
