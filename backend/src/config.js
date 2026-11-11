@@ -43,10 +43,11 @@ function loadConfig() {
       fromEmail: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
     },
     cashfree: {
-      appId:      (process.env.CASHFREE_APP_ID     || '').trim(),
-      secretKey:  (process.env.CASHFREE_SECRET_KEY || '').trim(),
-      env:        (process.env.CASHFREE_ENV        || 'TEST').trim(),
-      version:    (process.env.CASHFREE_API_VERSION || '2023-08-01').trim()
+      appId:         (process.env.CASHFREE_APP_ID     || '').trim(),
+      secretKey:     (process.env.CASHFREE_SECRET_KEY || '').trim(),
+      env:           (process.env.CASHFREE_ENV        || 'TEST').trim(),
+      version:       (process.env.CASHFREE_API_VERSION || '2023-08-01').trim(),
+      webhookSecret: (process.env.CASHFREE_WEBHOOK_SECRET || process.env.CASHFREE_SECRET_KEY || '').trim()
     },
     settlement: {
       mode: (process.env.SETTLEMENT_MODE || 'MOCK_TEST_MODE').toUpperCase(),

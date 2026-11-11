@@ -8,10 +8,11 @@ const { loadConfig } = require('../config');
  */
 function getCashfreeConfig() {
   const config = loadConfig();
-  const appId     = config.cashfree?.appId     || process.env.CASHFREE_APP_ID     || '';
-  const secretKey = config.cashfree?.secretKey || process.env.CASHFREE_SECRET_KEY || '';
-  const env       = config.cashfree?.env       || process.env.CASHFREE_ENV        || 'TEST';
-  const version   = config.cashfree?.version   || process.env.CASHFREE_API_VERSION || '2023-08-01';
+  const appId         = config.cashfree?.appId         || process.env.CASHFREE_APP_ID         || '';
+  const secretKey     = config.cashfree?.secretKey     || process.env.CASHFREE_SECRET_KEY     || '';
+  const webhookSecret = config.cashfree?.webhookSecret || process.env.CASHFREE_WEBHOOK_SECRET || secretKey;
+  const env           = config.cashfree?.env           || process.env.CASHFREE_ENV            || 'TEST';
+  const version       = config.cashfree?.version       || process.env.CASHFREE_API_VERSION     || '2023-08-01';
 
   if (!appId || !secretKey) {
     console.warn('⚠️  Cashfree credentials not fully configured in environment (CASHFREE_APP_ID / CASHFREE_SECRET_KEY).');
@@ -24,6 +25,7 @@ function getCashfreeConfig() {
   return {
     appId,
     secretKey,
+    webhookSecret,
     baseUrl,
     version,
     headers: {
@@ -109,8 +111,9 @@ async function fetchOrderPayments(cfOrderId) {
 function verifyCashfreeWebhook({ rawBody, timestamp, signature }) {
   if (!rawBody || !timestamp || !signature) return false;
 
-  const { secretKey } = getCashfreeConfig();
-  if (!secretKey) {
+  const { secretKey, webhookSecret } = getCashfreeConfig();
+  const signingKey = webhookSecret || secretKey;
+  if (!signingKey) {
     console.error('Missing CASHFREE_SECRET_KEY for webhook verification');
     return false;
   }
@@ -119,7 +122,7 @@ function verifyCashfreeWebhook({ rawBody, timestamp, signature }) {
   const signedData = `${timestamp}${body}`;
 
   const expectedSignature = crypto
-    .createHmac('sha256', secretKey)
+    .createHmac('sha256', signingKey)
     .update(signedData)
     .digest('base64');
 

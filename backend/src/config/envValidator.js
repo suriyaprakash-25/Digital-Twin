@@ -73,13 +73,14 @@ function validateEnvironment(env = process.env) {
   // 3. Cashfree Configuration
   const cashfreeAppId     = env.CASHFREE_APP_ID;
   const cashfreeSecretKey = env.CASHFREE_SECRET_KEY;
-  const cashfreeWebhookSecret = env.CASHFREE_WEBHOOK_SECRET;
+  // Cashfree signs webhooks with the Secret Key by default unless an optional separate webhook secret is provided
+  const cashfreeWebhookSecret = env.CASHFREE_WEBHOOK_SECRET || env.CASHFREE_SECRET_KEY;
 
   if (isProduction) {
     if (!cashfreeAppId || isPlaceholder(cashfreeAppId)) errors.push('A non-placeholder CASHFREE_APP_ID is required in production.');
     if (!cashfreeSecretKey || isPlaceholder(cashfreeSecretKey)) errors.push('A non-placeholder CASHFREE_SECRET_KEY is required in production.');
     if (!cashfreeWebhookSecret || isPlaceholder(cashfreeWebhookSecret)) {
-      errors.push('A non-placeholder CASHFREE_WEBHOOK_SECRET is required in production for webhook signature verification.');
+      errors.push('A non-placeholder CASHFREE_SECRET_KEY (or CASHFREE_WEBHOOK_SECRET) is required in production for webhook signature verification.');
     }
   } else if (!cashfreeAppId || !cashfreeSecretKey) {
     warnings.push('Cashfree credentials missing or incomplete; payment-gateway calls will not work.');
