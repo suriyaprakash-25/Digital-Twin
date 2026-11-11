@@ -367,7 +367,7 @@ router.post('/verify', requireAuth, async (req, res) => {
         }
       });
     }
-, 
+
     // 4. Server-side verification via Cashfree API
     const { verified, paymentId, method, status: cfStatus } = await verifyCashfreePayment(resolvedOrderId);
 
