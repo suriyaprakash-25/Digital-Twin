@@ -36,3 +36,4 @@ export function loadCashfreeScript() {
     document.body.appendChild(script);
   });
 }
+
