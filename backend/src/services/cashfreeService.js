@@ -145,36 +145,54 @@ function verifyCashfreeWebhook({ rawBody, timestamp, signature }) {
  * @param {string} cfOrderId - Our internal order ID (equals Cashfree order_id)
  * @returns {{ verified: boolean, paymentId: string|null, method: string, status: string }}
  */
-async function verifyCashfreePayment(cfOrderId) {
+async function verifyCashfreePayment(cfOrderId, maxRetries = 3, retryDelayMs = 800) {
   if (!cfOrderId) return { verified: false, paymentId: null, method: 'Unknown', status: 'FAILED' };
 
-  try {
-    const order = await fetchCashfreeOrder(cfOrderId);
-    if (!order || order.order_status !== 'PAID') {
-      return { verified: false, paymentId: null, method: 'Unknown', status: order?.order_status || 'FAILED' };
-    }
-
-    // Fetch individual payment record(s) to get payment method
-    let paymentId = null;
-    let method = 'ONLINE / CASHFREE';
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const payments = await fetchOrderPayments(cfOrderId);
-      const successPayment = Array.isArray(payments)
-        ? payments.find(p => p.payment_status === 'SUCCESS')
-        : null;
-      if (successPayment) {
-        paymentId = successPayment.cf_payment_id ? String(successPayment.cf_payment_id) : null;
-        method = (successPayment.payment_method?.type || 'ONLINE').toUpperCase();
-      }
-    } catch (_) {
-      // non-critical: proceed without payment method detail
-    }
+      const order = await fetchCashfreeOrder(cfOrderId);
 
-    return { verified: true, paymentId, method, status: 'PAID' };
-  } catch (err) {
-    console.error('Cashfree order verification error:', err?.response?.data || err.message);
-    return { verified: false, paymentId: null, method: 'Unknown', status: 'FAILED' };
+      if (order && order.order_status === 'PAID') {
+        let paymentId = null;
+        let method = 'ONLINE / CASHFREE';
+        try {
+          const payments = await fetchOrderPayments(cfOrderId);
+          const successPayment = Array.isArray(payments)
+            ? payments.find(p => p.payment_status === 'SUCCESS')
+            : null;
+          if (successPayment) {
+            paymentId = successPayment.cf_payment_id ? String(successPayment.cf_payment_id) : null;
+            method = (successPayment.payment_method?.type || 'ONLINE').toUpperCase();
+          }
+        } catch (_) {
+          // non-critical: proceed without payment method detail
+        }
+
+        return { verified: true, paymentId, method, status: 'PAID' };
+      }
+
+      // If order is permanently terminated or expired
+      if (order && (order.order_status === 'EXPIRED' || order.order_status === 'TERMINATED')) {
+        return { verified: false, paymentId: null, method: 'Unknown', status: order.order_status };
+      }
+
+      // If not yet PAID, retry up to maxRetries before giving up
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, retryDelayMs));
+      } else {
+        return { verified: false, paymentId: null, method: 'Unknown', status: order?.order_status || 'PENDING' };
+      }
+    } catch (err) {
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, retryDelayMs));
+      } else {
+        console.error('Cashfree order verification error:', err?.response?.data || err.message);
+        return { verified: false, paymentId: null, method: 'Unknown', status: 'FAILED' };
+      }
+    }
   }
+
+  return { verified: false, paymentId: null, method: 'Unknown', status: 'PENDING' };
 }
 
 /**

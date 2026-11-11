@@ -367,16 +367,22 @@ router.post('/verify', requireAuth, async (req, res) => {
         }
       });
     }
-
+, 
     // 4. Server-side verification via Cashfree API
     const { verified, paymentId, method, status: cfStatus } = await verifyCashfreePayment(resolvedOrderId);
 
     if (!verified) {
-      await payments.updateOne(
-        { _id: payment._id },
-        { $set: { status: PAYMENT_STATUS.FAILED, failureReason: `Cashfree order status: ${cfStatus}`, updatedAt: new Date() } }
-      );
-      return res.status(400).json({ success: false, message: `Payment not confirmed by Cashfree. Status: ${cfStatus}` });
+      if (cfStatus !== 'ACTIVE' && cfStatus !== 'PENDING') {
+        await payments.updateOne(
+          { _id: payment._id },
+          { $set: { status: PAYMENT_STATUS.FAILED, failureReason: `Cashfree order status: ${cfStatus}`, updatedAt: new Date() } }
+        );
+      }
+      return res.status(400).json({
+        success: false,
+        status: cfStatus,
+        message: `Payment not confirmed by Cashfree. Status: ${cfStatus}`
+      });
     }
 
     const paidAt = new Date();

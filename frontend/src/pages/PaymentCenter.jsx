@@ -39,9 +39,9 @@ export default function PaymentCenter() {
   const [selectedRefundPayment, setSelectedRefundPayment] = useState(null);
   const [payingPaymentId, setPayingPaymentId] = useState(null);
 
-  const fetchFinancialData = async () => {
+  const fetchFinancialData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
@@ -62,7 +62,7 @@ export default function PaymentCenter() {
     } catch (err) {
       console.error('Error loading customer financial data:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -75,7 +75,6 @@ export default function PaymentCenter() {
       const isLoaded = await loadCashfreeScript();
       if (!isLoaded) {
         showToast('Failed to load Cashfree payment gateway. Please check your internet connection.', 'error');
-        setPayingPaymentId(null);
         return;
       }
 
@@ -102,56 +101,64 @@ export default function PaymentCenter() {
         throw new Error('Payment session configuration is unavailable. Please contact support.');
       }
 
-      // 3. Configure Cashfree Drop.js Checkout
+      // 3. Launch Cashfree Drop.js Checkout Modal
       const cashfree = window.Cashfree({ mode: CASHFREE_MODE });
 
-      const checkoutOptions = {
+      const checkoutResult = await cashfree.checkout({
         paymentSessionId,
-        redirectTarget: '_modal',
-        onSuccess: async (data) => {
-          const confirmedOrderId = data?.order?.orderId || cfOrderId;
-          try {
-            // 4. Send order ID to backend for verification
-            const verifyRes = await axios.post(
-              `${API_BASE_URL}/api/payments/verify`,
-              {
-                cfOrderId: confirmedOrderId,
-                orderId: confirmedOrderId,
-                serviceId: targetServiceId,
-                invoiceNumber: paymentItem.invoiceNumber
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
+        redirectTarget: '_modal'
+      });
 
-            if (verifyRes.data?.success) {
-              showToast('Payment successful! Your invoice has been settled.', 'success');
-              if (selectedInvoice) setSelectedInvoice(null);
-              await fetchFinancialData();
-            } else {
-              showToast('Payment verification failed. Please contact support.', 'error');
-            }
-          } catch (verifyErr) {
-            console.error('Payment verification error:', verifyErr);
-            showToast(verifyErr.response?.data?.message || 'Payment verification failed', 'error');
-          } finally {
-            setPayingPaymentId(null);
+      // 4. Verify payment with backend immediately when modal finishes
+      try {
+        const verifyRes = await axios.post(
+          `${API_BASE_URL}/api/payments/verify`,
+          {
+            cfOrderId,
+            orderId: cfOrderId,
+            serviceId: targetServiceId,
+            invoiceNumber: paymentItem.invoiceNumber
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (verifyRes.data?.success) {
+          // Instant Optimistic UI Update: immediately mark as PAID in state
+          setPayments(prev =>
+            prev.map(p =>
+              (p.invoiceNumber === paymentItem.invoiceNumber || p.id === paymentItem.id)
+                ? { ...p, status: 'CAPTURED', paymentStatus: 'PAID', paidAt: new Date().toISOString() }
+                : p
+            )
+          );
+
+          if (selectedInvoice && (selectedInvoice.invoiceNumber === paymentItem.invoiceNumber || selectedInvoice.id === paymentItem.id)) {
+            setSelectedInvoice(prev => prev ? { ...prev, status: 'CAPTURED', paymentStatus: 'PAID' } : null);
           }
-        },
-        onFailure: (data) => {
-          console.error('Cashfree payment failed:', data);
-          const msg = data?.order?.errorText || data?.transaction?.txMsg || 'Transaction declined';
-          showToast(`Payment failed: ${msg}`, 'error');
-          setPayingPaymentId(null);
-        },
-        onClose: () => {
-          setPayingPaymentId(null);
-        }
-      };
 
-      await cashfree.checkout(checkoutOptions);
+          showToast('Payment successful! Your invoice has been settled.', 'success');
+          // Background re-sync (without blanking the table)
+          await fetchFinancialData(true);
+        } else {
+          // If modal was dismissed or error without payment
+          if (checkoutResult?.error) {
+            console.log('Cashfree modal closed:', checkoutResult.error);
+          } else {
+            showToast('Payment verification pending. Please check again in a moment.', 'warning');
+            await fetchFinancialData(true);
+          }
+        }
+      } catch (verifyErr) {
+        console.error('Payment verification error:', verifyErr);
+        if (!checkoutResult?.error) {
+          showToast(verifyErr.response?.data?.message || 'Payment verification could not be completed', 'error');
+        }
+      }
     } catch (err) {
       console.error('Error starting payment:', err);
       showToast(err.response?.data?.message || err.message || 'Unable to initialize payment', 'error');
+    } finally {
+      // Guaranteed reset so button is NEVER stuck in "Opening..." or "Processing..."
       setPayingPaymentId(null);
     }
   };

@@ -66,64 +66,54 @@ const PaymentButton = ({ service, onPaymentSuccess, className = '' }) => {
         throw new Error('Missing payment session ID from server. Please contact support.');
       }
 
-      // 3. Initialize Cashfree Drop.js and open checkout
+      // 3. Launch Cashfree Drop.js Checkout Modal
       const cashfree = window.Cashfree({ mode: CASHFREE_MODE });
 
-      const checkoutOptions = {
+      const checkoutResult = await cashfree.checkout({
         paymentSessionId,
-        redirectTarget: '_modal',    // Opens inline modal; use '_self' or '_blank' for redirect
-        onSuccess: async (data) => {
-          // data.order.orderId is the cfOrderId
-          const confirmedOrderId = data?.order?.orderId || cfOrderId;
-          try {
-            const verifyRes = await axios.post(
-              `${apiBaseUrl}/api/payments/verify`,
-              {
-                cfOrderId:  confirmedOrderId,
-                orderId:    confirmedOrderId,
-                serviceId:  targetServiceId,
-                invoiceNumber: service.invoiceNumber
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
+        redirectTarget: '_modal'
+      });
 
-            if (verifyRes.data?.success) {
-              setErrorMessage('');
-              if (onPaymentSuccess) {
-                onPaymentSuccess(
-                  verifyRes.data.payment || {
-                    ...service,
-                    paymentStatus: 'PAID',
-                    paidAt: new Date().toISOString()
-                  }
-                );
+      // 4. Verify payment with backend immediately when modal finishes
+      try {
+        const verifyRes = await axios.post(
+          `${apiBaseUrl}/api/payments/verify`,
+          {
+            cfOrderId,
+            orderId: cfOrderId,
+            serviceId: targetServiceId,
+            invoiceNumber: service.invoiceNumber
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (verifyRes.data?.success) {
+          setErrorMessage('');
+          if (onPaymentSuccess) {
+            onPaymentSuccess(
+              verifyRes.data.payment || {
+                ...service,
+                paymentStatus: 'PAID',
+                paidAt: new Date().toISOString()
               }
-            } else {
-              setErrorMessage('Payment verification failed. Please contact support.');
-            }
-          } catch (verifyErr) {
-            console.error('Payment verification error:', verifyErr);
-            setErrorMessage(verifyErr.response?.data?.message || 'Payment verification failed');
-          } finally {
-            setLoading(false);
+            );
           }
-        },
-        onFailure: (data) => {
-          console.error('Cashfree payment failed:', data);
-          const msg = data?.order?.errorText || data?.transaction?.txMsg || 'Transaction declined';
-          setErrorMessage(`Payment failed: ${msg}`);
-          setLoading(false);
-        },
-        onClose: () => {
-          // User dismissed the modal without completing payment
-          setLoading(false);
+        } else {
+          if (!checkoutResult?.error) {
+            setErrorMessage('Payment verification pending. Please check again shortly.');
+          }
         }
-      };
-
-      await cashfree.checkout(checkoutOptions);
+      } catch (verifyErr) {
+        console.error('Payment verification error:', verifyErr);
+        if (!checkoutResult?.error) {
+          setErrorMessage(verifyErr.response?.data?.message || 'Payment verification failed');
+        }
+      }
     } catch (err) {
       console.error('Error starting payment:', err);
       setErrorMessage(err.response?.data?.message || err.message || 'Unable to initialize payment');
+    } finally {
+      // Guaranteed reset so button is NEVER stuck in loading state
       setLoading(false);
     }
   };
