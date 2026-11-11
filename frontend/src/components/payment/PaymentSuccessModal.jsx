@@ -43,7 +43,7 @@ const PaymentSuccessModal = ({ isOpen, onClose, paymentDetails, onViewBill }) =>
           </div>
 
           <h3 className="text-2xl font-black tracking-tight">Payment Successful</h3>
-          <p className="text-emerald-100 text-xs font-medium mt-1">Transaction confirmed by Razorpay & DrivePortz</p>
+          <p className="text-emerald-100 text-xs font-medium mt-1">Transaction confirmed by Cashfree & DrivePortz</p>
         </div>
 
         {/* Receipt Body */}

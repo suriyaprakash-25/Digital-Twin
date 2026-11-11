@@ -22,8 +22,10 @@ import {
 } from 'lucide-react';
 import RefundTrackingModal from '../components/payments/RefundTrackingModal';
 import { API_BASE_URL } from '../utils/config';
-import { loadRazorpayScript } from '../utils/loadRazorpay';
+import { loadCashfreeScript } from '../utils/loadCashfree';
 import { useToast } from '../context/toastContextCore';
+
+const CASHFREE_MODE = import.meta.env.VITE_CASHFREE_MODE || 'sandbox';
 
 export default function PaymentCenter() {
   const { showToast } = useToast();
@@ -69,10 +71,10 @@ export default function PaymentCenter() {
     setPayingPaymentId(paymentItem.id);
 
     try {
-      // 1. Ensure Razorpay SDK is loaded
-      const isLoaded = await loadRazorpayScript();
+      // 1. Ensure Cashfree SDK is loaded
+      const isLoaded = await loadCashfreeScript();
       if (!isLoaded) {
-        showToast('Failed to load payment gateway script. Please check your internet connection.', 'error');
+        showToast('Failed to load Cashfree payment gateway. Please check your internet connection.', 'error');
         setPayingPaymentId(null);
         return;
       }
@@ -81,7 +83,7 @@ export default function PaymentCenter() {
       const userRaw = localStorage.getItem('user');
       const user = userRaw ? JSON.parse(userRaw) : {};
 
-      // 2. Create server-side Razorpay Order
+      // 2. Create server-side Cashfree Order
       const targetServiceId = paymentItem.serviceId || paymentItem.id;
       const res = await axios.post(
         `${API_BASE_URL}/api/payments/create-order`,
@@ -89,48 +91,34 @@ export default function PaymentCenter() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (!res.data?.success || !res.data?.order) {
+      if (!res.data?.success) {
         throw new Error(res.data?.message || 'Failed to initialize payment order');
       }
 
-      const orderData = res.data.order;
-      const razorpayKey = orderData.keyId;
-      if (!razorpayKey) {
-        throw new Error('Payment gateway configuration is unavailable. Please contact support.');
+      const cfOrderId = res.data.cfOrderId || res.data.orderId || res.data.order?.cfOrderId;
+      const paymentSessionId = res.data.paymentSessionId || res.data.order?.paymentSessionId;
+
+      if (!paymentSessionId) {
+        throw new Error('Payment session configuration is unavailable. Please contact support.');
       }
 
-      // 3. Configure Razorpay Standard Checkout
-      const options = {
-        key: razorpayKey,
-        amount: orderData.amount,
-        currency: orderData.currency || 'INR',
-        name: 'DrivePortz Mobility',
-        description: `Invoice ${orderData.invoiceNumber || paymentItem.invoiceNumber || 'Payment'} - ${paymentItem.serviceType || 'Automotive Service'}`,
-        image: '/logo-removebg-preview.png',
-        order_id: orderData.id,
-        prefill: {
-          name: user.name || '',
-          email: user.email || '',
-          contact: user.phone || ''
-        },
-        theme: {
-          color: '#0d9488'
-        },
-        modal: {
-          ondismiss: () => {
-            setPayingPaymentId(null);
-          }
-        },
-        handler: async (response) => {
+      // 3. Configure Cashfree Drop.js Checkout
+      const cashfree = window.Cashfree({ mode: CASHFREE_MODE });
+
+      const checkoutOptions = {
+        paymentSessionId,
+        redirectTarget: '_modal',
+        onSuccess: async (data) => {
+          const confirmedOrderId = data?.order?.orderId || cfOrderId;
           try {
-            // 4. Send signature to backend for verification
+            // 4. Send order ID to backend for verification
             const verifyRes = await axios.post(
               `${API_BASE_URL}/api/payments/verify`,
               {
-                paymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                signature: response.razorpay_signature,
-                serviceId: targetServiceId
+                cfOrderId: confirmedOrderId,
+                orderId: confirmedOrderId,
+                serviceId: targetServiceId,
+                invoiceNumber: paymentItem.invoiceNumber
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -148,17 +136,19 @@ export default function PaymentCenter() {
           } finally {
             setPayingPaymentId(null);
           }
+        },
+        onFailure: (data) => {
+          console.error('Cashfree payment failed:', data);
+          const msg = data?.order?.errorText || data?.transaction?.txMsg || 'Transaction declined';
+          showToast(`Payment failed: ${msg}`, 'error');
+          setPayingPaymentId(null);
+        },
+        onClose: () => {
+          setPayingPaymentId(null);
         }
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', (response) => {
-        console.error('Razorpay payment failed:', response.error);
-        showToast(`Payment failed: ${response.error?.description || 'Transaction declined'}`, 'error');
-        setPayingPaymentId(null);
-      });
-
-      rzp.open();
+      await cashfree.checkout(checkoutOptions);
     } catch (err) {
       console.error('Error starting payment:', err);
       showToast(err.response?.data?.message || err.message || 'Unable to initialize payment', 'error');

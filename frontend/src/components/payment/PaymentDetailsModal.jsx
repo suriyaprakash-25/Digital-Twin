@@ -122,7 +122,7 @@ const PaymentDetailsModal = ({
                                     </div>
                                     <div>
                                         <h4 className="font-extrabold text-emerald-900 text-sm">Payment Successful</h4>
-                                        <p className="text-xs text-emerald-700 font-medium">Verified and captured through Razorpay Standard Checkout</p>
+                                        <p className="text-xs text-emerald-700 font-medium">Verified and captured through Cashfree Standard Checkout</p>
                                     </div>
                                 </div>
                             ) : isFailed ? (

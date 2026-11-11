@@ -293,7 +293,10 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
       amount:           totalCost,
       currency:         'INR',
       invoiceNumber,
+      keyId:            cfOrder.payment_session_id,
       order: {
+        id:               cfOrderId,
+        keyId:            cfOrder.payment_session_id,
         cfOrderId,
         orderId:          cfOrderId,
         paymentSessionId: cfOrder.payment_session_id,
