@@ -1,15 +1,17 @@
 import { API_BASE_URL } from '../../utils/config';
 import { useState } from 'react';
 import axios from 'axios';
-import { CreditCard, CheckCircle, Loader2, IndianRupee, AlertCircle } from 'lucide-react';
-import { loadRazorpayScript } from '../../utils/loadRazorpay';
+import { CreditCard, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { loadCashfreeScript } from '../../utils/loadCashfree';
+
+const CASHFREE_MODE = import.meta.env.VITE_CASHFREE_MODE || 'sandbox'; // 'sandbox' | 'production'
 
 const PaymentButton = ({ service, onPaymentSuccess, className = '' }) => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]           = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const isPaid = service.paymentStatus === 'PAID';
-  const totalCost = parseFloat(service.totalCost) || 0;
+  const isPaid     = service.paymentStatus === 'PAID';
+  const totalCost  = parseFloat(service.totalCost) || 0;
 
   if (isPaid) {
     return (
@@ -20,9 +22,7 @@ const PaymentButton = ({ service, onPaymentSuccess, className = '' }) => {
     );
   }
 
-  if (totalCost <= 0) {
-    return null;
-  }
+  if (totalCost <= 0) return null;
 
   const handlePayNow = async (e) => {
     e.stopPropagation();
@@ -32,79 +32,56 @@ const PaymentButton = ({ service, onPaymentSuccess, className = '' }) => {
     setErrorMessage('');
 
     try {
-      // 1. Ensure Razorpay SDK is loaded
-      const isLoaded = await loadRazorpayScript();
+      // 1. Load Cashfree Drop.js SDK
+      const isLoaded = await loadCashfreeScript();
       if (!isLoaded) {
-        setErrorMessage('Failed to load Razorpay checkout script. Please check your internet connection.');
+        setErrorMessage('Failed to load Cashfree checkout. Please check your internet connection.');
         setLoading(false);
         return;
       }
 
-      const token = localStorage.getItem('token');
-      const userRaw = localStorage.getItem('user');
-      const user = userRaw ? JSON.parse(userRaw) : {};
-      const apiBaseUrl = API_BASE_URL;
+      const token       = localStorage.getItem('token');
+      const userRaw     = localStorage.getItem('user');
+      const user        = userRaw ? JSON.parse(userRaw) : {};
+      const apiBaseUrl  = API_BASE_URL;
 
-      // 2. Create server-side Razorpay Order
+      // 2. Create Cashfree Order on the server
       const targetServiceId = service.id || service._id;
       const orderResponse = await axios.post(
         `${apiBaseUrl}/api/payments/create-order`,
         {
-          serviceId: targetServiceId,
-          invoiceId: service.invoiceNumber || targetServiceId
+          serviceId:  targetServiceId,
+          invoiceId:  service.invoiceNumber || targetServiceId
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const resData = orderResponse.data;
-      if (!resData || (!resData.success && resData.orderId === undefined && !resData.order)) {
+      if (!resData?.success) {
         throw new Error(resData?.message || 'Failed to generate payment order');
       }
 
-      const orderData = resData.order || resData;
-      const orderId = orderData.id || orderData.orderId || resData.orderId;
-      if (!orderId) {
-        throw new Error(resData?.message || 'Failed to obtain payment order ID');
+      const { cfOrderId, paymentSessionId } = resData;
+      if (!paymentSessionId) {
+        throw new Error('Missing payment session ID from server. Please contact support.');
       }
 
-      const razorpayKey = orderData.keyId || resData.keyId;
-      if (!razorpayKey) {
-        throw new Error('Payment gateway configuration is unavailable. Please contact support.');
-      }
-      const amountPaise = orderData.amount || resData.amount || Math.round(totalCost * 100);
+      // 3. Initialize Cashfree Drop.js and open checkout
+      const cashfree = window.Cashfree({ mode: CASHFREE_MODE });
 
-      // 3. Configure Razorpay Standard Checkout
-      const options = {
-        key: razorpayKey,
-        amount: amountPaise,
-        currency: orderData.currency || resData.currency || 'INR',
-        name: 'DrivePortz Mobility',
-        description: `Invoice ${orderData.invoiceNumber || service.invoiceNumber || 'Payment'} - ${service.serviceType || 'Automotive Service'}`,
-        image: '/logo-removebg-preview.png',
-        order_id: orderId,
-        prefill: {
-          name: user.name || '',
-          email: user.email || '',
-          contact: user.phone || ''
-        },
-        theme: {
-          color: '#0d9488' // DrivePortz Teal
-        },
-        modal: {
-          ondismiss: () => {
-            setLoading(false);
-          }
-        },
-        handler: async (response) => {
+      const checkoutOptions = {
+        paymentSessionId,
+        redirectTarget: '_modal',    // Opens inline modal; use '_self' or '_blank' for redirect
+        onSuccess: async (data) => {
+          // data.order.orderId is the cfOrderId
+          const confirmedOrderId = data?.order?.orderId || cfOrderId;
           try {
-            // 4. Send signature to backend for verification
             const verifyRes = await axios.post(
               `${apiBaseUrl}/api/payments/verify`,
               {
-                paymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                signature: response.razorpay_signature,
-                serviceId: targetServiceId,
+                cfOrderId:  confirmedOrderId,
+                orderId:    confirmedOrderId,
+                serviceId:  targetServiceId,
                 invoiceNumber: service.invoiceNumber
               },
               { headers: { Authorization: `Bearer ${token}` } }
@@ -113,7 +90,13 @@ const PaymentButton = ({ service, onPaymentSuccess, className = '' }) => {
             if (verifyRes.data?.success) {
               setErrorMessage('');
               if (onPaymentSuccess) {
-                onPaymentSuccess(verifyRes.data.payment || { ...service, paymentStatus: 'PAID', paidAt: new Date().toISOString() });
+                onPaymentSuccess(
+                  verifyRes.data.payment || {
+                    ...service,
+                    paymentStatus: 'PAID',
+                    paidAt: new Date().toISOString()
+                  }
+                );
               }
             } else {
               setErrorMessage('Payment verification failed. Please contact support.');
@@ -124,17 +107,20 @@ const PaymentButton = ({ service, onPaymentSuccess, className = '' }) => {
           } finally {
             setLoading(false);
           }
+        },
+        onFailure: (data) => {
+          console.error('Cashfree payment failed:', data);
+          const msg = data?.order?.errorText || data?.transaction?.txMsg || 'Transaction declined';
+          setErrorMessage(`Payment failed: ${msg}`);
+          setLoading(false);
+        },
+        onClose: () => {
+          // User dismissed the modal without completing payment
+          setLoading(false);
         }
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', (response) => {
-        console.error('Razorpay payment failed:', response.error);
-        setErrorMessage(`Payment failed: ${response.error?.description || 'Transaction declined'}`);
-        setLoading(false);
-      });
-
-      rzp.open();
+      await cashfree.checkout(checkoutOptions);
     } catch (err) {
       console.error('Error starting payment:', err);
       setErrorMessage(err.response?.data?.message || err.message || 'Unable to initialize payment');

@@ -357,7 +357,7 @@ function VehicleIQCard({ delay, isMobile }) {
       className="dt-card-float"
       style={{
         position: 'absolute',
-        top: isMobile ? '2%' : '6%',
+        top: isMobile ? '-2%' : '6%',
         left: isMobile ? '50%' : '26%',
         transform: isMobile ? 'translateX(-50%) scale(0.85)' : 'scale(1)',
         transformOrigin: 'top center',
@@ -833,7 +833,7 @@ export default function DigitalTwinHero() {
           className="dt-card-float-alt"
           style={{
             position: 'absolute',
-            top: isMobile ? '18%' : '4%',
+            top: isMobile ? '12%' : '4%',
             right: isMobile ? 'auto' : '2%',
             bottom: isMobile ? 'auto' : 'auto',
             left: isMobile ? '-2%' : 'auto',
@@ -856,7 +856,7 @@ export default function DigitalTwinHero() {
             position: 'absolute',
             top: isMobile ? 'auto' : '38%',
             left: isMobile ? '-2%' : '0%',
-            bottom: isMobile ? '24%' : 'auto',
+            bottom: isMobile ? '16%' : 'auto',
             transform: isMobile ? 'scale(0.8)' : 'scale(1)',
             transformOrigin: 'left center',
             zIndex: 20,
@@ -877,7 +877,7 @@ export default function DigitalTwinHero() {
             position: 'absolute',
             top: isMobile ? 'auto' : '42%',
             right: isMobile ? '-2%' : '0%',
-            bottom: isMobile ? '28%' : 'auto',
+            bottom: isMobile ? '20%' : 'auto',
             transform: isMobile ? 'scale(0.8)' : 'scale(1)',
             transformOrigin: 'right center',
             zIndex: 20,
@@ -938,7 +938,7 @@ export default function DigitalTwinHero() {
           <div
             style={{
               position: 'absolute',
-              bottom: '-2%',
+              bottom: '-8%',
               left: '50%',
               transform: 'translateX(-50%) scale(0.9)',
               display: 'grid',

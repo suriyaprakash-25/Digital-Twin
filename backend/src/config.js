@@ -42,10 +42,11 @@ function loadConfig() {
       pass: process.env.SMTP_PASS,
       fromEmail: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
     },
-    razorpay: {
-      keyId: (process.env.RAZORPAY_KEY_ID || '').trim(),
-      keySecret: (process.env.RAZORPAY_KEY_SECRET || '').trim(),
-      webhookSecret: (process.env.RAZORPAY_WEBHOOK_SECRET || '').trim()
+    cashfree: {
+      appId:      (process.env.CASHFREE_APP_ID     || '').trim(),
+      secretKey:  (process.env.CASHFREE_SECRET_KEY || '').trim(),
+      env:        (process.env.CASHFREE_ENV        || 'TEST').trim(),
+      version:    (process.env.CASHFREE_API_VERSION || '2023-08-01').trim()
     },
     settlement: {
       mode: (process.env.SETTLEMENT_MODE || 'MOCK_TEST_MODE').toUpperCase(),

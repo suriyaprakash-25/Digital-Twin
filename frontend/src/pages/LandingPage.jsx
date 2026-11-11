@@ -331,7 +331,7 @@ const LandingPage = () => {
         {/* ════════════════════════════════
            HERO – Full-width immersive layout
       ════════════════════════════════ */}
-        <main className="pt-20 md:pt-24 pb-6 md:pb-10">
+        <main className="pt-20 md:pt-24 pb-20 md:pb-10">
           <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12">
             <div className="flex flex-col md:flex-row items-center md:items-stretch min-h-0 md:min-h-[680px] gap-4 md:gap-0">
 

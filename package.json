@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "cashfree-pg": "^6.0.6"
+  }
+}

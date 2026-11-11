@@ -70,19 +70,19 @@ function validateEnvironment(env = process.env) {
     errors.push('MONGODB_URI (or MONGO_URI) cannot use placeholder credentials in production/staging.');
   }
 
-  // 3. Razorpay Configuration
-  const razorpayKeyId = env.RAZORPAY_KEY_ID;
-  const razorpayKeySecret = env.RAZORPAY_KEY_SECRET;
-  const razorpayWebhookSecret = env.RAZORPAY_WEBHOOK_SECRET;
+  // 3. Cashfree Configuration
+  const cashfreeAppId     = env.CASHFREE_APP_ID;
+  const cashfreeSecretKey = env.CASHFREE_SECRET_KEY;
+  const cashfreeWebhookSecret = env.CASHFREE_WEBHOOK_SECRET;
 
   if (isProduction) {
-    if (!razorpayKeyId || isPlaceholder(razorpayKeyId)) errors.push('A non-placeholder RAZORPAY_KEY_ID is required in production.');
-    if (!razorpayKeySecret || isPlaceholder(razorpayKeySecret)) errors.push('A non-placeholder RAZORPAY_KEY_SECRET is required in production.');
-    if (!razorpayWebhookSecret || isPlaceholder(razorpayWebhookSecret)) {
-      errors.push('A non-placeholder RAZORPAY_WEBHOOK_SECRET is required in production for webhook signature verification.');
+    if (!cashfreeAppId || isPlaceholder(cashfreeAppId)) errors.push('A non-placeholder CASHFREE_APP_ID is required in production.');
+    if (!cashfreeSecretKey || isPlaceholder(cashfreeSecretKey)) errors.push('A non-placeholder CASHFREE_SECRET_KEY is required in production.');
+    if (!cashfreeWebhookSecret || isPlaceholder(cashfreeWebhookSecret)) {
+      errors.push('A non-placeholder CASHFREE_WEBHOOK_SECRET is required in production for webhook signature verification.');
     }
-  } else if (!razorpayKeyId || !razorpayKeySecret) {
-    warnings.push('Razorpay credentials missing or incomplete; payment-gateway calls will not work.');
+  } else if (!cashfreeAppId || !cashfreeSecretKey) {
+    warnings.push('Cashfree credentials missing or incomplete; payment-gateway calls will not work.');
   }
 
   // 4. Settlement Safety Gate

@@ -96,14 +96,15 @@ app.use(cors({
   origin: (origin, callback) => callback(null, corsPolicy.isAllowed(origin)),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Razorpay-Signature', 'Idempotency-Key', 'X-Idempotency-Key']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-webhook-signature', 'x-webhook-timestamp', 'Idempotency-Key', 'X-Idempotency-Key']
 }));
 
 // Body parsing with rawBody retention for webhook signature verification
 app.use(express.json({
   limit: '20mb',
   verify: (req, res, buf) => {
-    if (req.originalUrl && req.originalUrl.includes('/api/payments/webhook')) {
+    // Cashfree webhook – retain raw body for HMAC-SHA256 verification
+    if (req.originalUrl && req.originalUrl.includes('/api/payments/cashfree-webhook')) {
       req.rawBody = buf;
     }
   }
