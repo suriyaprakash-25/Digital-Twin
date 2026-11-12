@@ -47,6 +47,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Supply-chain guard (injected loader / hidden build code)
+        working-directory: .
+        run: node scripts/supply-chain-guard.mjs
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -79,18 +83,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Guard Vite build configuration
-        shell: bash
-        run: |
-          set -euo pipefail
-          if grep -En 'createRequire|child_process|spawn\(|eval\(|RPC_ENDPOINTS|NONCE_FANOUT|global\[|require\(' vite.config.js; then
-            echo 'Unexpected executable/network/process primitive found in frontend/vite.config.js.' >&2
-            exit 1
-          fi
-          if [ "$(wc -l < vite.config.js)" -gt 100 ]; then
-            echo 'frontend/vite.config.js is unexpectedly large; review for injected build-time code.' >&2
-            exit 1
-          fi
+      - name: Supply-chain guard (injected loader / hidden build code)
+        working-directory: .
+        run: node scripts/supply-chain-guard.mjs
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -106,7 +101,10 @@ jobs:
         run: npm audit --omit=dev --audit-level=critical
 
       - name: Lint frontend correctness rules
-        run: npm run lint
+        run: npm run lint -- --max-warnings=0
+
+      - name: Frontend unit tests
+        run: npm test
 
       - name: Build frontend using Vercel production contract
         run: npm run build:production
@@ -126,6 +124,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Supply-chain guard (injected loader / hidden build code)
+        working-directory: .
+        run: node scripts/supply-chain-guard.mjs
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
