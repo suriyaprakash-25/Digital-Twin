@@ -97,6 +97,8 @@ function withoutSupersededAttempts(payments) {
     }
   });
   return payments.filter((p) => {
+    // Abandoned attempts that capture marked as superseded are audit records, not customer history.
+    if (p.supersededBy) return false;
     if (!OPEN_PAYMENT_STATUSES.includes(p.status)) return true;
     return !(paidKeys.has(p.invoiceNumber) || paidKeys.has(String(p.serviceId)) || paidKeys.has(String(p.invoiceId)));
   });
@@ -375,7 +377,7 @@ router.get('/history', requireAuth, asyncHandler(async (req, res) => {
 // ---------------------------------------------------------------------------
 const SUMMARY_PROJECTION = Object.freeze({
   status: 1, amount: 1, amountPaise: 1, totalRefundedAmount: 1, refundedPaise: 1, invoiceNumber: 1, serviceId: 1, invoiceId: 1,
-  vehicleNumber: 1, createdAt: 1, paidAt: 1, cfOrderId: 1, cashfreePaymentId: 1, serviceType: 1, garageName: 1, refunds: 1, currency: 1, vehicleId: 1, paymentMethod: 1,
+  vehicleNumber: 1, createdAt: 1, paidAt: 1, cfOrderId: 1, cashfreePaymentId: 1, serviceType: 1, garageName: 1, refunds: 1, currency: 1, vehicleId: 1, paymentMethod: 1, supersededBy: 1,
 });
 
 router.get('/customer/financial-summary', requireAuth, asyncHandler(async (req, res) => {

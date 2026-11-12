@@ -109,7 +109,7 @@ async function capturePayment({ db, payment, gatewayPaymentId, method, orderId, 
     if (staleFilters.length) {
       await payments.updateMany(
         { _id: { $ne: captured._id }, $or: staleFilters, status: { $in: OPEN_PAYMENT_STATUSES } },
-        { $set: { status: PAYMENT_STATUS.FAILED, failureReason: 'Superseded by a successful payment for the same invoice', updatedAt: paidAt } },
+        { $set: { status: PAYMENT_STATUS.FAILED, failureReason: 'Superseded by a successful payment for the same invoice', supersededBy: String(captured._id), updatedAt: paidAt } },
         withSession(session)
       );
     }

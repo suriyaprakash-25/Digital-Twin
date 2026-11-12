@@ -65,6 +65,33 @@ function toRequestUser(user) {
   };
 }
 
+const AUTH_USER_CACHE_PREFIX = 'auth:user:';
+const AUTH_USER_CACHE_TTL_MS = 30 * 1000;
+const AUTH_USER_PROJECTION = Object.freeze({ role: 1, adminRole: 1, email: 1, name: 1, phone: 1, tokenVersion: 1, isDisabled: 1 });
+
+/**
+ * Loads the fields auth needs, read-through cached for AUTH_USER_CACHE_TTL_MS. This was the hottest
+ * query in the system (one users lookup per authenticated request). Revocation stays sound:
+ * the instance that bumps tokenVersion invalidates immediately (invalidateAuthUser) and every other
+ * instance converges within the TTL.
+ */
+async function loadAuthUser(userId) {
+  const { getCache } = require('../infrastructure/cache/cache');
+  const { getDb } = require('../db');
+  const cached = await getCache().wrap(`${AUTH_USER_CACHE_PREFIX}${userId}`, AUTH_USER_CACHE_TTL_MS, async () => {
+    const user = await getDb().collection('users').findOne({ _id: new ObjectId(userId) }, { projection: AUTH_USER_PROJECTION });
+    // Cache values must be plain data: store the id as a string, and cache misses as null.
+    return user ? { ...user, _id: String(user._id) } : null;
+  });
+  return cached || null;
+}
+
+/** Call after any change to a user's role, tokenVersion or disabled flag. */
+async function invalidateAuthUser(userId) {
+  const { getCache } = require('../infrastructure/cache/cache');
+  await getCache().delete(`${AUTH_USER_CACHE_PREFIX}${String(userId)}`);
+}
+
 /**
  * Resolves the authenticated user, or null. The user is re-loaded on every request, so role
  * changes, deletions and session revocation (tokenVersion bump on password reset) apply instantly.
@@ -78,15 +105,11 @@ async function resolveUser(req) {
   }
   // Lazy requires keep this module free of config/db side effects at import time.
   const { verifyToken, isTokenCurrent } = require('../services/authService');
-  const { getDb } = require('../db');
   try {
     const payload = verifyToken(credential.token);
     req.auth = { method: credential.method, tokenType: payload.typ || 'session' };
     if (!payload.sub || !ObjectId.isValid(String(payload.sub))) return null;
-    const user = await getDb().collection('users').findOne(
-      { _id: new ObjectId(String(payload.sub)) },
-      { projection: { password: 0, otp: 0, otpHash: 0 } }
-    );
+    const user = await loadAuthUser(String(payload.sub));
     if (!user || !isTokenCurrent(payload, user) || user.isDisabled === true) return null;
     return toRequestUser(user);
   } catch {
@@ -121,4 +144,4 @@ function requireRole(allowedRoles) {
   };
 }
 
-module.exports = { requireAuth, optionalAuth, requireRole, normalizeRole, normalizePublicRole, ROLE_ALIASES };
+module.exports = { requireAuth, optionalAuth, requireRole, normalizeRole, normalizePublicRole, invalidateAuthUser, ROLE_ALIASES };

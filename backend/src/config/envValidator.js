@@ -111,6 +111,11 @@ function validateEnvironment(env = process.env) {
     errors.push('FINANCIAL_JOBS_ENABLED=true is not supported yet. Automated financial jobs must remain disabled until payout retry execution is provider-backed and idempotent.');
   }
 
+  // The mock payment gateway exists only for local development and browser E2E tests.
+  if (isProduction && String(env.PAYMENT_GATEWAY || '').toLowerCase() === 'mock') {
+    errors.push('PAYMENT_GATEWAY=mock is never allowed in production/staging.');
+  }
+
   // 5. Frontend URL & CORS origin
   const frontendUrl = env.FRONTEND_URL;
   if (isProduction && (!isSecureHttpUrl(frontendUrl) || String(frontendUrl).includes('localhost'))) {

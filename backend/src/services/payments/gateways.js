@@ -117,6 +117,45 @@ class RazorpayGateway extends PaymentGateway {
   }
 }
 
+/**
+ * Deterministic in-process gateway for local development and browser end-to-end tests
+ * (PAYMENT_GATEWAY=mock). Every order "succeeds" for the exact amount it was created with.
+ * Registered only outside production; envValidator also rejects PAYMENT_GATEWAY=mock in production.
+ */
+class MockGateway extends PaymentGateway {
+  constructor() {
+    super();
+    this.orders = new Map(); // orderId -> amountInRupees
+  }
+
+  get name() { return 'mock'; }
+
+  ownsPayment(payment) {
+    return Boolean(payment && payment.gateway === 'mock');
+  }
+
+  async createOrder({ orderId, amountInRupees }) {
+    this.orders.set(orderId, amountInRupees);
+    return { gatewayOrderId: `mock_${orderId}`, sessionId: `mock_session_${orderId}`, raw: { mock: true } };
+  }
+
+  async verifyOrderPayment(orderId) {
+    if (!this.orders.has(orderId)) return { verified: false, status: 'NOT_FOUND', gatewayPaymentId: null, method: 'MOCK', amountInRupees: null };
+    return { verified: true, status: 'PAID', gatewayPaymentId: `mockpay_${orderId}`, method: 'MOCK', amountInRupees: this.orders.get(orderId) };
+  }
+
+  async refund({ refundId }) {
+    return { refundId, gatewayRefundId: `mockrefund_${refundId}`, status: 'SUCCESS', raw: { mock: true } };
+  }
+
+  async fetchPaymentSnapshot(payment) {
+    const amount = toPaise(payment.amount);
+    const refunded = toPaise(payment.totalRefundedAmount);
+    const status = refunded <= 0 ? 'captured' : refunded >= amount ? 'refunded' : 'partially_refunded';
+    return { amount, amount_refunded: refunded, status, currency: PAYMENTS.CURRENCY };
+  }
+}
+
 const registry = new Map();
 function registerGateway(gateway) { registry.set(gateway.name, gateway); }
 function getGateway(name) {
@@ -133,8 +172,18 @@ function resolveGatewayForPayment(payment) {
   }
   return null;
 }
+function isProductionEnv() {
+  return ['production', 'staging'].includes(String(process.env.NODE_ENV || '').toLowerCase());
+}
+
+function defaultGateways() {
+  const gateways = [new CashfreeGateway(), new RazorpayGateway()];
+  if (!isProductionEnv()) gateways.push(new MockGateway());
+  return gateways;
+}
+
 /** Test seam. */
-function resetGateways(gateways = [new CashfreeGateway(), new RazorpayGateway()]) {
+function resetGateways(gateways = defaultGateways()) {
   registry.clear();
   gateways.forEach(registerGateway);
 }
@@ -145,6 +194,7 @@ module.exports = {
   PaymentGateway,
   CashfreeGateway,
   RazorpayGateway,
+  MockGateway,
   registerGateway,
   getGateway,
   getDefaultGateway,

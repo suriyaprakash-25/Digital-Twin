@@ -396,6 +396,8 @@ async function integrationTests() {
       const token = tokenFor(owner);
       assert.strictEqual((await call('GET', '/api/auth/me', { token })).status, 200);
       await users.updateOne({ _id: owner._id }, { $inc: { tokenVersion: 1 } });
+      // Code paths that bump tokenVersion invalidate the auth-user cache (other instances: <=30s TTL).
+      await require('./src/middleware/auth').invalidateAuthUser(owner._id);
       assert.strictEqual((await call('GET', '/api/auth/me', { token })).status, 401);
       owner.tokenVersion = 1;
     });
@@ -505,6 +507,21 @@ async function integrationTests() {
       assert.strictEqual(r.status, 200);
       assert.ok(r.json.payments.length <= 2);
       assert.ok(Number(r.headers.get('x-total-count')) >= 2);
+    });
+
+    await test('Superseded checkout attempts are kept for audit but hidden from customer history', async () => {
+      const serviceId = new ObjectId();
+      await db.collection('services').insertOne({ _id: serviceId, totalAmount: 1000, vehicleId: 'v-sup' });
+      const older = { _id: new ObjectId(), serviceId: String(serviceId), userId: String(owner._id), amount: 1000, cfOrderId: 'DP_SUP_OLD', status: 'CREATED', createdAt: new Date(Date.now() - 60000), updatedAt: new Date() };
+      const newer = { _id: new ObjectId(), serviceId: String(serviceId), userId: String(owner._id), amount: 1000, cfOrderId: 'DP_SUP_NEW', status: 'CREATED', createdAt: new Date(), updatedAt: new Date() };
+      await db.collection('payments').insertMany([older, newer]);
+      await capturePayment({ db, payment: newer, gatewayPaymentId: 'p', method: 'UPI', orderId: 'DP_SUP_NEW', gatewayAmountInRupees: 1000, source: 'VERIFY' });
+      const audit = await db.collection('payments').findOne({ _id: older._id });
+      assert.strictEqual(audit.status, 'FAILED');
+      assert.strictEqual(audit.supersededBy, String(newer._id));
+      const r = await call('GET', '/api/payments/history?limit=200', { token: tokenFor(owner) });
+      const ids = r.json.payments.map((p) => p.id);
+      assert.ok(ids.includes(String(newer._id)) && !ids.includes(String(older._id)));
     });
 
     // --- httpOnly cookie sessions + CSRF ---

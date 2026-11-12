@@ -2,7 +2,7 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 
 const { getDb } = require('../db');
-const { requireAuth, optionalAuth, normalizeRole, normalizePublicRole } = require('../middleware/auth');
+const { requireAuth, optionalAuth, normalizeRole, normalizePublicRole, invalidateAuthUser } = require('../middleware/auth');
 const { upload, createUploader } = require('../utils/uploads');
 const { persistUploadedFile, deletePersistedFile, removeTemporaryFile } = require('../services/persistentFileStorage');
 const { limiters } = require('../infrastructure/rateLimit/rateLimiters');
@@ -447,6 +447,7 @@ router.post('/reset-password', limiters.otp, async (req, res) => {
         $unset: { otp: '', otpHash: '', otpExpiry: '', otpAttempts: '' },
       }
     );
+    await invalidateAuthUser(result.user._id);
     return res.status(200).json({ success: true, message: 'Password updated successfully.' });
   } catch (error) {
     logger.error('Error in reset-password', { error: error.message });
@@ -479,6 +480,7 @@ router.get('/session', requireAuth, async (req, res) => {
 router.post('/logout', optionalAuth, async (req, res) => {
   if (req.user && req.body && req.body.allDevices === true) {
     await getDb().collection('users').updateOne({ _id: new ObjectId(req.user.id) }, { $inc: { tokenVersion: 1 } });
+    await invalidateAuthUser(req.user.id);
   }
   auth.endSession(res);
   return res.status(200).json({ success: true, message: 'Signed out' });
