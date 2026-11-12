@@ -1,9 +1,12 @@
 const express = require('express');
+const { safeSearchRegex } = require('../core/text');
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { generateInvoiceNumber } = require('../utils/invoiceNumber');
 const { PAYMENT_STATUS } = require('../models/Payment');
+
+const { hasOpenPaymentForService } = require('../services/payments/paymentCaptureService');
 
 const router = express.Router();
 
@@ -338,7 +341,7 @@ router.get('/garage/all', requireAuth, requireRole('GARAGE'), async (req, res) =
     ];
 
     if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = safeSearchRegex(search);
       pipeline.push({
         $match: {
           $or: [
@@ -425,6 +428,15 @@ router.put('/garage/:serviceId', requireAuth, requireRole('GARAGE'), async (req,
 
     if (service.paymentStatus === 'PAID') {
       return res.status(400).json({ success: false, message: 'Cannot modify a paid invoice' });
+    }
+
+    // The customer is paying the current total right now; changing it would make the capture stale.
+    if (await hasOpenPaymentForService(db, service._id)) {
+      return res.status(409).json({
+        success: false,
+        code: 'CHECKOUT_IN_PROGRESS',
+        message: 'The customer has an online payment in progress for this invoice. Try again in a few minutes.'
+      });
     }
 
     const calculated = calculateInvoiceTotals(req.body);

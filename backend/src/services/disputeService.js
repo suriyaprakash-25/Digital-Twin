@@ -3,8 +3,7 @@ const { getDb } = require('../db');
 const { DISPUTE_STATUS, DISPUTE_RESOLUTION } = require('../models/Dispute');
 const { generateDisputeNumber } = require('../utils/disputeNumber');
 const { notifyUser } = require('./notifications');
-const { createRazorpayRefund } = require('./razorpayService');
-const { reconcileRefundEarnings } = require('./earningsService');
+const { initiateRefund } = require('./payments/refundService');
 const { PAYMENT_STATUS } = require('../models/Payment');
 
 function safeObjectId(id) {
@@ -172,7 +171,17 @@ async function resolveDispute({ disputeId, adminId, resolution, resolutionNote, 
   }
 
   const now = new Date();
-  let rzpRefundResult = null;
+  let refundResult = null;
+
+  // Compare-and-swap claim: only one admin action can resolve (and refund) a dispute.
+  const claimed = await disputes.findOneAndUpdate(
+    { _id: dispute._id, status: dispute.status, resolutionInProgress: { $ne: true } },
+    { $set: { resolutionInProgress: true, resolutionClaimedBy: String(adminId), resolutionClaimedAt: now } }
+  );
+  if (!claimed) {
+    throw new Error('Dispute is already being resolved by another administrator');
+  }
+  try {
 
   // Handle Refund Resolutions
   if (resolution === DISPUTE_RESOLUTION.REFUND_FULL || resolution === DISPUTE_RESOLUTION.REFUND_PARTIAL) {
@@ -185,77 +194,24 @@ async function resolveDispute({ disputeId, adminId, resolution, resolutionNote, 
       throw new Error('Original payment record not found for refund processing');
     }
 
-    const maxRefundable = Math.max(0, (parseFloat(payment.amount) || 0) - (parseFloat(payment.totalRefundedAmount) || 0));
+    const balance = Math.max(0, (parseFloat(payment.amount) || 0) - (parseFloat(payment.totalRefundedAmount) || 0) - (parseFloat(payment.pendingRefundAmount) || 0));
     const targetRefundAmt = resolution === DISPUTE_RESOLUTION.REFUND_FULL
-      ? maxRefundable
+      ? balance
       : (parseFloat(refundAmount) || dispute.disputedAmount);
 
-    if (targetRefundAmt <= 0 || targetRefundAmt > maxRefundable) {
-      throw new Error(`Refund amount ₹${targetRefundAmt} is invalid or exceeds remaining refundable balance of ₹${maxRefundable}`);
+    if (targetRefundAmt <= 0 || targetRefundAmt > balance) {
+      throw new Error(`Refund amount ₹${targetRefundAmt} is invalid or exceeds remaining refundable balance of ₹${balance}`);
     }
 
-    // Call Phase 3 Razorpay Refund engine if payment has a live razorpayPaymentId
-    if (payment.razorpayPaymentId && payment.razorpayPaymentId.startsWith('pay_')) {
-      try {
-        rzpRefundResult = await createRazorpayRefund({
-          paymentId: payment.razorpayPaymentId,
-          amountInPaise: Math.round(targetRefundAmt * 100),
-          notes: {
-            disputeNumber: dispute.disputeNumber,
-            reason: resolutionNote || 'Dispute resolution refund'
-          }
-        });
-      } catch (err) {
-        console.error('Dispute refund gateway error:', err);
-        throw new Error(`Razorpay refund failed: ${err.message}`);
-      }
-    }
-
-    // Update payment document
-    const newTotalRefunded = (parseFloat(payment.totalRefundedAmount) || 0) + targetRefundAmt;
-    const isFullyRefunded = newTotalRefunded >= payment.amount;
-    const newStatus = isFullyRefunded ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED;
-
-    await payments.updateOne(
-      { _id: payment._id },
-      {
-        $set: {
-          status: newStatus,
-          totalRefundedAmount: newTotalRefunded,
-          refundedAt: now,
-          updatedAt: now
-        },
-        $push: {
-          refunds: {
-            refundId: rzpRefundResult?.id || `rfnd_disp_${Date.now()}`,
-            amount: targetRefundAmt,
-            currency: 'INR',
-            reason: `Dispute ${dispute.disputeNumber} resolution`,
-            status: 'processed',
-            createdAt: now
-          }
-        }
-      }
-    );
-
-    // Update service record
-    if (payment.serviceId) {
-      const sId = safeObjectId(payment.serviceId);
-      await services.updateOne(
-        sId ? { _id: sId } : { _id: String(payment.serviceId) },
-        {
-          $set: {
-            paymentStatus: newStatus,
-            totalRefundedAmount: newTotalRefunded,
-            refundedAt: now
-          }
-        }
-      );
-    }
-
-    // Reconcile garage earnings ledger
-    const updatedPayment = await payments.findOne({ _id: payment._id });
-    await reconcileRefundEarnings({ payment: updatedPayment, refundAmount: targetRefundAmt, dbInstance: db }).catch(e => console.warn('Dispute earnings reconciliation error:', e));
+    // Gateway-neutral refund: Cashfree, legacy Razorpay, or a flagged manual payout for offline payments.
+    refundResult = await initiateRefund({
+      db,
+      payment,
+      amount: targetRefundAmt,
+      reason: resolutionNote || `Dispute ${dispute.disputeNumber} resolution`,
+      actor: { id: adminId, role: 'ADMIN' },
+      context: { disputeNumber: dispute.disputeNumber, source: 'DISPUTE' }
+    });
 
     // Log refund timeline event
     await logDisputeEvent({
@@ -264,7 +220,7 @@ async function resolveDispute({ disputeId, adminId, resolution, resolutionNote, 
       actorRole: 'ADMIN',
       action: 'REFUND_COMPLETED',
       message: `Refund of ₹${targetRefundAmt.toLocaleString('en-IN')} processed successfully for dispute resolution.`,
-      metadata: { amount: targetRefundAmt, refundId: rzpRefundResult?.id },
+      metadata: { amount: targetRefundAmt, refundId: refundResult?.refund?.refundId, gateway: refundResult?.refund?.gateway },
       dbInstance: db
     });
 
@@ -281,6 +237,11 @@ async function resolveDispute({ disputeId, adminId, resolution, resolutionNote, 
     }).catch(e => console.warn('User notif error:', e));
   }
 
+  } catch (err) {
+    await disputes.updateOne({ _id: dispute._id }, { $unset: { resolutionInProgress: '', resolutionClaimedBy: '', resolutionClaimedAt: '' } });
+    throw err;
+  }
+
   const finalStatus = resolution === DISPUTE_RESOLUTION.REJECT_DISPUTE ? DISPUTE_STATUS.REJECTED : DISPUTE_STATUS.RESOLVED;
 
   // Update dispute
@@ -294,7 +255,8 @@ async function resolveDispute({ disputeId, adminId, resolution, resolutionNote, 
         resolvedAt: now,
         resolvedBy: String(adminId),
         updatedAt: now
-      }
+      },
+      $unset: { resolutionInProgress: '' }
     }
   );
 

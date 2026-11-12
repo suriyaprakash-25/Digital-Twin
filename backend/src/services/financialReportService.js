@@ -1,4 +1,5 @@
 const { ObjectId } = require('mongodb');
+const { safeSearchRegex } = require('../core/text');
 const { getDb } = require('../db');
 const { generateStatementNumber } = require('../utils/statementNumber');
 
@@ -154,7 +155,7 @@ async function getGarageTransactionsReport(garageId, { page = 1, limit = 20, sea
   }
 
   if (search && search.trim() !== '') {
-    const regex = new RegExp(search.trim(), 'i');
+    const regex = safeSearchRegex(search);
     query.$or = [
       { invoiceNumber: regex },
       { paymentId: regex },

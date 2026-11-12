@@ -5,7 +5,11 @@ const { getDb } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { notifyUser } = require('../services/notifications');
 
+const { parsePagination, setPaginationHeaders } = require('../core/pagination');
 const router = express.Router();
+
+const OWNER_BOOKINGS_DEFAULT_LIMIT = 100;
+const GARAGE_BOOKINGS_DEFAULT_LIMIT = 200;
 
 function toObjectId(id) {
   return new ObjectId(String(id));
@@ -277,11 +281,13 @@ router.get('/my', requireAuth, requireRole('USER'), async (req, res) => {
     let userIdObj = null;
     try { userIdObj = new ObjectId(userIdStr); } catch {}
 
-    const docs = await bookings
-      .find({ userId: { $in: [userIdStr, req.user.id, userIdObj].filter(Boolean) } })
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .toArray();
+    const filter = { userId: { $in: [userIdStr, req.user.id, userIdObj].filter(Boolean) } };
+    const page = parsePagination(req.query, { defaultLimit: OWNER_BOOKINGS_DEFAULT_LIMIT });
+    const [docs, total] = await Promise.all([
+      bookings.find(filter).sort({ createdAt: -1 }).skip(page.skip).limit(page.limit).toArray(),
+      bookings.countDocuments(filter)
+    ]);
+    setPaginationHeaders(res, { total, page: page.page, limit: page.limit });
 
     return res.status(200).json(
       docs.map((b) => ({
@@ -313,11 +319,13 @@ router.get('/garage', requireAuth, requireRole('GARAGE'), async (req, res) => {
       return res.status(400).json({ msg: 'Create your garage profile first' });
     }
 
-    const docs = await bookings
-      .find({ garageId: garage._id })
-      .sort({ createdAt: -1 })
-      .limit(200)
-      .toArray();
+    const filter = { garageId: garage._id };
+    const page = parsePagination(req.query, { defaultLimit: GARAGE_BOOKINGS_DEFAULT_LIMIT });
+    const [docs, total] = await Promise.all([
+      bookings.find(filter).sort({ createdAt: -1 }).skip(page.skip).limit(page.limit).toArray(),
+      bookings.countDocuments(filter)
+    ]);
+    setPaginationHeaders(res, { total, page: page.page, limit: page.limit });
 
     // Fetch user profile details for bookings lacking full snapshot user info
     const usersCol = db.collection('users');
@@ -326,12 +334,13 @@ router.get('/garage', requireAuth, requireRole('GARAGE'), async (req, res) => {
       try { return new ObjectId(id); } catch { return null; }
     }).filter(Boolean);
     
+    // Only the contact fields the garage needs (previously loaded whole user docs incl. password hashes).
     const userDocs = await usersCol.find({
       $or: [
         { _id: { $in: userObjectIds } },
         { uid: { $in: userIds } }
       ]
-    }).toArray();
+    }, { projection: { name: 1, email: 1, phone: 1, uid: 1, photoUrl: 1 } }).toArray();
 
     const userMap = new Map();
     userDocs.forEach(u => {

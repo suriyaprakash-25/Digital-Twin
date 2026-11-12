@@ -1,4 +1,6 @@
 const express = require('express');
+const { aggregateKpis, countWhere, equals } = require('../core/aggregation');
+const { safeSearchRegex } = require('../core/text');
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { requireAdmin } = require('../middleware/adminMiddleware');
@@ -23,27 +25,18 @@ router.get('/summary', requireAdmin, async (req, res) => {
   const riskEvents = db.collection('payment_risk_events');
 
   try {
-    const all = await riskEvents.find({}).toArray();
-
-    let criticalCount = 0;
-    let highCount = 0;
-    let mediumCount = 0;
-    let openCount = 0;
-    let reviewedCount = 0;
-
-    all.forEach(r => {
-      if (r.riskLevel === 'CRITICAL') criticalCount++;
-      else if (r.riskLevel === 'HIGH') highCount++;
-      else if (r.riskLevel === 'MEDIUM') mediumCount++;
-
-      if (r.status === 'OPEN') openCount++;
-      else reviewedCount++;
+    const { total, criticalCount, highCount, mediumCount, openCount } = await aggregateKpis(riskEvents, {
+      criticalCount: countWhere(equals('$riskLevel', 'CRITICAL')),
+      highCount: countWhere(equals('$riskLevel', 'HIGH')),
+      mediumCount: countWhere(equals('$riskLevel', 'MEDIUM')),
+      openCount: countWhere(equals('$status', 'OPEN'))
     });
+    const reviewedCount = total - openCount;
 
     return res.status(200).json({
       success: true,
       summary: {
-        totalFlagged: all.length,
+        totalFlagged: total,
         criticalCount,
         highCount,
         mediumCount,
@@ -76,7 +69,7 @@ router.get('/', requireAdmin, async (req, res) => {
     if (status && status !== 'ALL') query.status = status;
 
     if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = safeSearchRegex(search);
       query.$or = [
         { paymentId: regex },
         { orderId: regex },

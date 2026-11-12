@@ -1,128 +1,87 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { ObjectId } = require('mongodb');
 
 const { getDb } = require('../db');
-const { loadConfig } = require('../config');
-const { requireAuth, normalizeRole, normalizePublicRole } = require('../middleware/auth');
+const { requireAuth, optionalAuth, normalizeRole, normalizePublicRole } = require('../middleware/auth');
 const { upload, createUploader } = require('../utils/uploads');
 const { persistUploadedFile, deletePersistedFile, removeTemporaryFile } = require('../services/persistentFileStorage');
+const { limiters } = require('../infrastructure/rateLimit/rateLimiters');
+const { asString, normalizeEmail } = require('../core/text');
+const { AUTH, TIME } = require('../core/constants');
+const { logger } = require('../services/logger');
+const auth = require('../services/authService');
+
 const documentUpload = createUploader(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
-const rateLimit = require('express-rate-limit');
-
 const router = express.Router();
-const config = loadConfig();
 
-// Generic Auth Rate Limiter (e.g. max 20 requests per 15 minutes)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { msg: 'Too many requests from this IP, please try again after 15 minutes' }
-});
+const OTP_REQUESTS_PER_HOUR = 3;
+const GENERIC_LOGIN_ERROR = 'Invalid email or password';
+const GENERIC_OTP_RESPONSE = 'If an account exists for this email, an OTP has been sent.';
 
-router.post('/signup', async (req, res) => {
-  const { name, email, password, role, termsAccepted, privacyAccepted } = req.body || {};
+/** Accounts created before emails were normalised may be stored in mixed case. */
+async function findUserByEmail(users, rawEmail) {
+  const typed = asString(rawEmail, { maxLength: 254 });
+  if (!typed) return null;
+  const lower = typed.toLowerCase();
+  return (await users.findOne({ email: lower })) || (typed !== lower ? users.findOne({ email: typed }) : null);
+}
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ msg: 'All fields are required' });
+function badRequest(res, msg, code = 'VALIDATION_ERROR') {
+  return res.status(400).json({ success: false, msg, message: msg, code });
+}
+
+router.post('/signup', limiters.signup, async (req, res) => {
+  const body = req.body || {};
+  const name = asString(body.name, { maxLength: 100 });
+  const email = normalizeEmail(body.email);
+  const password = typeof body.password === 'string' ? body.password : '';
+
+  if (!name || !email || !password) return badRequest(res, 'All fields are required');
+  if (!auth.isValidEmail(email)) return badRequest(res, 'Please enter a valid email address.');
+  if (auth.isBlockedEmailDomain(email)) return badRequest(res, 'Registration with dummy or disposable email domains is not allowed.');
+  if (!auth.isStrongPassword(password)) return badRequest(res, auth.PASSWORD_POLICY_MESSAGE, 'WEAK_PASSWORD');
+  if (body.termsAccepted !== true || body.privacyAccepted !== true) {
+    return badRequest(res, 'You must accept the Terms & Conditions and Privacy Policy before registration.');
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ msg: 'Please enter a valid email address.' });
-  }
-
-  const blockedDomains = ['example.com', 'test.com', 'driveportz.com', 'tempmail.com', 'yopmail.com', 'mailinator.com'];
-  const domain = String(email).split('@')[1]?.toLowerCase().trim();
-  if (blockedDomains.includes(domain)) {
-    return res.status(400).json({ msg: 'Registration with dummy or disposable email domains is not allowed.' });
-  }
-
-  if (termsAccepted !== true || privacyAccepted !== true) {
-    return res.status(400).json({ msg: 'You must accept the Terms & Conditions and Privacy Policy before registration.' });
-  }
-
-  const db = getDb();
-  const users = db.collection('users');
-
-  const existing = await users.findOne({ email });
-  if (existing) {
-    return res.status(400).json({ msg: 'User already exists with this email' });
-  }
-
-  const hashedPassword = await bcrypt.hash(String(password), 10);
-
-  const normalizedRole = normalizePublicRole(role);
-
-  const newUser = {
-    name,
-    email,
-    password: hashedPassword,
-    role: normalizedRole,
-    createdAt: new Date(),
-    termsAccepted: true,
-    privacyAccepted: true,
-    termsAcceptedAt: new Date(),
-    privacyAcceptedAt: new Date(),
-    termsVersionAccepted: "pilot-2026-09-v1",
-    privacyVersionAccepted: "pilot-2026-09-v1",
-    legalVersionAccepted: "pilot-2026-09-v1"
-  };
+  const users = getDb().collection('users');
+  if (await findUserByEmail(users, email)) return badRequest(res, 'User already exists with this email', 'EMAIL_TAKEN');
 
   try {
-    await users.insertOne(newUser);
-    return res.status(201).json({ msg: 'User created successfully' });
+    await users.insertOne({
+      name,
+      email,
+      password: await auth.hashPassword(password),
+      role: normalizePublicRole(body.role),
+      tokenVersion: 0,
+      createdAt: new Date(),
+      ...auth.legalAcceptanceFields(),
+    });
+    return res.status(201).json({ success: true, msg: 'User created successfully', message: 'User created successfully' });
   } catch (e) {
-    return res.status(500).json({ msg: 'Error creating user', error: String(e && e.message ? e.message : e) });
+    // The unique email index closes the check-then-insert race between concurrent signups.
+    if (e && e.code === 11000) return badRequest(res, 'User already exists with this email', 'EMAIL_TAKEN');
+    logger.error('Signup failed', { error: e.message });
+    return res.status(500).json({ success: false, msg: 'Error creating user', message: 'Error creating user' });
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', limiters.login, async (req, res) => {
   const { email, password } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ msg: 'Email and password are required' });
+  if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
+    return badRequest(res, 'Email and password are required');
   }
 
-  const db = getDb();
-  const users = db.collection('users');
-
-  const user = await users.findOne({ email });
-  if (!user) {
-    return res.status(401).json({ msg: 'Invalid email or password' });
+  const user = await findUserByEmail(getDb().collection('users'), email);
+  // Same response for unknown email and wrong password (no account enumeration).
+  if (!user || !(await auth.verifyPassword(password, user.password)) || user.isDisabled === true) {
+    return res.status(401).json({ success: false, msg: GENERIC_LOGIN_ERROR, message: GENERIC_LOGIN_ERROR, code: 'INVALID_CREDENTIALS' });
   }
-
-  const ok = await bcrypt.compare(String(password), String(user.password || ''));
-  if (!ok) {
-    return res.status(401).json({ msg: 'Invalid email or password' });
-  }
-
-  const token = jwt.sign(
-    {
-      role: normalizeRole(user.role)
-    },
-    config.jwtSecret,
-    {
-      subject: String(user._id),
-      expiresIn: config.jwtExpiresIn
-    }
-  );
 
   return res.status(200).json({
     msg: 'Login successful',
-    token,
-    user: {
-      id: String(user._id),
-      name: user.name,
-      email: user.email,
-      role: normalizeRole(user.role),
-      phone: user.phone || '',
-      city: user.city || '',
-      bio: user.bio || '',
-      photoUrl: user.photoUrl || null,
-      licenseDocumentUrl: user.licenseDocumentUrl || null,
-      createdAt: user.createdAt || null
-    }
+    token: auth.startSession(res, user, normalizeRole),
+    user: auth.toUserView(user, normalizeRole),
   });
 });
 
@@ -310,271 +269,219 @@ router.post('/me/license', requireAuth, documentUpload.single('license'), async 
   }
 });
 
-router.post('/google', async (req, res) => {
+const GOOGLE_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
+const GOOGLE_TIMEOUT_MS = 8 * TIME.SECOND_MS;
+const VALID_GOOGLE_ISSUERS = new Set(['accounts.google.com', 'https://accounts.google.com']);
+
+async function fetchGoogleTokenInfo(credential) {
+  const { createResilientClient } = require('../infrastructure/http/resilientHttp');
+  const http = createResilientClient('google-oauth', { timeoutMs: GOOGLE_TIMEOUT_MS });
+  const response = await http.get(GOOGLE_TOKENINFO_URL, { params: { id_token: credential } });
+  return response.data;
+}
+
+router.post('/google', limiters.login, async (req, res) => {
   const { credential, role, termsAccepted, privacyAccepted } = req.body || {};
-  if (!credential) {
-    return res.status(400).json({ msg: 'Google credential token is required' });
+  if (typeof credential !== 'string' || !credential) {
+    return badRequest(res, 'Google credential token is required');
   }
 
+  let googlePayload;
   try {
-    const https = require('https');
-    const tokenInfoUrl = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`;
-    
-    const googlePayload = await new Promise((resolve, reject) => {
-      https.get(tokenInfoUrl, (googleRes) => {
-        let data = '';
-        googleRes.on('data', (chunk) => { data += chunk; });
-        googleRes.on('end', () => {
-          try {
-            const parsed = JSON.parse(data);
-            if (googleRes.statusCode === 200) {
-              resolve(parsed);
-            } else {
-              reject(new Error(parsed.error_description || 'Invalid token'));
-            }
-          } catch (e) {
-            reject(new Error('Failed to parse Google API response'));
-          }
-        });
-      }).on('error', (err) => {
-        reject(err);
-      });
-    });
+    googlePayload = await fetchGoogleTokenInfo(credential);
+  } catch (err) {
+    logger.warn('Google token verification failed', { error: err.message });
+    return res.status(401).json({ success: false, msg: 'Google authentication failed', message: 'Google authentication failed', code: 'GOOGLE_AUTH_FAILED' });
+  }
 
-    if (!googlePayload.email) {
-      return res.status(400).json({ msg: 'Google token does not contain email' });
+  const expectedClientId = process.env.GOOGLE_CLIENT_ID;
+  if (expectedClientId && googlePayload.aud !== expectedClientId) {
+    return res.status(401).json({ success: false, msg: 'Token audience mismatch. Unrecognized client ID.', message: 'Token audience mismatch. Unrecognized client ID.', code: 'GOOGLE_AUDIENCE_MISMATCH' });
+  }
+  if (googlePayload.iss && !VALID_GOOGLE_ISSUERS.has(googlePayload.iss)) {
+    return res.status(401).json({ success: false, msg: 'Untrusted token issuer', message: 'Untrusted token issuer', code: 'GOOGLE_ISSUER_INVALID' });
+  }
+  // Linking a Google login to an existing (possibly admin) account requires a verified mailbox.
+  const emailVerified = googlePayload.email_verified === true || googlePayload.email_verified === 'true';
+  if (!googlePayload.email || !emailVerified) {
+    return res.status(401).json({ success: false, msg: 'Google account email is not verified', message: 'Google account email is not verified', code: 'GOOGLE_EMAIL_UNVERIFIED' });
+  }
+
+  const email = normalizeEmail(googlePayload.email);
+  const photoUrl = googlePayload.picture || null;
+  const users = getDb().collection('users');
+
+  let user = await findUserByEmail(users, email);
+  const isNewUser = !user;
+  if (isNewUser) {
+    if (termsAccepted !== true || privacyAccepted !== true) {
+      return badRequest(res, 'You must accept the Terms & Conditions and Privacy Policy before registration.');
     }
-
-    const expectedClientId = process.env.GOOGLE_CLIENT_ID;
-    if (expectedClientId && googlePayload.aud !== expectedClientId) {
-      return res.status(401).json({ msg: 'Token audience mismatch. Unrecognized client ID.' });
-    }
-
-    const email = String(googlePayload.email).trim().toLowerCase();
-    const name = googlePayload.name || googlePayload.given_name || 'Google User';
-    const photoUrl = googlePayload.picture || null;
-
-    const db = getDb();
-    const users = db.collection('users');
-
-    let user = await users.findOne({ email });
-    let isNewUser = false;
-
-    if (!user) {
-      if (termsAccepted !== true || privacyAccepted !== true) {
-        return res.status(400).json({ msg: 'You must accept the Terms & Conditions and Privacy Policy before registration.' });
-      }
-
-      isNewUser = true;
-      const normalizedRole = normalizePublicRole(role);
-      const randomPassword = await bcrypt.hash(Math.random().toString(36).slice(-10), 10);
-      user = {
-        name,
-        email,
-        password: randomPassword,
-        role: normalizedRole,
-        photoUrl,
-        createdAt: new Date(),
-        termsAccepted: true,
-        privacyAccepted: true,
-        termsAcceptedAt: new Date(),
-        privacyAcceptedAt: new Date(),
-        termsVersionAccepted: "pilot-2026-09-v1",
-        privacyVersionAccepted: "pilot-2026-09-v1",
-        legalVersionAccepted: "pilot-2026-09-v1"
-      };
+    user = {
+      name: asString(googlePayload.name || googlePayload.given_name, { maxLength: 100 }) || 'Google User',
+      email,
+      password: await auth.randomPasswordHash(),
+      role: normalizePublicRole(role),
+      photoUrl,
+      tokenVersion: 0,
+      createdAt: new Date(),
+      ...auth.legalAcceptanceFields(),
+    };
+    try {
       const result = await users.insertOne(user);
       user._id = result.insertedId;
+    } catch (e) {
+      if (!e || e.code !== 11000) throw e;
+      user = await findUserByEmail(users, email); // concurrent first login created it
     }
-
-    const token = jwt.sign(
-      {
-        role: normalizeRole(user.role)
-      },
-      config.jwtSecret,
-      {
-        subject: String(user._id),
-        expiresIn: config.jwtExpiresIn
-      }
-    );
-
-    return res.status(200).json({
-      msg: isNewUser ? 'Signup successful' : 'Login successful',
-      token,
-      user: {
-        id: String(user._id),
-        name: user.name,
-        email: user.email,
-        role: normalizeRole(user.role),
-        phone: user.phone || '',
-        city: user.city || '',
-        bio: user.bio || '',
-        photoUrl: user.photoUrl || photoUrl || null,
-        licenseDocumentUrl: user.licenseDocumentUrl || null,
-        createdAt: user.createdAt || null
-      }
-    });
-  } catch (err) {
-    console.error('Google Sign In Error:', err.message);
-    return res.status(401).json({ msg: 'Google authentication failed', error: err.message });
   }
+  if (user.isDisabled === true) {
+    return res.status(401).json({ success: false, msg: GENERIC_LOGIN_ERROR, message: GENERIC_LOGIN_ERROR, code: 'INVALID_CREDENTIALS' });
+  }
+
+  return res.status(200).json({
+    msg: isNewUser ? 'Signup successful' : 'Login successful',
+    token: auth.startSession(res, user, normalizeRole),
+    user: auth.toUserView(user, normalizeRole, { photoUrl }),
+  });
 });
 
-// POST /forgot-password - Phase 1 & 4: Send OTP with Limits
-router.post('/forgot-password', authLimiter, async (req, res) => {
-  const { email } = req.body || {};
-
-  if (!email) {
-    return res.status(400).json({ msg: 'Email is required' });
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ msg: 'Valid email format required' });
-  }
+// POST /forgot-password — always answers the same way (no account enumeration).
+router.post('/forgot-password', limiters.otp, async (req, res) => {
+  const email = normalizeEmail((req.body || {}).email);
+  if (!auth.isValidEmail(email)) return badRequest(res, 'Valid email format required');
 
   try {
-    const db = getDb();
-    const users = db.collection('users');
+    const users = getDb().collection('users');
+    const user = await findUserByEmail(users, email);
+    if (!user) return res.status(200).json({ success: true, message: GENERIC_OTP_RESPONSE });
 
-    const user = await users.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ msg: 'Email not found' });
-    }
-
-    // Phase 4: Maximum 3 OTP requests per hour
-    const oneHourAgo = Date.now() - 60 * 60 * 1000;
-    
-    // Reset window if it's been more than an hour since the last request window started
+    const windowStart = Date.now() - TIME.HOUR_MS;
     let requestCount = user.otpRequestCount || 0;
     let requestWindow = user.otpRequestWindow || Date.now();
-
-    if (requestWindow < oneHourAgo) {
+    if (requestWindow < windowStart) {
       requestCount = 0;
       requestWindow = Date.now();
     }
-
-    if (requestCount >= 3) {
-      return res.status(429).json({ msg: 'Maximum OTP requests reached. Please try again after an hour.' });
+    if (requestCount >= OTP_REQUESTS_PER_HOUR) {
+      return res.status(429).json({ success: false, msg: 'Maximum OTP requests reached. Please try again after an hour.', message: 'Maximum OTP requests reached. Please try again after an hour.', code: 'OTP_REQUEST_LIMIT' });
     }
 
-    // Generate random 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Save OTP and increment request count, reset attempts
+    const otp = auth.generateOtp();
     await users.updateOne(
       { _id: user._id },
-      { 
-        $set: { 
-          otp, 
-          otpExpiry,
+      {
+        $set: {
+          otpHash: auth.hashOtp(otp),
+          otpExpiry: new Date(Date.now() + AUTH.OTP_TTL_MS),
           otpRequestCount: requestCount + 1,
           otpRequestWindow: requestWindow,
-          otpAttempts: 0 // reset failed attempts on new OTP
-        } 
+          otpAttempts: 0,
+        },
+        $unset: { otp: '' },
       }
     );
 
-    // Send email
     const { sendOtpEmail } = require('../services/emailService');
-    await sendOtpEmail(email, otp);
-
-    res.status(200).json({ success: true, message: 'OTP sent to your email.' });
+    await sendOtpEmail(user.email, otp);
+    return res.status(200).json({ success: true, message: GENERIC_OTP_RESPONSE });
   } catch (error) {
-    console.error('Error in forgot-password:', error);
-    res.status(500).json({ msg: 'Server error while processing forgot password' });
+    logger.error('Error in forgot-password', { error: error.message });
+    return res.status(500).json({ success: false, msg: 'Server error while processing forgot password', message: 'Server error while processing forgot password' });
   }
 });
 
-// POST /verify-otp - Phase 2 & 4: Verify OTP with Max Attempts
-router.post('/verify-otp', authLimiter, async (req, res) => {
+/**
+ * Shared OTP check for verify-otp and reset-password. Counts EVERY failed attempt (reset-password
+ * previously skipped the attempt limit, allowing a brute force of the 6-digit code).
+ * @returns {Promise<{ ok: true, user: object } | { ok: false, status: number, msg: string }>}
+ */
+async function checkOtp(users, email, otp) {
+  const user = await findUserByEmail(users, email);
+  if (!user || (!user.otpHash && !user.otp)) return { ok: false, status: 400, msg: 'Invalid or expired OTP.' };
+  if ((user.otpAttempts || 0) >= AUTH.OTP_MAX_ATTEMPTS) {
+    return { ok: false, status: 429, msg: 'Maximum OTP attempts reached. Please request a new OTP.' };
+  }
+  if (auth.isOtpExpired(user)) return { ok: false, status: 400, msg: 'OTP expired.' };
+  if (!auth.otpMatches(user, otp)) {
+    await users.updateOne({ _id: user._id }, { $inc: { otpAttempts: 1 } });
+    return { ok: false, status: 400, msg: 'Invalid OTP.' };
+  }
+  return { ok: true, user };
+}
+
+router.post('/verify-otp', limiters.otp, async (req, res) => {
   const { email, otp } = req.body || {};
-
-  if (!email || !otp) {
-    return res.status(400).json({ msg: 'Email and OTP are required' });
-  }
-
+  if (!email || !otp) return badRequest(res, 'Email and OTP are required');
   try {
-    const db = getDb();
-    const users = db.collection('users');
-
-    const user = await users.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ msg: 'Email not found' });
-    }
-
-    const attempts = user.otpAttempts || 0;
-    if (attempts >= 5) {
-      return res.status(429).json({ msg: 'Maximum OTP attempts reached. Please request a new OTP.' });
-    }
-
-    if (user.otp !== otp) {
-      await users.updateOne({ _id: user._id }, { $inc: { otpAttempts: 1 } });
-      return res.status(400).json({ msg: 'Invalid OTP.' });
-    }
-
-    if (!user.otpExpiry || Date.now() > new Date(user.otpExpiry).getTime()) {
-      return res.status(400).json({ msg: 'OTP expired.' });
-    }
-
-    res.status(200).json({ success: true, msg: 'OTP verified successfully.' });
+    const result = await checkOtp(getDb().collection('users'), email, otp);
+    if (!result.ok) return res.status(result.status).json({ success: false, msg: result.msg, message: result.msg });
+    return res.status(200).json({ success: true, msg: 'OTP verified successfully.' });
   } catch (error) {
-    console.error('Error in verify-otp:', error);
-    res.status(500).json({ msg: 'Server error while verifying OTP' });
+    logger.error('Error in verify-otp', { error: error.message });
+    return res.status(500).json({ success: false, msg: 'Server error while verifying OTP', message: 'Server error while verifying OTP' });
   }
 });
 
-// POST /reset-password - Phase 3 & 4: Reset Password
-router.post('/reset-password', authLimiter, async (req, res) => {
+// Strong policy for resets (unchanged contract): upper, lower, digit, special, >= 8.
+const RESET_PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$/;
+
+router.post('/reset-password', limiters.otp, async (req, res) => {
   const { email, otp, newPassword } = req.body || {};
-
-  if (!email || !otp || !newPassword) {
-    return res.status(400).json({ msg: 'Email, OTP, and new password are required' });
-  }
-
-  // Password complexity regex: Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-  if (!passwordRegex.test(newPassword)) {
-    return res.status(400).json({ 
-      msg: 'Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, one number, and one special character.' 
-    });
+  if (!email || !otp || !newPassword) return badRequest(res, 'Email, OTP, and new password are required');
+  if (typeof newPassword !== 'string' || !RESET_PASSWORD_PATTERN.test(newPassword)) {
+    return badRequest(res, 'Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, one number, and one special character.', 'WEAK_PASSWORD');
   }
 
   try {
-    const db = getDb();
-    const users = db.collection('users');
-
-    const user = await users.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ msg: 'Email not found' });
-    }
-
-    if (user.otp !== otp) {
-      return res.status(400).json({ msg: 'Invalid OTP.' });
-    }
-
-    if (!user.otpExpiry || Date.now() > new Date(user.otpExpiry).getTime()) {
-      return res.status(400).json({ msg: 'OTP expired.' });
-    }
-
-    // OTP is valid. Hash new password and update.
-    const hashedPassword = await bcrypt.hash(String(newPassword), 10);
+    const users = getDb().collection('users');
+    const result = await checkOtp(users, email, otp);
+    if (!result.ok) return res.status(result.status).json({ success: false, msg: result.msg, message: result.msg });
 
     await users.updateOne(
-      { _id: user._id },
-      { 
-        $set: { password: hashedPassword },
-        $unset: { otp: "", otpExpiry: "" } 
+      { _id: result.user._id },
+      {
+        $set: { password: await auth.hashPassword(newPassword), passwordChangedAt: new Date() },
+        // Revoke every existing session: tokens carry the old tokenVersion.
+        $inc: { tokenVersion: 1 },
+        $unset: { otp: '', otpHash: '', otpExpiry: '', otpAttempts: '' },
       }
     );
-
-    res.status(200).json({ success: true, message: 'Password updated successfully.' });
+    return res.status(200).json({ success: true, message: 'Password updated successfully.' });
   } catch (error) {
-    console.error('Error in reset-password:', error);
-    res.status(500).json({ msg: 'Server error while resetting password' });
+    logger.error('Error in reset-password', { error: error.message });
+    return res.status(500).json({ success: false, msg: 'Server error while resetting password', message: 'Server error while resetting password' });
   }
+});
+
+/**
+ * GET /api/auth/session — restores a session on page load and refreshes the short-lived access
+ * token. Only a SESSION credential (the httpOnly cookie, or a legacy 7-day bearer) may refresh;
+ * a stolen 15-minute access token cannot be used to mint new ones.
+ */
+router.get('/session', requireAuth, async (req, res) => {
+  if (req.auth && req.auth.tokenType === auth.TOKEN_TYPE.ACCESS) {
+    return res.status(401).json({ success: false, msg: 'Session expired. Please sign in again.', message: 'Session expired. Please sign in again.', code: 'SESSION_REQUIRED' });
+  }
+  const user = await getDb().collection('users').findOne({ _id: new ObjectId(req.user.id) }, { projection: { password: 0, otp: 0, otpHash: 0 } });
+  if (!user) return res.status(401).json({ success: false, msg: 'Missing or invalid token', message: 'Missing or invalid token', code: 'UNAUTHENTICATED' });
+  return res.status(200).json({
+    success: true,
+    token: auth.issueToken(user, normalizeRole, { type: auth.TOKEN_TYPE.ACCESS }),
+    user: auth.toUserView(user, normalizeRole),
+  });
+});
+
+/**
+ * POST /api/auth/logout — clears the session cookie. { allDevices: true } also revokes every
+ * other session by bumping tokenVersion.
+ */
+router.post('/logout', optionalAuth, async (req, res) => {
+  if (req.user && req.body && req.body.allDevices === true) {
+    await getDb().collection('users').updateOne({ _id: new ObjectId(req.user.id) }, { $inc: { tokenVersion: 1 } });
+  }
+  auth.endSession(res);
+  return res.status(200).json({ success: true, message: 'Signed out' });
 });
 
 module.exports = router;
-

@@ -695,9 +695,9 @@ async function runPhase8TestSuite() {
       NODE_ENV: 'production',
       JWT_SECRET_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       MONGODB_URI: 'mongodb+srv://user:pass@cluster.mongodb.net/digital_twin',
-      RAZORPAY_KEY_ID: 'rzp_live_test123456789',
-      RAZORPAY_KEY_SECRET: 'rzp_live_secret_test123456789',
-      RAZORPAY_WEBHOOK_SECRET: 'webhook_secret_test123456789',
+      CASHFREE_APP_ID: 'cf_live_app_test123456789',
+      CASHFREE_SECRET_KEY: 'cfsk_live_secret_test123456789',
+      CASHFREE_WEBHOOK_SECRET: 'cf_webhook_secret_test123456789',
       FRONTEND_URL: 'https://www.driveportz.com'
     });
 

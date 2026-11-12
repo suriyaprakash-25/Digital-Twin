@@ -1,7 +1,7 @@
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { RECONCILIATION_STATUS, MISMATCH_TYPE } = require('../models/Reconciliation');
-const { fetchPaymentDetails } = require('./razorpayService');
+const { resolveGatewayForPayment } = require('./payments/gateways');
 const { PAYMENT_STATUS } = require('../models/Payment');
 
 function safeObjectId(id) {
@@ -59,11 +59,14 @@ async function reconcilePayment({ payment, dbInstance, razorpayData }) {
   let rzpPayment = razorpayData || null;
   let rzpFetchError = null;
 
-  if (!rzpPayment && payment.razorpayPaymentId && payment.razorpayPaymentId.startsWith('pay_')) {
+  // Polymorphic gateway lookup: Cashfree payments are reconciled against Cashfree, legacy ones
+  // against Razorpay. Snapshots share one normalised shape (amounts in paise, lowercase status).
+  const gateway = resolveGatewayForPayment(payment);
+  if (!rzpPayment && gateway) {
     try {
-      rzpPayment = await fetchPaymentDetails(payment.razorpayPaymentId);
+      rzpPayment = await gateway.fetchPaymentSnapshot(payment);
     } catch (err) {
-      rzpFetchError = err.message || 'Payment not found on Razorpay';
+      rzpFetchError = err.message || `Payment not found on ${gateway.name}`;
     }
   }
 

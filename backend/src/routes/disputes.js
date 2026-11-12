@@ -1,5 +1,7 @@
 const express = require('express');
-const multer = require('multer');
+const { safeSearchRegex } = require('../core/text');
+const { createUploader } = require('../utils/uploads');
+const { aggregateKpis, countWhere, inList, equals, num } = require('../core/aggregation');
 const path = require('path');
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
@@ -27,22 +29,10 @@ if (config.cloudinary && config.cloudinary.cloudName) {
   });
 }
 
-// Multer storage
-const uploadsDir = path.resolve(__dirname, '../../uploads');
-fs.mkdirSync(uploadsDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `dispute_${Date.now()}_${Math.random().toString(36).substring(7)}${ext}`);
-  }
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
+// Evidence uploads: type-allowlisted, signature-verified, random server-side filenames
+// (previously any file type with the client's extension was accepted).
+const DISPUTE_EVIDENCE_MAX_BYTES = 10 * 1024 * 1024;
+const upload = createUploader(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], DISPUTE_EVIDENCE_MAX_BYTES);
 
 function safeObjectId(id) {
   try {
@@ -136,7 +126,7 @@ userDisputeRouter.get('/', requireAuth, async (req, res) => {
     }
 
     if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = safeSearchRegex(search);
       query.$or = [
         { disputeNumber: regex },
         { invoiceNumber: regex },
@@ -362,7 +352,7 @@ garageDisputeRouter.get('/', requireAuth, requireRole('GARAGE'), async (req, res
     }
 
     if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = safeSearchRegex(search);
       query.$or = [
         { disputeNumber: regex },
         { invoiceNumber: regex },
@@ -488,29 +478,21 @@ adminDisputeRouter.get('/summary', requireAdmin, async (req, res) => {
   const disputes = db.collection('payment_disputes');
 
   try {
-    const all = await disputes.find({}).toArray();
-
-    let open = 0;
-    let underReview = 0;
-    let resolved = 0;
-    let rejected = 0;
-    let refundDisputes = 0;
-    let totalDisputedVolume = 0;
-
-    all.forEach(d => {
-      totalDisputedVolume += parseFloat(d.disputedAmount) || 0;
-      if (d.status === DISPUTE_STATUS.OPEN) open++;
-      else if (d.status === DISPUTE_STATUS.UNDER_REVIEW || d.status === DISPUTE_STATUS.WAITING_FOR_GARAGE || d.status === DISPUTE_STATUS.WAITING_FOR_USER) underReview++;
-      else if (d.status === DISPUTE_STATUS.RESOLVED) resolved++;
-      else if (d.status === DISPUTE_STATUS.REJECTED) rejected++;
-
-      if (d.category === 'REFUND_NOT_RECEIVED' || d.category === 'WRONG_REFUND_AMOUNT') refundDisputes++;
+    const IN_REVIEW = [DISPUTE_STATUS.UNDER_REVIEW, DISPUTE_STATUS.WAITING_FOR_GARAGE, DISPUTE_STATUS.WAITING_FOR_USER];
+    const REFUND_CATEGORIES = ['REFUND_NOT_RECEIVED', 'WRONG_REFUND_AMOUNT'];
+    const { total, open, underReview, resolved, rejected, refundDisputes, totalDisputedVolume } = await aggregateKpis(disputes, {
+      open: countWhere(equals('$status', DISPUTE_STATUS.OPEN)),
+      underReview: countWhere(inList('$status', IN_REVIEW)),
+      resolved: countWhere(equals('$status', DISPUTE_STATUS.RESOLVED)),
+      rejected: countWhere(equals('$status', DISPUTE_STATUS.REJECTED)),
+      refundDisputes: countWhere(inList('$category', REFUND_CATEGORIES)),
+      totalDisputedVolume: { $sum: num('$disputedAmount') }
     });
 
     return res.status(200).json({
       success: true,
       summary: {
-        totalDisputes: all.length,
+        totalDisputes: total,
         open,
         underReview,
         resolved,
@@ -547,7 +529,7 @@ adminDisputeRouter.get('/', requireAdmin, async (req, res) => {
     }
 
     if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = safeSearchRegex(search);
       query.$or = [
         { disputeNumber: regex },
         { invoiceNumber: regex },

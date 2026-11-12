@@ -1,4 +1,5 @@
 const express = require('express');
+const { safeSearchRegex } = require('../core/text');
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
@@ -77,7 +78,7 @@ router.get('/earnings', requireAuth, requireRole('GARAGE'), async (req, res) => 
     }
 
     if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = safeSearchRegex(search);
       query.$or = [
         { invoiceNumber: regex },
         { vehicleNumber: regex },

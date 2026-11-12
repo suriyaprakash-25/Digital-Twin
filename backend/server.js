@@ -1,234 +1,233 @@
-// Driveportz Backend Server
+// DrivePortz Backend Server — composition root.
+// Wires configuration, middleware (in security-significant order), routes, background workers and
+// graceful shutdown. Business logic lives in src/services; nothing domain-specific belongs here.
 const path = require('path');
 const fs = require('fs');
-
 const express = require('express');
 const cors = require('cors');
 
 const { loadConfig } = require('./src/config');
-const { connectToMongo, getMongoStatus, getDb } = require('./src/db');
+const { connectToMongo, getMongoStatus, getDb, closeMongo } = require('./src/db');
 const { initFirebase, getFirebaseInitError } = require('./src/firebase');
 const { createCorsPolicy } = require('./src/security/corsPolicy');
-
-const authRoutes = require('./src/routes/auth');
-const vehicleRoutes = require('./src/routes/vehicles');
-const serviceRoutes = require('./src/routes/services');
-const healthRoutes = require('./src/routes/health');
-const reminderRoutes = require('./src/routes/reminders');
-const resaleRoutes = require('./src/routes/resale');
-const garageRoutes = require('./src/routes/garage');
-const analyticsRoutes = require('./src/routes/analytics');
-const marketplaceRoutes = require('./src/routes/marketplace');
-const garagesRoutes = require('./src/routes/garages');
-const bookingRoutes = require('./src/routes/bookings');
-const notificationRoutes = require('./src/routes/notifications');
-const adminRoutes = require('./src/routes/admin');
-const passportRoutes = require('./src/routes/passport');
-const insuranceRoutes = require('./src/routes/insurance');
-const ownershipRoutes = require('./src/routes/ownership');
-const vehicleDoctorRoutes = require('./src/routes/vehicleDoctorRoutes');
-const copilotRoutes = require('./src/routes/copilotRoutes');
-const garageAvailabilityRoutes = require('./src/routes/garageAvailabilityRoutes');
-const feedbackRoutes = require('./src/routes/feedbackRoutes');
-const adminFeedbackRoutes = require('./src/routes/adminFeedbackRoutes');
-const paymentRoutes = require('./src/routes/payments');
-const invoiceRoutes = require('./src/routes/invoices');
-const earningsRoutes = require('./src/routes/earnings');
-const reconciliationRoutes = require('./src/routes/reconciliation');
-const { userDisputeRouter, garageDisputeRouter, adminDisputeRouter } = require('./src/routes/disputes');
-const mediaRoutes = require('./src/routes/media');
-const riskRouter = require('./src/routes/risk');
-const { garageReportsRouter, adminReportsRouter } = require('./src/routes/reports');
-const financialOperationsRouter = require('./src/routes/financialOperations');
-const financialAuditRouter = require('./src/routes/financialAudit');
-const treasuryRouter = require('./src/routes/treasury');
-const { garageTaxRouter, adminTaxRouter } = require('./src/routes/tax');
-const riskCasesRouter = require('./src/routes/riskCases');
-const { ensurePaymentIndexes } = require('./src/models/Payment');
-const { ensureEarningsIndexes } = require('./src/models/Earnings');
-const { ensureReconciliationIndexes } = require('./src/models/Reconciliation');
-const { ensureDisputeIndexes } = require('./src/models/Dispute');
-const { ensureRiskIndexes } = require('./src/models/RiskEvent');
-const { ensureAuditIndexes } = require('./src/models/AuditLog');
-const { ensureSettlementOperationIndexes } = require('./src/models/SettlementSchedule');
+const { securityHeaders, sanitizeRequest, jsonBodyParser, maskServerErrors, notFoundHandler, errorHandler } = require('./src/security/httpHardening');
 const { requestCorrelationMiddleware } = require('./src/middleware/requestCorrelation');
 const { operationalMonitoringMiddleware, registerProcessErrorMonitoring } = require('./src/middleware/operationalMonitoring');
-const systemHealthRoutes = require('./src/routes/systemHealth');
-const operationalMonitoringRoutes = require('./src/routes/operationalMonitoring');
-const financialAlertsRouter = require('./src/routes/financialAlerts');
-const financialIntegrityRouter = require('./src/routes/financialIntegrity');
-const pilotAdminRoutes = require('./src/routes/pilotAdminRoutes');
-const { ensureWebhookEventIndexes } = require('./src/models/PaymentWebhookEvent');
-const { ensureJobRegistryIndexes } = require('./src/jobs/jobRegistry');
-const { ensureFinancialAlertIndexes } = require('./src/services/financialAlertService');
-const { ensureFinancialNotificationIndexes } = require('./src/services/financialNotificationService');
-const { ensureOperationalMonitoringIndexes } = require('./src/services/operationalMonitoringService');
+const { HTTP_LIMITS, SHUTDOWN } = require('./src/core/constants');
+const { JobWorker, ensureJobQueueIndexes } = require('./src/infrastructure/messaging/jobQueue');
+const { ensureRateLimitIndexes } = require('./src/infrastructure/rateLimit/rateLimiters');
+const { breakerSnapshots } = require('./src/infrastructure/http/resilientHttp');
+const { getCache } = require('./src/infrastructure/cache/cache');
+const { registerPaymentNotifications } = require('./src/services/payments/paymentNotifications');
+const { logger } = require('./src/services/logger');
 
-const app = express();
+const { userDisputeRouter, garageDisputeRouter, adminDisputeRouter } = require('./src/routes/disputes');
+const { garageReportsRouter, adminReportsRouter } = require('./src/routes/reports');
+const { garageTaxRouter, adminTaxRouter } = require('./src/routes/tax');
+
+// Order matters: Express matches mounts in sequence and a router that has no matching route falls
+// through to the next mount (e.g. /api/admin -> /api/admin/settlements).
+const ROUTES = [
+  ['/api/auth', require('./src/routes/auth')],
+  ['/api/vehicles', require('./src/routes/vehicles')],
+  ['/api/services', require('./src/routes/services')],
+  ['/api/health', require('./src/routes/systemHealth')],
+  ['/api/vehicle-health', require('./src/routes/health')],
+  ['/api/reminders', require('./src/routes/reminders')],
+  ['/api/resale', require('./src/routes/resale')],
+  ['/api/garage', require('./src/routes/garage')],
+  ['/api/garage/availability', require('./src/routes/garageAvailabilityRoutes')],
+  ['/api/analytics', require('./src/routes/analytics')],
+  ['/api/marketplace', require('./src/routes/marketplace')],
+  ['/api/garages', require('./src/routes/garages')],
+  ['/api/bookings', require('./src/routes/bookings')],
+  ['/api/notifications', require('./src/routes/notifications')],
+  ['/api/admin', require('./src/routes/admin')],
+  ['/api/passport', require('./src/routes/passport')],
+  ['/api/insurance', require('./src/routes/insurance')],
+  ['/api/ownership', require('./src/routes/ownership')],
+  ['/api/vehicle-doctor', require('./src/routes/vehicleDoctorRoutes')],
+  ['/api/copilot', require('./src/routes/copilotRoutes')],
+  ['/api/feedback', require('./src/routes/feedbackRoutes')],
+  ['/api/admin/feedback', require('./src/routes/adminFeedbackRoutes')],
+  ['/api/payments', require('./src/routes/payments')],
+  ['/api/invoices', require('./src/routes/invoices')],
+  ['/api/garage/invoices', require('./src/routes/invoices')],
+  ['/api/garage', require('./src/routes/earnings')],
+  ['/api/garage/earnings', require('./src/routes/earnings')],
+  ['/api/admin/reconciliation', require('./src/routes/reconciliation')],
+  ['/api/disputes', userDisputeRouter],
+  ['/api/garage/disputes', garageDisputeRouter],
+  ['/api/admin/disputes', adminDisputeRouter],
+  ['/api/admin/risk', require('./src/routes/risk')],
+  ['/api/garage/reports', garageReportsRouter],
+  ['/api/admin/reports', adminReportsRouter],
+  ['/api/admin/financial-operations', require('./src/routes/financialOperations')],
+  ['/api/admin/settlements', require('./src/routes/financialOperations')],
+  ['/api/admin/financial-audit', require('./src/routes/financialAudit')],
+  ['/api/admin/treasury', require('./src/routes/treasury')],
+  ['/api/garage/tax', garageTaxRouter],
+  ['/api/admin/tax', adminTaxRouter],
+  ['/api/admin/risk-cases', require('./src/routes/riskCases')],
+  ['/api/admin/alerts', require('./src/routes/financialAlerts')],
+  ['/api/admin/financial-integrity', require('./src/routes/financialIntegrity')],
+  ['/api/admin/monitoring', require('./src/routes/operationalMonitoring')],
+  ['/api/admin/pilot', require('./src/routes/pilotAdminRoutes')],
+  ['/api/media', require('./src/routes/media')],
+];
+
+const INDEX_INITIALISERS = [
+  require('./src/models/Payment').ensurePaymentIndexes,
+  require('./src/models/Earnings').ensureEarningsIndexes,
+  require('./src/models/Reconciliation').ensureReconciliationIndexes,
+  require('./src/models/Dispute').ensureDisputeIndexes,
+  require('./src/models/RiskEvent').ensureRiskIndexes,
+  require('./src/models/AuditLog').ensureAuditIndexes,
+  require('./src/models/SettlementSchedule').ensureSettlementOperationIndexes,
+  require('./src/models/ComplianceAndRisk').ensureComplianceAndRiskIndexes,
+  require('./src/models/PaymentWebhookEvent').ensureWebhookEventIndexes,
+  require('./src/models/CoreIndexes').ensureCoreIndexes,
+  require('./src/services/garages').ensureGarageIndexes,
+  require('./src/jobs/jobRegistry').ensureJobRegistryIndexes,
+  require('./src/services/financialAlertService').ensureFinancialAlertIndexes,
+  require('./src/services/financialNotificationService').ensureFinancialNotificationIndexes,
+  require('./src/services/operationalMonitoringService').ensureOperationalMonitoringIndexes,
+  () => ensureJobQueueIndexes(),
+  () => ensureRateLimitIndexes(),
+];
+
 const config = loadConfig();
+const isProduction = ['production', 'staging'].includes(String(config.nodeEnv).toLowerCase());
 
-app.use(requestCorrelationMiddleware);
-app.use(operationalMonitoringMiddleware);
+function buildApp() {
+  const app = express();
+  app.disable('x-powered-by');
+  // Render/Vercel sit behind one proxy hop; without this every client shares the proxy's IP and
+  // IP-keyed rate limits would lock out all users at once.
+  app.set('trust proxy', process.env.TRUST_PROXY !== undefined ? Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY : (isProduction ? 1 : false));
 
-// Strict CORS policy. Production accepts only DrivePortz origins plus explicitly
-// configured preview/staging origins from CORS_ALLOWED_ORIGINS.
-const corsPolicy = createCorsPolicy({
-  nodeEnv: config.nodeEnv,
-  frontendUrl: config.frontendUrl,
-  extraOrigins: process.env.CORS_ALLOWED_ORIGINS
-});
+  app.use(requestCorrelationMiddleware);
+  app.use(operationalMonitoringMiddleware);
+  app.use(securityHeaders({ isProduction }));
+  app.use(maskServerErrors);
 
-// Reject untrusted browser origins before route handlers execute. Requests with
-// no Origin header remain valid for native clients, webhooks, health checks,
-// curl, and other server-to-server traffic.
-app.use((req, res, next) => {
-  const origin = req.get('Origin');
-  if (origin && !corsPolicy.isAllowed(origin)) {
-    return res.status(403).json({
-      error: 'CORS origin not allowed',
-      requestId: req.requestId || null
-    });
-  }
-  return next();
-});
-
-app.use(cors({
-  origin: (origin, callback) => callback(null, corsPolicy.isAllowed(origin)),
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-webhook-signature', 'x-webhook-timestamp', 'Idempotency-Key', 'X-Idempotency-Key']
-}));
-
-// Body parsing with rawBody retention for webhook signature verification
-app.use(express.json({
-  limit: '20mb',
-  verify: (req, res, buf) => {
-    // Cashfree webhook – retain raw body for HMAC-SHA256 verification
-    if (req.originalUrl && req.originalUrl.includes('/api/payments/cashfree-webhook')) {
-      req.rawBody = buf;
+  // Strict CORS: unknown browser origins are rejected before any handler runs. Requests with no
+  // Origin header (webhooks, health checks, native clients) remain valid.
+  const corsPolicy = createCorsPolicy({ nodeEnv: config.nodeEnv, frontendUrl: config.frontendUrl, extraOrigins: process.env.CORS_ALLOWED_ORIGINS });
+  app.use((req, res, next) => {
+    const origin = req.get('Origin');
+    if (origin && !corsPolicy.isAllowed(origin)) {
+      return res.status(403).json({ success: false, msg: 'CORS origin not allowed', message: 'CORS origin not allowed', code: 'CORS_REJECTED', requestId: req.requestId || null });
     }
-  }
-}));
-app.use(express.urlencoded({ extended: true }));
+    return next();
+  });
+  app.use(cors({
+    origin: (origin, callback) => callback(null, corsPolicy.isAllowed(origin)),
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-webhook-signature', 'x-webhook-timestamp', 'Idempotency-Key', 'X-Idempotency-Key'],
+    exposedHeaders: ['X-Request-ID', 'X-Total-Count', 'X-Page', 'X-Limit', 'X-Total-Pages', 'Idempotent-Replayed', 'RateLimit', 'RateLimit-Policy'],
+  }));
 
-// Uploads folder (mirrors Flask behavior)
-const uploadsDir = path.join(__dirname, 'uploads');
-fs.mkdirSync(uploadsDir, { recursive: true });
+  // Small JSON limit by default; raw body retained for webhook HMAC verification.
+  app.use(jsonBodyParser({ rawBodyPaths: ['/api/payments/cashfree-webhook'] }));
+  app.use(express.urlencoded({ extended: true, limit: HTTP_LIMITS.DEFAULT_JSON_BODY }));
+  app.use(sanitizeRequest);
 
-// Static uploads
-app.use('/uploads', express.static(uploadsDir));
-
-// Root
-app.get('/', (req, res) => {
-  res.send('Mobility Driveportz API is running!');
-});
-
-// Simple status endpoint to confirm DB connectivity
-app.get('/api/status', async (req, res) => {
-  const status = getMongoStatus();
-  let pingOk = false;
-
-  try {
-    if (status.connected) {
-      await getDb().command({ ping: 1 });
-      pingOk = true;
-    }
-  } catch (e) {
-    pingOk = false;
-  }
-
-  res.status(status.connected && pingOk ? 200 : 503).json({
-    ok: status.connected && pingOk,
-    mongo: {
-      connected: status.connected,
-      dbName: status.dbName,
-      pingOk,
-      lastError: status.lastError
+  // Local uploads (development fallback; production uses Cloudinary). Served as inert files:
+  // `sandbox` CSP + nosniff mean an uploaded .html/.svg can never execute on the API origin.
+  const uploadsDir = path.join(__dirname, 'uploads');
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  app.use('/uploads', express.static(uploadsDir, {
+    dotfiles: 'deny',
+    index: false,
+    setHeaders: (res) => {
+      res.set('Content-Security-Policy', "default-src 'none'; img-src 'self'; sandbox");
+      res.set('X-Content-Type-Options', 'nosniff');
     },
-    firebase: {
-      initialized: Boolean(initFirebase(config)),
-      lastError: getFirebaseInitError()
+  }));
+
+  app.get('/', (req, res) => res.send('Mobility Driveportz API is running!'));
+
+  // Readiness probe used by Render health checks / load balancer.
+  app.get('/api/status', async (req, res) => {
+    const status = getMongoStatus();
+    let pingOk = false;
+    try {
+      if (status.connected) {
+        await getDb().command({ ping: 1 });
+        pingOk = true;
+      }
+    } catch {
+      pingOk = false;
     }
+    const ok = status.connected && pingOk;
+    const body = { ok, mongo: { connected: status.connected, pingOk }, dependencies: breakerSnapshots() };
+    if (!isProduction) {
+      body.mongo.dbName = status.dbName;
+      body.mongo.lastError = status.lastError;
+      body.firebase = { initialized: Boolean(initFirebase(config)), lastError: getFirebaseInitError() };
+      body.cache = getCache().getStats ? getCache().getStats() : undefined;
+    }
+    res.status(ok ? 200 : 503).json(body);
   });
-});
 
-const { ensureComplianceAndRiskIndexes } = require('./src/models/ComplianceAndRisk');
+  ROUTES.forEach(([mountPath, router]) => app.use(mountPath, router));
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/services', serviceRoutes);
-app.use('/api/health', systemHealthRoutes);
-app.use('/api/vehicle-health', healthRoutes);
-app.use('/api/reminders', reminderRoutes);
-app.use('/api/resale', resaleRoutes);
-app.use('/api/garage', garageRoutes);
-app.use('/api/garage/availability', garageAvailabilityRoutes);
-app.use('/api/analytics', analyticsRoutes);
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+  return app;
+}
 
-// Marketplace + two-sided garage workflows
-app.use('/api/marketplace', marketplaceRoutes);
-app.use('/api/garages', garagesRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/passport', passportRoutes);
-app.use('/api/insurance', insuranceRoutes);
-app.use('/api/ownership', ownershipRoutes);
-app.use('/api/vehicle-doctor', vehicleDoctorRoutes);
-app.use('/api/copilot', copilotRoutes);
-app.use('/api/feedback', feedbackRoutes);
-app.use('/api/admin/feedback', adminFeedbackRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/invoices', invoiceRoutes);
-app.use('/api/garage/invoices', invoiceRoutes);
-app.use('/api/garage', earningsRoutes);
-app.use('/api/garage/earnings', earningsRoutes);
-app.use('/api/admin/reconciliation', reconciliationRoutes);
-app.use('/api/disputes', userDisputeRouter);
-app.use('/api/garage/disputes', garageDisputeRouter);
-app.use('/api/admin/disputes', adminDisputeRouter);
-app.use('/api/admin/risk', riskRouter);
-app.use('/api/garage/reports', garageReportsRouter);
-app.use('/api/admin/reports', adminReportsRouter);
-app.use('/api/admin/financial-operations', financialOperationsRouter);
-app.use('/api/admin/settlements', financialOperationsRouter);
-app.use('/api/admin/financial-audit', financialAuditRouter);
-app.use('/api/admin/treasury', treasuryRouter);
-app.use('/api/garage/tax', garageTaxRouter);
-app.use('/api/admin/tax', adminTaxRouter);
-app.use('/api/admin/risk-cases', riskCasesRouter);
-app.use('/api/admin/alerts', financialAlertsRouter);
-app.use('/api/admin/financial-integrity', financialIntegrityRouter);
-app.use('/api/admin/monitoring', operationalMonitoringRoutes);
-app.use('/api/admin/pilot', pilotAdminRoutes);
-app.use('/api/media', mediaRoutes);
+const app = buildApp();
 
-// Start after DB connects
-(async () => {
+async function start() {
   await connectToMongo(config);
-  await ensurePaymentIndexes();
-  await ensureEarningsIndexes();
-  await ensureReconciliationIndexes();
-  await ensureDisputeIndexes();
-  await ensureRiskIndexes();
-  await ensureAuditIndexes();
-  await ensureSettlementOperationIndexes();
-  await ensureComplianceAndRiskIndexes();
-  await ensureWebhookEventIndexes();
-  await ensureJobRegistryIndexes();
-  await ensureFinancialAlertIndexes();
-  await ensureFinancialNotificationIndexes();
-  await ensureOperationalMonitoringIndexes();
+  for (const ensureIndexes of INDEX_INITIALISERS) {
+    await ensureIndexes();
+  }
   registerProcessErrorMonitoring();
-  app.listen(config.port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`Backend listening on http://localhost:${config.port}`);
-  });
-})().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error('Failed to start server:', err);
-  process.exit(1);
-});
 
-// Restart trigger for DrivePortz CoPilot PRD-3
+  const worker = new JobWorker({ handlers: { ...registerPaymentNotifications() } });
+  if (process.env.JOB_WORKER_ENABLED !== 'false') worker.start();
+
+  const server = app.listen(config.port, () => {
+    logger.info(`Backend listening on http://localhost:${config.port}`);
+  });
+  server.requestTimeout = HTTP_LIMITS.REQUEST_TIMEOUT_MS;
+  server.headersTimeout = HTTP_LIMITS.REQUEST_TIMEOUT_MS + 5000;
+
+  let shuttingDown = false;
+  async function shutdown(signal) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    logger.info(`${signal} received: draining connections`);
+    const forceExit = setTimeout(() => {
+      logger.error('Graceful shutdown timed out; forcing exit');
+      process.exit(1);
+    }, SHUTDOWN.GRACE_PERIOD_MS);
+    forceExit.unref();
+    try {
+      await new Promise((resolve) => server.close(resolve)); // stop accepting, finish in-flight requests
+      await worker.stop(); // finish the in-flight job batch
+      await closeMongo();
+      process.exit(0);
+    } catch (err) {
+      logger.error('Error during shutdown', { error: err.message });
+      process.exit(1);
+    }
+  }
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  return server;
+}
+
+if (require.main === module) {
+  start().catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = { app, buildApp, start };

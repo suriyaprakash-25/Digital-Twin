@@ -1,6 +1,6 @@
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
-const { SETTLEMENT_STATUS } = require('./settlementStateMachine');
+const { SETTLEMENT_STATUS, transitionSettlement, normalizeSettlementStatus } = require('./settlementStateMachine');
 const { logFinancialAudit } = require('./auditService');
 
 const RETRY_DELAYS_MS = [
@@ -43,24 +43,33 @@ async function scheduleSettlementRetry({ settlementId, failureReason, failureCod
     throw new Error(`Settlement ${settlementId} not found for retry scheduling`);
   }
 
+  // A payout that failed mid-flight is PROCESSING: record the failure first (PROCESSING -> FAILED).
+  let current = settlement;
+  if (normalizeSettlementStatus(current.status) === SETTLEMENT_STATUS.PROCESSING) {
+    current = await transitionSettlement({
+      collection: settlements,
+      settlement: current,
+      to: SETTLEMENT_STATUS.FAILED,
+      set: { failureReason: failureReason || 'Payout provider failure', failureCode: failureCode || 'PROVIDER_FAILURE', failedAt: now }
+    });
+  }
+
   const currentRetries = settlement.retryCount || 0;
   const newRetryCount = currentRetries + 1;
 
   if (newRetryCount > MAX_SETTLEMENT_RETRIES) {
     // Exceeded maximum retries -> FAILED_PERMANENTLY
-    await settlements.updateOne(
-      { _id: settlement._id },
-      {
-        $set: {
-          status: SETTLEMENT_STATUS.FAILED_PERMANENTLY,
-          retryCount: newRetryCount,
-          failureReason: `Exceeded max retry attempts (${MAX_SETTLEMENT_RETRIES}): ${failureReason || 'Permanent provider failure'}`,
-          failureCode: failureCode || 'MAX_RETRIES_EXCEEDED',
-          nextRetryAt: null,
-          updatedAt: now
-        }
+    await transitionSettlement({
+      collection: settlements,
+      settlement: current,
+      to: SETTLEMENT_STATUS.FAILED_PERMANENTLY,
+      set: {
+        retryCount: newRetryCount,
+        failureReason: `Exceeded max retry attempts (${MAX_SETTLEMENT_RETRIES}): ${failureReason || 'Permanent provider failure'}`,
+        failureCode: failureCode || 'MAX_RETRIES_EXCEEDED',
+        nextRetryAt: null
       }
-    );
+    });
 
     // Safely unlock locked earnings back to AVAILABLE
     if (settlement.earningsIds && settlement.earningsIds.length > 0) {
@@ -101,19 +110,17 @@ async function scheduleSettlementRetry({ settlementId, failureReason, failureCod
   const delayMs = getRetryDelayMs(newRetryCount);
   const nextRetryAt = new Date(now.getTime() + delayMs);
 
-  await settlements.updateOne(
-    { _id: settlement._id },
-    {
-      $set: {
-        status: SETTLEMENT_STATUS.RETRY_PENDING,
-        retryCount: newRetryCount,
-        nextRetryAt,
-        lastFailureReason: failureReason || 'Temporary payout gateway error',
-        lastFailureCode: failureCode || 'TEMPORARY_ERROR',
-        updatedAt: now
-      }
+  await transitionSettlement({
+    collection: settlements,
+    settlement: current,
+    to: SETTLEMENT_STATUS.RETRY_PENDING,
+    set: {
+      retryCount: newRetryCount,
+      nextRetryAt,
+      lastFailureReason: failureReason || 'Temporary payout gateway error',
+      lastFailureCode: failureCode || 'TEMPORARY_ERROR'
     }
-  );
+  });
 
   await logFinancialAudit({
     actorId: 'SETTLEMENT_RETRY_ENGINE',

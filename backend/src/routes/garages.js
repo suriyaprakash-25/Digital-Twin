@@ -1,849 +1,151 @@
+/**
+ * /api/garages: thin HTTP adapters over services/garages/*.
+ * Routes parse the request, run the auth middleware and map results/errors to the existing
+ * response contract ({ msg } on errors, plus { error } on unexpected 500s, as before).
+ */
 const express = require('express');
-const { ObjectId } = require('mongodb');
 
-const { getDb } = require('../db');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requireRole, optionalAuth } = require('../middleware/auth');
 const { createUploader } = require('../utils/uploads');
-const { persistUploadedFile, persistUploadedFiles, deletePersistedFile, removeTemporaryFile } = require('../services/persistentFileStorage');
+const { AppError } = require('../core/errors');
+const { setPaginationHeaders } = require('../core/pagination');
+const { createRepositories } = require('../repositories');
+const { createGarageServices } = require('../services/garages');
+const { UPLOADS } = require('../services/garages/garageConstants');
+const { invalidateCacheOnWrite, CACHE_KEYS } = require('../infrastructure/cache/cache');
 
 const galleryUploader = createUploader();
-
 const router = express.Router();
+router.use(invalidateCacheOnWrite(CACHE_KEYS.GARAGE_LIST, CACHE_KEYS.GARAGE_DETAIL));
 
-router.get('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
+const garageOwner = [requireAuth, requireRole('GARAGE')];
 
-  try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
-    if (!garage) {
-      return res.status(200).json({ exists: false });
+/**
+ * Wraps a handler: typed client errors become `{ msg }` with their status; anything else is a 500
+ * with `failureMsg`. With `logLabel` the 500 body omits the raw error (upload routes, as before).
+ */
+function handle(failureMsg, handler, { logLabel } = {}) {
+  return async (req, res) => {
+    try {
+      return await handler(req, res, createGarageServices({ repos: createRepositories() }));
+    } catch (err) {
+      if (err instanceof AppError && err.expose) return res.status(err.status).json({ msg: err.message });
+      const detail = String(err && err.message ? err.message : err);
+      if (logLabel) {
+        console.error(`${logLabel}:`, detail);
+        return res.status(500).json({ msg: failureMsg });
+      }
+      return res.status(500).json({ msg: failureMsg, error: detail });
     }
+  };
+}
 
-    return res.status(200).json({
-      exists: true,
-      id: String(garage._id),
-      name: garage.name,
-      phone: garage.phone,
-      address: garage.address,
-      city: garage.city,
-      description: garage.description,
-      maxCapacity: garage.maxCapacity !== undefined ? garage.maxCapacity : 20,
-      isActive: Boolean(garage.isActive !== false),
-      createdAt: garage.createdAt,
-      garageLocation: garage.garageLocation || null,
-      photoUrl: garage.photoUrl || null,
-      galleryPhotos: Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : [],
-      certifications: Array.isArray(garage.certifications) ? garage.certifications : [],
-      specializations: Array.isArray(garage.specializations) ? garage.specializations : [],
-      rating: garage.rating || 4.8,
-      reviewCount: garage.reviewCount || 0
-    });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error loading garage profile', error: String(e && e.message ? e.message : e) });
-  }
-});
+// ── Owner profile ────────────────────────────────────────────────────────────
 
-router.post('/me', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
+router.get('/me', ...garageOwner, handle('Error loading garage profile', async (req, res, { profile }) => {
+  const garage = await profile.getMyProfile(req.user.id);
+  return res.status(200).json(garage || { exists: false });
+}));
 
-  const { name, phone, address, city, description, maxCapacity, certifications, specializations, galleryPhotos } = req.body || {};
+router.post('/me', ...garageOwner, handle('Error saving garage profile', async (req, res, { profile }) => {
+  const { created, id } = await profile.saveMyProfile(req.user.id, req.body || {});
+  return created
+    ? res.status(201).json({ msg: 'Garage profile created', id })
+    : res.status(200).json({ msg: 'Garage profile updated', id });
+}));
 
-  if (!name) {
-    return res.status(400).json({ msg: 'Garage name is required' });
-  }
-
-  try {
-    const update = {
-      name: String(name),
-      phone: phone ? String(phone) : '',
-      address: address ? String(address) : '',
-      city: city ? String(city) : '',
-      description: description ? String(description) : '',
-      maxCapacity: maxCapacity !== undefined ? Number(maxCapacity) : 20,
-      certifications: Array.isArray(certifications) ? certifications : [],
-      specializations: Array.isArray(specializations) ? specializations : [],
-      galleryPhotos: (Array.isArray(galleryPhotos) ? galleryPhotos : []).filter(u => typeof u === 'string' && u.trim().length > 0),
-      ownerUserId: String(req.user.id),
-      isActive: true,
-      updatedAt: new Date()
-    };
-
-    const existing = await garages.findOne({ ownerUserId: String(req.user.id) });
-
-    if (existing) {
-      await garages.updateOne({ _id: existing._id }, { $set: update });
-      return res.status(200).json({ msg: 'Garage profile updated', id: String(existing._id) });
-    }
-
-    const result = await garages.insertOne({
-      ...update,
-      createdAt: new Date()
-    });
-
-    return res.status(201).json({ msg: 'Garage profile created', id: String(result.insertedId) });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error saving garage profile', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-router.post('/gallery', requireAuth, requireRole('GARAGE'), galleryUploader.array('photos', 10), async (req, res) => {
+router.post('/gallery', ...garageOwner, galleryUploader.array('photos', UPLOADS.GALLERY_MAX_FILES), handle('Server error uploading photos', async (req, res, { profile }) => {
   const files = Array.isArray(req.files) ? req.files : [];
-  if (files.length === 0) {
-    return res.status(400).json({ msg: 'No photos provided' });
-  }
-
-  const db = getDb();
-  const garages = db.collection('garages');
-  let persisted = [];
-  let stored = false;
-
-  try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id) });
-    if (!garage) {
-      files.forEach(removeTemporaryFile);
-      return res.status(404).json({ msg: 'Garage profile not found' });
-    }
-
-    persisted = await persistUploadedFiles(files, {
-      folder: 'driveportz/garages/gallery',
-      resourceType: 'image'
-    });
-    const newPhotos = persisted.map((asset) => asset.url);
-
-    const result = await garages.findOneAndUpdate(
-      { _id: garage._id },
-      { $push: { galleryPhotos: { $each: newPhotos } }, $set: { updatedAt: new Date() } },
-      { returnDocument: 'after' }
-    );
-    stored = true;
-
-    return res.status(200).json({
-      msg: 'Photos uploaded successfully',
-      photoUrls: newPhotos,
-      galleryPhotos: result?.galleryPhotos || [...(garage.galleryPhotos || []), ...newPhotos]
-    });
-  } catch (err) {
-    if (!stored && persisted.length > 0) {
-      await Promise.allSettled(persisted.map((asset) => deletePersistedFile(asset)));
-    } else if (persisted.length === 0) {
-      files.forEach(removeTemporaryFile);
-    }
-    console.error('Error uploading gallery photos:', err.message);
-    return res.status(500).json({ msg: 'Server error uploading photos' });
-  }
-});
-
-router.post('/photo', requireAuth, requireRole('GARAGE'), galleryUploader.single('photo'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ msg: 'No photo provided' });
-  }
-
-  const db = getDb();
-  const garages = db.collection('garages');
-  let persisted = null;
-  let stored = false;
-
-  try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id) });
-    if (!garage) {
-      removeTemporaryFile(req.file);
-      return res.status(404).json({ msg: 'Garage profile not found' });
-    }
-
-    persisted = await persistUploadedFile(req.file, {
-      folder: 'driveportz/garages/profile',
-      resourceType: 'image'
-    });
-
-    await garages.updateOne(
-      { _id: garage._id },
-      {
-        $set: {
-          photoUrl: persisted.url,
-          photoStorageProvider: persisted.storageProvider,
-          photoStorageKey: persisted.storageKey,
-          photoResourceType: persisted.resourceType || 'image',
-          updatedAt: new Date()
-        }
-      }
-    );
-    stored = true;
-
-    if (garage.photoUrl && garage.photoUrl !== persisted.url) {
-      await deletePersistedFile({
-        url: garage.photoUrl,
-        storageProvider: garage.photoStorageProvider,
-        storageKey: garage.photoStorageKey,
-        resourceType: garage.photoResourceType || 'image'
-      });
-    }
-
-    return res.status(200).json({ msg: 'Photo uploaded successfully', photoUrl: persisted.url });
-  } catch (err) {
-    if (!stored && persisted) await deletePersistedFile(persisted);
-    if (!persisted) removeTemporaryFile(req.file);
-    console.error('Error uploading garage photo:', err.message);
-    return res.status(500).json({ msg: 'Server error uploading photo' });
-  }
-});
-
-router.patch('/me/capacity', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
-  const { maxCapacity } = req.body || {};
-
-  const capacity = Number(maxCapacity);
-  if (Number.isNaN(capacity) || capacity < 1) {
-    return res.status(400).json({ msg: 'Capacity must be a positive number' });
-  }
-
-  try {
-    const result = await garages.findOneAndUpdate(
-      { ownerUserId: String(req.user.id) },
-      { $set: { maxCapacity: capacity, updatedAt: new Date() } },
-      { returnDocument: 'after' }
-    );
-    const updated = result?.value || result;
-    if (!updated) {
-      return res.status(404).json({ msg: 'Garage profile not found' });
-    }
-    return res.status(200).json({ msg: 'Capacity updated successfully', maxCapacity: updated.maxCapacity });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error updating capacity', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-router.get('/me/services', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
-  const garageServices = db.collection('garageServices');
-
-  try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
-    if (!garage) {
-      return res.status(400).json({ msg: 'Create your garage profile first' });
-    }
-
-    const services = await garageServices
-      .find({ garageId: garage._id, isArchived: { $ne: true } })
-      .sort({ createdAt: -1 })
-      .toArray();
-
-    return res.status(200).json(
-      services.map((s) => ({
-        id: String(s._id),
-        title: s.title,
-        description: s.description,
-        price: s.price,
-        durationMins: s.durationMins,
-        category: s.category || 'General Service',
-        photoUrl: s.photoUrl || null,
-        whatsIncluded: Array.isArray(s.whatsIncluded) ? s.whatsIncluded : [],
-        bundledItems: Array.isArray(s.bundledItems) ? s.bundledItems : [],
-        isPackage: Boolean(s.isPackage),
-        isActive: Boolean(s.isActive !== false)
-      }))
-    );
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error loading services', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-router.post('/me/services', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
-  const garageServices = db.collection('garageServices');
-
-  const { title, description, price, durationMins, category, photoUrl, whatsIncluded, bundledItems, isPackage } = req.body || {};
-  if (!title) {
-    return res.status(400).json({ msg: 'Service title is required' });
-  }
-
-  try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
-    if (!garage) {
-      return res.status(400).json({ msg: 'Create your garage profile first' });
-    }
-
-    const doc = {
-      garageId: garage._id,
-      title: String(title),
-      description: description ? String(description) : '',
-      price: price !== undefined && price !== null && String(price).trim() !== '' ? Number(price) : null,
-      durationMins: durationMins !== undefined && durationMins !== null && String(durationMins).trim() !== '' ? Number(durationMins) : null,
-      category: category ? String(category) : 'General Service',
-      photoUrl: photoUrl ? String(photoUrl) : null,
-      whatsIncluded: Array.isArray(whatsIncluded) ? whatsIncluded : [],
-      bundledItems: Array.isArray(bundledItems) ? bundledItems : [],
-      isPackage: Boolean(isPackage),
-      isActive: true,
-      isArchived: false,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    const result = await garageServices.insertOne(doc);
-    return res.status(201).json({ msg: 'Service created', id: String(result.insertedId) });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error creating service', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-router.put('/me/services/:serviceId', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
-  const garageServices = db.collection('garageServices');
-
-  const { title, description, price, durationMins, category, photoUrl, whatsIncluded, bundledItems, isPackage, isActive } = req.body || {};
-
-  try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
-    if (!garage) {
-      return res.status(400).json({ msg: 'Create your garage profile first' });
-    }
-
-    const update = {
-      updatedAt: new Date()
-    };
-    if (title !== undefined) update.title = String(title);
-    if (description !== undefined) update.description = String(description);
-    if (price !== undefined) update.price = String(price).trim() === '' ? null : Number(price);
-    if (durationMins !== undefined) update.durationMins = String(durationMins).trim() === '' ? null : Number(durationMins);
-    if (category !== undefined) update.category = String(category);
-    if (photoUrl !== undefined) update.photoUrl = photoUrl ? String(photoUrl) : null;
-    if (whatsIncluded !== undefined) update.whatsIncluded = Array.isArray(whatsIncluded) ? whatsIncluded : [];
-    if (bundledItems !== undefined) update.bundledItems = Array.isArray(bundledItems) ? bundledItems : [];
-    if (isPackage !== undefined) update.isPackage = Boolean(isPackage);
-    if (isActive !== undefined) update.isActive = Boolean(isActive);
-
-    const result = await garageServices.updateOne(
-      { _id: new ObjectId(String(req.params.serviceId)), garageId: garage._id, isArchived: { $ne: true } },
-      { $set: update }
-    );
-
-    if (!result.matchedCount) {
-      return res.status(404).json({ msg: 'Service not found' });
-    }
-
-    return res.status(200).json({ msg: 'Service updated' });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error updating service', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-router.delete('/me/services/:serviceId', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
-  const garageServices = db.collection('garageServices');
-
-  try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
-    if (!garage) {
-      return res.status(400).json({ msg: 'Create your garage profile first' });
-    }
-
-    const result = await garageServices.updateOne(
-      { _id: new ObjectId(String(req.params.serviceId)), garageId: garage._id },
-      { $set: { isArchived: true, isActive: false, updatedAt: new Date() } }
-    );
-
-    if (!result.matchedCount) {
-      return res.status(404).json({ msg: 'Service not found' });
-    }
-
-    return res.status(200).json({ msg: 'Service removed' });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error removing service', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-
-
-
-
-// DELETE /api/garages/gallery — remove photo from garage gallery
-router.delete('/gallery', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
-  const { photoUrl } = req.body || {};
-
-  if (!photoUrl) return res.status(400).json({ msg: 'Photo URL is required' });
-
-  try {
-    const garage = await garages.findOne({ ownerUserId: String(req.user.id), isActive: { $ne: false } });
-    if (!garage) return res.status(404).json({ msg: 'Garage profile not found' });
-
-    const updatedGallery = (Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []).filter(u => u !== photoUrl);
-    await deletePersistedFile({ url: photoUrl });
-
-    await garages.updateOne({ _id: garage._id }, { $set: { galleryPhotos: updatedGallery, updatedAt: new Date() } });
-
-    return res.status(200).json({ msg: 'Photo removed', galleryPhotos: updatedGallery });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error deleting gallery photo', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-// POST /api/garages/location — garage owner saves their map coordinates
-router.post('/location', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
-
-  const { latitude, longitude, address } = req.body || {};
-
-  const lat = parseFloat(latitude);
-  const lng = parseFloat(longitude);
-  if (Number.isNaN(lat) || Number.isNaN(lng)) {
-    return res.status(400).json({ msg: 'Valid latitude and longitude are required' });
-  }
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    return res.status(400).json({ msg: 'Coordinates out of valid range' });
-  }
-
-  try {
-    const existing = await garages.findOne({ ownerUserId: String(req.user.id) });
-    if (!existing) {
-      return res.status(404).json({ msg: 'Create your garage profile first' });
-    }
-
-    await garages.updateOne(
-      { _id: existing._id },
-      {
-        $set: {
-          garageLocation: {
-            latitude: lat,
-            longitude: lng,
-            address: address ? String(address).slice(0, 500) : ''
-          },
-          updatedAt: new Date()
-        }
-      }
-    );
-
-    return res.status(200).json({ msg: 'Location saved successfully' });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error saving location', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-// GET /api/garages/details/:garageId — public detailed garage profile
-router.get('/details/:garageId', async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
-  const garageServices = db.collection('garageServices');
-  const reviewsCol = db.collection('reviews');
-  const { calculateCurrentStatus, getCurrentTimeString } = require('../services/availabilityService');
-
-  try {
-    let garageId;
-    try {
-      garageId = new ObjectId(String(req.params.garageId));
-    } catch {
-      return res.status(400).json({ msg: 'Invalid Garage ID' });
-    }
-
-    const garage = await garages.findOne({ _id: garageId, isActive: { $ne: false } });
-    if (!garage) {
-      return res.status(404).json({ msg: 'Garage profile not found' });
-    }
-
-    let ownerEmail = '';
-    if (garage.ownerUserId) {
-      try {
-        const usersCol = db.collection('users');
-        const ownerUser = await usersCol.findOne({
-          $or: [
-            { _id: new ObjectId(String(garage.ownerUserId)) },
-            { _id: String(garage.ownerUserId) }
-          ]
-        });
-        if (ownerUser && ownerUser.email) {
-          ownerEmail = ownerUser.email;
-        }
-      } catch (err) {
-        console.warn('Error fetching owner user email:', err.message);
-      }
-    }
-
-    const [servicesList, reviewsList] = await Promise.all([
-      garageServices.find({ garageId, isActive: { $ne: false }, isArchived: { $ne: true } }).toArray(),
-      reviewsCol.find({ garageId }).toArray()
-    ]);
-
-    const ratingDistribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    let ratingSum = 0;
-    reviewsList.forEach(r => {
-      const star = Math.min(5, Math.max(1, Math.round(r.rating || 5)));
-      ratingDistribution[star] = (ratingDistribution[star] || 0) + 1;
-      ratingSum += (r.rating || 5);
-    });
-
-    const totalReviews = reviewsList.length;
-    const averageRating = totalReviews > 0 ? parseFloat((ratingSum / totalReviews).toFixed(1)) : (garage.rating || 4.8);
-
-    const currentStatus = calculateCurrentStatus(garage);
-
-    return res.status(200).json({
-      id: String(garage._id),
-      name: garage.name,
-      phone: garage.phone,
-      email: garage.email || garage.contactEmail || ownerEmail || 'contact@driveportz.com',
-      address: garage.address,
-      city: garage.city,
-      description: garage.description || 'Authorized partner service center equipped with state-of-the-art diagnostic machinery and certified mechanics.',
-      maxCapacity: garage.maxCapacity || 20,
-      photoUrl: garage.photoUrl || null,
-      galleryPhotos: (Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []).filter(u => typeof u === 'string' && u.trim().length > 0),
-      certifications: Array.isArray(garage.certifications) && garage.certifications.length > 0 ? garage.certifications : ['Bosch Authorized', 'DrivePortz Verified', 'ISO 9001 Certified'],
-      specializations: Array.isArray(garage.specializations) && garage.specializations.length > 0 ? garage.specializations : ['Periodic Service', 'Engine Overhaul', 'AC Repair', 'Denting & Painting', 'Electricals'],
-      rating: averageRating,
-      reviewCount: totalReviews,
-      ratingDistribution,
-      experienceYears: garage.experienceYears || 8,
-      partnerSince: garage.createdAt ? new Date(garage.createdAt).getFullYear() : 2024,
-      isVerified: Boolean(garage.verified !== false),
-      currentStatus,
-      currentTime: getCurrentTimeString(),
-      businessHours: garage.businessHours || {
-        Monday: { isOpen: true, openTime: '09:00', closeTime: '19:00' },
-        Tuesday: { isOpen: true, openTime: '09:00', closeTime: '19:00' },
-        Wednesday: { isOpen: true, openTime: '09:00', closeTime: '19:00' },
-        Thursday: { isOpen: true, openTime: '09:00', closeTime: '19:00' },
-        Friday: { isOpen: true, openTime: '09:00', closeTime: '19:00' },
-        Saturday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
-        Sunday: { isOpen: false, openTime: '10:00', closeTime: '16:00' }
-      },
-      facilities: garage.facilities || {
-        parkingAvailable: true,
-        pickupDrop: true,
-        homeService: true,
-        emergencyService: true
-      },
-      paymentMethods: garage.paymentMethods || ['Cash', 'UPI', 'Credit/Debit Card', 'Net Banking'],
-      garageLocation: garage.garageLocation || null,
-      services: servicesList.map(s => ({
-        id: String(s._id),
-        title: s.title,
-        description: s.description,
-        price: parseFloat(s.price || 0),
-        durationMins: s.durationMins || 60,
-        category: s.category || 'General Maintenance',
-        photoUrl: s.photoUrl || null,
-        whatsIncluded: s.whatsIncluded || [],
-        isPackage: Boolean(s.isPackage)
-      }))
-    });
-
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error fetching garage details', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-// GET /api/garages/:garageId/services — fetch services for garage
-router.get('/:garageId/services', async (req, res) => {
-  const db = getDb();
-  const garageServices = db.collection('garageServices');
-  try {
-    const garageId = new ObjectId(String(req.params.garageId));
-    const services = await garageServices.find({ garageId, isActive: { $ne: false }, isArchived: { $ne: true } }).toArray();
-    return res.status(200).json(services.map(s => ({
-      id: String(s._id),
-      title: s.title,
-      description: s.description,
-      price: parseFloat(s.price || 0),
-      durationMins: s.durationMins || 60,
-      category: s.category || 'General Maintenance',
-      photoUrl: s.photoUrl || null,
-      whatsIncluded: s.whatsIncluded || [],
-      isPackage: Boolean(s.isPackage)
-    })));
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error fetching services', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-// GET /api/garages/:garageId/gallery — fetch garage gallery photos
-router.get('/:garageId/gallery', async (req, res) => {
-  const db = getDb();
-  const garages = db.collection('garages');
-  try {
-    const garage = await garages.findOne({ _id: new ObjectId(String(req.params.garageId)) });
-    if (!garage) return res.status(404).json({ msg: 'Garage not found' });
-    const photos = (Array.isArray(garage.galleryPhotos) ? garage.galleryPhotos : []).filter(u => typeof u === 'string' && u.trim().length > 0);
-    return res.status(200).json({ galleryPhotos: photos });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error fetching gallery', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-// GET /api/garages/:garageId/reviews — fetch customer reviews
-router.get('/:garageId/reviews', async (req, res) => {
-  const db = getDb();
-  const reviewsCol = db.collection('reviews');
-  const bookingsCol = db.collection('bookings');
-  const garages = db.collection('garages');
-
-  try {
-    let garageId;
-    try {
-      garageId = new ObjectId(String(req.params.garageId));
-    } catch {
-      return res.status(400).json({ msg: 'Invalid Garage ID' });
-    }
-
-    const { sort = 'newest' } = req.query;
-
-    let sortOption = { createdAt: -1 };
-    if (sort === 'rating_high') sortOption = { rating: -1, createdAt: -1 };
-    if (sort === 'rating_low') sortOption = { rating: 1, createdAt: -1 };
-
-    const reviews = await reviewsCol.find({ garageId }).sort(sortOption).toArray();
-
-    // Calculate rating distribution
-    const ratingDistribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    let ratingSum = 0;
-
-    const formattedReviews = reviews.map(r => {
-      const star = Math.min(5, Math.max(1, Math.round(r.rating || 5)));
-      ratingDistribution[star] = (ratingDistribution[star] || 0) + 1;
-      ratingSum += (r.rating || 5);
-
-      return {
-        id: String(r._id),
-        garageId: String(r.garageId),
-        userId: String(r.userId),
-        userName: r.userName || 'Customer',
-        userPhotoUrl: r.userPhotoUrl || null,
-        rating: r.rating || 5,
-        reviewTitle: r.reviewTitle || '',
-        reviewMessage: r.reviewMessage || '',
-        vehicleModel: r.vehicleModel || 'Vehicle',
-        serviceName: r.serviceName || 'General Service',
-        reply: r.reply || null,
-        createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : new Date().toISOString()
-      };
-    });
-
-    const totalReviews = formattedReviews.length;
-    const averageRating = totalReviews > 0 ? parseFloat((ratingSum / totalReviews).toFixed(1)) : 4.8;
-
-    // Check user eligibility if token header supplied
-    let userCanReview = false;
-    let completedBookings = [];
-    
-    if (req.headers.authorization) {
-      try {
-        const jwt = require('jsonwebtoken');
-        const token = req.headers.authorization.split(' ')[1];
-        const { loadConfig } = require('../config');
-        const decoded = jwt.verify(token, loadConfig().jwtSecret);
-        if (decoded && decoded.id) {
-          const userIdStr = String(decoded.id);
-          let userIdObj = null;
-          try { userIdObj = new ObjectId(userIdStr); } catch {}
-          
-          const userBookings = await bookingsCol.find({
-            garageId,
-            userId: { $in: [userIdStr, decoded.id, userIdObj].filter(Boolean) },
-            status: 'COMPLETED'
-          }).toArray();
-
-          if (userBookings.length > 0) {
-            userCanReview = true;
-            completedBookings = userBookings.map(b => ({
-              id: String(b._id),
-              serviceName: (b.snapshots && b.snapshots.service && b.snapshots.service.title) || 'Completed Service',
-              vehicleModel: (b.snapshots && b.snapshots.vehicle && `${b.snapshots.vehicle.brand} ${b.snapshots.vehicle.model}`) || 'Vehicle',
-              date: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : 'Recent'
-            }));
-          }
-        }
-      } catch {
-        /* invalid token, ignore */
-      }
-    }
-
-    return res.status(200).json({
-      averageRating,
-      totalReviews,
-      ratingDistribution,
-      userCanReview,
-      completedBookings,
-      reviews: formattedReviews
-    });
-
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error fetching reviews', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-// POST /api/garages/:garageId/reviews — submit a new review
-router.post('/:garageId/reviews', requireAuth, async (req, res) => {
-  const db = getDb();
-  const reviewsCol = db.collection('reviews');
-  const bookingsCol = db.collection('bookings');
-  const garagesCol = db.collection('garages');
-  const usersCol = db.collection('users');
-
-  try {
-    let garageId;
-    try {
-      garageId = new ObjectId(String(req.params.garageId));
-    } catch {
-      return res.status(400).json({ msg: 'Invalid Garage ID' });
-    }
-
-    const { rating, reviewTitle, reviewMessage, bookingId } = req.body || {};
-
-    const numRating = parseInt(rating, 10);
-    if (Number.isNaN(numRating) || numRating < 1 || numRating > 5) {
-      return res.status(400).json({ msg: 'Rating is required (1 to 5 stars)' });
-    }
-
-    const cleanMessage = String(reviewMessage || '').trim();
-    if (!cleanMessage || cleanMessage.length < 20) {
-      return res.status(400).json({ msg: 'Review message must be at least 20 characters long' });
-    }
-    if (cleanMessage.length > 1000) {
-      return res.status(400).json({ msg: 'Review message cannot exceed 1000 characters' });
-    }
-
-    // Verify user has completed service at this garage
-    const userIdStr = String(req.user.id);
-    let userIdObj = null;
-    try { userIdObj = new ObjectId(userIdStr); } catch {}
-
-    const completedBooking = await bookingsCol.findOne({
-      garageId,
-      userId: { $in: [userIdStr, req.user.id, userIdObj].filter(Boolean) },
-      status: 'COMPLETED'
-    });
-
-    if (!completedBooking) {
-      return res.status(403).json({ msg: 'Only customers with a completed service booking at this garage can write a review.' });
-    }
-
-    // Check duplicate review for booking
-    if (bookingId) {
-      const existingReview = await reviewsCol.findOne({ bookingId: new ObjectId(String(bookingId)) });
-      if (existingReview) {
-        return res.status(400).json({ msg: 'You have already submitted a review for this service booking.' });
-      }
-    }
-
-    const userDoc = await usersCol.findOne({ _id: new ObjectId(String(req.user.id)) });
-
-    const newReview = {
-      garageId,
-      userId: userIdStr,
-      userName: userDoc?.name || req.user.name || 'Verified Customer',
-      userPhotoUrl: userDoc?.photoUrl || null,
-      bookingId: completedBooking ? completedBooking._id : null,
-      serviceName: (completedBooking && completedBooking.snapshots && completedBooking.snapshots.service && completedBooking.snapshots.service.title) || 'Verified Service',
-      vehicleModel: (completedBooking && completedBooking.snapshots && completedBooking.snapshots.vehicle && `${completedBooking.snapshots.vehicle.brand} ${completedBooking.snapshots.vehicle.model}`) || 'Vehicle',
-      rating: numRating,
-      reviewTitle: reviewTitle ? String(reviewTitle).slice(0, 150) : '',
-      reviewMessage: cleanMessage,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    const result = await reviewsCol.insertOne(newReview);
-
-    // Update garage rating stats in MongoDB
-    const allReviews = await reviewsCol.find({ garageId }).toArray();
-    const ratingSum = allReviews.reduce((sum, r) => sum + (r.rating || 5), 0);
-    const newAverage = parseFloat((ratingSum / allReviews.length).toFixed(1));
-
-    await garagesCol.updateOne(
-      { _id: garageId },
-      {
-        $set: {
-          rating: newAverage,
-          reviewCount: allReviews.length,
-          updatedAt: new Date()
-        }
-      }
-    );
-
-    return res.status(201).json({
-      msg: 'Review submitted successfully!',
-      review: {
-        id: String(result.insertedId),
-        ...newReview,
-        createdAt: newReview.createdAt.toISOString()
-      },
-      averageRating: newAverage,
-      totalReviews: allReviews.length
-    });
-
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error submitting review', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-// POST /api/garages/:garageId/reviews/:reviewId/reply — owner response
-router.post('/:garageId/reviews/:reviewId/reply', requireAuth, requireRole('GARAGE'), async (req, res) => {
-  const db = getDb();
-  const reviewsCol = db.collection('reviews');
-  const garagesCol = db.collection('garages');
-
-  try {
-    const { replyMessage } = req.body || {};
-    if (!replyMessage || String(replyMessage).trim().length < 5) {
-      return res.status(400).json({ msg: 'Reply message must be at least 5 characters' });
-    }
-
-    const garage = await garagesCol.findOne({ ownerUserId: String(req.user.id) });
-    if (!garage) return res.status(403).json({ msg: 'Garage profile not found' });
-
-    const reviewId = new ObjectId(String(req.params.reviewId));
-    const review = await reviewsCol.findOne({ _id: reviewId, garageId: garage._id });
-    if (!review) return res.status(404).json({ msg: 'Review not found' });
-
-    const replyObj = {
-      replyMessage: String(replyMessage).trim(),
-      createdAt: new Date()
-    };
-
-    await reviewsCol.updateOne({ _id: reviewId }, { $set: { reply: replyObj, updatedAt: new Date() } });
-
-    return res.status(200).json({ msg: 'Reply posted successfully', reply: replyObj });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error posting reply', error: String(e && e.message ? e.message : e) });
-  }
-});
-
-// DELETE /api/garages/:garageId/reviews/:reviewId — admin delete review
-router.delete('/:garageId/reviews/:reviewId', requireAuth, requireRole('ADMIN'), async (req, res) => {
-  const db = getDb();
-  const reviewsCol = db.collection('reviews');
-  const garagesCol = db.collection('garages');
-
-  try {
-    const reviewId = new ObjectId(String(req.params.reviewId));
-    const review = await reviewsCol.findOne({ _id: reviewId });
-    if (!review) return res.status(404).json({ msg: 'Review not found' });
-
-    await reviewsCol.deleteOne({ _id: reviewId });
-
-    // Recalculate garage rating
-    const allReviews = await reviewsCol.find({ garageId: review.garageId }).toArray();
-    const totalReviews = allReviews.length;
-    const ratingSum = allReviews.reduce((sum, r) => sum + (r.rating || 5), 0);
-    const newAverage = totalReviews > 0 ? parseFloat((ratingSum / totalReviews).toFixed(1)) : 4.8;
-
-    await garagesCol.updateOne(
-      { _id: review.garageId },
-      { $set: { rating: newAverage, reviewCount: totalReviews } }
-    );
-
-    return res.status(200).json({ msg: 'Review deleted by admin' });
-  } catch (e) {
-    return res.status(500).json({ msg: 'Error deleting review', error: String(e && e.message ? e.message : e) });
-  }
-});
+  if (files.length === 0) return res.status(400).json({ msg: 'No photos provided' });
+  const { photoUrls, galleryPhotos } = await profile.addGalleryPhotos(req.user.id, files);
+  return res.status(200).json({ msg: 'Photos uploaded successfully', photoUrls, galleryPhotos });
+}, { logLabel: 'Error uploading gallery photos' }));
+
+router.post('/photo', ...garageOwner, galleryUploader.single('photo'), handle('Server error uploading photo', async (req, res, { profile }) => {
+  if (!req.file) return res.status(400).json({ msg: 'No photo provided' });
+  const { photoUrl } = await profile.setProfilePhoto(req.user.id, req.file);
+  return res.status(200).json({ msg: 'Photo uploaded successfully', photoUrl });
+}, { logLabel: 'Error uploading garage photo' }));
+
+router.patch('/me/capacity', ...garageOwner, handle('Error updating capacity', async (req, res, { profile }) => {
+  const { maxCapacity } = await profile.updateCapacity(req.user.id, (req.body || {}).maxCapacity);
+  return res.status(200).json({ msg: 'Capacity updated successfully', maxCapacity });
+}));
+
+// DELETE /api/garages/gallery: remove a photo from the caller's own gallery
+router.delete('/gallery', ...garageOwner, handle('Error deleting gallery photo', async (req, res, { profile }) => {
+  const { galleryPhotos } = await profile.removeGalleryPhoto(req.user.id, (req.body || {}).photoUrl);
+  return res.status(200).json({ msg: 'Photo removed', galleryPhotos });
+}));
+
+// POST /api/garages/location: garage owner saves their map coordinates
+router.post('/location', ...garageOwner, handle('Error saving location', async (req, res, { profile }) => {
+  await profile.saveLocation(req.user.id, req.body || {});
+  return res.status(200).json({ msg: 'Location saved successfully' });
+}));
+
+// ── Owner service catalogue ──────────────────────────────────────────────────
+
+router.get('/me/services', ...garageOwner, handle('Error loading services', async (req, res, { catalog }) => {
+  return res.status(200).json(await catalog.listMine(req.user.id));
+}));
+
+router.post('/me/services', ...garageOwner, handle('Error creating service', async (req, res, { catalog }) => {
+  const { id } = await catalog.createMine(req.user.id, req.body || {});
+  return res.status(201).json({ msg: 'Service created', id });
+}));
+
+router.put('/me/services/:serviceId', ...garageOwner, handle('Error updating service', async (req, res, { catalog }) => {
+  await catalog.updateMine(req.user.id, req.params.serviceId, req.body || {});
+  return res.status(200).json({ msg: 'Service updated' });
+}));
+
+router.delete('/me/services/:serviceId', ...garageOwner, handle('Error removing service', async (req, res, { catalog }) => {
+  await catalog.archiveMine(req.user.id, req.params.serviceId);
+  return res.status(200).json({ msg: 'Service removed' });
+}));
+
+// ── Public pages ─────────────────────────────────────────────────────────────
+
+// GET /api/garages/details/:garageId: public detailed garage profile (cached snapshot)
+router.get('/details/:garageId', handle('Error fetching garage details', async (req, res, { publicProfile }) => {
+  return res.status(200).json(await publicProfile.getDetails(req.params.garageId));
+}));
+
+router.get('/:garageId/services', handle('Error fetching services', async (req, res, { catalog }) => {
+  return res.status(200).json(await catalog.listPublic(req.params.garageId));
+}));
+
+router.get('/:garageId/gallery', handle('Error fetching gallery', async (req, res, { publicProfile }) => {
+  return res.status(200).json(await publicProfile.getGallery(req.params.garageId));
+}));
+
+// ── Reviews ──────────────────────────────────────────────────────────────────
+
+// GET /api/garages/:garageId/reviews?sort=&page=&limit=: optionalAuth so a signed-in customer
+// learns whether they can review (req.user.id; tokens carry `sub`).
+router.get('/:garageId/reviews', optionalAuth, handle('Error fetching reviews', async (req, res, { reviews }) => {
+  const { body, pagination } = await reviews.listReviews(req.params.garageId, req.query, req.user);
+  setPaginationHeaders(res, pagination);
+  return res.status(200).json(body);
+}));
+
+// POST /api/garages/:garageId/reviews: one review per COMPLETED booking owned by the caller
+router.post('/:garageId/reviews', requireAuth, handle('Error submitting review', async (req, res, { reviews }) => {
+  const result = await reviews.createReview(req.params.garageId, req.user, req.body || {});
+  return res.status(201).json({ msg: 'Review submitted successfully!', ...result });
+}));
+
+// POST /api/garages/:garageId/reviews/:reviewId/reply: owner response
+router.post('/:garageId/reviews/:reviewId/reply', ...garageOwner, handle('Error posting reply', async (req, res, { reviews }) => {
+  const reply = await reviews.replyToReview(req.user, req.params.reviewId, req.body || {});
+  return res.status(200).json({ msg: 'Reply posted successfully', reply });
+}));
+
+// DELETE /api/garages/:garageId/reviews/:reviewId: admin removal
+router.delete('/:garageId/reviews/:reviewId', requireAuth, requireRole('ADMIN'), handle('Error deleting review', async (req, res, { reviews }) => {
+  await reviews.deleteReview(req.params.reviewId);
+  return res.status(200).json({ msg: 'Review deleted by admin' });
+}));
 
 module.exports = router;

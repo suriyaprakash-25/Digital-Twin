@@ -1,4 +1,6 @@
 const express = require('express');
+const { aggregateKpis, countWhere, sumWhere, equals } = require('../core/aggregation');
+const { safeSearchRegex } = require('../core/text');
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { requireAdmin } = require('../middleware/adminMiddleware');
@@ -24,31 +26,20 @@ router.get('/summary', requireAdmin, async (req, res) => {
   const reconciliations = db.collection('payment_reconciliations');
 
   try {
-    const all = await reconciliations.find({}).toArray();
-
-    let matched = 0;
-    let mismatched = 0;
-    let missing = 0;
-    let pending = 0;
-    let resolved = 0;
-    let totalMismatchAmount = 0;
-
-    all.forEach(r => {
-      if (r.reconciliationStatus === RECONCILIATION_STATUS.MATCHED) matched++;
-      else if (r.reconciliationStatus === RECONCILIATION_STATUS.MISMATCH) mismatched++;
-      else if (r.reconciliationStatus === RECONCILIATION_STATUS.MISSING) missing++;
-      else if (r.reconciliationStatus === RECONCILIATION_STATUS.PENDING) pending++;
-      else if (r.reconciliationStatus === RECONCILIATION_STATUS.RESOLVED) resolved++;
-
-      if (r.reconciliationStatus === RECONCILIATION_STATUS.MISMATCH && r.amountDifference) {
-        totalMismatchAmount += parseFloat(r.amountDifference) || 0;
-      }
+    const isStatus = (status) => equals('$reconciliationStatus', status);
+    const { total, matched, mismatched, missing, pending, resolved, totalMismatchAmount } = await aggregateKpis(reconciliations, {
+      matched: countWhere(isStatus(RECONCILIATION_STATUS.MATCHED)),
+      mismatched: countWhere(isStatus(RECONCILIATION_STATUS.MISMATCH)),
+      missing: countWhere(isStatus(RECONCILIATION_STATUS.MISSING)),
+      pending: countWhere(isStatus(RECONCILIATION_STATUS.PENDING)),
+      resolved: countWhere(isStatus(RECONCILIATION_STATUS.RESOLVED)),
+      totalMismatchAmount: sumWhere(isStatus(RECONCILIATION_STATUS.MISMATCH), '$amountDifference')
     });
 
     return res.status(200).json({
       success: true,
       summary: {
-        totalChecked: all.length,
+        totalChecked: total,
         matched,
         mismatched,
         missing,
@@ -88,7 +79,7 @@ router.get('/', requireAdmin, async (req, res) => {
     }
 
     if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = safeSearchRegex(search);
       query.$or = [
         { invoiceNumber: regex },
         { paymentId: regex },
