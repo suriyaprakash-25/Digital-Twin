@@ -184,19 +184,27 @@ Other settings:
 - Missing gateway timeouts.
 - Rate limiting that was per-instance only.
 
+**Fixed in the third pass**
+
+- All nine large route files (`admin`, `garages`, `services`, `invoices`, `earnings`, `bookings`, `disputes`, `ownership`, `passport`) are thin adapters over services and repositories, with zero direct collection calls.
+- Explicit state machines now cover bookings (`services/bookings/bookingStateMachine.js`) and ownership transfers (`services/ownership/transferStateMachine.js`), alongside settlements and disputes. All of them use compare-and-swap transitions.
+- Settlement requests lock exact earnings rows atomically (no double payout or over-locking), and booking capacity is enforced under a per-garage lease.
+- The public vehicle passport (JSON and PDF) exposes only an allow-list of fields.
+- A browser end-to-end journey (`frontend/tests/e2e`) runs in CI against a real backend, using the mock payment gateway.
+
 **Fixed in the second pass**
 
 - Every admin KPI summary is now an aggregation (`core/aggregation.js`).
 - Garage ratings are an aggregation, and review lists are paginated.
 - The financial integrity scan streams through a cursor with batched invoice lookups (it was N+1) and writes issues with a single `bulkWrite`.
 - The SPA entry chunk is 193 kB, down from 2,119 kB.
+- `requireAuth` reads the user through a 30-second read-through cache, removing the hottest query. Code paths that change a user's role, `tokenVersion` or disabled flag call `invalidateAuthUser`; other instances converge within the TTL.
 
 **Known and next**
 
-1. These route files still query MongoDB directly and should move onto services and repositories the way `admin.js`, `garages.js` and `services.js` did: `ownership`, `invoices`, `bookings`, `passport`, `disputes` and `earnings`. Together the routes still hold about 200 direct collection calls, down from 295.
-2. At around 1,000 requests per second, the per-request user lookup in `requireAuth` is the hottest query. Add a short-TTL user cache, invalidated when `tokenVersion` changes.
-3. Vehicle service history and the per-user admin detail are bounded but not yet paginated.
-4. The `vendor-three` chunk (688 kB) loads only with the landing-page hero.
+1. Some older services still query collections directly rather than through repositories: `settlementEligibilityService`, `earningsService` and `settlementForecastService` (which also scans in memory). The routes layer is down to 115 direct calls from 295; `payments.js` passes collections into payment services.
+2. Vehicle service history and the per-user admin detail are bounded but not yet paginated.
+3. The `vendor-three` chunk (688 kB) loads only with the landing-page hero.
 
 ## 12. Trade-offs
 
