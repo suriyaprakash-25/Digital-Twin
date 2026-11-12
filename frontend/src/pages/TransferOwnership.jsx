@@ -1,7 +1,6 @@
-import { API_BASE_URL } from '../utils/config';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiGet, apiPost, getErrorMessage } from '../utils/api';
 import { ArrowLeft, UserPlus, Mail, AlertTriangle, ShieldCheck, Info } from 'lucide-react';
 
 const TransferOwnership = () => {
@@ -13,27 +12,21 @@ const TransferOwnership = () => {
   const [status, setStatus] = useState({ type: '', message: '' });
   const navigate = useNavigate();
 
-  const token = localStorage.getItem('token');
-  const headers = useMemo(
-    () => ({ headers: { Authorization: `Bearer ${token}` } }),
-    [token]
-  );
-
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
-        const vRes = await axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers);
-        const currentVehicle = vRes.data.find(v => v.id === vehicleId);
+        const vehicles = await apiGet('/vehicles/myvehicles');
+        const currentVehicle = (vehicles || []).find(v => v.id === vehicleId);
         setVehicle(currentVehicle);
       } catch (err) {
         console.error('Error fetching vehicle details:', err);
-        setStatus({ type: 'error', message: 'Failed to load vehicle details.' });
+        setStatus({ type: 'error', message: getErrorMessage(err, 'Failed to load vehicle details.') });
       } finally {
         setLoading(false);
       }
     };
     fetchVehicle();
-  }, [vehicleId, headers]);
+  }, [vehicleId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,10 +40,10 @@ const TransferOwnership = () => {
     setSubmitting(true);
 
     try {
-      await axios.post(`${API_BASE_URL}/api/ownership/transfer`, {
+      await apiPost('/ownership/transfer', {
         vehicleId,
         buyerEmail: buyerEmail.trim().toLowerCase()
-      }, headers);
+      });
 
       setStatus({
         type: 'success',
@@ -63,7 +56,7 @@ const TransferOwnership = () => {
       }, 2000);
     } catch (err) {
       console.error('Error initiating transfer:', err);
-      setStatus({ type: 'error', message: err.response?.data?.msg || 'Failed to initiate transfer request.' });
+      setStatus({ type: 'error', message: getErrorMessage(err, 'Failed to initiate transfer request.') });
     } finally {
       setSubmitting(false);
     }
@@ -71,7 +64,7 @@ const TransferOwnership = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div role="status" aria-label="Loading vehicle" className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
       </div>
     );
@@ -100,7 +93,7 @@ const TransferOwnership = () => {
       </header>
 
       {status.message && (
-        <div className={`p-4 rounded-xl flex items-center gap-3 text-sm font-semibold mb-6 shadow-sm ${
+        <div role={status.type === 'error' ? 'alert' : 'status'} className={`p-4 rounded-xl flex items-center gap-3 text-sm font-semibold mb-6 shadow-sm ${
           status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {status.type === 'success' ? <ShieldCheck className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
@@ -124,12 +117,14 @@ const TransferOwnership = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
-            <label className="text-xs md:text-sm font-bold text-slate-700">Buyer Email Address</label>
+            <label htmlFor="transfer-buyer-email" className="text-xs md:text-sm font-bold text-slate-700">Buyer Email Address</label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-teal-500 transition-colors">
                 <Mail className="h-4 w-4 md:h-5 md:w-5" />
               </div>
               <input
+                id="transfer-buyer-email"
+                aria-describedby="transfer-buyer-email-hint"
                 type="email"
                 placeholder="buyer@example.com"
                 value={buyerEmail}
@@ -138,7 +133,7 @@ const TransferOwnership = () => {
                 className="block w-full pl-9 md:pl-11 pr-4 py-2 md:py-3 border border-slate-200 rounded-xl text-xs md:text-sm text-slate-900 bg-slate-50 focus:bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium hover:border-slate-300 shadow-sm"
               />
             </div>
-            <p className="text-[10px] text-slate-400 font-medium">
+            <p id="transfer-buyer-email-hint" className="text-[10px] text-slate-400 font-medium">
               The buyer must be registered on the platform with this exact email address.
             </p>
           </div>

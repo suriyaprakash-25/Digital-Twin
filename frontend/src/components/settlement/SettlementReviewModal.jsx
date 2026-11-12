@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
 import {
   X,
   ShieldCheck,
@@ -15,98 +14,82 @@ import {
   Ban,
   UserCheck
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import { apiPost } from '../../utils/api';
 import { useToast } from '../../context/toastContextCore';
+import { useDialog } from '../../hooks/useDialog';
+import { useFinancialAction } from '../admin/useFinancialAction';
 import SettlementHoldModal from './SettlementHoldModal';
 
 export default function SettlementReviewModal({ settlement, onClose, onUpdated }) {
   const { showSuccess, showError } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
+  const { run, busy: isSubmitting } = useFinancialAction();
+  const { dialogProps, titleId } = useDialog({ isOpen: Boolean(settlement) && !showHoldModal, onClose });
 
   if (!settlement) return null;
 
+  const settlementKey = settlement.settlementId || settlement._id;
   const reqAmount = parseFloat(settlement.approvedAmount || settlement.requestedAmount) || 0;
   const isHighValue = settlement.isHighValue || reqAmount >= 50000;
   const requiredApprovals = settlement.requiredApprovalCount || (isHighValue ? 2 : 1);
   const currentApprovals = settlement.approvalCount || (settlement.approvals ? settlement.approvals.length : 0);
 
-  const handleApprove = async () => {
-    setIsSubmitting(true);
-    try {
-      const endpoint = isHighValue && currentApprovals === 1
-        ? `${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/second-approve`
-        : `${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/approve`;
-
-      const res = await axios.post(endpoint, { confirmation: true }, { headers: getAuthHeaders() });
-      if (res.data?.success) {
-        showSuccess(res.data.message || 'Settlement approved');
-        if (onUpdated) onUpdated();
-        onClose();
-      } else {
-        showError(res.data?.message || 'Failed to approve');
-      }
-    } catch (err) {
-      showError(err.response?.data?.message || 'Error approving settlement');
-    } finally {
-      setIsSubmitting(false);
+  // Every mutation carries an Idempotency-Key (required by the backend) and is
+  // guarded against double submission by useFinancialAction.
+  const submit = async (action, path, body, successMessage, failureMessage, errorMessage) => {
+    const data = await run(`${action}:${settlementKey}`, (config) => apiPost(path, body, config), errorMessage);
+    if (!data) return;
+    if (data.success) {
+      showSuccess(successMessage(data));
+      if (onUpdated) onUpdated();
+      onClose();
+    } else {
+      showError(data.message || failureMessage);
     }
   };
 
-  const handleReject = async () => {
+  const handleApprove = () => {
+    const secondApproval = isHighValue && currentApprovals === 1;
+    return submit(
+      secondApproval ? 'second-approve' : 'approve',
+      `/admin/settlements/${settlementKey}/${secondApproval ? 'second-approve' : 'approve'}`,
+      { confirmation: true },
+      (data) => data.message || 'Settlement approved',
+      'Failed to approve',
+      'Error approving settlement'
+    );
+  };
+
+  const handleReject = () => {
     if (!rejectReason.trim()) {
       showError('Please specify the reason for rejection');
-      return;
+      return undefined;
     }
-    setIsSubmitting(true);
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/reject`,
-        { reason: rejectReason.trim(), confirmation: true },
-        { headers: getAuthHeaders() }
-      );
-      if (res.data?.success) {
-        showSuccess('Settlement rejected and earnings unlocked');
-        if (onUpdated) onUpdated();
-        onClose();
-      } else {
-        showError(res.data?.message || 'Failed to reject');
-      }
-    } catch (err) {
-      showError(err.response?.data?.message || 'Error rejecting settlement');
-    } finally {
-      setIsSubmitting(false);
-    }
+    return submit(
+      'reject',
+      `/admin/settlements/${settlementKey}/reject`,
+      { reason: rejectReason.trim(), confirmation: true },
+      () => 'Settlement rejected and earnings unlocked',
+      'Failed to reject',
+      'Error rejecting settlement'
+    );
   };
 
-  const handleProcess = async () => {
-    setIsSubmitting(true);
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/admin/settlements/${settlement.settlementId || settlement._id}/process`,
-        { confirmation: true },
-        { headers: getAuthHeaders() }
-      );
-      if (res.data?.success) {
-        showSuccess('Settlement payout processed successfully (TEST MODE)');
-        if (onUpdated) onUpdated();
-        onClose();
-      } else {
-        showError(res.data?.message || 'Failed to process payout');
-      }
-    } catch (err) {
-      showError(err.response?.data?.message || 'Error processing payout');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const handleProcess = () => submit(
+    'process',
+    `/admin/settlements/${settlementKey}/process`,
+    { confirmation: true },
+    () => 'Settlement payout processed successfully (TEST MODE)',
+    'Failed to process payout',
+    'Error processing payout'
+  );
 
   return (
     <>
       <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden p-6 md:p-8 space-y-6">
+        <div {...dialogProps} className="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden p-6 md:p-8 space-y-6 focus:outline-none">
           
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -119,7 +102,7 @@ export default function SettlementReviewModal({ settlement, onClose, onUpdated }
                   </span>
                 )}
               </div>
-              <h2 className="text-xl font-black text-white mt-0.5">{settlement.settlementId}</h2>
+              <h2 id={titleId} className="text-xl font-black text-white mt-0.5">{settlement.settlementId}</h2>
             </div>
             <button
               onClick={onClose}

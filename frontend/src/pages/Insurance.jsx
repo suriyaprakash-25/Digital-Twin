@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback, useId } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
-import { ShieldCheck, FileText, Upload, Calendar, ArrowLeft, Building2, Plus, Info, AlertCircle, FileUp, Sparkles, ExternalLink } from 'lucide-react';
-import { API_BASE_URL } from '../utils/config';
+import { ShieldCheck, FileText, Upload, Calendar, ArrowLeft, Building2, Plus, AlertCircle, FileUp, ExternalLink } from 'lucide-react';
+import { apiGet, apiUpload, getErrorMessage } from '../utils/api';
+import { getPhotoUrl } from '../utils/imageUrl';
+import ErrorState from '../components/common/ErrorState';
 
 const Insurance = () => {
   const { vehicleId } = useParams();
@@ -11,6 +12,8 @@ const Insurance = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
+  const [loadError, setLoadError] = useState('');
+  const fieldId = useId();
 
   // Form State
   const [provider, setProvider] = useState('');
@@ -20,28 +23,23 @@ const Insurance = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [documentConsent, setDocumentConsent] = useState(false);
 
-  const token = localStorage.getItem('token');
-  const headers = useMemo(
-    () => ({ headers: { Authorization: `Bearer ${token}` } }),
-    [token]
-  );
-
   const fetchInsuranceData = useCallback(async () => {
     try {
-      const [vRes, iRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers),
-        axios.get(`${API_BASE_URL}/api/insurance/${vehicleId}`, headers)
+      const [vehicles, insurancePolicies] = await Promise.all([
+        apiGet('/vehicles/myvehicles'),
+        apiGet(`/insurance/${vehicleId}`)
       ]);
-      const currentVehicle = vRes.data.find(v => v.id === vehicleId);
+      const currentVehicle = (vehicles || []).find(v => v.id === vehicleId);
       setVehicle(currentVehicle);
-      setPolicies(iRes.data);
+      setPolicies(insurancePolicies || []);
+      setLoadError('');
     } catch (err) {
       console.error('Error fetching insurance details:', err);
-      setStatus({ type: 'error', message: 'Failed to load vehicle or insurance details.' });
+      setLoadError(getErrorMessage(err, 'Failed to load vehicle or insurance details.'));
     } finally {
       setLoading(false);
     }
-  }, [headers, vehicleId]);
+  }, [vehicleId]);
 
   useEffect(() => {
     fetchInsuranceData();
@@ -93,12 +91,7 @@ const Insurance = () => {
     formData.append('document', selectedFile);
 
     try {
-      await axios.post(`${API_BASE_URL}/api/insurance/add`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      await apiUpload('/insurance/add', formData);
 
       setStatus({ type: 'success', message: 'Insurance policy logged successfully!' });
       // Reset form
@@ -113,7 +106,7 @@ const Insurance = () => {
       fetchInsuranceData();
     } catch (err) {
       console.error('Error adding policy:', err);
-      setStatus({ type: 'error', message: err.response?.data?.msg || 'Failed to upload insurance policy.' });
+      setStatus({ type: 'error', message: getErrorMessage(err, 'Failed to upload insurance policy.') });
     } finally {
       setSubmitting(false);
     }
@@ -134,7 +127,7 @@ const Insurance = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div role="status" aria-label="Loading insurance details" className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
       </div>
     );
@@ -162,8 +155,16 @@ const Insurance = () => {
         )}
       </header>
 
+      {loadError && (
+        <ErrorState
+          className="mb-6"
+          message={loadError}
+          onRetry={() => { setLoading(true); fetchInsuranceData(); }}
+        />
+      )}
+
       {status.message && (
-        <div className={`p-4 rounded-xl flex items-center gap-3 text-sm font-semibold mb-6 shadow-sm ${
+        <div role={status.type === 'error' ? 'alert' : 'status'} className={`p-4 rounded-xl flex items-center gap-3 text-sm font-semibold mb-6 shadow-sm ${
           status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {status.type === 'success' ? <ShieldCheck className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
@@ -180,8 +181,9 @@ const Insurance = () => {
           
           <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Insurance Provider</label>
+              <label htmlFor={`${fieldId}-provider`} className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Insurance Provider</label>
               <input
+                id={`${fieldId}-provider`}
                 type="text"
                 placeholder="e.g. HDFC Ergo, ICICI Lombard"
                 value={provider}
@@ -192,8 +194,9 @@ const Insurance = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Policy Number</label>
+              <label htmlFor={`${fieldId}-policy`} className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Policy Number</label>
               <input
+                id={`${fieldId}-policy`}
                 type="text"
                 placeholder="Enter Policy Reference ID"
                 value={policyNumber}
@@ -205,8 +208,9 @@ const Insurance = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
+                <label htmlFor={`${fieldId}-start`} className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
                 <input
+                  id={`${fieldId}-start`}
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
@@ -216,8 +220,9 @@ const Insurance = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Expiry Date</label>
+                <label htmlFor={`${fieldId}-expiry`} className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Expiry Date</label>
                 <input
+                  id={`${fieldId}-expiry`}
                   type="date"
                   value={expiryDate}
                   onChange={(e) => setExpiryDate(e.target.value)}
@@ -228,9 +233,10 @@ const Insurance = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Upload Policy PDF</label>
-              <div className="border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-3 md:p-4 bg-slate-50 hover:bg-white transition-all text-center relative group cursor-pointer">
+              <label htmlFor={`${fieldId}-document`} className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Upload Policy PDF</label>
+              <div className="border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-3 md:p-4 bg-slate-50 hover:bg-white transition-all text-center relative group cursor-pointer focus-within:border-teal-500">
                 <input
+                  id={`${fieldId}-document`}
                   type="file"
                   accept="application/pdf"
                   onChange={handleFileChange}
@@ -238,7 +244,7 @@ const Insurance = () => {
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 />
                 <div className="flex flex-col items-center justify-center gap-1.5">
-                  <FileUp className="h-6 w-6 md:h-8 md:w-8 text-slate-400 group-hover:text-teal-600 transition-colors" />
+                  <FileUp aria-hidden="true" className="h-6 w-6 md:h-8 md:w-8 text-slate-400 group-hover:text-teal-600 transition-colors" />
                   <span className="text-xs md:text-sm font-bold text-slate-650 truncate max-w-full">
                     {selectedFile ? selectedFile.name : 'Choose PDF document'}
                   </span>
@@ -311,7 +317,7 @@ const Insurance = () => {
                     </div>
 
                     <a
-                      href={policy.documentUrl?.startsWith('http') ? policy.documentUrl : `${API_BASE_URL}${policy.documentUrl}`}
+                      href={getPhotoUrl(policy.documentUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 w-full sm:w-auto"

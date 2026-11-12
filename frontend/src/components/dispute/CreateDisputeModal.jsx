@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
   X,
   AlertTriangle,
@@ -10,8 +10,9 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
-import axios from 'axios';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import { apiUpload, getErrorMessage, idempotencyHeaders, isIdempotencyInProgress } from '../../utils/api';
+import { useDialog } from '../../hooks/useDialog';
+import { useIdempotencyKeys } from '../../hooks/useIdempotencyKeys';
 
 const CATEGORIES = [
   { value: 'INCORRECT_AMOUNT', label: 'Incorrect Amount Charged' },
@@ -33,6 +34,17 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
   const [evidenceFile, setEvidenceFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const { dialogProps, titleId } = useDialog({ isOpen: Boolean(isOpen && payment), onClose });
+  const keys = useIdempotencyKeys();
+  const fieldId = useId();
+  const ids = {
+    category: `${fieldId}-category`,
+    subject: `${fieldId}-subject`,
+    amount: `${fieldId}-amount`,
+    amountHint: `${fieldId}-amount-hint`,
+    description: `${fieldId}-description`,
+    evidence: `${fieldId}-evidence`,
+  };
 
   if (!isOpen || !payment) return null;
 
@@ -54,8 +66,10 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
       return;
     }
 
+    if (submitting) return;
     setSubmitting(true);
     setError('');
+    const scope = `dispute:${payment.id || payment.paymentId}`;
 
     try {
       const formData = new FormData();
@@ -69,19 +83,18 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
         formData.append('evidence', evidenceFile);
       }
 
-      const headers = {
-        ...getAuthHeaders(),
-        'Content-Type': 'multipart/form-data'
-      };
+      const res = await apiUpload('/disputes', formData, { headers: idempotencyHeaders(keys.keyFor(scope)) });
+      keys.release(scope);
 
-      const res = await axios.post(`${API_BASE_URL}/api/disputes`, formData, { headers });
-
-      if (res.data?.success) {
-        if (onSuccess) onSuccess(res.data.dispute);
+      if (res?.success) {
+        if (onSuccess) onSuccess(res.dispute);
         onClose();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Error submitting dispute');
+      keys.settle(scope, err);
+      setError(isIdempotencyInProgress(err)
+        ? 'This dispute is already being submitted. Please wait a moment.'
+        : getErrorMessage(err, 'Error submitting dispute'));
     } finally {
       setSubmitting(false);
     }
@@ -90,16 +103,19 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200"
+        {...dialogProps}
+        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="bg-slate-900 text-white p-6 relative">
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close dispute form"
             className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-2 mb-2">
             <span className="p-2 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
@@ -109,7 +125,7 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
               Payment & Service Dispute
             </span>
           </div>
-          <h2 className="text-xl font-black tracking-tight text-white">
+          <h2 id={titleId} className="text-xl font-black tracking-tight text-white">
             Raise a Payment Dispute
           </h2>
           <p className="text-xs text-slate-400 mt-1">
@@ -120,8 +136,8 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-bold text-red-600 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0" />
+            <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-bold text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}
@@ -148,10 +164,11 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
 
           {/* Category */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label htmlFor={ids.category} className="block text-xs font-bold text-slate-700 mb-1">
               Dispute Category *
             </label>
             <select
+              id={ids.category}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500"
@@ -164,10 +181,11 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
 
           {/* Subject */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label htmlFor={ids.subject} className="block text-xs font-bold text-slate-700 mb-1">
               Subject Summary
             </label>
             <input
+              id={ids.subject}
               type="text"
               placeholder="e.g. Overcharged for brake fluid replacement"
               value={subject}
@@ -178,12 +196,14 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
 
           {/* Disputed Amount */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label htmlFor={ids.amount} className="block text-xs font-bold text-slate-700 mb-1">
               Disputed Amount (₹) *
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
               <input
+                id={ids.amount}
+                aria-describedby={ids.amountHint}
                 type="number"
                 step="0.01"
                 max={payment.amount}
@@ -193,15 +213,16 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
                 className="w-full pl-7 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-teal-500"
               />
             </div>
-            <p className="text-[10px] text-slate-400 mt-0.5">Maximum refundable transaction balance: ₹{payment.amount}</p>
+            <p id={ids.amountHint} className="text-[10px] text-slate-400 mt-0.5">Maximum refundable transaction balance: ₹{payment.amount}</p>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label htmlFor={ids.description} className="block text-xs font-bold text-slate-700 mb-1">
               Detailed Explanation *
             </label>
             <textarea
+              id={ids.description}
               rows="3"
               required
               placeholder="Explain clearly what happened and why this charge or service is being disputed..."
@@ -213,17 +234,18 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
 
           {/* Evidence Upload */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label htmlFor={ids.evidence} className="block text-xs font-bold text-slate-700 mb-1">
               Supporting Evidence (Optional)
             </label>
             <div className="border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center bg-slate-50 hover:bg-slate-100/60 transition-colors cursor-pointer relative">
               <input
+                id={ids.evidence}
                 type="file"
                 accept="image/*,application/pdf"
                 onChange={(e) => setEvidenceFile(e.target.files[0] || null)}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              <Upload className="h-6 w-6 text-slate-400 mx-auto mb-1" />
+              <Upload className="h-6 w-6 text-slate-400 mx-auto mb-1" aria-hidden="true" />
               {evidenceFile ? (
                 <span className="text-xs font-bold text-teal-700 block">{evidenceFile.name}</span>
               ) : (
@@ -246,7 +268,8 @@ const CreateDisputeModal = ({ isOpen, onClose, payment, onSuccess }) => {
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+              aria-busy={submitting}
+              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-60"
             >
               {submitting ? 'Submitting Dispute...' : 'Submit Dispute'}
             </button>

@@ -1,9 +1,9 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { useEscapeKey } from '../hooks/useEscapeKey';
+import { useDialog } from '../hooks/useDialog';
 
 const PartnerTermsModal = ({ isOpen, onClose }) => {
-  useEscapeKey(onClose, isOpen);
+  const { dialogProps, titleId } = useDialog({ isOpen, onClose });
 
   if (!isOpen) return null;
 
@@ -17,7 +17,7 @@ const PartnerTermsModal = ({ isOpen, onClose }) => {
       />
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-[700px] bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[80vh] border border-slate-200/50">
+      <div className="relative w-full max-w-[700px] bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[80vh] border border-slate-200/50 focus:outline-none" {...dialogProps}>
 
         {/* Sticky Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white/80 backdrop-blur-md z-10">
@@ -28,7 +28,7 @@ const PartnerTermsModal = ({ isOpen, onClose }) => {
               style={{ height: '44px', objectFit: 'contain' }}
             />
             <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+              <h2 id={titleId} className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                 DrivePortz Partner Terms & Conditions
               </h2>
               <p className="text-sm font-medium text-slate-500 mt-1">
@@ -37,7 +37,9 @@ const PartnerTermsModal = ({ isOpen, onClose }) => {
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close partner terms"
             className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
           >
             <X className="h-5 w-5" />

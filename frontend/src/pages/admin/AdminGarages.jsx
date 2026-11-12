@@ -1,13 +1,17 @@
-import { API_BASE_URL } from '../../utils/config';
 import { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
 import {
     Building2, Search, ChevronLeft, ChevronRight, ShieldCheck, ShieldX,
-    Ban, CheckCircle2, XCircle, MapPin, Phone, IndianRupee, Wrench
+    Ban, CheckCircle2, MapPin, Phone, IndianRupee, Wrench
 } from 'lucide-react';
 import { getPhotoUrl } from '../../utils/imageUrl';
+import { apiGetPage, apiPatch, getErrorMessage } from '../../utils/api';
+import { useToast } from '../../context/toastContextCore';
+import ErrorState from '../../components/common/ErrorState';
+import StatusBadge from '../../components/common/StatusBadge';
+import { garageStatusMeta, getGarageStatus } from '../../utils/statusMeta';
 
 const AdminGarages = () => {
+    const { showError } = useToast();
     const [garages, setGarages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -18,25 +22,22 @@ const AdminGarages = () => {
     const [total, setTotal] = useState(0);
     const [actionLoading, setActionLoading] = useState(null);
 
-    const token = localStorage.getItem('token');
-
     const fetchGarages = useCallback(async (p = 1, q = '') => {
         setLoading(true);
+        setError('');
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/admin/garages`, {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { page: p, limit: 20, search: q }
-            });
-            setGarages(res.data.items || []);
-            setTotal(res.data.total || 0);
-            setTotalPages(res.data.totalPages || 1);
-            setPage(res.data.page || 1);
+            const res = await apiGetPage('/admin/garages', { page: p, limit: 20, search: q });
+            const data = res.data || {};
+            setGarages(data.items || []);
+            setTotal(data.total || res.total || 0);
+            setTotalPages(data.totalPages || res.totalPages || 1);
+            setPage(data.page || res.page || 1);
         } catch (err) {
-            setError(err.response?.data?.msg || 'Failed to load garages');
+            setError(getErrorMessage(err, 'Failed to load garages'));
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, []);
 
     useEffect(() => {
         fetchGarages(1, search);
@@ -48,41 +49,16 @@ const AdminGarages = () => {
     };
 
     const handleAction = async (garageId, action) => {
+        if (actionLoading) return;
         setActionLoading(`${garageId}-${action}`);
         try {
-            await axios.patch(
-                `${API_BASE_URL}/api/admin/garages/${garageId}/${action}`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await apiPatch(`/admin/garages/${garageId}/${action}`, {});
             fetchGarages(page, search);
         } catch (err) {
-            alert(err.response?.data?.msg || 'Action failed');
+            showError(getErrorMessage(err, 'Action failed'));
         } finally {
             setActionLoading(null);
         }
-    };
-
-    const getStatusBadge = (garage) => {
-        if (!garage.isActive) {
-            return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-500 border border-red-200">
-                    <XCircle className="h-3 w-3" /> Suspended
-                </span>
-            );
-        }
-        if (garage.verified) {
-            return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                    <CheckCircle2 className="h-3 w-3" /> Verified
-                </span>
-            );
-        }
-        return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200">
-                <ShieldX className="h-3 w-3" /> Pending
-            </span>
-        );
     };
 
     return (
@@ -101,9 +77,10 @@ const AdminGarages = () => {
 
                 <form onSubmit={handleSearch} className="flex items-center gap-2">
                     <div className="relative flex-1 sm:flex-none">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" aria-hidden="true" />
                         <input
-                            type="text"
+                            type="search"
+                            aria-label="Search garages by name or city"
                             placeholder="Search by name or city..."
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
@@ -116,9 +93,7 @@ const AdminGarages = () => {
                 </form>
             </div>
 
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm font-medium">{error}</div>
-            )}
+            {error && <ErrorState message={error} onRetry={() => fetchGarages(page, search)} retrying={loading} />}
 
             {/* Desktop Table */}
             <div className="hidden md:block rounded-2xl bg-white border border-slate-200 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
@@ -198,29 +173,29 @@ const AdminGarages = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            {getStatusBadge(garage)}
+                                            <StatusBadge status={getGarageStatus(garage)} metaMap={garageStatusMeta} />
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
                                                 {garage.isActive && !garage.verified && (
-                                                    <button onClick={() => handleAction(garage.id, 'verify')} disabled={actionLoading === `${garage.id}-verify`}
+                                                    <button type="button" onClick={() => handleAction(garage.id, 'verify')} disabled={Boolean(actionLoading)} aria-busy={actionLoading === `${garage.id}-verify`}
                                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-semibold transition-colors disabled:opacity-50 border border-emerald-200">
                                                         <ShieldCheck className="h-3.5 w-3.5" /> Verify
                                                     </button>
                                                 )}
                                                 {garage.isActive && garage.verified && (
-                                                    <button onClick={() => handleAction(garage.id, 'unverify')} disabled={actionLoading === `${garage.id}-unverify`}
+                                                    <button type="button" onClick={() => handleAction(garage.id, 'unverify')} disabled={Boolean(actionLoading)} aria-busy={actionLoading === `${garage.id}-unverify`}
                                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 text-xs font-semibold transition-colors disabled:opacity-50 border border-amber-200">
                                                         <ShieldX className="h-3.5 w-3.5" /> Unverify
                                                     </button>
                                                 )}
                                                 {garage.isActive ? (
-                                                    <button onClick={() => handleAction(garage.id, 'suspend')} disabled={actionLoading === `${garage.id}-suspend`}
+                                                    <button type="button" onClick={() => handleAction(garage.id, 'suspend')} disabled={Boolean(actionLoading)} aria-busy={actionLoading === `${garage.id}-suspend`}
                                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 text-xs font-semibold transition-colors disabled:opacity-50 border border-red-200">
                                                         <Ban className="h-3.5 w-3.5" /> Suspend
                                                     </button>
                                                 ) : (
-                                                    <button onClick={() => handleAction(garage.id, 'activate')} disabled={actionLoading === `${garage.id}-activate`}
+                                                    <button type="button" onClick={() => handleAction(garage.id, 'activate')} disabled={Boolean(actionLoading)} aria-busy={actionLoading === `${garage.id}-activate`}
                                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 text-xs font-semibold transition-colors disabled:opacity-50 border border-sky-200">
                                                         <CheckCircle2 className="h-3.5 w-3.5" /> Activate
                                                     </button>
@@ -264,7 +239,7 @@ const AdminGarages = () => {
                                             {garage.name}
                                             {garage.verified && <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
                                         </p>
-                                        {getStatusBadge(garage)}
+                                        <StatusBadge status={getGarageStatus(garage)} metaMap={garageStatusMeta} />
                                     </div>
                                     <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
                                         {garage.city && (
@@ -293,24 +268,24 @@ const AdminGarages = () => {
                             </div>
                             <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
                                 {garage.isActive && !garage.verified && (
-                                    <button onClick={() => handleAction(garage.id, 'verify')} disabled={actionLoading === `${garage.id}-verify`}
+                                    <button type="button" onClick={() => handleAction(garage.id, 'verify')} disabled={Boolean(actionLoading)} aria-busy={actionLoading === `${garage.id}-verify`}
                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-semibold border border-emerald-200 disabled:opacity-50">
                                         <ShieldCheck className="h-3.5 w-3.5" /> Verify
                                     </button>
                                 )}
                                 {garage.isActive && garage.verified && (
-                                    <button onClick={() => handleAction(garage.id, 'unverify')} disabled={actionLoading === `${garage.id}-unverify`}
+                                    <button type="button" onClick={() => handleAction(garage.id, 'unverify')} disabled={Boolean(actionLoading)} aria-busy={actionLoading === `${garage.id}-unverify`}
                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-600 text-xs font-semibold border border-amber-200 disabled:opacity-50">
                                         <ShieldX className="h-3.5 w-3.5" /> Unverify
                                     </button>
                                 )}
                                 {garage.isActive ? (
-                                    <button onClick={() => handleAction(garage.id, 'suspend')} disabled={actionLoading === `${garage.id}-suspend`}
+                                    <button type="button" onClick={() => handleAction(garage.id, 'suspend')} disabled={Boolean(actionLoading)} aria-busy={actionLoading === `${garage.id}-suspend`}
                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-500 text-xs font-semibold border border-red-200 disabled:opacity-50">
                                         <Ban className="h-3.5 w-3.5" /> Suspend
                                     </button>
                                 ) : (
-                                    <button onClick={() => handleAction(garage.id, 'activate')} disabled={actionLoading === `${garage.id}-activate`}
+                                    <button type="button" onClick={() => handleAction(garage.id, 'activate')} disabled={Boolean(actionLoading)} aria-busy={actionLoading === `${garage.id}-activate`}
                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 text-sky-600 text-xs font-semibold border border-sky-200 disabled:opacity-50">
                                         <CheckCircle2 className="h-3.5 w-3.5" /> Activate
                                     </button>
@@ -325,11 +300,11 @@ const AdminGarages = () => {
                 <div className="flex items-center justify-between">
                     <p className="text-slate-500 text-sm">Page {page} of {totalPages} · {total} garages</p>
                     <div className="flex items-center gap-2">
-                        <button onClick={() => fetchGarages(page - 1, search)} disabled={page <= 1}
+                        <button type="button" onClick={() => fetchGarages(page - 1, search)} disabled={page <= 1}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
                             <ChevronLeft className="h-4 w-4" /> Previous
                         </button>
-                        <button onClick={() => fetchGarages(page + 1, search)} disabled={page >= totalPages}
+                        <button type="button" onClick={() => fetchGarages(page + 1, search)} disabled={page >= totalPages}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
                             Next <ChevronRight className="h-4 w-4" />
                         </button>

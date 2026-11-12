@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useId, useRef } from 'react';
 import { 
     X, 
     RotateCcw, 
@@ -8,7 +8,9 @@ import {
     ArrowRight,
     HelpCircle
 } from 'lucide-react';
-import { apiPost } from '../../utils/api';
+import { apiPost, getErrorMessage, idempotencyHeaders, isIdempotencyInProgress } from '../../utils/api';
+import { useDialog } from '../../hooks/useDialog';
+import { useIdempotencyKeys } from '../../hooks/useIdempotencyKeys';
 
 const RefundModal = ({
     isOpen,
@@ -24,6 +26,10 @@ const RefundModal = ({
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [successResult, setSuccessResult] = useState(null);
+    const submittingRef = useRef(false);
+    const keys = useIdempotencyKeys();
+    const { dialogProps, titleId } = useDialog({ isOpen: Boolean(isOpen && payment), onClose });
+    const fieldId = useId();
 
     const originalAmount = parseFloat(payment?.amount) || 0;
     const alreadyRefunded = parseFloat(payment?.totalRefundedAmount) || 0;
@@ -71,15 +77,20 @@ const RefundModal = ({
             return;
         }
 
+        if (submittingRef.current) return;
+        submittingRef.current = true;
         setSubmitting(true);
         setError('');
 
+        const targetId = payment.id || payment._id || payment.paymentId || payment.razorpayPaymentId;
+        // One key per (payment, amount, reason) attempt; a retry of the same attempt reuses it.
+        const scope = `refund:${targetId}:${amt}:${finalReason}`;
         try {
-            const targetId = payment.id || payment._id || payment.paymentId || payment.razorpayPaymentId;
             const res = await apiPost(`/payments/${targetId}/refund`, {
                 amount: amt,
                 reason: finalReason
-            });
+            }, { headers: idempotencyHeaders(keys.keyFor(scope)) });
+            keys.release(scope);
 
             if (res && res.success) {
                 setSuccessResult(res);
@@ -90,16 +101,21 @@ const RefundModal = ({
                 setError(res?.message || 'Failed to process refund');
             }
         } catch (err) {
-            setError(err?.response?.data?.message || err.message || 'Error processing refund');
+            keys.settle(scope, err);
+            setError(isIdempotencyInProgress(err)
+                ? 'This refund is already being processed. Please wait before trying again.'
+                : getErrorMessage(err, 'Error processing refund'));
         } finally {
+            submittingRef.current = false;
             setSubmitting(false);
         }
     };
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-            <div 
-                className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]"
+            <div
+                {...dialogProps}
+                className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] focus:outline-none"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -110,15 +126,16 @@ const RefundModal = ({
                         </div>
                         <div>
                             <span className="text-[10px] sm:text-xs font-bold text-violet-700 uppercase tracking-widest block">Refund Gateway</span>
-                            <h2 className="text-lg font-black text-slate-900">Initiate Payment Refund</h2>
+                            <h2 id={titleId} className="text-lg font-black text-slate-900">Initiate Payment Refund</h2>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
                         className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
-                        aria-label="Close"
+                        type="button"
+                        aria-label="Close refund dialog"
                     >
-                        <X className="h-5 w-5" />
+                        <X className="h-5 w-5" aria-hidden="true" />
                     </button>
                 </div>
 
@@ -132,7 +149,7 @@ const RefundModal = ({
                             <div>
                                 <h3 className="text-xl font-extrabold text-slate-900">Refund Processed Successfully</h3>
                                 <p className="text-xs text-slate-500 mt-1">
-                                    The refund has been transmitted to Razorpay and will credit the customer's bank account in 5–7 working days.
+                                    The refund has been transmitted to the payment gateway (Cashfree) and will credit the customer's bank account in 5–7 working days.
                                 </p>
                             </div>
 
@@ -176,8 +193,8 @@ const RefundModal = ({
                             </div>
 
                             {error && (
-                                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-semibold flex items-center gap-2">
-                                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                                <div role="alert" className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-semibold flex items-center gap-2">
+                                    <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
                                     <span>{error}</span>
                                 </div>
                             )}
@@ -186,12 +203,13 @@ const RefundModal = ({
                                 <>
                                     {/* Type Selection */}
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                                        <p id={`${fieldId}-type`} className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
                                             Refund Type
-                                        </label>
-                                        <div className="grid grid-cols-2 gap-3">
+                                        </p>
+                                        <div role="group" aria-labelledby={`${fieldId}-type`} className="grid grid-cols-2 gap-3">
                                             <button
                                                 type="button"
+                                                aria-pressed={isFullRefund}
                                                 onClick={handleSelectFullRefund}
                                                 className={`p-3 rounded-2xl border text-xs font-bold transition-all flex flex-col items-center gap-1 ${
                                                     isFullRefund
@@ -204,6 +222,7 @@ const RefundModal = ({
                                             </button>
                                             <button
                                                 type="button"
+                                                aria-pressed={!isFullRefund}
                                                 onClick={() => {
                                                     setIsFullRefund(false);
                                                     setRefundAmount('');
@@ -223,7 +242,7 @@ const RefundModal = ({
                                     {/* Amount Input */}
                                     <div className="space-y-1.5">
                                         <div className="flex justify-between items-center text-xs">
-                                            <label className="font-bold text-slate-700 uppercase tracking-wider">
+                                            <label htmlFor={`${fieldId}-amount`} className="font-bold text-slate-700 uppercase tracking-wider">
                                                 Refund Amount (₹)
                                             </label>
                                             <span className="text-[11px] text-slate-400 font-medium">Max: ₹{maxRefundable.toLocaleString('en-IN')}</span>
@@ -233,6 +252,7 @@ const RefundModal = ({
                                                 <IndianRupee className="h-4 w-4" />
                                             </div>
                                             <input
+                                                id={`${fieldId}-amount`}
                                                 type="number"
                                                 min="1"
                                                 max={maxRefundable}
@@ -248,10 +268,11 @@ const RefundModal = ({
 
                                     {/* Reason */}
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                                        <label htmlFor={`${fieldId}-reason`} className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
                                             Reason for Refund
                                         </label>
                                         <select
+                                            id={`${fieldId}-reason`}
                                             value={reason}
                                             onChange={(e) => setReason(e.target.value)}
                                             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white"
@@ -266,6 +287,7 @@ const RefundModal = ({
 
                                         {reason === 'Other' && (
                                             <textarea
+                                                aria-label="Describe the refund reason"
                                                 rows="2"
                                                 value={customReason}
                                                 onChange={(e) => setCustomReason(e.target.value)}
@@ -319,6 +341,7 @@ const RefundModal = ({
                                 type="button"
                                 onClick={handleSubmitRefund}
                                 disabled={submitting}
+                                aria-busy={submitting}
                                 className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 transition-all shadow-md shadow-violet-500/20 flex items-center gap-2 disabled:opacity-50"
                             >
                                 {submitting ? (

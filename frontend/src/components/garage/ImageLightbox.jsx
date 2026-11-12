@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useDialog } from '../../hooks/useDialog';
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { getPhotoUrl } from '../../utils/imageUrl';
 
 const ImageLightbox = ({ images = [], currentIndex = 0, onClose = () => {}, onIndexChange = () => {} }) => {
   const [zoom, setZoom] = useState(1);
+  const hasImages = Boolean(images && images.length > 0);
+  const { dialogProps, titleId } = useDialog({ isOpen: hasImages, onClose });
 
   if (!images || images.length === 0) return null;
 
@@ -30,12 +33,16 @@ const ImageLightbox = ({ images = [], currentIndex = 0, onClose = () => {}, onIn
 
   return (
     <div
+      {...dialogProps}
       onClick={onClose}
-      className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200 focus:outline-none"
     >
+      <h2 id={titleId} className="sr-only">Photo viewer</h2>
       {/* Close button */}
       <button
+        type="button"
         onClick={onClose}
+        aria-label="Close photo viewer"
         className="absolute top-4 right-4 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-50"
       >
         <X className="w-6 h-6" />
@@ -49,7 +56,9 @@ const ImageLightbox = ({ images = [], currentIndex = 0, onClose = () => {}, onIn
       {/* Prev button */}
       {images.length > 1 && (
         <button
+          type="button"
           onClick={handlePrev}
+          aria-label="Previous photo"
           className="absolute left-4 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-110 z-50"
         >
           <ChevronLeft className="w-6 h-6" />
@@ -71,6 +80,7 @@ const ImageLightbox = ({ images = [], currentIndex = 0, onClose = () => {}, onIn
 
         {/* Zoom Control Pill */}
         <button
+          type="button"
           onClick={toggleZoom}
           className="absolute bottom-4 right-4 p-2 rounded-xl bg-slate-900/80 backdrop-blur-md text-white border border-white/10 flex items-center gap-1.5 text-xs font-bold"
         >
@@ -81,7 +91,9 @@ const ImageLightbox = ({ images = [], currentIndex = 0, onClose = () => {}, onIn
       {/* Next button */}
       {images.length > 1 && (
         <button
+          type="button"
           onClick={handleNext}
+          aria-label="Next photo"
           className="absolute right-4 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-110 z-50"
         >
           <ChevronRight className="w-6 h-6" />

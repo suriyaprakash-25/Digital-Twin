@@ -1,33 +1,33 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { useEscapeKey } from '../hooks/useEscapeKey';
+import { useDialog } from '../hooks/useDialog';
 
 const PrivacyPolicyModal = ({ isOpen, onClose }) => {
-  useEscapeKey(onClose, isOpen);
+  const { dialogProps, titleId } = useDialog({ isOpen, onClose });
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-[700px] bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[80vh] border border-slate-200/50">
-        
+      <div className="relative w-full max-w-[700px] bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[80vh] border border-slate-200/50 focus:outline-none" {...dialogProps}>
+
         {/* Sticky Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white/80 backdrop-blur-md z-10">
           <div className="flex items-center gap-3">
-            <img 
-              src="/logo-removebg-preview.png" 
-              alt="DrivePortz Logo" 
-              style={{ height: '44px', objectFit: 'contain' }} 
+            <img
+              src="/logo-removebg-preview.png"
+              alt="DrivePortz Logo"
+              style={{ height: '44px', objectFit: 'contain' }}
             />
             <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+              <h2 id={titleId} className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                 DrivePortz Privacy Policy
               </h2>
               <p className="text-sm font-medium text-slate-500 mt-1">
@@ -35,8 +35,10 @@ const PrivacyPolicyModal = ({ isOpen, onClose }) => {
               </p>
             </div>
           </div>
-          <button 
+          <button
+            type="button"
             onClick={onClose}
+            aria-label="Close privacy policy"
             className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
           >
             <X className="h-5 w-5" />

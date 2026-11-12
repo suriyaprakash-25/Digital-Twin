@@ -1,43 +1,33 @@
-import { API_BASE_URL } from '../../utils/config';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import FloatingButton from './FloatingButton';
 import CopilotWindow from './CopilotWindow';
 import { FEATURES } from '../../config/features';
+import { apiDelete, apiGet, apiPost } from '../../utils/api';
+import { useAuth } from '../../context/authContextCore';
+import { useToast } from '../../context/toastContextCore';
+import { getErrorMessage } from '../../utils/api';
 
 const Copilot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [userName, setUserName] = useState('');
-  const [userRole, setUserRole] = useState('USER');
+  const { user, role, isAuthenticated } = useAuth();
+  const { showError } = useToast();
+  const userName = user?.name || '';
+  const userRole = role || 'USER';
   const [activeVehicleId, setActiveVehicleId] = useState(null);
 
   // Load chat history on mount
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!isAuthenticated) return;
 
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          try {
-            const parsed = JSON.parse(storedUser);
-            setUserName(parsed.name);
-            setUserRole(parsed.role || 'USER');
-          } catch (error) {
-            console.warn('Ignoring malformed cached user data:', error);
-          }
-        }
+        const data = await apiGet('/copilot/history');
 
-        const res = await axios.get(`${API_BASE_URL}/api/copilot/history`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (res.data.success && res.data.data) {
+        if (data.success && data.data) {
           const history = [];
-          res.data.data.forEach(item => {
+          data.data.forEach(item => {
             history.push({ text: item.message, isUser: true, timestamp: item.createdAt, hasImage: item.hasImage });
             if (item.response) {
               history.push({ 
@@ -59,13 +49,12 @@ const Copilot = () => {
     if (isOpen && messages.length === 0) {
       fetchHistory();
     }
-  }, [isOpen, messages.length]);
+  }, [isOpen, messages.length, isAuthenticated]);
 
   const handleSendMessage = async (text, imageBase64 = null) => {
     if (!text?.trim() && !imageBase64) return;
 
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!isAuthenticated) return;
 
     if (!FEATURES.AI_DOCTOR && text) {
       const lowerText = text.toLowerCase();
@@ -88,16 +77,13 @@ const Copilot = () => {
     setIsLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/copilot/chat`, 
-        { message: text, activeVehicleId, imageBase64 },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const data = await apiPost('/copilot/chat', { message: text, activeVehicleId, imageBase64 });
 
-      if (res.data.success) {
+      if (data.success) {
         const aiMsg = { 
-          text: res.data.data.response,
-          type: res.data.data.type || 'text',
-          payload: res.data.data.payload || null,
+          text: data.data.response,
+          type: data.data.type || 'text',
+          payload: data.data.payload || null,
           isUser: false, 
           timestamp: new Date() 
         };
@@ -118,13 +104,10 @@ const Copilot = () => {
 
   const handleClearChat = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_BASE_URL}/api/copilot/history`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiDelete('/copilot/history');
       setMessages([]);
     } catch (error) {
-      console.error('Error clearing chat:', error);
+      showError(getErrorMessage(error, 'Could not clear the chat history.'));
     }
   };
 

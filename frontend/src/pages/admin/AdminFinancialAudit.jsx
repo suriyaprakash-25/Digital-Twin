@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import {
   FileText,
   Search,
@@ -15,11 +14,11 @@ import {
   Lock,
   Receipt
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/toastContextCore';
+import { apiGet, apiGetPage, getErrorMessage } from '../../utils/api';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import ErrorState from '../../components/common/ErrorState';
 
 export default function AdminFinancialAudit() {
-  const { showError } = useToast();
   const [summary, setSummary] = useState({
     totalLogs: 0,
     settlementActions: 0,
@@ -30,9 +29,11 @@ export default function AdminFinancialAudit() {
 
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
   // Filters
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 350);
   const [actionFilter, setActionFilter] = useState('ALL');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -42,9 +43,9 @@ export default function AdminFinancialAudit() {
 
   const fetchSummary = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/admin/financial-audit/summary`, { headers: getAuthHeaders() });
-      if (res.data?.success) {
-        setSummary(res.data.summary);
+      const data = await apiGet('/admin/financial-audit/summary');
+      if (data?.success) {
+        setSummary(data.summary);
       }
     } catch (err) {
       console.error('Error fetching audit summary:', err);
@@ -53,6 +54,7 @@ export default function AdminFinancialAudit() {
 
   const fetchAuditLogs = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const params = {
         page,
@@ -60,21 +62,21 @@ export default function AdminFinancialAudit() {
         action: actionFilter !== 'ALL' ? actionFilter : undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
-        search: search || undefined
+        search: debouncedSearch || undefined
       };
 
-      const res = await axios.get(`${API_BASE_URL}/api/admin/financial-audit`, { params, headers: getAuthHeaders() });
-      if (res.data?.success) {
-        setLogs(res.data.auditLogs || []);
-        setTotalPages(res.data.totalPages || 1);
-        setTotalCount(res.data.totalCount || 0);
+      const { data, total, totalPages: headerPages } = await apiGetPage('/admin/financial-audit', params);
+      if (data?.success) {
+        setLogs(data.auditLogs || []);
+        setTotalPages(data.totalPages || headerPages || 1);
+        setTotalCount(data.totalCount || total || 0);
       }
-    } catch {
-      showError('Failed to load financial audit logs');
+    } catch (err) {
+      setLoadError(getErrorMessage(err, 'Failed to load financial audit logs'));
     } finally {
       setLoading(false);
     }
-  }, [page, actionFilter, dateFrom, dateTo, search, showError]);
+  }, [page, actionFilter, dateFrom, dateTo, debouncedSearch]);
 
   useEffect(() => {
     fetchSummary();
@@ -163,17 +165,19 @@ export default function AdminFinancialAudit() {
       <div className="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-64">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
             <input
-              type="text"
+              type="search"
+              aria-label="Search audit logs"
               placeholder="Search ID, actor, action..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-500"
             />
           </div>
 
           <select
+            aria-label="Filter by action"
             value={actionFilter}
             onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900"
@@ -193,19 +197,23 @@ export default function AdminFinancialAudit() {
         <div className="flex items-center gap-2">
           <input
             type="date"
+            aria-label="From date"
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
+            onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
             className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900"
           />
           <span className="text-slate-500 text-xs">to</span>
           <input
             type="date"
+            aria-label="To date"
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
+            onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
             className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900"
           />
         </div>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchAuditLogs} retrying={loading} />}
 
       {/* Logs Table */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
@@ -280,21 +288,25 @@ export default function AdminFinancialAudit() {
             </span>
             <div className="flex items-center gap-2">
               <button
+                type="button"
+                aria-label="Previous page"
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               </button>
               <span className="text-xs font-semibold text-slate-600 px-2">
                 Page {page} of {totalPages}
               </span>
               <button
+                type="button"
+                aria-label="Next page"
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>

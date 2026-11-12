@@ -11,8 +11,10 @@ import {
   Clock,
   AlertCircle
 } from 'lucide-react';
+import { useDialog } from '../../hooks/useDialog';
 
 const CommissionDetailsModal = ({ isOpen, onClose, earning, onViewInvoice }) => {
+  const { dialogProps, titleId } = useDialog({ isOpen: Boolean(isOpen && earning), onClose });
   if (!isOpen || !earning) return null;
 
   const gross = parseFloat(earning.grossAmount) || 0;
@@ -25,16 +27,19 @@ const CommissionDetailsModal = ({ isOpen, onClose, earning, onViewInvoice }) => 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200"
+        {...dialogProps}
+        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="bg-slate-900 text-white p-6 relative">
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-2 mb-2">
             <span className="p-2 bg-teal-500/20 text-teal-400 rounded-xl border border-teal-500/30">
@@ -44,7 +49,7 @@ const CommissionDetailsModal = ({ isOpen, onClose, earning, onViewInvoice }) => 
               Commission Breakdown
             </span>
           </div>
-          <h2 className="text-xl font-black tracking-tight text-white">
+          <h2 id={titleId} className="text-xl font-black tracking-tight text-white">
             {earning.invoiceNumber || 'Financial Ledger Entry'}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
@@ -74,7 +79,7 @@ const CommissionDetailsModal = ({ isOpen, onClose, earning, onViewInvoice }) => 
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Payment ID</span>
               <span className="font-mono text-[11px] font-bold text-slate-700 block truncate">
-                {earning.razorpayPaymentId || earning.paymentId || '—'}
+                {earning.gatewayPaymentId || earning.cfPaymentId || earning.razorpayPaymentId || earning.paymentId || '—'}
               </span>
             </div>
           </div>

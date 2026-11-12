@@ -1,7 +1,9 @@
 import { Outlet } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
-import { tryRegisterFcmToken } from '../utils/fcm';
+import SkipLink from './common/SkipLink';
+import PageLoader from './common/PageLoader';
+import { useAuth } from '../context/authContextCore';
 import { Menu, LogOut } from 'lucide-react';
 import Copilot from './copilot/Copilot';
 import FeedbackButton from './feedback/FeedbackButton';
@@ -10,12 +12,15 @@ import MobileBottomNav from './MobileBottomNav';
 
 const MainLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { isAuthenticated, logout } = useAuth();
 
+    // Firebase is large; load it only once a signed-in layout is on screen.
     useEffect(() => {
-        const authToken = localStorage.getItem('token');
-        if (!authToken) return;
-        tryRegisterFcmToken({ authToken, requestPermission: false }).catch(() => {});
-    }, []);
+        if (!isAuthenticated) return;
+        import('../utils/fcm')
+            .then(({ tryRegisterFcmToken }) => tryRegisterFcmToken({ requestPermission: false }))
+            .catch(() => {});
+    }, [isAuthenticated]);
 
     // Close sidebar when viewport grows to desktop
     useEffect(() => {
@@ -25,13 +30,14 @@ const MainLayout = () => {
         return () => mq.removeEventListener('change', handler);
     }, []);
 
-    const handleLogout = () => {
-        localStorage.clear();
+    const handleLogout = async () => {
+        await logout();
         window.location.replace('/');
     };
 
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+            <SkipLink />
             <Sidebar
                 onLogout={handleLogout}
                 isOpen={sidebarOpen}
@@ -68,11 +74,13 @@ const MainLayout = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-auto relative">
+                <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto relative focus:outline-none">
                     <div className="mx-auto min-h-full p-3 md:p-6 lg:p-8 pb-24 lg:pb-8">
-                        <Outlet />
+                        <Suspense fallback={<PageLoader />}>
+                            <Outlet />
+                        </Suspense>
                     </div>
-                </div>
+                </main>
 
             </div>
 

@@ -1,5 +1,4 @@
-import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
+import { createElement, useCallback, useEffect, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -14,8 +13,10 @@ import {
   Users,
   Wrench
 } from 'lucide-react';
-import { API_BASE_URL } from '../../utils/config';
+import { apiGet, apiPatch, getErrorMessage } from '../../utils/api';
 import { useToast } from '../../context/toastContextCore';
+import { useAuth } from '../../context/authContextCore';
+import ErrorState from '../../components/common/ErrorState';
 
 const queueLabels = {
   PILOT_OPERATIONS: 'Pilot Operations',
@@ -52,49 +53,51 @@ function KpiCard({ label, value, helper, icon }) {
 
 export default function AdminPilotOperations() {
   const { showToast } = useToast();
-  const token = localStorage.getItem('token');
-  const adminName = localStorage.getItem('name') || 'Admin on duty';
-  const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
+  const { user } = useAuth();
+  const adminName = user?.name || 'Admin on duty';
 
   const [days, setDays] = useState('30');
   const [analytics, setAnalytics] = useState(null);
   const [support, setSupport] = useState([]);
   const [supportMetrics, setSupportMetrics] = useState({ open: 0, urgent: 0, slaBreached: 0, total: 0 });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const [analyticsRes, supportRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/admin/pilot/analytics?days=${days}`, headers),
-        axios.get(`${API_BASE_URL}/api/admin/pilot/support?limit=50`, headers)
+      const [analyticsData, supportData] = await Promise.all([
+        apiGet(`/admin/pilot/analytics?days=${days}`),
+        apiGet('/admin/pilot/support?limit=50')
       ]);
-      setAnalytics(analyticsRes.data?.analytics || null);
-      setSupport(supportRes.data?.items || []);
-      setSupportMetrics(supportRes.data?.metrics || { open: 0, urgent: 0, slaBreached: 0, total: 0 });
+      setAnalytics(analyticsData?.analytics || null);
+      setSupport(supportData?.items || []);
+      setSupportMetrics(supportData?.metrics || { open: 0, urgent: 0, slaBreached: 0, total: 0 });
     } catch (error) {
-      showToast(error.response?.data?.msg || 'Failed to load pilot operations', 'error');
+      setLoadError(getErrorMessage(error, 'Failed to load pilot operations'));
     } finally {
       setLoading(false);
     }
-  }, [days, headers, showToast]);
+  }, [days]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const updateSupport = async (id, patch) => {
+    if (updatingId) return;
     setUpdatingId(id);
     try {
-      const res = await axios.patch(`${API_BASE_URL}/api/admin/pilot/support/${id}`, patch, headers);
-      const updated = res.data?.item;
+      const data = await apiPatch(`/admin/pilot/support/${id}`, patch);
+      const updated = data?.item;
       if (updated) {
         setSupport((items) => items.map((item) => (item._id === id ? updated : item)));
       }
       showToast('Support item updated', 'success');
     } catch (error) {
-      showToast(error.response?.data?.msg || 'Failed to update support item', 'error');
+      showToast(getErrorMessage(error, 'Failed to update support item'), 'error');
     } finally {
       setUpdatingId(null);
     }
@@ -135,11 +138,13 @@ export default function AdminPilotOperations() {
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
             Refresh
           </button>
         </div>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={load} retrying={loading} />}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -204,6 +209,7 @@ export default function AdminPilotOperations() {
                   </td>
                   <td className="px-4 py-3">
                     <select
+                      aria-label={`Priority for ${item.name || 'support item'}`}
                       value={item.supportPriority || 'MEDIUM'}
                       disabled={updatingId === item._id}
                       onChange={(event) => updateSupport(item._id, { supportPriority: event.target.value })}
@@ -237,6 +243,7 @@ export default function AdminPilotOperations() {
                   </td>
                   <td className="px-4 py-3">
                     <select
+                      aria-label={`Status for ${item.name || 'support item'}`}
                       value={item.status || 'NEW'}
                       disabled={updatingId === item._id}
                       onChange={(event) => updateSupport(item._id, { status: event.target.value })}

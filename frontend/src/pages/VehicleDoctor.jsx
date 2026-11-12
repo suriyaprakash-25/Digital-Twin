@@ -1,6 +1,5 @@
-import { API_BASE_URL } from '../utils/config';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { apiGet, apiUpload, getErrorMessage } from '../utils/api';
 import { Stethoscope, FileText, Camera, Loader2, ArrowRight } from 'lucide-react';
 import VehicleSelector from '../components/vehicle-doctor/VehicleSelector';
 import SymptomsChecklist from '../components/vehicle-doctor/SymptomsChecklist';
@@ -24,13 +23,9 @@ const VehicleDoctor = () => {
 
     const fetchVehicles = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setVehicles(res.data);
+        setVehicles(await apiGet('/vehicles/myvehicles'));
       } catch (err) {
-        console.error('Failed to fetch vehicles', err);
+        setError(getErrorMessage(err, 'Could not load your vehicles.'));
       }
     };
     fetchVehicles();
@@ -88,7 +83,6 @@ const VehicleDoctor = () => {
     setDiagnosisResult(null);
 
     try {
-      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('vehicleId', selectedVehicleId);
       formData.append('symptoms', symptoms);
@@ -98,17 +92,11 @@ const VehicleDoctor = () => {
         formData.append('images', image);
       });
 
-      const res = await axios.post(`${API_BASE_URL}/api/vehicle-doctor/analyze`, formData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const data = await apiUpload('/vehicle-doctor/analyze', formData);
 
-      setDiagnosisResult(res.data);
+      setDiagnosisResult(data);
     } catch (err) {
-      console.error('Diagnosis Failed:', err);
-      setError(err.response?.data?.msg || 'Failed to analyze vehicle. Please try again.');
+      setError(getErrorMessage(err, 'Failed to analyze vehicle. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -156,10 +144,11 @@ const VehicleDoctor = () => {
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-teal-600" />
-            Describe the Problem
+            <FileText className="w-5 h-5 text-teal-600" aria-hidden="true" />
+            <label htmlFor="doctor-symptoms">Describe the Problem</label>
           </h3>
           <textarea
+            id="doctor-symptoms"
             value={symptoms}
             onChange={(e) => setSymptoms(e.target.value)}
             placeholder="E.g., I hear a knocking sound from the engine when I accelerate..."
@@ -176,10 +165,12 @@ const VehicleDoctor = () => {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
             <Camera className="w-5 h-5 text-teal-600" />
-            Upload Images (Optional)
+            <label htmlFor="doctor-images">Upload Images (Optional)</label>
           </h3>
-          <p className="text-sm text-slate-500 mb-4">Have a picture of a warning light, leak, or damaged part? Upload it here.</p>
+          <p id="doctor-images-hint" className="text-sm text-slate-500 mb-4">Have a picture of a warning light, leak, or damaged part? Upload it here.</p>
           <input
+            id="doctor-images"
+            aria-describedby="doctor-images-hint"
             type="file"
             multiple
             accept="image/*"
@@ -197,7 +188,7 @@ const VehicleDoctor = () => {
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-sm font-medium">
+          <div role="alert" className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-sm font-medium">
             {error}
           </div>
         )}

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import {
   CheckCircle2,
   AlertCircle,
@@ -11,7 +10,7 @@ import {
   Home,
   RefreshCw
 } from 'lucide-react';
-import { API_BASE_URL } from '../utils/config';
+import { apiPost, getErrorMessage } from '../utils/api';
 
 export default function PaymentReturn() {
   const location = useLocation();
@@ -37,31 +36,24 @@ export default function PaymentReturn() {
       }
 
       try {
-        const token = localStorage.getItem('token');
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-        const res = await axios.post(
-          `${API_BASE_URL}/api/payments/verify`,
-          { cfOrderId: orderId, orderId },
-          { headers }
-        );
+        const data = await apiPost('/payments/verify', { cfOrderId: orderId, orderId });
 
         if (!isMounted) return;
 
-        if (res.data?.success) {
-          setPayment(res.data.payment || { cfOrderId: orderId, status: 'CAPTURED' });
+        if (data?.success) {
+          setPayment(data.payment || { cfOrderId: orderId, status: 'CAPTURED' });
           setVerifying(false);
         } else {
-          setErrorMessage(res.data?.message || 'Payment status could not be verified yet.');
+          setErrorMessage(data?.message || 'Payment status could not be verified yet.');
           setVerifying(false);
         }
       } catch (err) {
         if (!isMounted) return;
         console.error('PaymentReturn verification error:', err);
-        setErrorMessage(
-          err.response?.data?.message ||
+        setErrorMessage(getErrorMessage(
+          err,
           'Payment confirmation is still processing. If money was debited, your invoice will update shortly.'
-        );
+        ));
         setVerifying(false);
       }
     }
@@ -97,7 +89,7 @@ export default function PaymentReturn() {
         {/* Header Accent Banner */}
         <div className={`h-3 w-full ${verifying ? 'bg-teal-500 animate-pulse' : payment ? 'bg-emerald-500' : 'bg-amber-500'}`} />
 
-        <div className="p-6 md:p-8">
+        <main className="p-6 md:p-8" aria-live="polite">
           {/* STATE 1: Verifying */}
           {verifying && (
             <div className="py-8 flex flex-col items-center">
@@ -230,7 +222,7 @@ export default function PaymentReturn() {
               </div>
             </div>
           )}
-        </div>
+        </main>
       </div>
     </div>
   );

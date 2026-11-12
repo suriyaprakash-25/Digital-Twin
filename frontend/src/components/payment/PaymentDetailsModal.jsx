@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    X, 
-    CheckCircle2, 
-    XCircle, 
-    RotateCcw, 
-    Clock, 
-    CreditCard, 
-    Building2, 
-    Car, 
-    Wrench, 
-    Receipt, 
-    FileText, 
+import {
+    X,
+    CheckCircle2,
+    XCircle,
+    RotateCcw,
+    Clock,
+    CreditCard,
+    Building2,
+    Car,
+    Wrench,
+    Receipt,
+    FileText,
     IndianRupee,
     ExternalLink,
     AlertCircle
 } from 'lucide-react';
 import { apiGet } from '../../utils/api';
+import { useDialog } from '../../hooks/useDialog';
 
 const PaymentDetailsModal = ({
     isOpen,
@@ -26,6 +27,7 @@ const PaymentDetailsModal = ({
     onViewReceipt
 }) => {
     const [details, setDetails] = useState(paymentData || null);
+    const { dialogProps, titleId } = useDialog({ isOpen, onClose });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -65,22 +67,23 @@ const PaymentDetailsModal = ({
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-            <div 
-                className="bg-white w-full max-w-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]"
+            <div
+                {...dialogProps}
+                className="bg-white w-full max-w-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] focus:outline-none"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
                         <span className="text-[10px] sm:text-xs font-bold text-teal-600 uppercase tracking-widest block mb-0.5">Transaction Audit</span>
-                        <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
+                        <h2 id={titleId} className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
                             Payment Details
                         </h2>
                     </div>
                     <button
                         onClick={onClose}
                         className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
-                        aria-label="Close"
+                        aria-label="Close payment details"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -160,7 +163,7 @@ const PaymentDetailsModal = ({
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">Method</span>
                                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-xl text-xs font-bold text-teal-300">
                                         <CreditCard className="h-3.5 w-3.5" />
-                                        {details.paymentMethod || 'Razorpay / Online'}
+                                        {details.paymentMethod || 'Online (payment gateway)'}
                                     </span>
                                 </div>
                             </div>
@@ -173,11 +176,11 @@ const PaymentDetailsModal = ({
                                 </div>
                                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Gateway Payment ID</span>
-                                    <span className="font-mono text-xs font-black text-slate-800 break-all">{details.paymentId || details.razorpayPaymentId || '—'}</span>
+                                    <span className="font-mono text-xs font-black text-slate-800 break-all">{details.paymentId || details.cashfreePaymentId || details.gatewayPaymentId || details.razorpayPaymentId || '—'}</span>
                                 </div>
                                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Gateway Order ID</span>
-                                    <span className="font-mono text-xs font-black text-slate-800 break-all">{details.orderId || details.razorpayOrderId || '—'}</span>
+                                    <span className="font-mono text-xs font-black text-slate-800 break-all">{details.orderId || details.cfOrderId || details.gatewayOrderId || details.razorpayOrderId || '—'}</span>
                                 </div>
                                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Payment Date</span>

@@ -1,34 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HelmetProvider } from 'react-helmet-async'
-import axios from 'axios'
 import './index.css'
-import 'leaflet/dist/leaflet.css'
 import App from './App.jsx'
-import { API_BASE_URL } from './utils/config'
 
-// Set up Axios interceptor for dynamic deployment API URL mapping
-axios.interceptors.request.use((config) => {
-  if (config.url && config.url.startsWith(`${API_BASE_URL}`)) {
-    config.url = config.url.replace(`${API_BASE_URL}`, API_BASE_URL);
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
-
-// Set up Axios interceptor for handling expired/invalid tokens globally
-axios.interceptors.response.use((response) => {
-  return response;
-}, (error) => {
-  if (error.response && error.response.status === 401 && error.response.data?.msg === 'Missing or invalid token') {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
-  }
-  return Promise.reject(error);
-});
-
+// HTTP concerns (base URL, auth header, global 401 handling) live in utils/api.js.
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

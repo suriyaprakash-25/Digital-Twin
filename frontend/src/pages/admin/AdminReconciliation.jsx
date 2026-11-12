@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import {
   Scale,
   IndianRupee,
@@ -18,9 +17,13 @@ import {
   FileText
 } from 'lucide-react';
 import ReconciliationDetailsModal from '../../components/reconciliation/ReconciliationDetailsModal';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import ErrorState from '../../components/common/ErrorState';
+import { useToast } from '../../context/toastContextCore';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { apiGet, apiGetPage, apiPost, getErrorMessage } from '../../utils/api';
 
 const AdminReconciliation = () => {
+  const { showSuccess, showError } = useToast();
   const [reconciliations, setReconciliations] = useState([]);
   const [summary, setSummary] = useState({
     totalChecked: 0,
@@ -32,9 +35,11 @@ const AdminReconciliation = () => {
     totalMismatchAmount: 0
   });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [runningBatch, setRunningBatch] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 350);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -42,50 +47,43 @@ const AdminReconciliation = () => {
 
   const fetchReconciliations = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const [listRes, summaryRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/admin/reconciliation`, {
-          headers: getAuthHeaders(),
-          params: { page, limit: 20, status: statusFilter, search }
-        }),
-        axios.get(`${API_BASE_URL}/api/admin/reconciliation/summary`, {
-          headers: getAuthHeaders()
-        })
+      const [listRes, summaryData] = await Promise.all([
+        apiGetPage('/admin/reconciliation', { page, limit: 20, status: statusFilter, search: debouncedSearch }),
+        apiGet('/admin/reconciliation/summary')
       ]);
 
       if (listRes.data?.success) {
         setReconciliations(listRes.data.reconciliations || []);
-        setTotalPages(listRes.data.totalPages || 1);
+        setTotalPages(listRes.data.totalPages || listRes.totalPages || 1);
       }
 
-      if (summaryRes.data?.success) {
-        setSummary(summaryRes.data.summary);
+      if (summaryData?.success) {
+        setSummary(summaryData.summary);
       }
     } catch (err) {
-      console.error('Error fetching reconciliations:', err);
+      setLoadError(getErrorMessage(err, 'Could not load reconciliation records.'));
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, debouncedSearch, statusFilter]);
 
   useEffect(() => {
     fetchReconciliations();
   }, [fetchReconciliations]);
 
   const handleRunBatch = async () => {
+    if (runningBatch) return;
     setRunningBatch(true);
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/admin/reconciliation/run`,
-        { hours: 48, limit: 50 },
-        { headers: getAuthHeaders() }
-      );
-      if (res.data?.success) {
-        alert(res.data.message || 'Reconciliation batch completed');
+      const data = await apiPost('/admin/reconciliation/run', { hours: 48, limit: 50 });
+      if (data?.success) {
+        showSuccess(data.message || 'Reconciliation batch completed');
         fetchReconciliations();
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Error triggering batch reconciliation');
+      showError(getErrorMessage(err, 'Error triggering batch reconciliation'));
     } finally {
       setRunningBatch(false);
     }
@@ -108,12 +106,13 @@ const AdminReconciliation = () => {
             Payment Reconciliation Engine
           </h1>
           <p className="text-xs md:text-sm text-slate-500 font-medium">
-            Automated multi-way cross verification between Razorpay gateway, DrivePortz invoices, and ledger records
+            Automated multi-way cross verification between the payment gateway, DrivePortz invoices, and ledger records
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleRunBatch}
             disabled={runningBatch}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 transition-colors shadow-2xs"
@@ -122,7 +121,9 @@ const AdminReconciliation = () => {
             <span>{runningBatch ? 'Reconciling...' : 'Run 48h Reconciliation'}</span>
           </button>
           <button
+            type="button"
             onClick={fetchReconciliations}
+            disabled={loading}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -188,11 +189,12 @@ const AdminReconciliation = () => {
       {/* Controls */}
       <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:max-w-md">
-          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
-            type="text"
+            type="search"
+            aria-label="Search reconciliation records"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search invoice number, payment ID, garage..."
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500"
           />
@@ -203,7 +205,8 @@ const AdminReconciliation = () => {
             <button
               key={status}
               type="button"
-              onClick={() => setStatusFilter(status)}
+              aria-pressed={statusFilter === status}
+              onClick={() => { setStatusFilter(status); setPage(1); }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 statusFilter === status
                   ? 'bg-white text-slate-900 shadow-sm'
@@ -215,6 +218,8 @@ const AdminReconciliation = () => {
           ))}
         </div>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchReconciliations} retrying={loading} />}
 
       {/* Table */}
       <div className="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
@@ -239,7 +244,7 @@ const AdminReconciliation = () => {
                   <th className="py-3.5 px-4">Invoice / Payment</th>
                   <th className="py-3.5 px-4">Garage / Vehicle</th>
                   <th className="py-3.5 px-4">Expected</th>
-                  <th className="py-3.5 px-4">Razorpay</th>
+                  <th className="py-3.5 px-4">Gateway</th>
                   <th className="py-3.5 px-4">Variance</th>
                   <th className="py-3.5 px-4">Audited At</th>
                   <th className="py-3.5 px-4 pr-6 text-right">Action</th>
@@ -275,7 +280,7 @@ const AdminReconciliation = () => {
                       <td className="py-4 px-4">
                         <span className="font-bold text-slate-900 block">{r.invoiceNumber}</span>
                         <span className="font-mono text-[10px] text-slate-500 block truncate max-w-[120px]">
-                          {r.razorpayPaymentId || r.paymentId}
+                          {r.gatewayPaymentId || r.cfPaymentId || r.razorpayPaymentId || r.paymentId}
                         </span>
                       </td>
                       <td className="py-4 px-4">
@@ -286,7 +291,7 @@ const AdminReconciliation = () => {
                         ₹{Number(r.expectedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="py-4 px-4 font-bold text-slate-900">
-                        ₹{Number(r.razorpayAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        ₹{Number(r.gatewayAmount ?? r.razorpayAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="py-4 px-4 font-bold">
                         {r.amountDifference > 0 ? (
@@ -324,18 +329,20 @@ const AdminReconciliation = () => {
               <button
                 type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
+                aria-label="Previous page"
                 disabled={page === 1}
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                aria-label="Next page"
                 disabled={page === totalPages}
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           </div>

@@ -1,15 +1,14 @@
-import { API_BASE_URL } from '../utils/config';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { apiGet, apiPut, apiUpload, getErrorMessage } from '../utils/api';
+import { useAuth } from '../context/authContextCore';
+import { ROLES, normalizeRole } from '../utils/roles';
+import ErrorState from '../components/common/ErrorState';
 import {
   ArrowRight,
   Camera,
   Car,
-  CheckCircle,
   FileBadge2,
-  FileText,
-  ShieldCheck,
   Mail,
   MapPin,
   PencilLine,
@@ -17,7 +16,8 @@ import {
   Shield,
   Upload,
   User,
-  Wrench
+  Wrench,
+  LogOut
 } from 'lucide-react';
 import { useToast } from '../context/toastContextCore';
 
@@ -28,9 +28,9 @@ const StatCard = ({ label, value, tone }) => (
   </div>
 );
 
-const Field = ({ label, icon, children }) => (
+const Field = ({ id, label, icon, children }) => (
   <div className="space-y-1.5 pb-1 lg:pb-2">
-    <label className="text-xs md:text-sm font-bold text-slate-700 flex items-center gap-2">
+    <label htmlFor={id} className="text-xs md:text-sm font-bold text-slate-700 flex items-center gap-2">
       {icon}
       {label}
     </label>
@@ -39,7 +39,16 @@ const Field = ({ label, icon, children }) => (
 );
 
 const MyProfile = () => {
-  const token = localStorage.getItem('token');
+  const { updateUser, logout } = useAuth();
+  const [signingOutAll, setSigningOutAll] = useState(false);
+
+  const handleSignOutAllDevices = async () => {
+    if (signingOutAll) return;
+    if (!window.confirm('Sign out of DrivePortz on every device, including this one?')) return;
+    setSigningOutAll(true);
+    await logout({ allDevices: true });
+    window.location.replace('/login');
+  };
   const fileInputRef = useRef(null);
   const licenseInputRef = useRef(null);
   const [profile, setProfile] = useState({ name: '', email: '', phone: '', city: '', bio: '', role: 'USER', photoUrl: null, licenseDocumentUrl: null, createdAt: null });
@@ -52,8 +61,9 @@ const MyProfile = () => {
   const { showToast } = useToast();
   const [uploadingLicense, setUploadingLicense] = useState(false);
   const [photoError, setPhotoError] = useState(false);
-
-  const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+  const isGarageProfile = normalizeRole(profile.role) === ROLES.GARAGE;
 
   useEffect(() => {
     let cancelled = false;
@@ -61,22 +71,22 @@ const MyProfile = () => {
     async function load() {
       setLoading(true);
       try {
-        const [profileRes, vehiclesRes, bookingsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/auth/me`, headers),
-          axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers),
-          axios.get(`${API_BASE_URL}/api/bookings/my`, headers)
+        const [nextProfile, vehicleList, bookingList] = await Promise.all([
+          apiGet('/auth/me'),
+          apiGet('/vehicles/myvehicles'),
+          apiGet('/bookings/my')
         ]);
 
         if (cancelled) return;
-        const nextProfile = profileRes.data;
         setProfile(nextProfile);
         setOriginal(nextProfile);
         setPhotoError(false);
-        setVehicles(Array.isArray(vehiclesRes.data) ? vehiclesRes.data : []);
-        setBookings(Array.isArray(bookingsRes.data) ? bookingsRes.data : []);
+        setLoadError('');
+        setVehicles(Array.isArray(vehicleList) ? vehicleList : []);
+        setBookings(Array.isArray(bookingList) ? bookingList : []);
       } catch (err) {
         if (cancelled) return;
-        showToast(err.response?.data?.msg || 'Failed to load profile.', 'error');
+        setLoadError(getErrorMessage(err, 'Failed to load profile.'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -86,7 +96,7 @@ const MyProfile = () => {
     return () => {
       cancelled = true;
     };
-  }, [headers, showToast]);
+  }, [reloadKey]);
 
   const initials = profile.name
     ? profile.name.split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase()
@@ -108,31 +118,28 @@ const MyProfile = () => {
     bio: original.bio
   });
 
-  const persistUser = (nextUser) => {
-    const userRaw = localStorage.getItem('user');
-    const prevUser = userRaw ? JSON.parse(userRaw) : {};
-    localStorage.setItem('user', JSON.stringify({ ...prevUser, ...nextUser }));
-  };
+  // Keep the cached session user (sidebar, guards) in sync with profile edits.
+  const persistUser = (nextUser) => updateUser(nextUser);
 
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
 
     try {
-      const res = await axios.put(`${API_BASE_URL}/api/auth/me`, {
+      const data = await apiPut('/auth/me', {
         name: profile.name,
         email: profile.email,
         phone: profile.phone,
         city: profile.city,
         bio: profile.bio
-      }, headers);
+      });
 
-      setProfile((prev) => ({ ...prev, ...res.data.user }));
-      setOriginal((prev) => ({ ...prev, ...res.data.user }));
+      setProfile((prev) => ({ ...prev, ...data.user }));
+      setOriginal((prev) => ({ ...prev, ...data.user }));
       persistUser(profile);
       showToast('Profile updated successfully.', 'success');
     } catch (err) {
-      showToast(err.response?.data?.msg || 'Failed to save profile.', 'error');
+      showToast(getErrorMessage(err, 'Failed to save profile.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -147,19 +154,14 @@ const MyProfile = () => {
     setUploading(true);
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/me/photo`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      setProfile((prev) => ({ ...prev, photoUrl: res.data.photoUrl }));
-      setOriginal((prev) => ({ ...prev, photoUrl: res.data.photoUrl }));
+      const data = await apiUpload('/auth/me/photo', formData);
+      setProfile((prev) => ({ ...prev, photoUrl: data.photoUrl }));
+      setOriginal((prev) => ({ ...prev, photoUrl: data.photoUrl }));
       setPhotoError(false);
-      persistUser({ photoUrl: res.data.photoUrl });
+      persistUser({ photoUrl: data.photoUrl });
       showToast('Profile photo updated.', 'success');
     } catch (err) {
-      showToast(err.response?.data?.msg || 'Failed to upload photo.', 'error');
+      showToast(getErrorMessage(err, 'Failed to upload photo.'), 'error');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -175,18 +177,13 @@ const MyProfile = () => {
     setUploadingLicense(true);
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/me/license`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      setProfile((prev) => ({ ...prev, licenseDocumentUrl: res.data.licenseDocumentUrl }));
-      setOriginal((prev) => ({ ...prev, licenseDocumentUrl: res.data.licenseDocumentUrl }));
-      persistUser({ licenseDocumentUrl: res.data.licenseDocumentUrl });
+      const data = await apiUpload('/auth/me/license', formData);
+      setProfile((prev) => ({ ...prev, licenseDocumentUrl: data.licenseDocumentUrl }));
+      setOriginal((prev) => ({ ...prev, licenseDocumentUrl: data.licenseDocumentUrl }));
+      persistUser({ licenseDocumentUrl: data.licenseDocumentUrl });
       showToast('License uploaded successfully.', 'success');
     } catch (err) {
-      showToast(err.response?.data?.msg || 'Failed to upload license.', 'error');
+      showToast(getErrorMessage(err, 'Failed to upload license.'), 'error');
     } finally {
       setUploadingLicense(false);
       if (licenseInputRef.current) licenseInputRef.current.value = '';
@@ -195,8 +192,16 @@ const MyProfile = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-32">
+      <div role="status" aria-label="Loading profile" className="flex items-center justify-center py-32">
         <div className="h-12 w-12 animate-spin rounded-full border-b-4 border-teal-600" />
+      </div>
+    );
+  }
+
+  if (loadError && !original) {
+    return (
+      <div className="max-w-3xl mx-auto py-8">
+        <ErrorState title="Could not load your profile" message={loadError} onRetry={() => setReloadKey((k) => k + 1)} />
       </div>
     );
   }
@@ -227,15 +232,16 @@ const MyProfile = () => {
                   disabled={uploading}
                   className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-xl border border-white/20 bg-white text-slate-900 shadow-md transition hover:bg-slate-100 disabled:opacity-60"
                   title="Upload profile photo"
+                  aria-label="Upload profile photo"
                 >
                   {uploading ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" /> : <Camera className="h-3.5 w-3.5 md:h-4 md:w-4" />}
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} aria-label="Profile photo file" tabIndex={-1} />
               </div>
 
               <div>
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/30 bg-teal-500/15 px-2.5 py-0.5 md:px-3 md:py-1 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-teal-200">
-                  <Shield className="h-3 w-3 md:h-3.5 md:w-3.5" /> {profile.role === 'GARAGE' ? 'Garage Partner' : 'Member Profile'}
+                  <Shield className="h-3 w-3 md:h-3.5 md:w-3.5" /> {isGarageProfile ? 'Garage Partner' : 'Member Profile'}
                 </div>
                 <h1 className="mt-2 text-xl md:text-4xl font-black tracking-tight">{profile.name || 'Your Profile'}</h1>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-xs md:text-sm text-slate-300">
@@ -265,25 +271,25 @@ const MyProfile = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-3 p-4 md:gap-6 md:p-8 md:grid-cols-2">
-            <Field label="Full Name" icon={<User className="h-3.5 w-3.5 text-slate-400" />}>
-              <input value={profile.name} onChange={(e) => setProfile((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+            <Field id="profile-name" label="Full Name" icon={<User className="h-3.5 w-3.5 text-slate-400" />}>
+              <input id="profile-name" value={profile.name} onChange={(e) => setProfile((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
             </Field>
 
-            <Field label="Email Address" icon={<Mail className="h-3.5 w-3.5 text-slate-400" />}>
-              <input type="email" value={profile.email} onChange={(e) => setProfile((prev) => ({ ...prev, email: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+            <Field id="profile-email" label="Email Address" icon={<Mail className="h-3.5 w-3.5 text-slate-400" />}>
+              <input id="profile-email" type="email" value={profile.email} onChange={(e) => setProfile((prev) => ({ ...prev, email: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
             </Field>
 
-            <Field label="Phone Number" icon={<Phone className="h-3.5 w-3.5 text-slate-400" />}>
-              <input value={profile.phone} onChange={(e) => setProfile((prev) => ({ ...prev, phone: e.target.value }))} placeholder="e.g. 9876543210" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+            <Field id="profile-phone" label="Phone Number" icon={<Phone className="h-3.5 w-3.5 text-slate-400" />}>
+              <input id="profile-phone" type="tel" value={profile.phone} onChange={(e) => setProfile((prev) => ({ ...prev, phone: e.target.value }))} placeholder="e.g. 9876543210" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
             </Field>
 
-            <Field label="City" icon={<MapPin className="h-3.5 w-3.5 text-slate-400" />}>
-              <input value={profile.city} onChange={(e) => setProfile((prev) => ({ ...prev, city: e.target.value }))} placeholder="Your city" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+            <Field id="profile-city" label="City" icon={<MapPin className="h-3.5 w-3.5 text-slate-400" />}>
+              <input id="profile-city" value={profile.city} onChange={(e) => setProfile((prev) => ({ ...prev, city: e.target.value }))} placeholder="Your city" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
             </Field>
 
             <div className="md:col-span-2">
-              <Field label="About You" icon={<PencilLine className="h-3.5 w-3.5 text-slate-400" />}>
-                <textarea value={profile.bio} onChange={(e) => setProfile((prev) => ({ ...prev, bio: e.target.value }))} rows={5} placeholder="Tell us a little about your driving habits, vehicle interests, or what you use the platform for." className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
+              <Field id="profile-bio" label="About You" icon={<PencilLine className="h-3.5 w-3.5 text-slate-400" />}>
+                <textarea id="profile-bio" value={profile.bio} onChange={(e) => setProfile((prev) => ({ ...prev, bio: e.target.value }))} rows={5} placeholder="Tell us a little about your driving habits, vehicle interests, or what you use the platform for." className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs md:px-4 md:py-3 md:text-sm font-medium text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20" />
               </Field>
             </div>
           </div>
@@ -302,7 +308,7 @@ const MyProfile = () => {
             <div className="mt-4 md:mt-5 space-y-3 md:space-y-4 text-xs md:text-sm">
               <div className="rounded-2xl bg-slate-50 p-3 md:p-4">
                 <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Role</p>
-                <p className="mt-1 text-sm md:text-base font-bold text-slate-900">{profile.role === 'GARAGE' ? 'Garage Partner' : 'Vehicle Owner'}</p>
+                <p className="mt-1 text-sm md:text-base font-bold text-slate-900">{isGarageProfile ? 'Garage Partner' : 'Vehicle Owner'}</p>
               </div>
               <div className="rounded-2xl bg-slate-50 p-3 md:p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -338,7 +344,10 @@ const MyProfile = () => {
                 </div>
                 <input
                   ref={licenseInputRef}
+                  aria-label="Driving license file"
+                  tabIndex={-1}
                   type="file"
+
                   accept=".pdf,image/*"
                   className="hidden"
                   onChange={handleLicenseUpload}
@@ -358,6 +367,16 @@ const MyProfile = () => {
                 <span className="inline-flex items-center gap-2 md:gap-3"><Wrench className="h-4 w-4" /> Browse garage marketplace</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
+              <button
+                type="button"
+                onClick={handleSignOutAllDevices}
+                disabled={signingOutAll}
+                aria-busy={signingOutAll}
+                className="flex w-full items-center justify-between rounded-xl md:rounded-2xl border border-slate-200 px-3 py-3 md:px-4 md:py-4 text-xs md:text-sm font-bold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-60"
+              >
+                <span className="inline-flex items-center gap-2 md:gap-3"><LogOut className="h-4 w-4" aria-hidden="true" /> {signingOutAll ? 'Signing out…' : 'Sign out of all devices'}</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
           </div>
         </div>

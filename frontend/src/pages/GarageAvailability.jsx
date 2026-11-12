@@ -1,37 +1,48 @@
-import { API_BASE_URL } from '../utils/config';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiGet, getErrorMessage } from '../utils/api';
+import ErrorState from '../components/common/ErrorState';
 import { ArrowLeft, Clock } from 'lucide-react';
 import GarageAvailabilityCard from '../components/garage/GarageAvailabilityCard';
 
 const GarageAvailability = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
-  const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
-
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    axios.get(`${API_BASE_URL}/api/garages/me`, headers)
-      .then(res => {
-        if (res.data?.exists) {
-          setProfile(res.data);
-        }
+    let active = true;
+    apiGet('/garages/me')
+      .then(data => {
+        if (!active) return;
+        setError(null);
+        if (data?.exists) setProfile(data);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [headers]);
+      .catch(err => { if (active) setError(getErrorMessage(err, 'Failed to load your garage profile')); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [reloadKey]);
+
+  const retry = () => {
+    setLoading(true);
+    setReloadKey(k => k + 1);
+  };
 
   if (loading) {
-    return <div className="p-12 text-center text-slate-500 font-medium">Loading availability settings...</div>;
+    return <div role="status" className="p-12 text-center text-slate-500 font-medium">Loading availability settings...</div>;
+  }
+
+  if (error) {
+    return <div className="max-w-4xl mx-auto"><ErrorState message={error} onRetry={retry} /></div>;
   }
 
   return (
     <div className="max-w-4xl mx-auto pb-12 lg:pb-8 animate-in fade-in duration-500">
       {/* Back */}
       <button
+        type="button"
         onClick={() => navigate('/garage-dashboard')}
         className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors mb-6 group"
       >
@@ -58,7 +69,7 @@ const GarageAvailability = () => {
           You need to create your Garage Profile first before configuring availability.
         </div>
       ) : (
-        <GarageAvailabilityCard garageId={profile.id} token={token} />
+        <GarageAvailabilityCard garageId={profile.id} />
       )}
     </div>
   );

@@ -2,14 +2,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Car, Store, UserCircle2, Wrench, PieChart, Building2, Stethoscope } from 'lucide-react';
 import { FEATURES } from '../config/features';
 
-import { normalizeRole } from '../utils/roles';
+import { useAuth } from '../context/authContextCore';
 
 
 const MobileBottomNav = () => {
     const location = useLocation();
-    const userRaw = localStorage.getItem('user');
-    const user = userRaw ? JSON.parse(userRaw) : null;
-    const role = normalizeRole(user?.role);
+    const { role } = useAuth();
 
     const tabs = role === 'GARAGE'
         ? [
@@ -27,7 +25,7 @@ const MobileBottomNav = () => {
         ];
 
     return (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]"
+        <nav aria-label="Primary" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]"
             style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="flex items-stretch">
                 {tabs.map((tab) => {

@@ -29,7 +29,9 @@ const ImageUploader = ({ onImageSelect, selectedImage, onClear }) => {
         <div className="relative group">
           <img src={selectedImage} alt="Upload preview" className="w-8 h-8 rounded object-cover border border-slate-200 shadow-sm" />
           <button 
+            type="button"
             onClick={onClear}
+            aria-label="Remove attached image"
             className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <X className="w-3 h-3" />
@@ -39,6 +41,7 @@ const ImageUploader = ({ onImageSelect, selectedImage, onClear }) => {
         <button
           type="button"
           onClick={() => fileInputRef.current.click()}
+          aria-label="Attach an image"
           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors flex-shrink-0"
           title="Attach Image"
         >

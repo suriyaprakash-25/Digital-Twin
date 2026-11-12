@@ -44,7 +44,7 @@ export default function PrivacyPolicy() {
           <Section title="4. Service providers">
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="rounded-xl border border-slate-200 p-4"><Database className="h-5 w-5 text-teal-600 mb-2" /><b>Infrastructure & storage</b><p>MongoDB-backed application data and Cloudinary-backed uploaded files.</p></div>
-              <div className="rounded-xl border border-slate-200 p-4"><CreditCard className="h-5 w-5 text-teal-600 mb-2" /><b>Payments</b><p>Payment processing may use Razorpay. DrivePortz should not store full card credentials.</p></div>
+              <div className="rounded-xl border border-slate-200 p-4"><CreditCard className="h-5 w-5 text-teal-600 mb-2" /><b>Payments</b><p>Payment processing is handled by our payment gateway partner (Cashfree). DrivePortz should not store full card credentials.</p></div>
               <div className="rounded-xl border border-slate-200 p-4"><Brain className="h-5 w-5 text-teal-600 mb-2" /><b>AI services</b><p>Vehicle Doctor/CoPilot requests may be processed through configured AI providers such as Groq or Gemini.</p></div>
               <div className="rounded-xl border border-slate-200 p-4"><FileText className="h-5 w-5 text-teal-600 mb-2" /><b>Login & messaging</b><p>Google authentication, Firebase notifications and configured email delivery services may process the minimum information required for those functions.</p></div>
             </div>

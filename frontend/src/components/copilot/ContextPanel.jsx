@@ -1,6 +1,5 @@
-import { API_BASE_URL } from '../../utils/config';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { apiGet } from '../../utils/api';
 import { Car, ChevronDown } from 'lucide-react';
 
 const ContextPanel = ({ activeVehicleId, setActiveVehicleId }) => {
@@ -11,14 +10,11 @@ const ContextPanel = ({ activeVehicleId, setActiveVehicleId }) => {
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_BASE_URL}/api/vehicles`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.data.success) {
-          setVehicles(res.data.data);
-          if (res.data.data.length > 0 && !activeVehicleId) {
-            setActiveVehicleId(res.data.data[0]._id);
+        const data = await apiGet('/vehicles');
+        if (data.success) {
+          setVehicles(data.data);
+          if (data.data.length > 0 && !activeVehicleId) {
+            setActiveVehicleId(data.data[0]._id);
           }
         }
       } catch (err) {
@@ -38,6 +34,8 @@ const ContextPanel = ({ activeVehicleId, setActiveVehicleId }) => {
     <div className="bg-slate-50 border-b border-slate-100 px-4 py-2 relative">
       <button 
         onClick={() => setShowDropdown(!showDropdown)}
+        aria-expanded={showDropdown}
+        aria-haspopup="listbox"
         className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-blue-600 transition-colors w-full"
       >
         <Car className="w-4 h-4 text-slate-400" />

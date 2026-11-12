@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useId } from 'react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { X, Bot, Home, Loader2 } from 'lucide-react';
 import ChatBubble from './ChatBubble';
 import ChatInput from './ChatInput';
@@ -20,6 +21,9 @@ const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessag
   const [showEmergency, setShowEmergency] = useState(false);
   const [showHome, setShowHome] = useState(false);
   const messagesEndRef = useRef(null);
+  const titleId = useId();
+  // Non-modal floating panel: Escape closes it (the emergency sheet first, if open).
+  useEscapeKey(() => (showEmergency ? setShowEmergency(false) : onClose()), isOpen);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -82,7 +86,7 @@ const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessag
   return (
     <>
       {isOpen && (
-        <div className="fixed bottom-36 right-4 md:bottom-28 md:right-8 z-50 w-[calc(100vw-2rem)] md:w-[420px] h-[75vh] max-h-[700px] flex flex-col bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+        <div role="dialog" aria-labelledby={titleId} className="fixed bottom-36 right-4 md:bottom-28 md:right-8 z-50 w-[calc(100vw-2rem)] md:w-[420px] h-[75vh] max-h-[700px] flex flex-col bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
           {showEmergency && (
             <EmergencyPanel 
               onClose={() => setShowEmergency(false)} 
@@ -99,7 +103,7 @@ const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessag
                 </div>
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 leading-tight">AI CoPilot</h3>
+                <h3 id={titleId} className="font-bold text-slate-800 leading-tight">AI CoPilot</h3>
                 <p className="text-xs text-slate-500 font-medium">Your Intelligent Mobility Companion</p>
               </div>
             </div>
@@ -108,12 +112,13 @@ const CopilotWindow = ({ isOpen, onClose, messages = [], isLoading, onSendMessag
                 <button
                   onClick={() => setShowHome(true)}
                   title="Back to Home"
+                  aria-label="Back to assistant home"
                   className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                 >
                   <Home className="w-5 h-5" />
                 </button>
               )}
-              <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+              <button onClick={onClose} aria-label="Close assistant" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>

@@ -12,10 +12,15 @@ import {
     X
 } from 'lucide-react';
 import { apiGet, apiPatch } from '../../utils/api';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { useAuth } from '../../context/authContextCore';
+import { ROLES } from '../../utils/roles';
 
 const NotificationBell = () => {
-    const navigate = useNavigate();
+    const { role } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
+    useEscapeKey(() => setIsOpen(false), isOpen);
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
@@ -87,12 +92,9 @@ const NotificationBell = () => {
 
         // Navigation intelligence based on notification type
         const type = notif.data?.type || '';
-        const userStr = localStorage.getItem('user');
-        const userObj = userStr ? JSON.parse(userStr) : {};
-        const role = userObj?.role || 'USER';
 
         if (type.startsWith('REFUND') || type.startsWith('PAYMENT')) {
-            if (role === 'GARAGE') {
+            if (role === ROLES.GARAGE) {
                 navigate('/garage/payments');
             } else {
                 navigate('/payment-history');
@@ -100,13 +102,13 @@ const NotificationBell = () => {
         } else if (type === 'INVOICE_CREATED' || type === 'INVOICE_FINALIZED') {
             if (notif.data?.vehicleId) {
                 navigate(`/service-history/${notif.data.vehicleId}`);
-            } else if (role === 'GARAGE') {
+            } else if (role === ROLES.GARAGE) {
                 navigate('/garage-services-history');
             } else {
                 navigate('/payment-history');
             }
         } else if (notif.data?.bookingId) {
-            if (role === 'GARAGE') {
+            if (role === ROLES.GARAGE) {
                 navigate('/garage-dashboard'); // Garages manage active bookings on the main dashboard
             } else {
                 navigate('/user-dashboard'); // Users view their bookings on their dashboard
@@ -137,9 +139,11 @@ const NotificationBell = () => {
                     if (!isOpen) fetchNotifications();
                 }}
                 className="relative p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                aria-label="Notifications"
+                aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+                aria-expanded={isOpen}
+                aria-haspopup="true"
             >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-5 w-5" aria-hidden="true" />
                 {unreadCount > 0 && (
                     <span className="absolute top-1 right-1 w-4 h-4 bg-teal-500 text-white text-[9px] font-black rounded-full flex items-center justify-center ring-2 ring-white animate-pulse">
                         {unreadCount > 9 ? '9+' : unreadCount}

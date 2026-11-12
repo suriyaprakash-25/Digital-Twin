@@ -1,6 +1,8 @@
 import { CheckCircle2, IndianRupee, FileText, ArrowRight, ShieldCheck, X } from 'lucide-react';
+import { useDialog } from '../../hooks/useDialog';
 
 const PaymentSuccessModal = ({ isOpen, onClose, paymentDetails, onViewBill }) => {
+  const { dialogProps, titleId } = useDialog({ isOpen: Boolean(isOpen && paymentDetails), onClose });
   if (!isOpen || !paymentDetails) return null;
 
   const {
@@ -25,7 +27,8 @@ const PaymentSuccessModal = ({ isOpen, onClose, paymentDetails, onViewBill }) =>
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200"
+        {...dialogProps}
+        className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -33,7 +36,7 @@ const PaymentSuccessModal = ({ isOpen, onClose, paymentDetails, onViewBill }) =>
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-            aria-label="Close"
+            aria-label="Close payment confirmation"
           >
             <X className="h-5 w-5" />
           </button>
@@ -42,7 +45,7 @@ const PaymentSuccessModal = ({ isOpen, onClose, paymentDetails, onViewBill }) =>
             <CheckCircle2 className="h-10 w-10 text-white" />
           </div>
 
-          <h3 className="text-2xl font-black tracking-tight">Payment Successful</h3>
+          <h2 id={titleId} className="text-2xl font-black tracking-tight">Payment Successful</h2>
           <p className="text-emerald-100 text-xs font-medium mt-1">Transaction confirmed by Cashfree & DrivePortz</p>
         </div>
 

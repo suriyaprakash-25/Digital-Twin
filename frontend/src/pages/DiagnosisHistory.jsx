@@ -1,38 +1,27 @@
-import { API_BASE_URL } from '../utils/config';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
 import { FileText, ArrowLeft, Calendar, Car } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import UrgencyBadge from '../components/vehicle-doctor/UrgencyBadge';
 import DiagnosisCard from '../components/vehicle-doctor/DiagnosisCard';
+import ErrorState from '../components/common/ErrorState';
 import { FEATURES } from '../config/features';
+import { apiGet } from '../utils/api';
+import { useAsync } from '../hooks/useAsync';
+
+// The doctor page is only routed when the feature flag is on; never link to it otherwise.
+const AI_DOCTOR_ENABLED = FEATURES.AI_DOCTOR;
 
 const DiagnosisHistory = () => {
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedDiagnosis, setSelectedDiagnosis] = useState(null);
   const navigate = useNavigate();
+  const { data, error, loading, refetch } = useAsync(
+    () => apiGet('/vehicle-doctor/history'),
+    [],
+    { immediate: AI_DOCTOR_ENABLED, initialData: [] },
+  );
+  const history = Array.isArray(data) ? data : [];
 
-  useEffect(() => {
-    if (!FEATURES.AI_DOCTOR) return;
-
-    const fetchHistory = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_BASE_URL}/api/vehicle-doctor/history`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setHistory(res.data);
-      } catch (err) {
-        console.error('Failed to fetch history', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHistory();
-  }, []);
-
-  if (!FEATURES.AI_DOCTOR) {
+  if (!AI_DOCTOR_ENABLED) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
@@ -58,12 +47,16 @@ const DiagnosisHistory = () => {
     <div className="max-w-4xl mx-auto space-y-4 md:space-y-8 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 md:gap-4">
-          <button 
-            onClick={() => navigate('/vehicle-doctor')}
-            className="p-1.5 md:p-2 bg-white hover:bg-slate-50 text-slate-600 rounded-full border border-slate-200 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
+          {AI_DOCTOR_ENABLED && (
+            <button
+              type="button"
+              onClick={() => navigate('/vehicle-doctor')}
+              aria-label="Back to AI Vehicle Doctor"
+              className="p-1.5 md:p-2 bg-white hover:bg-slate-50 text-slate-600 rounded-full border border-slate-200 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />
+            </button>
+          )}
           <h1 className="text-xl md:text-3xl font-extrabold text-slate-900 flex items-center gap-2.5">
             <FileText className="w-6 h-6 md:w-8 md:h-8 text-teal-600" />
             Diagnosis History
@@ -71,23 +64,28 @@ const DiagnosisHistory = () => {
         </div>
       </div>
 
+      {error && <ErrorState message={error} onRetry={() => refetch()} retrying={loading} />}
+
       {loading ? (
-        <div className="flex justify-center py-12">
+        <div role="status" aria-label="Loading diagnosis history" className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
         </div>
-      ) : history.length === 0 ? (
+      ) : error ? null : history.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-slate-200">
           <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <FileText className="w-8 h-8 text-teal-600" />
           </div>
           <h3 className="text-xl font-bold text-slate-900 mb-2">No Past Diagnoses</h3>
           <p className="text-slate-500 mb-6">You haven't requested any AI diagnostics yet.</p>
-          <button 
-            onClick={() => navigate('/vehicle-doctor')}
-            className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors"
-          >
-            Start a Diagnosis
-          </button>
+          {AI_DOCTOR_ENABLED && (
+            <button
+              type="button"
+              onClick={() => navigate('/vehicle-doctor')}
+              className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors"
+            >
+              Start a Diagnosis
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -95,8 +93,10 @@ const DiagnosisHistory = () => {
             const isSelected = selectedDiagnosis?._id === record._id;
             return (
               <div key={record._id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all">
-                <div 
-                  className="p-3.5 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                <button
+                  type="button"
+                  aria-expanded={isSelected}
+                  className="w-full text-left p-3.5 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4 cursor-pointer hover:bg-slate-50 transition-colors"
                   onClick={() => setSelectedDiagnosis(isSelected ? null : record)}
                 >
                   <div className="flex flex-col gap-1">
@@ -118,7 +118,7 @@ const DiagnosisHistory = () => {
                   <div className="text-xs md:text-sm text-slate-600 truncate max-w-sm">
                     {record.symptoms || (record.selectedSymptoms && record.selectedSymptoms.join(', '))}
                   </div>
-                </div>
+                </button>
 
                 {/* Expanded Details */}
                 {isSelected && (

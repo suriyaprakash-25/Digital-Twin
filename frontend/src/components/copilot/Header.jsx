@@ -18,6 +18,7 @@ const Header = ({ onClose }) => {
       </div>
       <button
         onClick={onClose}
+        aria-label="Close assistant"
         className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
       >
         <X className="w-5 h-5" />

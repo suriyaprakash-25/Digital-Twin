@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Receipt,
   Scale,
@@ -18,12 +17,11 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/toastContextCore';
+import { apiGet, getErrorMessage } from '../../utils/api';
+import ErrorState from '../../components/common/ErrorState';
 import SettlementReviewModal from '../../components/settlement/SettlementReviewModal';
 
 export default function AdminFinancialOperations() {
-  const { showError } = useToast();
   const [summary, setSummary] = useState({
     pendingAmount: 0,
     pendingCount: 0,
@@ -42,15 +40,16 @@ export default function AdminFinancialOperations() {
 
   const [settlements, setSettlements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [activeTab, setActiveTab] = useState('ALL_PENDING'); // 'ALL_PENDING' | 'HIGH_VALUE' | 'HOLDS'
   const [selectedSettlement, setSelectedSettlement] = useState(null);
   const [search, setSearch] = useState('');
 
   const fetchSummary = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/admin/financial-operations/summary`, { headers: getAuthHeaders() });
-      if (res.data?.success) {
-        setSummary(res.data.summary);
+      const data = await apiGet('/admin/financial-operations/summary');
+      if (data?.success) {
+        setSummary(data.summary);
       }
     } catch (err) {
       console.error('Error loading operations summary:', err);
@@ -59,21 +58,22 @@ export default function AdminFinancialOperations() {
 
   const fetchSettlements = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const endpoint = activeTab === 'HIGH_VALUE'
-        ? `${API_BASE_URL}/api/admin/settlements/high-value`
-        : `${API_BASE_URL}/api/admin/settlements/pending`;
+        ? '/admin/settlements/high-value'
+        : '/admin/settlements/pending';
 
-      const res = await axios.get(endpoint, { headers: getAuthHeaders() });
-      if (res.data?.success) {
-        setSettlements(res.data.settlements || []);
+      const data = await apiGet(endpoint);
+      if (data?.success) {
+        setSettlements(data.settlements || []);
       }
-    } catch {
-      showError('Failed to load settlements');
+    } catch (err) {
+      setLoadError(getErrorMessage(err, 'Failed to load settlements'));
     } finally {
       setLoading(false);
     }
-  }, [activeTab, showError]);
+  }, [activeTab]);
 
   useEffect(() => {
     fetchSummary();
@@ -108,10 +108,12 @@ export default function AdminFinancialOperations() {
         </div>
 
         <button
+          type="button"
           onClick={() => { fetchSummary(); fetchSettlements(); }}
+          disabled={loading}
           className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           Refresh
         </button>
       </div>
@@ -172,6 +174,8 @@ export default function AdminFinancialOperations() {
             return (
               <button
                 key={tab.id}
+                type="button"
+                aria-pressed={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition ${
                   activeTab === tab.id
@@ -188,9 +192,10 @@ export default function AdminFinancialOperations() {
 
         <div className="pb-2 md:pb-0">
           <div className="relative w-full md:w-64">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
             <input
-              type="text"
+              type="search"
+              aria-label="Search by ID or Garage"
               placeholder="Search by ID or Garage..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -199,6 +204,8 @@ export default function AdminFinancialOperations() {
           </div>
         </div>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchSettlements} retrying={loading} />}
 
       {/* Settlements Table */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
@@ -268,6 +275,7 @@ export default function AdminFinancialOperations() {
                       </td>
                       <td className="px-6 py-3.5 text-right">
                         <button
+                          type="button"
                           onClick={() => setSelectedSettlement(s)}
                           className="px-3 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-lg text-xs font-semibold transition"
                         >

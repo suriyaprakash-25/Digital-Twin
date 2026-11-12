@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import {
   FileSpreadsheet,
   Download,
@@ -16,8 +15,10 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import { apiGet, getErrorMessage } from '../../utils/api';
 import { useToast } from '../../context/toastContextCore';
+import { downloadReport } from '../../components/admin/downloadReport';
+import ErrorState from '../../components/common/ErrorState';
 
 export default function AdminFinancialReports() {
   const { showSuccess, showError } = useToast();
@@ -29,7 +30,8 @@ export default function AdminFinancialReports() {
   const [commissions, setCommissions] = useState([]);
   const [commissionSummary, setCommissionSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
 
   // Active sub-tab: 'COMMISSIONS' | 'TRANSACTIONS' | 'TRENDS'
@@ -37,6 +39,7 @@ export default function AdminFinancialReports() {
 
   const fetchFinancialReports = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const params = { period };
       if (period === 'CUSTOM') {
@@ -45,35 +48,36 @@ export default function AdminFinancialReports() {
       }
 
       // 1. Platform Summary
-      const sumRes = await axios.get(`${API_BASE_URL}/api/admin/reports/summary`, { params, headers: getAuthHeaders() });
-      if (sumRes.data?.success) {
-        setSummary(sumRes.data.summary);
+      const sumData = await apiGet('/admin/reports/summary', params);
+      if (sumData?.success) {
+        setSummary(sumData.summary);
       }
 
       // 2. Commissions Report
-      const comRes = await axios.get(`${API_BASE_URL}/api/admin/reports/commissions`, { params, headers: getAuthHeaders() });
-      if (comRes.data?.success) {
-        setCommissions(comRes.data.commissions || []);
-        setCommissionSummary(comRes.data.summary);
+      const comData = await apiGet('/admin/reports/commissions', params);
+      if (comData?.success) {
+        setCommissions(comData.commissions || []);
+        setCommissionSummary(comData.summary);
       }
 
       // 3. Transactions Report
-      const txRes = await axios.get(`${API_BASE_URL}/api/admin/reports/transactions`, { params: { ...params, limit: 15 }, headers: getAuthHeaders() });
-      if (txRes.data?.success) {
-        setTransactions(txRes.data.transactions || []);
+      const txData = await apiGet('/admin/reports/transactions', { ...params, limit: 15 });
+      if (txData?.success) {
+        setTransactions(txData.transactions || []);
       }
-    } catch {
-      showError('Failed to load platform financial reports');
+    } catch (err) {
+      setLoadError(getErrorMessage(err, 'Failed to load platform financial reports'));
     } finally {
       setLoading(false);
     }
-  }, [period, dateFrom, dateTo, showError]);
+  }, [period, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchFinancialReports();
   }, [fetchFinancialReports]);
 
   const handleExport = async (reportType = 'TRANSACTIONS', format = 'csv') => {
+    if (isExporting) return;
     setIsExporting(true);
     try {
       const params = { period, format, reportType };
@@ -82,27 +86,16 @@ export default function AdminFinancialReports() {
         if (dateTo) params.dateTo = dateTo;
       }
 
-      const res = await axios.get(`${API_BASE_URL}/api/admin/reports/export`, {
+      await downloadReport(
+        '/admin/reports/export',
         params,
-        headers: getAuthHeaders(),
-        responseType: 'blob'
-      });
-
-      const blob = new Blob([res.data], {
-        type: format === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv'
-      });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `DrivePortz_${reportType}_${new Date().toISOString().split('T')[0]}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+        `DrivePortz_${reportType}_${new Date().toISOString().split('T')[0]}.${format}`,
+        format
+      );
 
       showSuccess(`Exported ${reportType} (${format.toUpperCase()}) successfully`);
-    } catch {
-      showError('Failed to export platform report');
+    } catch (err) {
+      showError(getErrorMessage(err, 'Failed to export platform report'));
     } finally {
       setIsExporting(false);
     }
@@ -128,6 +121,7 @@ export default function AdminFinancialReports() {
         {/* Global Export Center Actions */}
         <div className="flex flex-wrap items-center gap-3">
           <button
+            type="button"
             onClick={() => handleExport('TRANSACTIONS', 'csv')}
             disabled={isExporting}
             className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition shadow-sm"
@@ -136,6 +130,7 @@ export default function AdminFinancialReports() {
             Export Transactions (CSV)
           </button>
           <button
+            type="button"
             onClick={() => handleExport('COMMISSIONS', 'xlsx')}
             disabled={isExporting}
             className="flex items-center gap-2 px-3.5 py-2 bg-emerald-950/80 border border-emerald-800 hover:border-emerald-700 rounded-xl text-xs font-bold text-emerald-300 hover:text-emerald-200 transition shadow-sm"
@@ -165,6 +160,8 @@ export default function AdminFinancialReports() {
           ].map(p => (
             <button
               key={p.id}
+              type="button"
+              aria-pressed={period === p.id}
               onClick={() => setPeriod(p.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                 period === p.id
@@ -181,6 +178,7 @@ export default function AdminFinancialReports() {
           <div className="flex items-center gap-2">
             <input
               type="date"
+              aria-label="From date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900"
@@ -188,6 +186,7 @@ export default function AdminFinancialReports() {
             <span className="text-slate-500 text-xs">to</span>
             <input
               type="date"
+              aria-label="To date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900"
@@ -195,6 +194,8 @@ export default function AdminFinancialReports() {
           </div>
         )}
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchFinancialReports} retrying={loading} />}
 
       {/* Platform Financial KPI Summary Cards */}
       {summary && (
@@ -254,6 +255,8 @@ export default function AdminFinancialReports() {
           return (
             <button
               key={tab.id}
+              type="button"
+              aria-pressed={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition ${
                 activeTab === tab.id

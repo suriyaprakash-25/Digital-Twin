@@ -1,6 +1,6 @@
-import { API_BASE_URL } from '../../utils/config';
-import React, { useState } from 'react';
-import axios from 'axios';
+import { useId, useState } from 'react';
+import { apiUpload, getErrorMessage } from '../../utils/api';
+import { useAuth } from '../../context/authContextCore';
 import {
   Send,
   Loader2,
@@ -35,9 +35,10 @@ const FeedbackForm = ({
   currentPage = { pageUrl: '/', pageName: 'DrivePortz App' },
   onSuccess
 }) => {
-  const token = localStorage.getItem('token');
-  const userRole = localStorage.getItem('role') || 'USER';
-  const userName = localStorage.getItem('name') || '';
+  const { user, role } = useAuth();
+  const userRole = role || 'USER';
+  const userName = user?.name || '';
+  const fieldId = useId();
 
   const [rating, setRating] = useState(0);
   const [category, setCategory] = useState('General Feedback');
@@ -92,28 +93,15 @@ const FeedbackForm = ({
         formData.append('screenshot', screenshotFile);
       }
 
-      const headers = {
-        'Content-Type': 'multipart/form-data'
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+      const data = await apiUpload('/feedback', formData);
 
-      const apiUrl = API_BASE_URL;
-      const res = await axios.post(`${apiUrl}/api/feedback`, formData, { headers });
-
-      if (res.data && res.data.success) {
-        onSuccess?.(res.data.feedback);
+      if (data && data.success) {
+        onSuccess?.(data.feedback);
       } else {
-        setErrorMsg(res.data?.msg || 'Failed to submit feedback. Please try again.');
+        setErrorMsg(data?.msg || data?.message || 'Failed to submit feedback. Please try again.');
       }
     } catch (err) {
-      console.error('Feedback submit error:', err);
-      setErrorMsg(
-        err.response?.data?.msg ||
-        err.message ||
-        'An error occurred while submitting your feedback. Please try again.'
-      );
+      setErrorMsg(getErrorMessage(err, 'An error occurred while submitting your feedback. Please try again.'));
     } finally {
       setSubmitting(false);
     }
@@ -143,9 +131,9 @@ const FeedbackForm = ({
 
       {/* Rating Field */}
       <div className="space-y-1 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <label className="text-xs font-bold text-slate-800 block">
-          How would you rate your experience? <span className="text-red-500">*</span>
-        </label>
+        <p id={`${fieldId}-rating`} className="text-xs font-bold text-slate-800 block">
+          How would you rate your experience? <span className="text-red-500" aria-hidden="true">*</span>
+        </p>
         <StarRating
           value={rating}
           onChange={(val) => {
@@ -160,12 +148,13 @@ const FeedbackForm = ({
 
       {/* Category Dropdown */}
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-          <Tag className="h-3.5 w-3.5 text-teal-600" />
+        <label htmlFor={`${fieldId}-category`} className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+          <Tag className="h-3.5 w-3.5 text-teal-600" aria-hidden="true" />
           Feedback Category <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <select
+            id={`${fieldId}-category`}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             disabled={submitting}
@@ -186,8 +175,8 @@ const FeedbackForm = ({
       {/* Feedback Message */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-            <MessageSquare className="h-3.5 w-3.5 text-teal-600" />
+          <label htmlFor={`${fieldId}-message`} className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <MessageSquare className="h-3.5 w-3.5 text-teal-600" aria-hidden="true" />
             Tell us what you think... <span className="text-red-500">*</span>
           </label>
           <span
@@ -204,6 +193,8 @@ const FeedbackForm = ({
         </div>
 
         <textarea
+          id={`${fieldId}-message`}
+          aria-describedby={`${fieldId}-message-hint`}
           rows={4}
           value={message}
           onChange={(e) => {
@@ -214,7 +205,7 @@ const FeedbackForm = ({
           placeholder="Describe the issue, bug, complaint, suggestion, or idea with enough detail for the pilot team..."
           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs md:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none font-medium leading-relaxed"
         />
-        <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+        <div id={`${fieldId}-message-hint`} className="flex items-center justify-between text-[11px] text-slate-400 px-1">
           <span>Minimum 10 characters</span>
           {charCount > 0 && charCount < 10 && (
             <span className="text-amber-600 font-medium">Need {10 - charCount} more character(s)</span>
@@ -233,8 +224,8 @@ const FeedbackForm = ({
 
       {/* Error Message */}
       {errorMsg && (
-        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div role="alert" className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>{errorMsg}</span>
         </div>
       )}

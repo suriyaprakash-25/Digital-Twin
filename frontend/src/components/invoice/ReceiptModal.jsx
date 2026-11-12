@@ -1,6 +1,6 @@
-import { API_BASE_URL } from '../../utils/config';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { apiGet, getErrorMessage } from '../../utils/api';
+import { useDialog } from '../../hooks/useDialog';
 import {
   X,
   Printer,
@@ -19,6 +19,7 @@ const ReceiptModal = ({ isOpen, onClose, serviceId, initialReceiptData = null })
   const [receipt, setReceipt] = useState(initialReceiptData);
   const [loading, setLoading] = useState(!initialReceiptData);
   const [error, setError] = useState('');
+  const { dialogProps, titleId } = useDialog({ isOpen, onClose });
 
   useEffect(() => {
     if (!isOpen || !serviceId) return;
@@ -27,17 +28,13 @@ const ReceiptModal = ({ isOpen, onClose, serviceId, initialReceiptData = null })
       setLoading(true);
       setError('');
       try {
-        const token = localStorage.getItem('token');
-        const apiBaseUrl = API_BASE_URL;
-        const res = await axios.get(`${apiBaseUrl}/api/invoices/${serviceId}/receipt`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.data?.success) {
-          setReceipt(res.data.receipt);
+        const data = await apiGet(`/invoices/${serviceId}/receipt`);
+        if (data?.success) {
+          setReceipt(data.receipt);
         }
       } catch (err) {
         console.error('Error fetching receipt:', err);
-        setError(err.response?.data?.message || 'Failed to load receipt details');
+        setError(getErrorMessage(err, 'Failed to load receipt details'));
       } finally {
         setLoading(false);
       }
@@ -65,7 +62,8 @@ const ReceiptModal = ({ isOpen, onClose, serviceId, initialReceiptData = null })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
       <div
-        className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full my-auto overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col"
+        {...dialogProps}
+        className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full my-auto overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top bar */}
@@ -74,9 +72,9 @@ const ReceiptModal = ({ isOpen, onClose, serviceId, initialReceiptData = null })
             <span className="p-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
               <Receipt className="h-4 w-4" />
             </span>
-            <span className="font-extrabold text-sm text-slate-800 tracking-tight">
+            <h2 id={titleId} className="font-extrabold text-sm text-slate-800 tracking-tight">
               Payment Receipt
-            </span>
+            </h2>
           </div>
 
           <div className="flex items-center gap-2">
@@ -92,6 +90,7 @@ const ReceiptModal = ({ isOpen, onClose, serviceId, initialReceiptData = null })
             <button
               onClick={onClose}
               type="button"
+              aria-label="Close receipt"
               className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors"
             >
               <X className="h-5 w-5" />
@@ -107,7 +106,7 @@ const ReceiptModal = ({ isOpen, onClose, serviceId, initialReceiptData = null })
               <p className="text-xs font-bold text-slate-400">Loading verified payment receipt...</p>
             </div>
           ) : error ? (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-center text-xs font-bold text-red-700 flex items-center justify-center gap-2">
+            <div role="alert" className="p-4 bg-red-50 border border-red-200 rounded-2xl text-center text-xs font-bold text-red-700 flex items-center justify-center gap-2">
               <AlertCircle className="h-4 w-4" />
               {error}
             </div>
@@ -136,7 +135,7 @@ const ReceiptModal = ({ isOpen, onClose, serviceId, initialReceiptData = null })
                   {Number(receipt.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full inline-block mt-2">
-                  Settled via {receipt.paymentMethod || 'Razorpay Online'}
+                  Settled via {receipt.paymentMethod || 'Online payment gateway'}
                 </span>
               </div>
 

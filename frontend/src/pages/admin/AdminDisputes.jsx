@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import {
   AlertTriangle,
   IndianRupee,
@@ -20,9 +19,15 @@ import {
   User,
   Paperclip
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import ErrorState from '../../components/common/ErrorState';
+import DisputeResolutionModal from '../../components/admin/DisputeResolutionModal';
+import { useFinancialAction } from '../../components/admin/useFinancialAction';
+import { useToast } from '../../context/toastContextCore';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { apiGet, apiGetPage, apiPost, getErrorMessage } from '../../utils/api';
 
 const AdminDisputes = () => {
+  const { showSuccess } = useToast();
   const [disputes, setDisputes] = useState([]);
   const [summary, setSummary] = useState({
     totalDisputes: 0,
@@ -34,84 +39,59 @@ const AdminDisputes = () => {
     totalDisputedVolume: 0
   });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [categoryFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 350);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   // Resolution Modal State
   const [selectedDispute, setSelectedDispute] = useState(null);
-  const [resolutionAction, setResolutionAction] = useState('REFUND_FULL');
-  const [resolutionNote, setResolutionNote] = useState('');
-  const [customRefundAmount, setCustomRefundAmount] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { run: runAction, busy: actionLoading } = useFinancialAction();
 
   const fetchDisputes = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const [listRes, summaryRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/admin/disputes`, {
-          headers: getAuthHeaders(),
-          params: { page, limit: 20, status: statusFilter, category: categoryFilter, search }
-        }),
-        axios.get(`${API_BASE_URL}/api/admin/disputes/summary`, {
-          headers: getAuthHeaders()
-        })
+      const [listRes, summaryData] = await Promise.all([
+        apiGetPage('/admin/disputes', { page, limit: 20, status: statusFilter, category: categoryFilter, search: debouncedSearch }),
+        apiGet('/admin/disputes/summary')
       ]);
 
       if (listRes.data?.success) {
         setDisputes(listRes.data.disputes || []);
-        setTotalPages(listRes.data.totalPages || 1);
+        setTotalPages(listRes.data.totalPages || listRes.totalPages || 1);
       }
 
-      if (summaryRes.data?.success) {
-        setSummary(summaryRes.data.summary);
+      if (summaryData?.success) {
+        setSummary(summaryData.summary);
       }
     } catch (err) {
-      console.error('Error fetching admin disputes:', err);
+      setLoadError(getErrorMessage(err, 'Could not load disputes.'));
     } finally {
       setLoading(false);
     }
-  }, [categoryFilter, page, search, statusFilter]);
+  }, [categoryFilter, page, debouncedSearch, statusFilter]);
 
   useEffect(() => {
     fetchDisputes();
   }, [fetchDisputes]);
 
-  const handleResolveSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedDispute) return;
-    if (!resolutionNote.trim()) {
-      setError('Please provide a resolution note');
-      return;
-    }
-
-    setActionLoading(true);
-    setError('');
-
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/admin/disputes/${selectedDispute.id}/resolve`,
-        {
-          resolution: resolutionAction,
-          resolutionNote,
-          refundAmount: resolutionAction === 'REFUND_PARTIAL' ? customRefundAmount : undefined
-        },
-        { headers: getAuthHeaders() }
-      );
-
-      if (res.data?.success) {
-        alert(res.data.message || 'Dispute resolved successfully');
-        setSelectedDispute(null);
-        setResolutionNote('');
-        fetchDisputes();
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error resolving dispute');
-    } finally {
-      setActionLoading(false);
+  // Resolutions can trigger refunds, so they carry an Idempotency-Key.
+  const handleResolveSubmit = async (body) => {
+    const target = selectedDispute;
+    if (!target) return;
+    const data = await runAction(
+      `resolve-dispute:${target.id}`,
+      (config) => apiPost(`/admin/disputes/${target.id}/resolve`, body, config),
+      'Error resolving dispute'
+    );
+    if (data?.success) {
+      showSuccess(data.message || 'Dispute resolved successfully');
+      setSelectedDispute(null);
+      fetchDisputes();
     }
   };
 
@@ -137,7 +117,9 @@ const AdminDisputes = () => {
         </div>
 
         <button
+          type="button"
           onClick={fetchDisputes}
+          disabled={loading}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs self-start md:self-auto"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -202,11 +184,12 @@ const AdminDisputes = () => {
       {/* Controls */}
       <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:max-w-md">
-          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
-            type="text"
+            type="search"
+            aria-label="Search disputes"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search dispute number, invoice, vehicle, garage..."
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500"
           />
@@ -217,7 +200,8 @@ const AdminDisputes = () => {
             <button
               key={status}
               type="button"
-              onClick={() => setStatusFilter(status)}
+              aria-pressed={statusFilter === status}
+              onClick={() => { setStatusFilter(status); setPage(1); }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 statusFilter === status
                   ? 'bg-white text-slate-900 shadow-sm'
@@ -229,6 +213,8 @@ const AdminDisputes = () => {
           ))}
         </div>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchDisputes} retrying={loading} />}
 
       {/* Table */}
       <div className="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
@@ -307,10 +293,7 @@ const AdminDisputes = () => {
                       <td className="py-4 px-4 pr-6 text-right">
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedDispute(d);
-                            setCustomRefundAmount(d.disputedAmount);
-                          }}
+                          onClick={() => setSelectedDispute(d)}
                           className="px-3 py-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors inline-flex items-center gap-1"
                         >
                           <ShieldCheck className="h-3.5 w-3.5" />
@@ -333,18 +316,20 @@ const AdminDisputes = () => {
               <button
                 type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
+                aria-label="Previous page"
                 disabled={page === 1}
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                aria-label="Next page"
                 disabled={page === totalPages}
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -352,106 +337,13 @@ const AdminDisputes = () => {
       </div>
 
       {/* Admin Resolution Modal */}
-      {selectedDispute && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="bg-white text-slate-900 p-6 relative">
-              <button
-                onClick={() => setSelectedDispute(null)}
-                className="absolute top-5 right-5 text-slate-500 hover:text-slate-900 p-1 rounded-full hover:bg-slate-100"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-mono text-xs font-bold bg-slate-100 text-amber-400 px-2 py-0.5 rounded">
-                  {selectedDispute.disputeNumber}
-                </span>
-                <span className="text-xs text-slate-500">{selectedDispute.invoiceNumber}</span>
-              </div>
-              <h3 className="text-base font-black text-slate-900">{selectedDispute.subject}</h3>
-            </div>
-
-            <form onSubmit={handleResolveSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              {error && <p className="text-xs font-bold text-red-600">{error}</p>}
-
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Claimed Amount</span>
-                  <span className="font-black text-slate-900">₹{Number(selectedDispute.disputedAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Garage</span>
-                  <span className="font-bold text-slate-800 truncate block">{selectedDispute.garageName}</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Resolution Action *
-                </label>
-                <select
-                  value={resolutionAction}
-                  onChange={(e) => setResolutionAction(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-teal-500"
-                >
-                  <option value="REFUND_FULL">Full Refund to Customer (₹{selectedDispute.disputedAmount})</option>
-                  <option value="REFUND_PARTIAL">Partial Refund to Customer</option>
-                  <option value="INVOICE_CORRECTION">Invoice Correction (No Direct Refund)</option>
-                  <option value="NO_ACTION">Close Dispute (No Financial Action)</option>
-                  <option value="REJECT_DISPUTE">Reject Dispute (Dismiss Customer Claim)</option>
-                </select>
-              </div>
-
-              {resolutionAction === 'REFUND_PARTIAL' && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Custom Refund Amount (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={customRefundAmount}
-                    onChange={(e) => setCustomRefundAmount(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Resolution Decision Rationale *
-                </label>
-                <textarea
-                  rows="3"
-                  required
-                  placeholder="Document the resolution rationale sent to customer and garage..."
-                  value={resolutionNote}
-                  onChange={(e) => setResolutionNote(e.target.value)}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedDispute(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="px-5 py-2 text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 rounded-xl shadow-xs"
-                >
-                  {actionLoading ? 'Processing...' : 'Confirm Resolution'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <DisputeResolutionModal
+        key={selectedDispute?.id || 'none'}
+        dispute={selectedDispute}
+        onClose={() => setSelectedDispute(null)}
+        onSubmit={handleResolveSubmit}
+        submitting={actionLoading}
+      />
     </div>
   );
 };

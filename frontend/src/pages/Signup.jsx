@@ -1,9 +1,11 @@
-import { API_BASE_URL } from '../utils/config';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
-import { Lock, Mail, User, ShieldCheck, ArrowRight, AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Lock, Mail, User, ShieldCheck, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import GoogleSignInButton from '../components/GoogleSignInButton';
+import { apiPost, getErrorMessage } from '../utils/api';
+import { homePathForRole } from '../utils/roles';
+import { useAuth } from '../context/authContextCore';
+import { PASSWORD_POLICY_HINT, validatePassword } from '../components/auth/passwordPolicy';
 import TermsConditionsModal from '../components/TermsConditionsModal';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 
@@ -24,6 +26,7 @@ const Signup = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -51,17 +54,24 @@ const Signup = () => {
             return;
         }
 
+        const passwordError = validatePassword(formData.password);
+        if (passwordError) {
+            setError(passwordError);
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            await axios.post(`${API_BASE_URL}/api/auth/signup`, {
+            await apiPost('/auth/signup', {
                 ...formData,
                 termsAccepted,
                 privacyAccepted
             });
             navigate('/login');
         } catch (err) {
-            setError(err.response?.data?.msg || 'Failed to create account. Please try again.');
+            // WEAK_PASSWORD (400) and other validation errors carry a user-facing message.
+            setError(getErrorMessage(err, 'Failed to create account. Please try again.'));
         } finally {
             setIsLoading(false);
         }
@@ -78,24 +88,17 @@ const Signup = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/auth/google`, {
+            const data = await apiPost('/auth/google', {
                 credential,
                 role: formData.role,
                 termsAccepted,
                 privacyAccepted
             });
 
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-
-            const role = response.data.user?.role;
-            if (role === 'ADMIN') {
-                navigate('/admin');
-            } else {
-                navigate(role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard');
-            }
+            login({ token: data.token, user: data.user });
+            navigate(homePathForRole(data.user?.role));
         } catch (err) {
-            setError(err.response?.data?.msg || 'Google Sign Up failed. Please try again.');
+            setError(getErrorMessage(err, 'Google Sign Up failed. Please try again.'));
         } finally {
             setIsLoading(false);
         }
@@ -126,19 +129,22 @@ const Signup = () => {
 
                 <form className="mt-10 space-y-6" onSubmit={handleSignup}>
                     {error && (
-                        <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-sm text-center font-medium shadow-sm">
+                        <div role="alert" className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-sm text-center font-medium shadow-sm">
                             {error}
                         </div>
                     )}
 
                     <div className="space-y-4">
                         <div className="relative group">
+                            <label htmlFor="signup-name" className="sr-only">Full name</label>
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <User className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                             </div>
                             <input
+                                id="signup-name"
                                 name="name"
                                 type="text"
+                                autoComplete="name"
                                 required
                                 className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:text-sm shadow-sm hover:border-slate-300"
                                 placeholder="Full Name"
@@ -148,12 +154,15 @@ const Signup = () => {
                         </div>
 
                         <div className="relative group">
+                            <label htmlFor="signup-email" className="sr-only">Email address</label>
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                             </div>
                             <input
+                                id="signup-email"
                                 name="email"
                                 type="email"
+                                autoComplete="email"
                                 required
                                 className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:text-sm shadow-sm hover:border-slate-300"
                                 placeholder="Email address"
@@ -162,13 +171,19 @@ const Signup = () => {
                             />
                         </div>
 
+                        <div>
                         <div className="relative group">
+                            <label htmlFor="signup-password" className="sr-only">Password</label>
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                             </div>
                             <input
+                                id="signup-password"
                                 name="password"
                                 type={showPassword ? "text" : "password"}
+                                autoComplete="new-password"
+                                minLength={8}
+                                aria-describedby="signup-password-hint"
                                 required
                                 className="block w-full pl-11 pr-12 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:text-sm shadow-sm hover:border-slate-300"
                                 placeholder="Password"
@@ -178,21 +193,29 @@ const Signup = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                aria-pressed={showPassword}
                                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                             >
                                 {showPassword ? (
-                                    <EyeOff className="h-5 w-5" />
+                                    <EyeOff className="h-5 w-5" aria-hidden="true" />
                                 ) : (
-                                    <Eye className="h-5 w-5" />
+                                    <Eye className="h-5 w-5" aria-hidden="true" />
                                 )}
                             </button>
                         </div>
+                        <p id="signup-password-hint" className="mt-1.5 px-1 text-xs font-medium text-slate-500">
+                            {PASSWORD_POLICY_HINT}
+                        </p>
+                        </div>
 
                         <div className="relative group">
+                            <label htmlFor="signup-role" className="sr-only">Account type</label>
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <ShieldCheck className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                             </div>
                             <select
+                                id="signup-role"
                                 name="role"
                                 className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:text-sm shadow-sm hover:border-slate-300 appearance-none font-medium"
                                 value={formData.role}

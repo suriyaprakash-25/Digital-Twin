@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import {
   Receipt,
   IndianRupee,
@@ -18,7 +17,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import SettlementDetailsModal from '../components/settlement/SettlementDetailsModal';
-import { API_BASE_URL, getAuthHeaders } from '../utils/api';
+import { apiGetPage, getErrorMessage } from '../utils/api';
+import ErrorState from '../components/common/ErrorState';
 
 const GarageSettlements = () => {
   const [settlements, setSettlements] = useState([]);
@@ -27,28 +27,29 @@ const GarageSettlements = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedSettlement, setSelectedSettlement] = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchSettlements = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/garage/settlements`, {
-        headers: getAuthHeaders(),
-        params: { page, limit: 15, status: statusFilter }
-      });
+      const { data, totalPages: headerPages } = await apiGetPage('/garage/settlements', { page, limit: 15, status: statusFilter });
 
-      if (res.data?.success) {
-        setSettlements(res.data.settlements || []);
-        setTotalPages(res.data.totalPages || 1);
+      if (data?.success) {
+        setSettlements(data.settlements || []);
+        setTotalPages(data.totalPages || headerPages || 1);
       }
+      setError(null);
     } catch (err) {
-      console.error('Error fetching settlements:', err);
+      setError(getErrorMessage(err, 'Failed to load settlements'));
     } finally {
       setLoading(false);
     }
   }, [page, statusFilter]);
 
   useEffect(() => {
-    fetchSettlements();
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) fetchSettlements(); });
+    return () => { cancelled = true; };
   }, [fetchSettlements]);
 
   return (
@@ -80,11 +81,14 @@ const GarageSettlements = () => {
           </Link>
 
           <button
+            type="button"
             onClick={fetchSettlements}
+            disabled={loading}
             className="p-2 rounded-xl text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs"
             title="Refresh Settlements"
+            aria-label="Refresh settlements"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -95,7 +99,8 @@ const GarageSettlements = () => {
           <button
             key={status}
             type="button"
-            onClick={() => setStatusFilter(status)}
+            onClick={() => { setStatusFilter(status); setPage(1); }}
+            aria-pressed={statusFilter === status}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
               statusFilter === status
                 ? 'bg-slate-900 text-white shadow-sm'
@@ -106,6 +111,8 @@ const GarageSettlements = () => {
           </button>
         ))}
       </div>
+
+      {error && <ErrorState message={error} onRetry={fetchSettlements} retrying={loading} />}
 
       {/* Settlements Table */}
       <div className="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
@@ -206,6 +213,7 @@ const GarageSettlements = () => {
                 type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
+                aria-label="Previous page"
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -214,6 +222,7 @@ const GarageSettlements = () => {
                 type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
+                aria-label="Next page"
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
                 <ChevronRight className="h-4 w-4" />

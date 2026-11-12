@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import {
   BellRing,
   AlertTriangle,
@@ -13,19 +12,22 @@ import {
   Eye,
   Check
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import { apiGet, apiGetPage, apiPost, getErrorMessage } from '../../utils/api';
 import { useToast } from '../../context/toastContextCore';
+import ErrorState from '../../components/common/ErrorState';
+import AlertInvestigationModal, { SeverityBadge } from '../../components/admin/AlertInvestigationModal';
 
 export default function AdminFinancialAlerts() {
   const { showSuccess, showError } = useToast();
   const [alerts, setAlerts] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('OPEN');
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [resolveNote, setResolveNote] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -33,6 +35,7 @@ export default function AdminFinancialAlerts() {
 
   const fetchAlerts = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const params = {
         page,
@@ -41,72 +44,63 @@ export default function AdminFinancialAlerts() {
         status: statusFilter !== 'ALL' ? statusFilter : undefined
       };
 
-      const [listRes, sumRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/admin/alerts`, { params, headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/api/admin/alerts/summary`, { headers: getAuthHeaders() })
+      const [listRes, sumData] = await Promise.all([
+        apiGetPage('/admin/alerts', params),
+        apiGet('/admin/alerts/summary')
       ]);
 
       if (listRes.data?.success) {
         setAlerts(listRes.data.alerts || []);
-        setTotalPages(listRes.data.totalPages || 1);
-        setTotalCount(listRes.data.totalCount || 0);
+        setTotalPages(listRes.data.totalPages || listRes.totalPages || 1);
+        setTotalCount(listRes.data.totalCount || listRes.total || 0);
       }
-      if (sumRes.data?.success) {
-        setSummary(sumRes.data.summary);
+      if (sumData?.success) {
+        setSummary(sumData.summary);
       }
-    } catch {
-      showError('Failed to load financial alerts');
+    } catch (err) {
+      setLoadError(getErrorMessage(err, 'Failed to load financial alerts'));
     } finally {
       setLoading(false);
     }
-  }, [page, severityFilter, statusFilter, showError]);
+  }, [page, severityFilter, statusFilter]);
 
   useEffect(() => {
     fetchAlerts();
   }, [fetchAlerts]);
 
   const handleAcknowledge = async (alertId) => {
-    setActionLoading(true);
+    if (pendingAction) return;
+    setPendingAction('acknowledge');
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/admin/alerts/${alertId}/acknowledge`, {}, { headers: getAuthHeaders() });
-      if (res.data?.success) {
+      const data = await apiPost(`/admin/alerts/${alertId}/acknowledge`, {});
+      if (data?.success) {
         showSuccess('Alert acknowledged');
         fetchAlerts();
         if (selectedAlert) setSelectedAlert(null);
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to acknowledge alert');
+      showError(getErrorMessage(err, 'Failed to acknowledge alert'));
     } finally {
-      setActionLoading(false);
+      setPendingAction(null);
     }
   };
 
   const handleResolve = async (alertId) => {
-    setActionLoading(true);
+    if (pendingAction) return;
+    setPendingAction('resolve');
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/admin/alerts/${alertId}/resolve`,
-        { resolutionNote: resolveNote },
-        { headers: getAuthHeaders() }
-      );
-      if (res.data?.success) {
+      const data = await apiPost(`/admin/alerts/${alertId}/resolve`, { resolutionNote: resolveNote });
+      if (data?.success) {
         showSuccess('Alert resolved successfully');
         setResolveNote('');
         setSelectedAlert(null);
         fetchAlerts();
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to resolve alert');
+      showError(getErrorMessage(err, 'Failed to resolve alert'));
     } finally {
-      setActionLoading(false);
+      setPendingAction(null);
     }
-  };
-
-  const getSeverityBadge = (sev) => {
-    if (sev === 'CRITICAL') return <span className="px-2 py-0.5 rounded text-[10px] font-black bg-red-500/20 text-red-400 border border-red-500/40">CRITICAL</span>;
-    if (sev === 'HIGH') return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40">HIGH</span>;
-    if (sev === 'WARNING') return <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-yellow-500/20 text-yellow-400">WARNING</span>;
-    return <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">INFO</span>;
   };
 
   return (
@@ -127,10 +121,12 @@ export default function AdminFinancialAlerts() {
         </div>
 
         <button
+          type="button"
           onClick={fetchAlerts}
+          disabled={loading}
           className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           Refresh
         </button>
       </div>
@@ -166,6 +162,7 @@ export default function AdminFinancialAlerts() {
       <div className="bg-white border border-slate-200 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <select
+            aria-label="Filter by severity"
             value={severityFilter}
             onChange={(e) => { setSeverityFilter(e.target.value); setPage(1); }}
             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900"
@@ -178,6 +175,7 @@ export default function AdminFinancialAlerts() {
           </select>
 
           <select
+            aria-label="Filter by status"
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900"
@@ -191,6 +189,8 @@ export default function AdminFinancialAlerts() {
 
         <span className="text-xs text-slate-500">Total Filtered: {totalCount}</span>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchAlerts} retrying={loading} />}
 
       {/* Alerts Queue Table */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
@@ -225,7 +225,7 @@ export default function AdminFinancialAlerts() {
                 alerts.map((alt) => (
                   <tr key={alt._id} className="hover:bg-slate-100/40 transition">
                     <td className="px-6 py-3.5 font-mono font-semibold text-rose-400">{alt.alertNumber}</td>
-                    <td className="px-6 py-3.5">{getSeverityBadge(alt.severity)}</td>
+                    <td className="px-6 py-3.5"><SeverityBadge severity={alt.severity} /></td>
                     <td className="px-6 py-3.5 font-semibold text-slate-900">{alt.alertType}</td>
                     <td className="px-6 py-3.5 text-slate-600 max-w-xs truncate">{alt.message}</td>
                     <td className="px-6 py-3.5 text-slate-500">
@@ -238,6 +238,7 @@ export default function AdminFinancialAlerts() {
                     </td>
                     <td className="px-6 py-3.5 text-right">
                       <button
+                        type="button"
                         onClick={() => setSelectedAlert(alt)}
                         className="px-3 py-1 bg-slate-100 hover:bg-slate-700 text-slate-900 rounded-lg text-xs font-semibold transition"
                       >
@@ -261,9 +262,10 @@ export default function AdminFinancialAlerts() {
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
+                aria-label="Previous page"
                 className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               </button>
               <span className="text-xs font-semibold text-slate-600 px-2">
                 Page {page} of {totalPages}
@@ -271,9 +273,10 @@ export default function AdminFinancialAlerts() {
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                aria-label="Next page"
                 className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -281,76 +284,15 @@ export default function AdminFinancialAlerts() {
       </div>
 
       {/* Alert Investigation Modal */}
-      {selectedAlert && (
-        <div className="fixed inset-0 z-50 bg-slate-100/90 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-xl p-6 space-y-6 shadow-2xl">
-            
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-              <div>
-                <h3 className="text-lg font-black text-slate-900">{selectedAlert.alertNumber}</h3>
-                <span className="text-xs text-slate-500">{selectedAlert.alertType}</span>
-              </div>
-              <button
-                onClick={() => setSelectedAlert(null)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-900"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Severity:</span>
-                {getSeverityBadge(selectedAlert.severity)}
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Status:</span>
-                <span className="font-bold text-slate-900">{selectedAlert.status}</span>
-              </div>
-              <div className="pt-2 border-t border-slate-900">
-                <span className="text-slate-500 block mb-1">Message:</span>
-                <p className="text-slate-900 font-medium">{selectedAlert.message}</p>
-              </div>
-            </div>
-
-            {selectedAlert.status !== 'RESOLVED' && (
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Resolution Note</label>
-                <textarea
-                  rows={2}
-                  placeholder="Enter resolution details, action taken..."
-                  value={resolveNote}
-                  onChange={(e) => setResolveNote(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-500"
-                />
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200">
-              {selectedAlert.status === 'OPEN' && (
-                <button
-                  disabled={actionLoading}
-                  onClick={() => handleAcknowledge(selectedAlert.alertNumber)}
-                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-slate-900 rounded-xl text-xs font-bold transition"
-                >
-                  Acknowledge Alert
-                </button>
-              )}
-
-              {selectedAlert.status !== 'RESOLVED' && (
-                <button
-                  disabled={actionLoading}
-                  onClick={() => handleResolve(selectedAlert.alertNumber)}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition"
-                >
-                  Resolve Alert
-                </button>
-              )}
-            </div>
-
-          </div>
-        </div>
-      )}
+      <AlertInvestigationModal
+        alert={selectedAlert}
+        onClose={() => setSelectedAlert(null)}
+        resolveNote={resolveNote}
+        onResolveNoteChange={setResolveNote}
+        pendingAction={pendingAction}
+        onAcknowledge={handleAcknowledge}
+        onResolve={handleResolve}
+      />
 
     </div>
   );

@@ -1,8 +1,8 @@
-import { API_BASE_URL } from '../utils/config';
 import { useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import axios from 'axios';
+import 'leaflet/dist/leaflet.css';
+import { apiPost, getErrorMessage } from '../utils/api';
 import { MapPin, Navigation, Save, ExternalLink, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 // Fix default marker icon broken by bundlers
@@ -23,7 +23,7 @@ function LocationSelector({ position, onSelect }) {
   return position ? <Marker position={[position.latitude, position.longitude]} /> : null;
 }
 
-const GarageLocationPicker = ({ token, initialLocation, readOnly = false, onSaved }) => {
+const GarageLocationPicker = ({ initialLocation, readOnly = false, onSaved }) => {
   const [location, setLocation] = useState(
     initialLocation?.latitude && initialLocation?.longitude
       ? { latitude: initialLocation.latitude, longitude: initialLocation.longitude }
@@ -76,16 +76,12 @@ const GarageLocationPicker = ({ token, initialLocation, readOnly = false, onSave
     }
     setSaving(true);
     try {
-      await axios.post(
-        `${API_BASE_URL}/api/garages/location`,
-        { latitude: location.latitude, longitude: location.longitude },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await apiPost('/garages/location', { latitude: location.latitude, longitude: location.longitude });
       setSaved(true);
       flash('success', 'Location saved successfully!');
       if (onSaved) onSaved({ latitude: location.latitude, longitude: location.longitude });
     } catch (e) {
-      flash('error', e.response?.data?.msg || 'Failed to save location.');
+      flash('error', getErrorMessage(e, 'Failed to save location.'));
     } finally {
       setSaving(false);
     }

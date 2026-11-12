@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   TrendingUp,
   DollarSign,
@@ -18,83 +18,85 @@ import {
   ChevronRight,
   Send
 } from 'lucide-react';
-import { API_BASE_URL } from '../utils/config';
+import { apiGet, apiPost, getErrorMessage, idempotencyHeaders, isIdempotencyInProgress } from '../utils/api';
+import { useIdempotencyKeys } from '../hooks/useIdempotencyKeys';
+import ErrorState from '../components/common/ErrorState';
+
+const SETTLEMENT_REQUEST_SCOPE = 'garage-settlement-request';
 
 const SETTLEMENT_STEPS = [
   { key: 'REQUESTED', label: 'Requested', desc: 'Payout initiated by garage or schedule' },
   { key: 'UNDER_REVIEW', label: 'Under Review', desc: 'Compliance & maker-checker check' },
   { key: 'APPROVED', label: 'Approved', desc: 'Authorized for gateway disbursement' },
-  { key: 'PROCESSING', label: 'Processing', desc: 'Routing through Razorpay bank rails' },
+  { key: 'PROCESSING', label: 'Processing', desc: 'Routing through the payment gateway bank rails' },
   { key: 'SETTLED', label: 'Settled', desc: 'Funds disbursed to linked bank account' }
 ];
 
 export default function GarageFinancialCenter() {
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const idempotencyKeys = useIdempotencyKeys();
   const [summary, setSummary] = useState(null);
   const [forecast, setForecast] = useState(null);
   const [settlements, setSettlements] = useState([]);
   const [requestingSettlement, setRequestingSettlement] = useState(false);
   const [message, setMessage] = useState(null);
 
-  const fetchGarageFinancials = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+  const fetchGarageFinancials = useCallback(async () => {
+    setLoading(true);
+    // Each panel loads independently so one failing endpoint does not blank the page.
+    const [sumRes, foreRes, setRes] = await Promise.allSettled([
+      apiGet('/garage/earnings/summary'),
+      apiGet('/garage/settlements/forecast'),
+      apiGet('/garage/settlements')
+    ]);
 
-      const [sumRes, foreRes, setRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/garage/earnings/summary`, { headers }),
-        fetch(`${API_BASE_URL}/api/garage/settlements/forecast`, { headers }),
-        fetch(`${API_BASE_URL}/api/garage/settlements`, { headers })
-      ]);
+    const sumData = sumRes.status === 'fulfilled' ? sumRes.value : null;
+    const foreData = foreRes.status === 'fulfilled' ? foreRes.value : null;
+    const setData = setRes.status === 'fulfilled' ? setRes.value : null;
 
-      const sumData = await sumRes.json();
-      const foreData = await foreRes.json();
-      const setData = await setRes.json();
-
-      if (sumData.success) {
-        setSummary(sumData.summary);
-      }
-      if (foreData.success) {
-        setForecast(foreData.forecast || foreData);
-      }
-      if (setData.success) {
-        setSettlements(setData.settlements || []);
-      }
-    } catch (err) {
-      console.error('Error fetching garage financial data:', err);
-    } finally {
-      setLoading(false);
+    if (sumData?.success) {
+      setSummary(sumData.summary);
     }
-  };
-
-  useEffect(() => {
-    fetchGarageFinancials();
+    if (foreData?.success) {
+      setForecast(foreData.forecast || foreData);
+    }
+    if (setData?.success) {
+      setSettlements(setData.settlements || []);
+    }
+    const failed = [sumRes, foreRes, setRes].find((r) => r.status === 'rejected');
+    setLoadError(failed ? getErrorMessage(failed.reason, 'Some financial data could not be loaded') : null);
+    setLoading(false);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) fetchGarageFinancials(); });
+    return () => { cancelled = true; };
+  }, [fetchGarageFinancials]);
+
   const handleRequestSettlement = async () => {
+    if (requestingSettlement) return;
+    // One stable key per payout attempt; reused only if the same request is retried.
+    const key = idempotencyKeys.keyFor(SETTLEMENT_REQUEST_SCOPE);
     try {
       setRequestingSettlement(true);
       setMessage(null);
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/garage/settlements/request`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          'Idempotency-Key': `req_set_${Date.now()}`
-        },
-        body: JSON.stringify({})
-      });
-      const data = await res.json();
-      if (data.success) {
+      const data = await apiPost('/garage/settlements/request', {}, { headers: idempotencyHeaders(key) });
+      idempotencyKeys.release(SETTLEMENT_REQUEST_SCOPE);
+      if (data?.success) {
         setMessage({ type: 'success', text: `Settlement batch ${data.settlement?.settlementNumber || 'requested'} initiated successfully!` });
         fetchGarageFinancials();
       } else {
-        setMessage({ type: 'error', text: data.message || 'Unable to request settlement' });
+        setMessage({ type: 'error', text: data?.message || 'Unable to request settlement' });
       }
-    } catch {
-      setMessage({ type: 'error', text: 'Network error requesting settlement' });
+    } catch (err) {
+      idempotencyKeys.settle(SETTLEMENT_REQUEST_SCOPE, err);
+      if (isIdempotencyInProgress(err)) {
+        setMessage({ type: 'warning', text: 'This payout request is already being processed.' });
+      } else {
+        setMessage({ type: 'error', text: getErrorMessage(err, 'Unable to request settlement') });
+      }
     } finally {
       setRequestingSettlement(false);
     }
@@ -138,7 +140,9 @@ export default function GarageFinancialCenter() {
 
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={handleRequestSettlement}
+              aria-busy={requestingSettlement}
               disabled={requestingSettlement || !summary?.availableBalance || summary?.availableBalance < 500}
               className="flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl text-sm transition shadow-sm"
             >
@@ -150,18 +154,28 @@ export default function GarageFinancialCenter() {
               Request Payout
             </button>
             <button
+              type="button"
               onClick={fetchGarageFinancials}
+              disabled={loading}
+              aria-label="Refresh financial data"
+              title="Refresh"
               className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl transition shadow-sm"
             >
-              <RefreshCw className="w-4 h-4 text-teal-600" />
+              <RefreshCw className={`w-4 h-4 text-teal-600 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
             </button>
           </div>
         </div>
 
         {/* Notifications / Alerts */}
+        {loadError && <ErrorState message={loadError} onRetry={fetchGarageFinancials} retrying={loading} />}
+
         {message && (
-          <div className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 ${
-            message.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-rose-50 border border-rose-200 text-rose-800'
+          <div role={message.type === 'error' ? 'alert' : 'status'} className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 ${
+            message.type === 'success'
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+              : message.type === 'warning'
+                ? 'bg-amber-50 border border-amber-200 text-amber-800'
+                : 'bg-rose-50 border border-rose-200 text-rose-800'
           }`}>
             {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <AlertCircle className="w-5 h-5 text-rose-600" />}
             {message.text}

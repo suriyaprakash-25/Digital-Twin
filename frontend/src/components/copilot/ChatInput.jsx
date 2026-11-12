@@ -36,6 +36,7 @@ const ChatInput = ({ onSendMessage, isLoading }) => {
           />
         )}
         <textarea
+          aria-label="Message the assistant"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -48,6 +49,7 @@ const ChatInput = ({ onSendMessage, isLoading }) => {
         <div className="p-1 shrink-0">
           <button
             type="submit"
+            aria-label="Send message"
             disabled={(!inputText.trim() && !imageBase64) || isLoading}
             className={`flex items-center justify-center w-8 h-8 rounded-xl transition-all ${
               (inputText.trim() || imageBase64) && !isLoading

@@ -1,11 +1,15 @@
-import { API_BASE_URL } from '../utils/config';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useId, useState } from 'react';
 import { ShieldCheck, AlertTriangle, Upload, CheckCircle, Clock } from 'lucide-react';
+import { apiGet, apiUpload, getErrorMessage } from '../utils/api';
+import { useAsync } from '../hooks/useAsync';
+import { useToast } from '../context/toastContextCore';
+import ErrorState from '../components/common/ErrorState';
 
 const GaragePortal = () => {
-    const [pendingServices, setPendingServices] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { showSuccess, showWarning, showError } = useToast();
+    const fieldId = useId();
+    const { data, error, loading, refetch } = useAsync(() => apiGet('/garage/pending'), [], { initialData: [] });
+    const pendingServices = Array.isArray(data) ? data : [];
     const [selectedService, setSelectedService] = useState(null);
     const [garageKm, setGarageKm] = useState('');
     const [severity, setSeverity] = useState('Normal');
@@ -14,26 +18,9 @@ const GaragePortal = () => {
     const [submitting, setSubmitting] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
-    const fetchPending = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_BASE_URL}/api/garage/pending`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setPendingServices(res.data);
-        } catch (err) {
-            console.error('Error fetching pending services:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchPending();
-    }, []);
-
     const handleVerifySubmit = async (e) => {
         e.preventDefault();
+        if (submitting) return;
         setSubmitting(true);
         setSuccessMessage('');
 
@@ -46,28 +33,22 @@ const GaragePortal = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.post(`${API_BASE_URL}/api/garage/verify/${selectedService.id}`, formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const result = await apiUpload(`/garage/verify/${selectedService.id}`, formData);
 
-            if (res.data.tamperDetected) {
-                alert('WARNING: Odometer tamper logic triggered based on inputs. Service is flagged.');
+            if (result?.tamperDetected) {
+                showWarning('WARNING: Odometer tamper logic triggered based on inputs. Service is flagged.', 8000);
             } else {
                 setSuccessMessage('Service formally verified with Trust Badge.');
+                showSuccess('Service formally verified with Trust Badge.');
             }
 
             setSelectedService(null);
             setGarageKm('');
             setNotes('');
             setBillFile(null);
-            fetchPending();
+            refetch({ silent: true });
         } catch (err) {
-            console.error('Error verifying:', err);
-            alert('Verification failed.');
+            showError(getErrorMessage(err, 'Verification failed.'));
         } finally {
             setSubmitting(false);
         }
@@ -75,10 +56,14 @@ const GaragePortal = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center py-24">
+            <div className="flex justify-center py-24" role="status" aria-label="Loading pending verifications">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-emerald-600"></div>
             </div>
         );
+    }
+
+    if (error) {
+        return <div className="max-w-7xl mx-auto"><ErrorState message={error} onRetry={() => refetch()} /></div>;
     }
 
     return (
@@ -99,7 +84,7 @@ const GaragePortal = () => {
             </header>
 
             {successMessage && (
-                <div className="mb-8 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center gap-3">
+                <div role="status" className="mb-8 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center gap-3">
                     <CheckCircle className="h-6 w-6 text-emerald-600" />
                     <span className="font-bold">{successMessage}</span>
                 </div>
@@ -118,25 +103,27 @@ const GaragePortal = () => {
                             <p className="text-slate-500 italic text-center py-8">No pending verifications queue is empty.</p>
                         ) : (
                             pendingServices.map(s => (
-                                <div
+                                <button
+                                    type="button"
                                     key={s.id}
                                     onClick={() => setSelectedService(s)}
-                                    className={`p-4 rounded-2xl border transition-all cursor-pointer ${selectedService?.id === s.id
+                                    aria-pressed={selectedService?.id === s.id}
+                                    className={`block w-full text-left p-4 rounded-2xl border transition-all cursor-pointer ${selectedService?.id === s.id
                                             ? 'bg-emerald-50 border-emerald-300 shadow-md ring-2 ring-emerald-500/20'
                                             : 'bg-slate-50 border-slate-200 hover:border-emerald-300 hover:bg-slate-100'
                                         }`}
                                 >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-slate-900">{s.vehicleInfo}</h3>
+                                    <span className="flex justify-between items-start mb-2">
+                                        <span className="font-bold text-slate-900">{s.vehicleInfo}</span>
                                         <span className="text-xs font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded-md">
                                             {s.serviceDate}
                                         </span>
-                                    </div>
-                                    <p className="text-sm font-medium text-slate-600 mb-1">{s.serviceCategory}</p>
-                                    <p className="text-xs text-slate-500 flex items-center gap-1">
+                                    </span>
+                                    <span className="block text-sm font-medium text-slate-600 mb-1">{s.serviceCategory}</span>
+                                    <span className="text-xs text-slate-500 flex items-center gap-1">
                                         Client claimed: <span className="font-bold text-slate-700">{s.odometerKm} km</span>
-                                    </p>
-                                </div>
+                                    </span>
+                                </button>
                             ))
                         )}
                     </div>
@@ -161,8 +148,9 @@ const GaragePortal = () => {
                             <form onSubmit={handleVerifySubmit} className="space-y-6">
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-700">Actual Garage Odometer Reading (Km)</label>
+                                        <label htmlFor={`${fieldId}-km`} className="text-sm font-bold text-slate-700">Actual Garage Odometer Reading (Km)</label>
                                         <input
+                                            id={`${fieldId}-km`}
                                             type="number"
                                             required
                                             value={garageKm}
@@ -176,8 +164,9 @@ const GaragePortal = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-slate-700">Repair Severity Rating</label>
+                                        <label htmlFor={`${fieldId}-severity`} className="text-sm font-bold text-slate-700">Repair Severity Rating</label>
                                         <select
+                                            id={`${fieldId}-severity`}
                                             value={severity}
                                             onChange={(e) => setSeverity(e.target.value)}
                                             className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all font-medium"
@@ -191,8 +180,9 @@ const GaragePortal = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700">Official Mechanic Notes & Recommendations</label>
+                                    <label htmlFor={`${fieldId}-notes`} className="text-sm font-bold text-slate-700">Official Mechanic Notes & Recommendations</label>
                                     <textarea
+                                        id={`${fieldId}-notes`}
                                         rows="3"
                                         value={notes}
                                         onChange={(e) => setNotes(e.target.value)}
@@ -202,11 +192,12 @@ const GaragePortal = () => {
                                 </div>
 
                                 <div className="space-y-2 pt-4 border-t border-slate-100">
-                                    <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                    <label htmlFor={`${fieldId}-bill`} className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                         <Upload className="h-4 w-4 text-emerald-600" />
                                         Upload System-Generated Invoice (PDF/Img)
                                     </label>
                                     <input
+                                        id={`${fieldId}-bill`}
                                         type="file"
                                         onChange={(e) => setBillFile(e.target.files[0])}
                                         className="w-full file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 text-slate-500"

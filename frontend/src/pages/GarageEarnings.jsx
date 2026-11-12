@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import {
   IndianRupee,
   Percent,
@@ -27,7 +26,10 @@ import {
 import CommissionDetailsModal from '../components/commission/CommissionDetailsModal';
 import RequestSettlementModal from '../components/settlement/RequestSettlementModal';
 import InvoiceModal from '../components/invoice/InvoiceModal';
-import { API_BASE_URL, getAuthHeaders } from '../utils/api';
+import PayoutProfileModal from '../components/garage/PayoutProfileModal';
+import ErrorState from '../components/common/ErrorState';
+import { apiGet, getErrorMessage } from '../utils/api';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const GarageEarnings = () => {
   const [earnings, setEarnings] = useState([]);
@@ -46,6 +48,8 @@ const GarageEarnings = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState(null);
+  const debouncedSearch = useDebouncedValue(search, 400);
 
   // Modals
   const [selectedEarningForDetails, setSelectedEarningForDetails] = useState(null);
@@ -53,73 +57,41 @@ const GarageEarnings = () => {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
 
-  // Bank Form State
-  const [bankForm, setBankForm] = useState({
-    accountHolderName: '',
-    accountNumber: '',
-    ifscCode: '',
-    bankName: ''
-  });
-  const [bankSaving, setBankSaving] = useState(false);
-
   const fetchEarningsAndSummary = useCallback(async () => {
     setLoading(true);
     try {
       const [earnRes, sumRes, profRes] = await Promise.allSettled([
-        axios.get(`${API_BASE_URL}/api/garage/earnings`, {
-          headers: getAuthHeaders(),
-          params: { page, limit: 15, search, status: statusFilter }
-        }),
-        axios.get(`${API_BASE_URL}/api/garage/earnings/summary`, {
-          headers: getAuthHeaders()
-        }),
-        axios.get(`${API_BASE_URL}/api/garage/payout-profile`, {
-          headers: getAuthHeaders()
-        })
+        apiGet('/garage/earnings', { page, limit: 15, search: debouncedSearch, status: statusFilter }),
+        apiGet('/garage/earnings/summary'),
+        apiGet('/garage/payout-profile')
       ]);
 
-      if (earnRes.status === 'fulfilled' && earnRes.value.data?.success) {
-        setEarnings(earnRes.value.data.earnings || []);
-        setTotalPages(earnRes.value.data.totalPages || 1);
+      if (earnRes.status === 'fulfilled' && earnRes.value?.success) {
+        setEarnings(earnRes.value.earnings || []);
+        setTotalPages(earnRes.value.totalPages || 1);
       }
 
-      if (sumRes.status === 'fulfilled' && sumRes.value.data?.success) {
-        setSummary(sumRes.value.data.summary);
+      if (sumRes.status === 'fulfilled' && sumRes.value?.success) {
+        setSummary(sumRes.value.summary);
       }
 
-      if (profRes.status === 'fulfilled' && profRes.value.data?.success) {
-        setPayoutProfile(profRes.value.data.profile);
+      if (profRes.status === 'fulfilled' && profRes.value?.success) {
+        setPayoutProfile(profRes.value.profile);
       }
-    } catch (err) {
-      console.error('Error loading garage earnings:', err);
+
+      // The payout profile may legitimately be missing; the ledger and summary may not.
+      const failed = [earnRes, sumRes].find((r) => r.status === 'rejected');
+      setError(failed ? getErrorMessage(failed.reason, 'Failed to load your earnings') : null);
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, debouncedSearch, statusFilter]);
 
   useEffect(() => {
-    fetchEarningsAndSummary();
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) fetchEarningsAndSummary(); });
+    return () => { cancelled = true; };
   }, [fetchEarningsAndSummary]);
-
-  const handleSaveBank = async (e) => {
-    e.preventDefault();
-    setBankSaving(true);
-    try {
-      const res = await axios.put(
-        `${API_BASE_URL}/api/garage/payout-profile`,
-        bankForm,
-        { headers: getAuthHeaders() }
-      );
-      if (res.data?.success) {
-        setPayoutProfile(res.data.profile);
-        setIsBankModalOpen(false);
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error saving payout profile');
-    } finally {
-      setBankSaving(false);
-    }
-  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-300">
@@ -142,6 +114,7 @@ const GarageEarnings = () => {
 
         <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
           <button
+            type="button"
             onClick={() => setIsBankModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs"
           >
@@ -150,6 +123,7 @@ const GarageEarnings = () => {
           </button>
 
           <button
+            type="button"
             onClick={() => setIsRequestModalOpen(true)}
             disabled={summary.availableBalance < 500}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 transition-all shadow-md"
@@ -159,11 +133,14 @@ const GarageEarnings = () => {
           </button>
 
           <button
+            type="button"
             onClick={fetchEarningsAndSummary}
+            disabled={loading}
             className="p-2 rounded-xl text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs"
             title="Refresh Ledger"
+            aria-label="Refresh ledger"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -226,9 +203,10 @@ const GarageEarnings = () => {
         <div className="relative w-full sm:max-w-md">
           <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
-            type="text"
+            type="search"
+            aria-label="Search earnings"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search by invoice number, vehicle, service, payment ID..."
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500"
           />
@@ -239,7 +217,8 @@ const GarageEarnings = () => {
             <button
               key={status}
               type="button"
-              onClick={() => setStatusFilter(status)}
+              onClick={() => { setStatusFilter(status); setPage(1); }}
+              aria-pressed={statusFilter === status}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 statusFilter === status
                   ? 'bg-slate-900 text-white shadow-sm'
@@ -251,6 +230,8 @@ const GarageEarnings = () => {
           ))}
         </div>
       </div>
+
+      {error && <ErrorState message={error} onRetry={fetchEarningsAndSummary} retrying={loading} />}
 
       {/* Ledger Table */}
       <div className="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
@@ -368,6 +349,7 @@ const GarageEarnings = () => {
                 type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
+                aria-label="Previous page"
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -376,6 +358,7 @@ const GarageEarnings = () => {
                 type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
+                aria-label="Next page"
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -417,80 +400,13 @@ const GarageEarnings = () => {
 
       {/* Bank Details Modal */}
       {isBankModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-black text-slate-900">Garage Bank Account for Payouts</h3>
-              <button onClick={() => setIsBankModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveBank} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Account Holder Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Apex Auto Services"
-                  value={bankForm.accountHolderName}
-                  onChange={e => setBankForm({ ...bankForm, accountHolderName: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"
-                />
-              </div>
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Bank Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. HDFC Bank"
-                  value={bankForm.bankName}
-                  onChange={e => setBankForm({ ...bankForm, bankName: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"
-                />
-              </div>
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Account Number</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 50100492817291"
-                  value={bankForm.accountNumber}
-                  onChange={e => setBankForm({ ...bankForm, accountNumber: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
-                />
-              </div>
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">IFSC Code</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. HDFC0001234"
-                  value={bankForm.ifscCode}
-                  onChange={e => setBankForm({ ...bankForm, ifscCode: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono uppercase"
-                />
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsBankModalOpen(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={bankSaving}
-                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold shadow-md"
-                >
-                  {bankSaving ? 'Saving...' : 'Save Bank Profile'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <PayoutProfileModal
+          onClose={() => setIsBankModalOpen(false)}
+          onSaved={(profile) => {
+            setPayoutProfile(profile);
+            setIsBankModalOpen(false);
+          }}
+        />
       )}
     </div>
   );

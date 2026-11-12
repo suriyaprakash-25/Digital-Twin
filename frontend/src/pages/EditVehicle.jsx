@@ -1,7 +1,6 @@
-import { API_BASE_URL } from '../utils/config';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import { apiGet, apiUpload, getErrorMessage } from '../utils/api';
 import { Car, CheckCircle, Hash, Calendar, Fuel, FileText, User, Phone, IndianRupee, Activity, Tag, Shield, FileCheck, Layers, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import MediaManager from '../components/MediaManager';
 
@@ -31,11 +30,8 @@ const EditVehicle = () => {
     useEffect(() => {
         const fetchVehicle = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const vehicle = res.data.find(v => v.id === id);
+                const vehicles = await apiGet('/vehicles/myvehicles');
+                const vehicle = (vehicles || []).find(v => v.id === id);
                 if (vehicle) {
                     // Map backend to form
                     const mapped = {};
@@ -53,8 +49,8 @@ const EditVehicle = () => {
                 } else {
                     setStatus({ type: 'error', message: 'Vehicle not found' });
                 }
-            } catch {
-                setStatus({ type: 'error', message: 'Failed to fetch vehicle details' });
+            } catch (err) {
+                setStatus({ type: 'error', message: getErrorMessage(err, 'Failed to fetch vehicle details') });
             } finally {
                 setInitialLoading(false);
             }
@@ -72,25 +68,19 @@ const EditVehicle = () => {
         setIsLoading(true);
 
         try {
-            const token = localStorage.getItem('token');
             const submitData = new FormData();
             Object.keys(formData).forEach(key => submitData.append(key, formData[key]));
             if (rcBookFile) submitData.append('rcBook', rcBookFile);
             if (insuranceFile) submitData.append('insuranceDocument', insuranceFile);
 
-            await axios.put(`${API_BASE_URL}/api/vehicles/${id}`, submitData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            await apiUpload(`/vehicles/${id}`, submitData, { method: 'put' });
 
             setStatus({ type: 'success', message: 'Vehicle updated successfully!' });
             setTimeout(() => navigate('/my-vehicles'), 1500);
         } catch (err) {
             setStatus({
                 type: 'error',
-                message: err.response?.data?.msg || 'Failed to update vehicle. Please try again.'
+                message: getErrorMessage(err, 'Failed to update vehicle. Please try again.')
             });
         } finally {
             setIsLoading(false);
@@ -99,13 +89,14 @@ const EditVehicle = () => {
 
     const renderInputGroup = (label, name, type = "text", icon = <Hash className="h-4 w-4 md:h-5 md:w-5" />, placeholder = "", options = null, extraProps = {}) => (
         <div className="space-y-1.5 pb-1 lg:pb-2">
-            <label className="text-xs md:text-sm font-bold text-slate-700">{label}</label>
+            <label htmlFor={`vehicle-${name}`} className="text-xs md:text-sm font-bold text-slate-700">{label}</label>
             <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-teal-500 transition-colors">
                     {icon}
                 </div>
                 {options ? (
                     <select
+                        id={`vehicle-${name}`}
                         name={name}
                         value={formData[name]}
                         onChange={handleChange}
@@ -116,6 +107,7 @@ const EditVehicle = () => {
                     </select>
                 ) : (
                     <input
+                        id={`vehicle-${name}`}
                         name={name}
                         type={type}
                         placeholder={placeholder}
@@ -131,7 +123,7 @@ const EditVehicle = () => {
 
     if (initialLoading) {
         return (
-            <div className="flex justify-center items-center py-24">
+            <div role="status" aria-label="Loading vehicle" className="flex justify-center items-center py-24">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
             </div>
         );
@@ -156,7 +148,7 @@ const EditVehicle = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-8">
                 {status.message && (
-                    <div className={`p-3 md:p-4 rounded-xl flex items-center gap-3 text-xs md:text-sm font-semibold shadow-sm ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+                    <div role={status.type === 'error' ? 'alert' : 'status'} className={`p-3 md:p-4 rounded-xl flex items-center gap-3 text-xs md:text-sm font-semibold shadow-sm ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
                         }`}>
                         {status.type === 'success' && <CheckCircle className="h-4.5 w-4.5 md:h-5 md:w-5" />}
                         {status.message}
@@ -223,12 +215,13 @@ const EditVehicle = () => {
                             {renderInputGroup("Engine Number", "engineNumber", "text", <Hash className="h-4 w-4 md:h-5 md:w-5" />, "")}
 
                             <div className="space-y-1.5">
-                                <label className="text-xs md:text-sm font-bold text-slate-700">Update RC Book (Optional)</label>
+                                <label htmlFor="vehicle-rcBook" className="text-xs md:text-sm font-bold text-slate-700">Update RC Book (Optional)</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
                                         <FileText className="h-4 w-4 md:h-5 md:w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                                     </div>
                                     <input
+                                        id="vehicle-rcBook"
                                         name="rcBook"
                                         type="file"
                                         accept=".pdf,image/*"
@@ -239,12 +232,13 @@ const EditVehicle = () => {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs md:text-sm font-bold text-slate-700">Update Insurance Document (Optional)</label>
+                                <label htmlFor="vehicle-insuranceDocument" className="text-xs md:text-sm font-bold text-slate-700">Update Insurance Document (Optional)</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
                                         <FileText className="h-4 w-4 md:h-5 md:w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                                     </div>
                                     <input
+                                        id="vehicle-insuranceDocument"
                                         name="insuranceDocument"
                                         type="file"
                                         accept=".pdf,image/*"

@@ -1,4 +1,4 @@
-import React from 'react';
+import { useDialog } from '../../hooks/useDialog';
 import { X, CheckCircle2, Clock, ArrowRight, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
 
 const REFUND_STAGES = [
@@ -9,6 +9,7 @@ const REFUND_STAGES = [
 ];
 
 export default function RefundTrackingModal({ payment, onClose }) {
+  const { dialogProps, titleId } = useDialog({ isOpen: Boolean(payment), onClose });
   if (!payment) return null;
 
   const originalAmount = Number(payment.amount || 0);
@@ -33,7 +34,7 @@ export default function RefundTrackingModal({ payment, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
+      <div {...dialogProps} className="relative w-full max-w-xl bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden focus:outline-none">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
           <div className="flex items-center gap-2.5">
@@ -41,12 +42,14 @@ export default function RefundTrackingModal({ payment, onClose }) {
               <RefreshCw className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Refund Tracker</h3>
+              <h2 id={titleId} className="text-lg font-bold text-slate-900">Refund Tracker</h2>
               <p className="text-xs text-slate-500 font-mono">Invoice {payment.invoiceNumber || '—'}</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close refund tracker"
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
           >
             <X className="w-5 h-5" />
@@ -79,7 +82,7 @@ export default function RefundTrackingModal({ payment, onClose }) {
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Payment ID:</span>
-              <span className="font-mono text-slate-800 font-semibold">{payment.paymentId || payment.razorpayPaymentId || '—'}</span>
+              <span className="font-mono text-slate-800 font-semibold">{payment.paymentId || payment.cashfreePaymentId || payment.razorpayPaymentId || '—'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Initiated On:</span>

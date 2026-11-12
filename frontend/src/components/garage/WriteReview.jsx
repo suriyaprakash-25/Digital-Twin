@@ -1,10 +1,10 @@
-import { API_BASE_URL } from '../../utils/config';
-import React, { useState } from 'react';
-import axios from 'axios';
+import { useId, useState } from 'react';
+import { apiPost, getErrorMessage } from '../../utils/api';
 import { PenTool, CheckCircle, AlertCircle, Send, Star, ShieldCheck } from 'lucide-react';
 import StarRating from './StarRating';
 
-const WriteReview = ({ garageId, token, completedBookings = [], onReviewSubmitted = () => {} }) => {
+const WriteReview = ({ garageId, completedBookings = [], onReviewSubmitted = () => {} }) => {
+  const fieldId = useId();
   const [rating, setRating] = useState(5);
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewMessage, setReviewMessage] = useState('');
@@ -36,26 +36,25 @@ const WriteReview = ({ garageId, token, completedBookings = [], onReviewSubmitte
     setSubmitting(true);
 
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/garages/${garageId}/reviews`,
+      const data = await apiPost(
+        `/garages/${garageId}/reviews`,
         {
           rating,
           reviewTitle,
           reviewMessage: reviewMessage.trim(),
           bookingId: selectedBookingId
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
 
       setStatus({ type: 'success', msg: 'Review submitted successfully! Thank you for your feedback.' });
       setReviewTitle('');
       setReviewMessage('');
       
-      if (res.data?.review) {
-        onReviewSubmitted(res.data.review, res.data.averageRating, res.data.totalReviews);
+      if (data?.review) {
+        onReviewSubmitted(data.review, data.averageRating, data.totalReviews);
       }
     } catch (err) {
-      setStatus({ type: 'error', msg: err.response?.data?.msg || 'Failed to submit review.' });
+      setStatus({ type: 'error', msg: getErrorMessage(err, 'Failed to submit review.') });
     } finally {
       setSubmitting(false);
     }
@@ -76,7 +75,7 @@ const WriteReview = ({ garageId, token, completedBookings = [], onReviewSubmitte
       </div>
 
       {status.msg && (
-        <div className={`p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 ${
+        <div role={status.type === 'success' ? 'status' : 'alert'} className={`p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 ${
           status.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {status.type === 'success' ? <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />}
@@ -88,10 +87,11 @@ const WriteReview = ({ garageId, token, completedBookings = [], onReviewSubmitte
         {/* Completed Service Selector if multiple */}
         {completedBookings.length > 1 && (
           <div>
-            <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
+            <label htmlFor={`${fieldId}-booking`} className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
               Select Completed Service Booking
             </label>
             <select
+              id={`${fieldId}-booking`}
               value={selectedBookingId}
               onChange={(e) => setSelectedBookingId(e.target.value)}
               className="w-full p-3 rounded-2xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
@@ -107,10 +107,10 @@ const WriteReview = ({ garageId, token, completedBookings = [], onReviewSubmitte
 
         {/* 5-Star Component */}
         <div>
-          <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
+          <span id={`${fieldId}-rating`} className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
             Rate Your Experience *
-          </label>
-          <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80 w-fit">
+          </span>
+          <div role="group" aria-labelledby={`${fieldId}-rating`} className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80 w-fit">
             <StarRating rating={rating} size={28} interactive={true} onChange={(val) => setRating(val)} />
             <span className="text-sm font-extrabold text-slate-800 ml-2">
               {rating === 5 ? '⭐⭐⭐⭐⭐ Excellent' : rating === 4 ? '⭐⭐⭐⭐ Very Good' : rating === 3 ? '⭐⭐⭐ Average' : rating === 2 ? '⭐⭐ Poor' : '⭐ Terrible'}
@@ -120,10 +120,11 @@ const WriteReview = ({ garageId, token, completedBookings = [], onReviewSubmitte
 
         {/* Review Title */}
         <div>
-          <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
+          <label htmlFor={`${fieldId}-title`} className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
             Review Title <span className="text-slate-400 font-normal">(Optional)</span>
           </label>
           <input
+            id={`${fieldId}-title`}
             type="text"
             value={reviewTitle}
             onChange={(e) => setReviewTitle(e.target.value)}
@@ -136,7 +137,7 @@ const WriteReview = ({ garageId, token, completedBookings = [], onReviewSubmitte
         {/* Review Message Textarea */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+            <label htmlFor={`${fieldId}-message`} className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
               Review Message * <span className="text-slate-400 font-normal">(Min 20 characters)</span>
             </label>
             <span className={`text-xs font-bold ${remainingChars < 50 ? 'text-amber-600' : 'text-slate-400'}`}>
@@ -144,6 +145,7 @@ const WriteReview = ({ garageId, token, completedBookings = [], onReviewSubmitte
             </span>
           </div>
           <textarea
+            id={`${fieldId}-message`}
             value={reviewMessage}
             onChange={(e) => setReviewMessage(e.target.value)}
             placeholder="Tell us details about the service quality, technician professionalism, waiting area, and turnaround time..."

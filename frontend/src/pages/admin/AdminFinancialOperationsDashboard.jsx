@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import {
   Activity,
   CreditCard,
@@ -21,12 +20,12 @@ import {
   XCircle,
   ChevronRight
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/toastContextCore';
+import { apiGet, getErrorMessage } from '../../utils/api';
+import ErrorState from '../../components/common/ErrorState';
 
 export default function AdminFinancialOperationsDashboard() {
-  const { showError } = useToast();
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [health, setHealth] = useState(null);
   const [forecast, setForecast] = useState(null);
   const [alertsSummary, setAlertsSummary] = useState(null);
@@ -35,26 +34,27 @@ export default function AdminFinancialOperationsDashboard() {
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const [hRes, fRes, aRes, iRes, tRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/health`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/api/admin/treasury/forecast`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/api/admin/alerts/summary`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/api/admin/financial-integrity/summary`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/api/admin/tax/summary?period=TODAY`, { headers: getAuthHeaders() })
+      const [hData, fData, aData, iData, tData] = await Promise.all([
+        apiGet('/health'),
+        apiGet('/admin/treasury/forecast'),
+        apiGet('/admin/alerts/summary'),
+        apiGet('/admin/financial-integrity/summary'),
+        apiGet('/admin/tax/summary?period=TODAY')
       ]);
 
-      if (hRes.data) setHealth(hRes.data);
-      if (fRes.data?.success) setForecast(fRes.data.forecast);
-      if (aRes.data?.success) setAlertsSummary(aRes.data.summary);
-      if (iRes.data?.success) setIntegritySummary(iRes.data.summary);
-      if (tRes.data?.success) setTaxSummary(tRes.data.summary);
-    } catch {
-      showError('Failed to load command center operations data');
+      if (hData) setHealth(hData);
+      if (fData?.success) setForecast(fData.forecast);
+      if (aData?.success) setAlertsSummary(aData.summary);
+      if (iData?.success) setIntegritySummary(iData.summary);
+      if (tData?.success) setTaxSummary(tData.summary);
+    } catch (err) {
+      setLoadError(getErrorMessage(err, 'Failed to load command center operations data'));
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, []);
 
   useEffect(() => {
     fetchDashboardData();
@@ -89,13 +89,17 @@ export default function AdminFinancialOperationsDashboard() {
         </div>
 
         <button
+          type="button"
           onClick={fetchDashboardData}
+          disabled={loading}
           className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           Refresh Status
         </button>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchDashboardData} retrying={loading} />}
 
       {/* System Subsystems Live Status Bar */}
       <div className="bg-white border border-slate-200 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
@@ -113,8 +117,8 @@ export default function AdminFinancialOperationsDashboard() {
 
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white border border-slate-200 text-xs">
             <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-            <span className="text-slate-500">Razorpay:</span>
-            <span className="font-bold text-blue-400 uppercase">{health?.services?.razorpay || 'Configured'}</span>
+            <span className="text-slate-500">Payment Gateway:</span>
+            <span className="font-bold text-blue-400 uppercase">{health?.services?.cashfree || health?.services?.paymentGateway || health?.services?.razorpay || 'Configured'}</span>
           </div>
 
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white border border-slate-200 text-xs">
