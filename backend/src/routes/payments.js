@@ -1,7 +1,7 @@
 const express = require('express');
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { loadConfig } = require('../config');
 const {
   createCashfreeOrder,
@@ -323,7 +323,7 @@ router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMid
 // Called by frontend after Cashfree checkout redirect / JS callback.
 // We re-verify order status directly with Cashfree API (server-side).
 // ---------------------------------------------------------------------------
-router.post('/verify', requireAuth, async (req, res) => {
+router.post('/verify', optionalAuth, async (req, res) => {
   const { cfOrderId, orderId, serviceId } = req.body || {};
   const resolvedOrderId = cfOrderId || orderId;
 
@@ -347,8 +347,8 @@ router.post('/verify', requireAuth, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Payment record not found for this order ID' });
     }
 
-    // 2. Authorize user ownership
-    if (String(payment.userId) !== String(req.user.id) && req.user.role !== 'ADMIN') {
+    // 2. Authorize user ownership if authenticated
+    if (req.user && String(payment.userId) !== String(req.user.id) && req.user.role !== 'ADMIN') {
       return res.status(403).json({ success: false, message: 'Forbidden: Unauthorized payment verification attempt' });
     }
 

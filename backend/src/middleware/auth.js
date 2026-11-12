@@ -64,6 +64,40 @@ async function requireAuth(req, res, next) {
   }
 }
 
+async function optionalAuth(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  const parts = authHeader.split(' ');
+  const token = parts.length === 2 && parts[0] === 'Bearer' ? parts[1] : null;
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const payload = jwt.verify(token, config.jwtSecret);
+    const { getDb } = require('../db');
+    const { ObjectId } = require('mongodb');
+    const db = getDb();
+
+    const user = await db.collection('users').findOne({ _id: new ObjectId(String(payload.sub)) });
+    if (user) {
+      req.user = {
+        id: String(user._id),
+        role: normalizeRole(user.role),
+        email: user.email || '',
+        name: user.name || '',
+        phone: user.phone || ''
+      };
+    } else {
+      req.user = null;
+    }
+  } catch (e) {
+    req.user = null;
+  }
+  return next();
+}
+
 function requireRole(allowedRoles) {
   const allowed = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
   const normalizedAllowed = allowed.map(normalizeRole);
@@ -77,4 +111,4 @@ function requireRole(allowedRoles) {
   };
 }
 
-module.exports = { requireAuth, requireRole, normalizeRole, normalizePublicRole };
+module.exports = { requireAuth, optionalAuth, requireRole, normalizeRole, normalizePublicRole };

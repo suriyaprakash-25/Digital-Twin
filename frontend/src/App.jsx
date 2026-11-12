@@ -69,6 +69,7 @@ import AdminFinancialAlerts from './pages/admin/AdminFinancialAlerts';
 import AdminFinancialOperationsDashboard from './pages/admin/AdminFinancialOperationsDashboard';
 import GarageTax from './pages/GarageTax';
 import PaymentCenter from './pages/PaymentCenter';
+import PaymentReturn from './pages/PaymentReturn';
 import GarageFinancialCenter from './pages/GarageFinancialCenter';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
@@ -99,6 +100,7 @@ function App() {
         <Route path="/fleets" element={<FleetsPage />} />
         <Route path="/garage-partners" element={<GaragePartnersPage />} />
         <Route path="/passport/:vehicleId" element={<Passport />} />
+        <Route path="/payment-return" element={<PaymentReturn />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
 
