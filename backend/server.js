@@ -88,6 +88,8 @@ const INDEX_INITIALISERS = [
   require('./src/models/PaymentWebhookEvent').ensureWebhookEventIndexes,
   require('./src/models/CoreIndexes').ensureCoreIndexes,
   require('./src/services/garages').ensureGarageIndexes,
+  require('./src/services/ownership').ensureOwnershipIndexes,
+  () => require('./src/repositories/DisputeRepository').ensureDisputeRepositoryIndexes(require('./src/db').getDb()),
   require('./src/jobs/jobRegistry').ensureJobRegistryIndexes,
   require('./src/services/financialAlertService').ensureFinancialAlertIndexes,
   require('./src/services/financialNotificationService').ensureFinancialNotificationIndexes,

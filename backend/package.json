@@ -12,7 +12,7 @@
     "test:payment-security": "node test_payment_security_suite.js",
     "test:contracts": "node test_frontend_backend_contract_suite.js",
     "test:phases": "node test_phase5cd_suite.js && node test_phase6ab_suite.js && node test_phase6c_suite.js && node test_phase6d_suite.js && node test_phase6e_suite.js && node test_phase7_suite.js && node test_phase8_suite.js",
-    "test:ci": "npm run test:hardening && npm run test:refactor && npm run test:summaries && npm run test:admin-routes && npm run test:garage-routes && npm run test:service-routes && npm run test:payment-security && npm run test:monitoring && npm run test:pilot-failures && npm run test:pilot-notifications && npm run test:pilot-ai && npm run test:pilot-tools && npm run test:pilot-low-priority && npm run test:deployment-standard && npm run test:pilot-journey && npm run test:contracts && npm run test:phases",
+    "test:ci": "npm run test:hardening && npm run test:refactor && npm run test:summaries && npm run test:admin-routes && npm run test:garage-routes && npm run test:service-routes && npm run test:ownership-passport && npm run test:booking-dispute && npm run test:invoice-earnings && npm run test:payment-security && npm run test:monitoring && npm run test:pilot-failures && npm run test:pilot-notifications && npm run test:pilot-ai && npm run test:pilot-tools && npm run test:pilot-low-priority && npm run test:deployment-standard && npm run test:pilot-journey && npm run test:contracts && npm run test:phases",
     "test:monitoring": "node test_operational_monitoring_suite.js",
     "test:pilot-journey": "node test_service_completion_payment_flow.js",
     "pilot:cleanup": "node scripts/pilot-data-cleanup.js",
@@ -28,7 +28,10 @@
     "test:summaries": "node test_admin_summaries_suite.js",
     "test:admin-routes": "node test_admin_routes_suite.js",
     "test:garage-routes": "node test_garage_routes_suite.js",
-    "test:service-routes": "node test_service_routes_suite.js"
+    "test:service-routes": "node test_service_routes_suite.js",
+    "test:ownership-passport": "node test_ownership_passport_routes_suite.js",
+    "test:booking-dispute": "node test_booking_dispute_routes_suite.js",
+    "test:invoice-earnings": "node test_invoice_earnings_routes_suite.js"
   },
   "dependencies": {
     "axios": "^1.18.1",

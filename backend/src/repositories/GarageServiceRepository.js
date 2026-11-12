@@ -2,7 +2,7 @@
  * Garage service catalogue items. Owned by: garages refactor.
  * Add query methods here instead of calling db.collection('garageServices') from routes or services.
  */
-const { BaseRepository } = require('./BaseRepository');
+const { BaseRepository, toObjectId, idValues } = require('./BaseRepository');
 
 const NOT_ARCHIVED = Object.freeze({ isArchived: { $ne: true } });
 
@@ -23,6 +23,16 @@ class GarageServiceRepository extends BaseRepository {
   /** Bookable items only (active and not archived): the public catalogue. */
   listPublicForGarage(garageId) {
     return this.find({ garageId, isActive: { $ne: false }, ...NOT_ARCHIVED });
+  }
+
+  /**
+   * A bookable catalogue item of `garageId` (active, not archived). Null for malformed ids and for
+   * items of another garage, so a booking can never carry a different garage's title/price.
+   */
+  findBookable(serviceId, garageId) {
+    const _id = toObjectId(serviceId);
+    if (!_id) return Promise.resolve(null);
+    return this.findOne({ _id, garageId: { $in: idValues(garageId) }, isActive: { $ne: false }, ...NOT_ARCHIVED });
   }
 
   create(doc) {
