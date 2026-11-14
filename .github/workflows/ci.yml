@@ -15,7 +15,7 @@ permissions:
 jobs:
   backend-verification:
     name: Backend verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       mongodb:
@@ -69,7 +69,7 @@ jobs:
 
   frontend-verification:
     name: Frontend security, lint and production build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     env:
       VITE_API_URL: https://ci-api.invalid
@@ -111,7 +111,7 @@ jobs:
 
   responsive-browser-smoke:
     name: Responsive browser smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     env:
       VITE_API_URL: https://ci-api.invalid
@@ -169,7 +169,7 @@ jobs:
 
   browser-e2e:
     name: Browser end-to-end journey
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
 
     services:
