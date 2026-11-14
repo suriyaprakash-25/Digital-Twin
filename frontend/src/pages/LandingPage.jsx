@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion as Motion } from 'framer-motion';
 import SEO from '../components/SEO';
+import { useAuth } from '../context/authContextCore';
+import { homePathForRole } from '../utils/roles';
 import {
   ArrowRight, ShieldCheck, Zap, Activity, Clock, FileText, ChevronRight, CheckCircle2, Layout, Database, Wrench, Menu, X, Globe, Smartphone, ArrowUpRight, Facebook, Instagram, Twitter, Linkedin, MessageCircle,
   Shield, TrendingUp, Bell, Store, BarChart3, CheckCircle, Car, Users, Award, HeartPulse
@@ -129,6 +131,7 @@ function FeatureInteractiveCard({ f, i, featVisible }) {
 ═══════════════════════════════════════════════════════ */
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, role: authRole } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPartnerTerms, setShowPartnerTerms] = useState(false);
@@ -148,12 +151,9 @@ const LandingPage = () => {
 
   /* auth redirect */
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const role = String(user.role || '').toUpperCase();
-    navigate(role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard', { replace: true });
-  }, [navigate]);
+    if (!isAuthenticated) return;
+    navigate(homePathForRole(authRole), { replace: true });
+  }, [isAuthenticated, authRole, navigate]);
 
   /* navbar scroll */
   useEffect(() => {

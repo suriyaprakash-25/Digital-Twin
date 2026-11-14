@@ -1,7 +1,6 @@
-import { API_BASE_URL } from '../../utils/config';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AlertTriangle, MapPin, X, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import { apiPost, getErrorMessage } from '../../utils/api';
 
 const categories = [
   "Flat Tyre", 
@@ -29,22 +28,18 @@ const EmergencyPanel = ({ onClose, onEmergencySent }) => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const token = localStorage.getItem('token');
-          const res = await axios.post(`${API_BASE_URL}/api/copilot/emergency`, {
+          const data = await apiPost('/copilot/emergency', {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
             category: category,
             radius: 5000 // default 5km
-          }, {
-            headers: { Authorization: `Bearer ${token}` }
           });
 
-          if (res.data.success) {
-            onEmergencySent(res.data.data, category);
+          if (data.success) {
+            onEmergencySent(data.data, category);
           }
         } catch (err) {
-          console.error("Emergency API error:", err);
-          setError("Failed to fetch nearby services. Please try again.");
+          setError(getErrorMessage(err, "Failed to fetch nearby services. Please try again."));
         } finally {
           setLoading(false);
         }
@@ -65,7 +60,7 @@ const EmergencyPanel = ({ onClose, onEmergencySent }) => {
           <AlertTriangle className="w-6 h-6" />
           Emergency Assistance
         </h3>
-        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
+        <button type="button" onClick={onClose} aria-label="Close emergency assistance" className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -75,13 +70,13 @@ const EmergencyPanel = ({ onClose, onEmergencySent }) => {
       </p>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">
+        <div role="alert" className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <div role="status" className="flex flex-col items-center justify-center py-12 gap-4">
           <div className="relative">
             <div className="w-16 h-16 border-4 border-red-100 rounded-full"></div>
             <div className="w-16 h-16 border-4 border-red-600 rounded-full border-t-transparent animate-spin absolute inset-0"></div>

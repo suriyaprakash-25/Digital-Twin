@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import {
   FileCheck2,
   Calendar,
@@ -13,7 +12,9 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import { apiGet, apiGetPage, getErrorMessage } from '../../utils/api';
+import { downloadReport } from '../../components/admin/downloadReport';
+import ErrorState from '../../components/common/ErrorState';
 import { useToast } from '../../context/toastContextCore';
 
 export default function AdminTaxCompliance() {
@@ -21,6 +22,8 @@ export default function AdminTaxCompliance() {
   const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [exporting, setExporting] = useState(null);
   const [period, setPeriod] = useState('30_DAYS');
   const [dateFrom] = useState('');
   const [dateTo] = useState('');
@@ -30,6 +33,7 @@ export default function AdminTaxCompliance() {
 
   const fetchTaxData = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const params = {
         period,
@@ -39,44 +43,43 @@ export default function AdminTaxCompliance() {
         limit: 20
       };
 
-      const [sumRes, txRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/admin/tax/summary`, { params, headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/api/admin/tax/transactions`, { params, headers: getAuthHeaders() })
+      const [sumData, txRes] = await Promise.all([
+        apiGet('/admin/tax/summary', params),
+        apiGetPage('/admin/tax/transactions', params)
       ]);
 
-      if (sumRes.data?.success) setSummary(sumRes.data.summary);
+      if (sumData?.success) setSummary(sumData.summary);
       if (txRes.data?.success) {
         setTransactions(txRes.data.transactions || []);
-        setTotalPages(txRes.data.totalPages || 1);
-        setTotalCount(txRes.data.totalCount || 0);
+        setTotalPages(txRes.data.totalPages || txRes.totalPages || 1);
+        setTotalCount(txRes.data.totalCount || txRes.total || 0);
       }
-    } catch {
-      showError('Failed to load tax compliance data');
+    } catch (err) {
+      setLoadError(getErrorMessage(err, 'Failed to load tax compliance data'));
     } finally {
       setLoading(false);
     }
-  }, [period, dateFrom, dateTo, page, showError]);
+  }, [period, dateFrom, dateTo, page]);
 
   useEffect(() => {
     fetchTaxData();
   }, [fetchTaxData]);
 
   const handleExport = async (format) => {
+    if (exporting) return;
+    setExporting(format);
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/admin/tax/export`, {
-        params: { period, dateFrom, dateTo, format },
-        responseType: 'blob',
-        headers: getAuthHeaders()
-      });
-
-      const blob = new Blob([res.data]);
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `DrivePortz_TAX_REPORT_${new Date().toISOString().split('T')[0]}.${format}`;
-      link.click();
+      await downloadReport(
+        '/admin/tax/export',
+        { period, dateFrom, dateTo, format },
+        `DrivePortz_TAX_REPORT_${new Date().toISOString().split('T')[0]}.${format}`,
+        format
+      );
       showSuccess(`Tax report ${format.toUpperCase()} export downloaded`);
-    } catch {
-      showError('Export failed');
+    } catch (err) {
+      showError(getErrorMessage(err, 'Export failed'));
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -100,6 +103,7 @@ export default function AdminTaxCompliance() {
         {/* Period Filter & Export Actions */}
         <div className="flex flex-wrap items-center gap-2">
           <select
+            aria-label="Reporting period"
             value={period}
             onChange={(e) => { setPeriod(e.target.value); setPage(1); }}
             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900"
@@ -112,6 +116,8 @@ export default function AdminTaxCompliance() {
           </select>
 
           <button
+            type="button"
+            disabled={Boolean(exporting)}
             onClick={() => handleExport('csv')}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
           >
@@ -119,6 +125,8 @@ export default function AdminTaxCompliance() {
             CSV
           </button>
           <button
+            type="button"
+            disabled={Boolean(exporting)}
             onClick={() => handleExport('xlsx')}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
           >
@@ -127,6 +135,8 @@ export default function AdminTaxCompliance() {
           </button>
         </div>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchTaxData} retrying={loading} />}
 
       {/* 6 Summary KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -239,9 +249,10 @@ export default function AdminTaxCompliance() {
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
+                aria-label="Previous page"
                 className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               </button>
               <span className="text-xs font-semibold text-slate-600 px-2">
                 Page {page} of {totalPages}
@@ -249,9 +260,10 @@ export default function AdminTaxCompliance() {
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                aria-label="Next page"
                 className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>

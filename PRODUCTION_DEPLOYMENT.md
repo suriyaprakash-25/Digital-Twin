@@ -147,17 +147,44 @@ Automatic financial payout jobs remain disabled during the controlled pilot. Man
 
 ---
 
-## Razorpay production routing
+## Cashfree production routing
 
-Webhook destination:
+Payments run on Cashfree. Razorpay remains only so that legacy payments can still be refunded and reconciled.
+
+Webhook destination, configured in the Cashfree dashboard:
 
 ```text
-https://driveportz.onrender.com/api/payments/webhook
+https://driveportz.onrender.com/api/payments/cashfree-webhook
 ```
 
-The webhook secret belongs only in Render as `RAZORPAY_WEBHOOK_SECRET`.
+Webhooks are verified with HMAC-SHA256 over the raw body. Deliveries whose `x-webhook-timestamp` is more than 15 minutes old are rejected (`WEBHOOK_MAX_SKEW_MS`). Set the following only in Render:
 
-The frontend does not need a Razorpay environment variable. The server returns the public checkout key ID only after authorizing and creating the payment order.
+- `CASHFREE_APP_ID`
+- `CASHFREE_SECRET_KEY`
+- `CASHFREE_ENV=PRODUCTION`
+- optionally `CASHFREE_WEBHOOK_SECRET`
+
+The frontend needs no gateway credentials. `create-order` returns the payment session and `cashfreeMode` (`sandbox` or `production`).
+
+---
+
+## Session cookies and the API domain
+
+Authentication uses two tokens:
+
+- **Session token:** an httpOnly `dp_session` cookie (Path `/api`), valid for 7 days. JavaScript cannot read it, so an XSS bug cannot steal it.
+- **Access token:** short-lived (15 minutes), returned in the login body and kept only in memory by the SPA.
+
+The SPA refreshes the access token through `GET /api/auth/session`. Cookie-authenticated mutations must send `X-Requested-With`; this is the CSRF defence.
+
+**Current topology (cross-site).** `www.driveportz.com` calls `driveportz.onrender.com`, so the cookie must be `SameSite=None; Secure`, which is the production default. Safari blocks such third-party cookies. Safari users still sign in and work normally through the in-memory access token, but they must sign in again after a page reload.
+
+**Recommended (same-site) setup, one-time:**
+
+1. In Render, add the custom domain `api.driveportz.com` to `driveportz-backend` and create the CNAME record it shows at your DNS provider.
+2. In Vercel, set `VITE_API_URL=https://api.driveportz.com` and redeploy.
+3. In Render, set `AUTH_COOKIE_SAMESITE=lax`. The frontend and API are then same-site, so the cookie works in every browser, and Lax adds browser-level CSRF isolation.
+4. Point the Cashfree webhook at `https://api.driveportz.com/api/payments/cashfree-webhook`.
 
 ---
 

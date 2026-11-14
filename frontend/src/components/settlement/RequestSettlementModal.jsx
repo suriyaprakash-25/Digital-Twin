@@ -1,17 +1,15 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
   X,
   IndianRupee,
-  Building,
-  CheckCircle2,
   AlertCircle,
-  Clock,
-  ShieldCheck,
   ArrowRight,
-  Wallet
+  Wallet,
+  Loader2
 } from 'lucide-react';
-import axios from 'axios';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import { apiPost, getErrorMessage, idempotencyHeaders, isIdempotencyInProgress } from '../../utils/api';
+import { useDialog } from '../../hooks/useDialog';
+import { useIdempotencyKeys } from '../../hooks/useIdempotencyKeys';
 
 const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutProfile, onSuccess }) => {
   const minAmount = 500;
@@ -19,6 +17,10 @@ const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutP
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { keyFor, release, settle } = useIdempotencyKeys();
+  const { dialogProps, titleId } = useDialog({ isOpen, onClose });
+  const amountId = useId();
+  const notesId = useId();
 
   if (!isOpen) return null;
 
@@ -27,25 +29,30 @@ const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutP
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isValid) return;
+    if (!isValid || loading) return;
 
     setLoading(true);
     setError('');
 
+    // One key per withdrawal attempt; reused only if the same request is retried.
+    const scope = 'settlement-request';
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/garage/settlements/request`,
+      const data = await apiPost(
+        '/garage/settlements/request',
         { amount: numAmount, notes },
-        { headers: getAuthHeaders() }
+        { headers: idempotencyHeaders(keyFor(scope)) }
       );
+      release(scope);
 
-      if (res.data?.success) {
-        if (onSuccess) onSuccess(res.data.settlement);
+      if (data?.success) {
+        if (onSuccess) onSuccess(data.settlement);
         onClose();
       }
     } catch (err) {
-      console.error('Settlement request failed:', err);
-      setError(err.response?.data?.message || 'Failed to submit settlement request. Please try again.');
+      settle(scope, err);
+      setError(isIdempotencyInProgress(err)
+        ? 'This settlement request is already being processed. Please wait a moment.'
+        : getErrorMessage(err, 'Failed to submit settlement request. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -54,16 +61,19 @@ const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutP
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
+        {...dialogProps}
+        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="bg-slate-900 text-white p-6 relative">
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-2 mb-2">
             <span className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
@@ -73,7 +83,7 @@ const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutP
               Payout Withdrawal
             </span>
           </div>
-          <h2 className="text-xl font-black tracking-tight text-white">
+          <h2 id={titleId} className="text-xl font-black tracking-tight text-white">
             Request Settlement
           </h2>
           <p className="text-xs text-slate-400 mt-1">
@@ -84,7 +94,7 @@ const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutP
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2">
+            <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -112,10 +122,11 @@ const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutP
 
           {/* Amount input */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">Withdrawal Amount (₹)</label>
+            <label htmlFor={amountId} className="text-xs font-bold text-slate-700">Withdrawal Amount (₹)</label>
             <div className="relative">
               <IndianRupee className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
+                id={amountId}
                 type="number"
                 step="1"
                 min={minAmount}
@@ -147,8 +158,9 @@ const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutP
 
           {/* Notes */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">Settlement Note (Optional)</label>
+            <label htmlFor={notesId} className="text-xs font-bold text-slate-700">Settlement Note (Optional)</label>
             <input
+              id={notesId}
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -172,7 +184,10 @@ const RequestSettlementModal = ({ isOpen, onClose, availableBalance = 0, payoutP
               className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
             >
               {loading ? (
-                <span>Submitting...</span>
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  <span>Submitting...</span>
+                </>
               ) : (
                 <>
                   <span>Submit Request</span>

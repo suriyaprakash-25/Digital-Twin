@@ -4,26 +4,50 @@ const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { calculateCurrentStatus } = require('../services/availabilityService');
 
+const { getCache, CACHE_KEYS } = require('../infrastructure/cache/cache');
+const { CACHE } = require('../core/constants');
+const { parsePagination, setPaginationHeaders } = require('../core/pagination');
+
 const router = express.Router();
 
-// Public marketplace listing: garages + their active services
+const MARKETPLACE_DEFAULT_LIMIT = 100;
+
+/**
+ * Read-through cache of the slowly-changing part of the listing (garage profiles + their service
+ * catalogues). Live fields (open/closed status, active booking counts) are computed per request.
+ * Any garage write invalidates the prefix (see invalidateCacheOnWrite in routes/garages.js, admin.js).
+ */
+async function loadListingSnapshot(db, page) {
+  const key = `${CACHE_KEYS.GARAGE_LIST}${page.page}:${page.limit}`;
+  return getCache().wrap(key, CACHE.GARAGE_LIST_TTL_MS, async () => {
+    const filter = { isActive: { $ne: false } };
+    const [garageDocs, total] = await Promise.all([
+      db.collection('garages').find(filter).sort({ createdAt: -1 }).skip(page.skip).limit(page.limit).toArray(),
+      db.collection('garages').countDocuments(filter)
+    ]);
+    const services = await db.collection('garageServices')
+      .find({ garageId: { $in: garageDocs.map((g) => g._id) }, isActive: { $ne: false } })
+      .sort({ createdAt: -1 })
+      .toArray();
+    // Cache values must be plain data (portable to Redis): ids are stored as strings.
+    return {
+      garageDocs: garageDocs.map((g) => ({ ...g, _id: String(g._id) })),
+      services: services.map((s) => ({ ...s, _id: String(s._id), garageId: String(s.garageId) })),
+      total
+    };
+  });
+}
+
+// Public marketplace listing: garages + their active services (paginated, cached)
 router.get('/', async (req, res) => {
   const db = getDb();
-  const garages = db.collection('garages');
-  const garageServices = db.collection('garageServices');
 
   try {
-    const garageDocs = await garages
-      .find({ isActive: { $ne: false } })
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .toArray();
-
+    const page = parsePagination(req.query, { defaultLimit: MARKETPLACE_DEFAULT_LIMIT });
+    const { garageDocs: cachedGarages, services, total } = await loadListingSnapshot(db, page);
+    const garageDocs = cachedGarages.map((g) => ({ ...g, _id: new ObjectId(g._id) }));
     const garageIds = garageDocs.map((g) => g._id);
-    const services = await garageServices
-      .find({ garageId: { $in: garageIds }, isActive: { $ne: false } })
-      .sort({ createdAt: -1 })
-      .toArray();
+    setPaginationHeaders(res, { total, page: page.page, limit: page.limit });
 
     // Aggregate active bookings counts for all listed garages
     const activeBookings = await db.collection('bookings').aggregate([

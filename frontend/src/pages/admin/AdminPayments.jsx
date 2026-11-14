@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { 
     CreditCard, 
     Search, 
@@ -18,7 +18,10 @@ import {
     Building2,
     AlertCircle
 } from 'lucide-react';
-import { apiGet } from '../../utils/api';
+import { apiGet, apiGetPage, getErrorMessage } from '../../utils/api';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import ErrorState from '../../components/common/ErrorState';
+import { PaymentStatusBadge } from '../../components/common/StatusBadge';
 import PaymentDetailsModal from '../../components/payment/PaymentDetailsModal';
 import RefundModal from '../../components/payment/RefundModal';
 import InvoiceModal from '../../components/invoice/InvoiceModal';
@@ -28,10 +31,10 @@ const AdminPayments = () => {
     const [payments, setPayments] = useState([]);
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
-    const searchQueryRef = useRef(searchQuery);
-    searchQueryRef.current = searchQuery;
+    const debouncedSearch = useDebouncedValue(searchQuery, 350);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
@@ -44,26 +47,28 @@ const AdminPayments = () => {
 
     const fetchData = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const [summaryRes, listRes] = await Promise.allSettled([
                 apiGet('/admin/payments/summary'),
-                apiGet(`/admin/payments/all?page=${currentPage}&limit=15&status=${statusFilter}&search=${encodeURIComponent(searchQueryRef.current)}`)
+                apiGetPage('/admin/payments/all', { page: currentPage, limit: 15, status: statusFilter, search: debouncedSearch })
             ]);
 
             if (summaryRes.status === 'fulfilled' && summaryRes.value?.success) {
                 setSummary(summaryRes.value.summary);
             }
-            if (listRes.status === 'fulfilled' && listRes.value?.success) {
-                setPayments(listRes.value.payments || []);
-                setTotalPages(listRes.value.totalPages || 1);
-                setTotalCount(listRes.value.totalCount || 0);
+            if (listRes.status === 'fulfilled' && listRes.value.data?.success) {
+                const list = listRes.value.data;
+                setPayments(list.payments || []);
+                setTotalPages(list.totalPages || listRes.value.totalPages || 1);
+                setTotalCount(list.totalCount || listRes.value.total || 0);
             }
-        } catch (err) {
-            console.error('Error fetching admin payments:', err);
+            const failed = [summaryRes, listRes].find((r) => r.status === 'rejected');
+            if (failed) setLoadError(getErrorMessage(failed.reason, 'Could not load payment records.'));
         } finally {
             setLoading(false);
         }
-    }, [currentPage, statusFilter]);
+    }, [currentPage, statusFilter, debouncedSearch]);
 
     useEffect(() => {
         fetchData();
@@ -73,39 +78,6 @@ const AdminPayments = () => {
         e.preventDefault();
         setCurrentPage(1);
         fetchData();
-    };
-
-    const getStatusBadge = (status) => {
-        if (status === 'CAPTURED' || status === 'PAID') {
-            return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <CheckCircle2 className="h-3 w-3" /> Paid
-                </span>
-            );
-        } else if (status === 'REFUNDED') {
-            return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-violet-50 text-violet-700 border border-violet-200">
-                    <RotateCcw className="h-3 w-3" /> Refunded
-                </span>
-            );
-        } else if (status === 'PARTIALLY_REFUNDED') {
-            return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-purple-50 text-purple-700 border border-purple-200">
-                    <RotateCcw className="h-3 w-3" /> Partial Refund
-                </span>
-            );
-        } else if (status === 'FAILED') {
-            return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">
-                    <XCircle className="h-3 w-3" /> Failed
-                </span>
-            );
-        }
-        return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200">
-                <Clock className="h-3 w-3" /> Pending
-            </span>
-        );
     };
 
     return (
@@ -123,6 +95,7 @@ const AdminPayments = () => {
                     </p>
                 </div>
                 <button
+                    type="button"
                     onClick={fetchData}
                     disabled={loading}
                     className="self-start sm:self-auto px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition-all flex items-center gap-2"
@@ -182,11 +155,12 @@ const AdminPayments = () => {
             {/* Filter & Search Bar */}
             <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
                 <form onSubmit={handleSearchSubmit} className="relative flex-1 w-full">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" aria-hidden="true" />
                     <input
-                        type="text"
+                        type="search"
+                        aria-label="Search payments"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                         placeholder="Search by invoice number, payment ID, order ID, garage or vehicle..."
                         className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all"
                     />
@@ -197,6 +171,7 @@ const AdminPayments = () => {
                         <button
                             key={status}
                             type="button"
+                            aria-pressed={statusFilter === status}
                             onClick={() => { setStatusFilter(status); setCurrentPage(1); }}
                             className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                                 statusFilter === status
@@ -209,6 +184,8 @@ const AdminPayments = () => {
                     ))}
                 </div>
             </div>
+
+            {loadError && <ErrorState message={loadError} onRetry={fetchData} retrying={loading} />}
 
             {/* Transactions Table */}
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
@@ -266,7 +243,7 @@ const AdminPayments = () => {
                                             <div className="text-[10px] text-slate-500">{p.paymentMethod || 'Online'}</div>
                                         </td>
                                         <td className="p-4">
-                                            {getStatusBadge(p.status, p.totalRefundedAmount)}
+                                            <PaymentStatusBadge status={p.status} refundedAmount={p.totalRefundedAmount} />
                                         </td>
                                         <td className="p-4 text-slate-500 text-[11px] whitespace-nowrap">
                                             {p.date ? new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
@@ -278,8 +255,9 @@ const AdminPayments = () => {
                                                     onClick={() => setSelectedPaymentForDetails(p)}
                                                     className="p-1.5 text-slate-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-colors"
                                                     title="View Full Audit Details"
+                                                    aria-label="View Full Audit Details"
                                                 >
-                                                    <Eye className="h-4 w-4" />
+                                                    <Eye className="h-4 w-4" aria-hidden="true" />
                                                 </button>
                                                 {p.serviceId && (
                                                     <button
@@ -287,8 +265,9 @@ const AdminPayments = () => {
                                                         onClick={() => setSelectedInvoiceId(p.serviceId)}
                                                         className="p-1.5 text-slate-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-colors"
                                                         title="View Invoice"
+                                                    aria-label="View Invoice"
                                                     >
-                                                        <FileText className="h-4 w-4" />
+                                                        <FileText className="h-4 w-4" aria-hidden="true" />
                                                     </button>
                                                 )}
                                                 {(p.status === 'CAPTURED' || p.status === 'PAID') && (
@@ -299,8 +278,9 @@ const AdminPayments = () => {
                                                                 onClick={() => setSelectedReceiptId(p.serviceId)}
                                                                 className="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
                                                                 title="View Receipt"
+                                                                aria-label="View Receipt"
                                                             >
-                                                                <Receipt className="h-4 w-4" />
+                                                                <Receipt className="h-4 w-4" aria-hidden="true" />
                                                             </button>
                                                         )}
                                                         <button
@@ -308,8 +288,9 @@ const AdminPayments = () => {
                                                             onClick={() => setSelectedPaymentForRefund(p)}
                                                             className="p-1.5 text-slate-600 hover:text-violet-700 hover:bg-violet-50 rounded-lg transition-colors"
                                                             title="Process Refund"
+                                                            aria-label="Process Refund"
                                                         >
-                                                            <RotateCcw className="h-4 w-4" />
+                                                            <RotateCcw className="h-4 w-4" aria-hidden="true" />
                                                         </button>
                                                     </>
                                                 )}
@@ -330,18 +311,20 @@ const AdminPayments = () => {
                             <button
                                 type="button"
                                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                aria-label="Previous page"
                                 disabled={currentPage === 1}
                                 className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-colors"
                             >
-                                <ChevronLeft className="h-4 w-4" />
+                                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                aria-label="Next page"
                                 disabled={currentPage === totalPages}
                                 className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-colors"
                             >
-                                <ChevronRight className="h-4 w-4" />
+                                <ChevronRight className="h-4 w-4" aria-hidden="true" />
                             </button>
                         </div>
                     </div>

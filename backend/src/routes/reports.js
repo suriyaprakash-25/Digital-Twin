@@ -1,4 +1,5 @@
 const express = require('express');
+const { safeSearchRegex } = require('../core/text');
 const { getDb } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/adminMiddleware');
@@ -147,7 +148,7 @@ adminReportsRouter.get('/transactions', requireAdmin, async (req, res) => {
     if (status && status !== 'ALL') query.status = status;
 
     if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = safeSearchRegex(search);
       query.$or = [
         { invoiceNumber: regex },
         { paymentId: regex },

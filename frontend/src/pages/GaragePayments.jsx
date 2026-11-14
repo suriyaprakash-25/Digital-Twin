@@ -1,7 +1,5 @@
-import { API_BASE_URL } from '../utils/config';
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import {
   CreditCard,
   IndianRupee,
@@ -31,6 +29,10 @@ import ReceiptModal from '../components/invoice/ReceiptModal';
 import GarageBillingModal from '../components/garage/GarageBillingModal';
 import PaymentDetailsModal from '../components/payment/PaymentDetailsModal';
 import RefundModal from '../components/payment/RefundModal';
+import ErrorState from '../components/common/ErrorState';
+import { RevenueSummaryCards, RevenueTrends } from '../components/garage/GarageRevenuePanels';
+import { apiGet, getErrorMessage } from '../utils/api';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const GaragePayments = () => {
   const [invoices, setInvoices] = useState([]);
@@ -51,6 +53,8 @@ const GaragePayments = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState(null);
+  const debouncedSearch = useDebouncedValue(search, 400);
 
   // Modal States
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
@@ -62,46 +66,38 @@ const GaragePayments = () => {
   const fetchInvoicesAndRevenue = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const apiBaseUrl = API_BASE_URL;
-
       const [invRes, revRes, anaRes] = await Promise.allSettled([
-        axios.get(`${apiBaseUrl}/api/garage/invoices/garage/all`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { page, limit: 15, search, status: statusFilter }
-        }),
-        axios.get(`${apiBaseUrl}/api/garage/invoices/garage/revenue/summary`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${apiBaseUrl}/api/garage/invoices/garage/payments/analytics?period=${analyticsPeriod}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        apiGet('/garage/invoices/garage/all', { page, limit: 15, search: debouncedSearch, status: statusFilter }),
+        apiGet('/garage/invoices/garage/revenue/summary'),
+        apiGet('/garage/invoices/garage/payments/analytics', { period: analyticsPeriod })
       ]);
 
-      if (invRes.status === 'fulfilled' && invRes.value.data?.success) {
-        setInvoices(invRes.value.data.invoices || []);
-        setTotalPages(invRes.value.data.totalPages || 1);
+      if (invRes.status === 'fulfilled' && invRes.value?.success) {
+        setInvoices(invRes.value.invoices || []);
+        setTotalPages(invRes.value.totalPages || 1);
       }
 
-      if (revRes.status === 'fulfilled' && revRes.value.data?.success) {
-        setRevenueSummary(revRes.value.data.summary);
+      if (revRes.status === 'fulfilled' && revRes.value?.success) {
+        setRevenueSummary(revRes.value.summary);
       }
 
-      if (anaRes.status === 'fulfilled' && anaRes.value.data?.success) {
-        setAnalyticsData(anaRes.value.data.trends || []);
+      if (anaRes.status === 'fulfilled' && anaRes.value?.success) {
+        setAnalyticsData(anaRes.value.trends || []);
       }
-    } catch (err) {
-      console.error('Error fetching garage payments & revenue:', err);
+
+      const failed = [invRes, revRes, anaRes].find((r) => r.status === 'rejected');
+      setError(failed ? getErrorMessage(failed.reason, 'Some payment data could not be loaded') : null);
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, analyticsPeriod]);
+  }, [page, debouncedSearch, statusFilter, analyticsPeriod]);
 
   useEffect(() => {
-    fetchInvoicesAndRevenue();
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) fetchInvoicesAndRevenue(); });
+    return () => { cancelled = true; };
   }, [fetchInvoicesAndRevenue]);
 
-  const maxTrendRevenue = Math.max(...analyticsData.map(d => d.revenue), 1);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-300">
@@ -123,7 +119,9 @@ const GaragePayments = () => {
         </div>
 
         <button
+          type="button"
           onClick={fetchInvoicesAndRevenue}
+          disabled={loading}
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs self-start md:self-auto"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -132,121 +130,22 @@ const GaragePayments = () => {
       </div>
 
       {/* Revenue Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Total Revenue</span>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center">
-            <IndianRupee className="h-4 w-4 text-slate-400 mr-0.5" />
-            {Number(revenueSummary.totalRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <p className="text-[10px] font-bold text-emerald-600 mt-1 flex items-center gap-0.5">
-            <CheckCircle2 className="h-3 w-3" />
-            {revenueSummary.paidInvoices} Paid Bills
-          </p>
-        </div>
-
-        <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-teal-600 block mb-1">Today's Revenue</span>
-          <div className="text-xl sm:text-2xl font-black text-teal-700 tracking-tight flex items-center">
-            <IndianRupee className="h-4 w-4 text-teal-500 mr-0.5" />
-            {Number(revenueSummary.todayRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <p className="text-[10px] font-medium text-slate-400 mt-1">Settled today</p>
-        </div>
-
-        <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block mb-1">This Month</span>
-          <div className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center">
-            <IndianRupee className="h-4 w-4 text-slate-400 mr-0.5" />
-            {Number(revenueSummary.monthRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <p className="text-[10px] font-medium text-slate-400 mt-1">Current Month</p>
-        </div>
-
-        <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 block mb-1">Pending Amount</span>
-          <div className="text-xl sm:text-2xl font-black text-amber-700 tracking-tight flex items-center">
-            <IndianRupee className="h-4 w-4 text-amber-500 mr-0.5" />
-            {Number(revenueSummary.pendingPayments || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <p className="text-[10px] font-medium text-amber-600 mt-1">Awaiting Payment</p>
-        </div>
-
-        <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-violet-600 block mb-1">Total Refunded</span>
-          <div className="text-xl sm:text-2xl font-black text-violet-800 tracking-tight flex items-center">
-            <IndianRupee className="h-4 w-4 text-violet-500 mr-0.5" />
-            {Number(revenueSummary.refundedAmount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <p className="text-[10px] font-medium text-violet-600 mt-1">Refunded to Customers</p>
-        </div>
-
-        <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Paid Invoices</span>
-          <div className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
-            {revenueSummary.paidInvoices} <span className="text-xs text-slate-400 font-normal">/ {revenueSummary.totalServicesLogged}</span>
-          </div>
-          <p className="text-[10px] font-medium text-slate-400 mt-1">Completed Services</p>
-        </div>
-      </div>
+      <RevenueSummaryCards summary={revenueSummary} />
 
       {/* Revenue Trends Chart Section */}
-      {analyticsData.length > 0 && (
-        <div className="bg-white border border-slate-100 p-5 rounded-3xl shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-teal-600" />
-              <h3 className="text-sm font-extrabold text-slate-900">Revenue Trends</h3>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {['7days', '30days'].map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setAnalyticsPeriod(p)}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                    analyticsPeriod === p
-                      ? 'bg-teal-50 text-teal-700 border border-teal-200'
-                      : 'text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  {p === '7days' ? 'Last 7 Days' : 'Last 30 Days'}
-                </button>
-              ))}
-            </div>
-          </div>
+      <RevenueTrends data={analyticsData} period={analyticsPeriod} onPeriodChange={setAnalyticsPeriod} />
 
-          <div className="h-36 flex items-end gap-2 pt-4 border-t border-slate-50">
-            {analyticsData.map((d, i) => {
-              const heightPercent = Math.max(8, (d.revenue / maxTrendRevenue) * 100);
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group relative">
-                  {/* Tooltip */}
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-10">
-                    ₹{d.revenue.toLocaleString('en-IN')} ({d.count} sales)
-                  </div>
-                  <div
-                    style={{ height: `${heightPercent}%` }}
-                    className="w-full bg-teal-500 hover:bg-teal-600 rounded-t-lg transition-all"
-                  />
-                  <span className="text-[9px] font-bold text-slate-400 truncate max-w-full">
-                    {d.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={fetchInvoicesAndRevenue} retrying={loading} />}
 
       {/* Controls: Search & Filters */}
       <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:max-w-md">
           <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
-            type="text"
+            type="search"
+            aria-label="Search invoices"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search by invoice number, customer, vehicle..."
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500"
           />
@@ -255,8 +154,9 @@ const GaragePayments = () => {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter className="h-4 w-4 text-slate-400" />
           <select
+            aria-label="Filter by status"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-teal-500"
           >
             <option value="ALL">All Statuses</option>
@@ -363,8 +263,9 @@ const GaragePayments = () => {
                             onClick={() => setSelectedPaymentForDetails(inv)}
                             className="p-1.5 text-slate-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-colors"
                             title="View Audit Details"
+                            aria-label={`View audit details for ${inv.invoiceNumber || 'draft bill'}`}
                           >
-                            <Eye className="h-3.5 w-3.5" />
+                            <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                           </button>
 
                           <button
@@ -399,8 +300,9 @@ const GaragePayments = () => {
                                 onClick={() => setSelectedPaymentForRefund(inv)}
                                 className="p-1.5 text-slate-500 hover:text-violet-700 hover:bg-violet-50 rounded-lg transition-colors"
                                 title="Issue Customer Refund"
+                                aria-label={`Issue customer refund for ${inv.invoiceNumber || 'this invoice'}`}
                               >
-                                <RotateCcw className="h-3.5 w-3.5" />
+                                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
                             </>
                           )}
@@ -423,6 +325,7 @@ const GaragePayments = () => {
                 type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
+                aria-label="Previous page"
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -431,6 +334,7 @@ const GaragePayments = () => {
                 type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
+                aria-label="Next page"
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
                 <ChevronRight className="h-4 w-4" />

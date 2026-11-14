@@ -1,37 +1,20 @@
-import { API_BASE_URL } from '../utils/config';
-import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
-import { ArrowLeft, ShieldCheck, AlertTriangle, TrendingDown, TrendingUp, HelpCircle, Activity, Award } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, AlertTriangle, TrendingDown, TrendingUp, HelpCircle, Activity, Award, RefreshCw } from 'lucide-react';
+import { apiGet } from '../utils/api';
+import { useAsync } from '../hooks/useAsync';
+import { formatCurrency as formatInr } from '../utils/format';
 
 const ResaleReport = () => {
     const { vehicleId } = useParams();
-    const [report, setReport] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        const fetchReport = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`${API_BASE_URL}/api/resale/${vehicleId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setReport(res.data);
-            } catch (err) {
-                console.error('Error fetching resale report:', err);
-                setError('Failed to load resale analysis or vehicle not found.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchReport();
-    }, [vehicleId]);
+    const { data: report, error: loadError, loading, refetch } = useAsync(
+        () => apiGet(`/resale/${vehicleId}`),
+        [vehicleId]
+    );
+    const error = loadError ? 'Failed to load resale analysis or vehicle not found.' : '';
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-[60vh]">
+            <div role="status" aria-label="Loading resale report" className="flex justify-center items-center h-[60vh]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
             </div>
         );
@@ -39,9 +22,17 @@ const ResaleReport = () => {
 
     if (error || !report) {
         return (
-            <div className="max-w-4xl mx-auto text-center mt-20 p-8 bg-red-50 rounded-3xl border border-red-100 pb-12 lg:pb-8">
-                <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-red-700">{error}</h2>
+            <div role="alert" className="max-w-4xl mx-auto text-center mt-20 p-8 bg-red-50 rounded-3xl border border-red-100 pb-12 lg:pb-8">
+                <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" aria-hidden="true" />
+                <h2 className="text-2xl font-bold text-red-700">{error || 'Resale report unavailable.'}</h2>
+                {loadError && <p className="text-sm text-red-600 mt-2">{loadError}</p>}
+                <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="mt-4 mr-4 inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100"
+                >
+                    <RefreshCw className="h-4 w-4" aria-hidden="true" /> Retry
+                </button>
                 <Link to="/my-vehicles" className="text-teal-600 font-semibold mt-4 inline-block hover:underline">
                     Return to My Vehicles
                 </Link>
@@ -65,7 +56,7 @@ const ResaleReport = () => {
         return 'text-rose-600 bg-rose-50 border-rose-200';
     };
 
-    const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumSignificantDigits: 3 }).format(val);
+    const formatCurrency = (val) => formatInr(val, { significant: 3 });
 
     return (
         <div className="max-w-5xl mx-auto pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">

@@ -1,29 +1,27 @@
 import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import {
   Receipt,
   IndianRupee,
-  Calendar,
   Search,
-  Filter,
   RefreshCw,
-  Building,
   CheckCircle2,
-  AlertCircle,
   Clock,
-  RotateCcw,
   Eye,
-  Check,
-  X,
   Play,
-  ShieldCheck,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import SettlementDetailsModal from '../../components/settlement/SettlementDetailsModal';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import RejectSettlementDialog from '../../components/settlement/RejectSettlementDialog';
+import ErrorState from '../../components/common/ErrorState';
+import { useFinancialAction } from '../../components/admin/useFinancialAction';
+import { useToast } from '../../context/toastContextCore';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { apiGetPage, apiPost, getErrorMessage } from '../../utils/api';
 
 const AdminSettlements = () => {
+  const { showSuccess } = useToast();
   const [settlements, setSettlements] = useState([]);
   const [summary, setSummary] = useState({
     totalPendingVolume: 0,
@@ -33,36 +31,37 @@ const AdminSettlements = () => {
     totalRequests: 0
   });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 350);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   // Modals & Action States
   const [selectedSettlement, setSelectedSettlement] = useState(null);
-  const [actionLoading, setActionLoading] = useState(false);
   const [rejectModalSettlement, setRejectModalSettlement] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
+  const { run: runAction, isPending, busy: actionLoading } = useFinancialAction();
 
   const fetchSettlements = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/admin/settlements`, {
-        headers: getAuthHeaders(),
-        params: { page, limit: 20, status: statusFilter, search }
+      const { data, totalPages: headerPages } = await apiGetPage('/admin/settlements', {
+        page, limit: 20, status: statusFilter, search: debouncedSearch
       });
 
-      if (res.data?.success) {
-        setSettlements(res.data.settlements || []);
-        if (res.data.summary) setSummary(res.data.summary);
-        setTotalPages(res.data.totalPages || 1);
+      if (data?.success) {
+        setSettlements(data.settlements || []);
+        if (data.summary) setSummary(data.summary);
+        setTotalPages(data.totalPages || headerPages || 1);
       }
     } catch (err) {
-      console.error('Error loading admin settlements:', err);
+      setLoadError(getErrorMessage(err, 'Could not load settlement requests.'));
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, debouncedSearch, statusFilter]);
 
   useEffect(() => {
     fetchSettlements();
@@ -73,43 +72,30 @@ const AdminSettlements = () => {
       return;
     }
 
-    setActionLoading(true);
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/admin/settlements/${s.id}/approve`,
-        {},
-        { headers: getAuthHeaders() }
-      );
-      if (res.data?.success) {
-        fetchSettlements();
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error approving settlement');
-    } finally {
-      setActionLoading(false);
+    const data = await runAction(
+      `approve:${s.id}`,
+      (config) => apiPost(`/admin/settlements/${s.id}/approve`, {}, config),
+      'Error approving settlement'
+    );
+    if (data?.success) {
+      showSuccess(data.message || 'Settlement approved');
+      fetchSettlements();
     }
   };
 
-  const handleRejectSubmit = async (e) => {
-    e.preventDefault();
-    if (!rejectModalSettlement) return;
+  const handleRejectSubmit = async (reason) => {
+    const target = rejectModalSettlement;
+    if (!target) return;
 
-    setActionLoading(true);
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/admin/settlements/${rejectModalSettlement.id}/reject`,
-        { reason: rejectReason },
-        { headers: getAuthHeaders() }
-      );
-      if (res.data?.success) {
-        setRejectModalSettlement(null);
-        setRejectReason('');
-        fetchSettlements();
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error rejecting settlement');
-    } finally {
-      setActionLoading(false);
+    const data = await runAction(
+      `reject:${target.id}`,
+      (config) => apiPost(`/admin/settlements/${target.id}/reject`, { reason }, config),
+      'Error rejecting settlement'
+    );
+    if (data?.success) {
+      setRejectModalSettlement(null);
+      showSuccess(data.message || 'Settlement rejected');
+      fetchSettlements();
     }
   };
 
@@ -118,21 +104,14 @@ const AdminSettlements = () => {
       return;
     }
 
-    setActionLoading(true);
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/admin/settlements/${s.id}/process`,
-        {},
-        { headers: getAuthHeaders() }
-      );
-      if (res.data?.success) {
-        alert(res.data.message || 'Settlement completed successfully!');
-        fetchSettlements();
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error processing payout');
-    } finally {
-      setActionLoading(false);
+    const data = await runAction(
+      `process:${s.id}`,
+      (config) => apiPost(`/admin/settlements/${s.id}/process`, {}, config),
+      'Error processing payout'
+    );
+    if (data?.success) {
+      showSuccess(data.message || 'Settlement completed successfully!');
+      fetchSettlements();
     }
   };
 
@@ -158,7 +137,9 @@ const AdminSettlements = () => {
         </div>
 
         <button
+          type="button"
           onClick={fetchSettlements}
+          disabled={loading}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs self-start md:self-auto"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -206,11 +187,12 @@ const AdminSettlements = () => {
       {/* Controls */}
       <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:max-w-md">
-          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
-            type="text"
+            type="search"
+            aria-label="Search settlements"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search by settlement ID, garage, account..."
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500"
           />
@@ -221,7 +203,8 @@ const AdminSettlements = () => {
             <button
               key={status}
               type="button"
-              onClick={() => setStatusFilter(status)}
+              aria-pressed={statusFilter === status}
+              onClick={() => { setStatusFilter(status); setPage(1); }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 statusFilter === status
                   ? 'bg-white text-slate-900 shadow-sm'
@@ -233,6 +216,8 @@ const AdminSettlements = () => {
           ))}
         </div>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchSettlements} retrying={loading} />}
 
       {/* Table */}
       <div className="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
@@ -313,8 +298,9 @@ const AdminSettlements = () => {
                             onClick={() => setSelectedSettlement(s)}
                             className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                             title="Inspect Details"
+                            aria-label={`Inspect settlement ${s.settlementId}`}
                           >
-                            <Eye className="h-3.5 w-3.5" />
+                            <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                           </button>
 
                           {isRequested && (
@@ -323,15 +309,16 @@ const AdminSettlements = () => {
                                 type="button"
                                 disabled={actionLoading}
                                 onClick={() => handleApprove(s)}
-                                className="px-2.5 py-1 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition-all"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition-all disabled:opacity-60"
                               >
+                                {isPending(`approve:${s.id}`) && <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />}
                                 Approve
                               </button>
                               <button
                                 type="button"
                                 disabled={actionLoading}
                                 onClick={() => setRejectModalSettlement(s)}
-                                className="px-2.5 py-1 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-all"
+                                className="px-2.5 py-1 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-all disabled:opacity-60"
                               >
                                 Reject
                               </button>
@@ -343,9 +330,11 @@ const AdminSettlements = () => {
                               type="button"
                               disabled={actionLoading}
                               onClick={() => handleProcessPayout(s)}
-                              className="px-3 py-1 text-xs font-bold text-slate-900 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all flex items-center gap-1 shadow-2xs"
+                              className="px-3 py-1 text-xs font-bold text-slate-900 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all flex items-center gap-1 shadow-2xs disabled:opacity-60"
                             >
-                              <Play className="h-3 w-3" />
+                              {isPending(`process:${s.id}`)
+                                ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                                : <Play className="h-3 w-3" aria-hidden="true" />}
                               Execute Payout
                             </button>
                           )}
@@ -368,17 +357,19 @@ const AdminSettlements = () => {
                 type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
+                aria-label="Previous page"
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
+                aria-label="Next page"
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -395,46 +386,13 @@ const AdminSettlements = () => {
       )}
 
       {/* Reject Modal Dialog */}
-      {rejectModalSettlement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md space-y-4">
-            <h3 className="text-base font-black text-slate-900">
-              Reject Settlement Request
-            </h3>
-            <p className="text-xs text-slate-500">
-              Rejecting {rejectModalSettlement.settlementId} will unlock ₹{Number(rejectModalSettlement.requestedAmount).toLocaleString('en-IN')} back to the garage's available balance.
-            </p>
-
-            <form onSubmit={handleRejectSubmit} className="space-y-3">
-              <textarea
-                required
-                rows="3"
-                placeholder="Specify rejection reason (e.g. Bank details unverified)..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
-              />
-
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRejectModalSettlement(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="px-4 py-2 text-xs font-bold text-slate-900 bg-red-600 hover:bg-red-700 rounded-xl"
-                >
-                  Confirm Rejection
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <RejectSettlementDialog
+        key={rejectModalSettlement?.id || 'none'}
+        settlement={rejectModalSettlement}
+        onCancel={() => setRejectModalSettlement(null)}
+        onSubmit={handleRejectSubmit}
+        submitting={rejectModalSettlement ? isPending(`reject:${rejectModalSettlement.id}`) : false}
+      />
     </div>
   );
 };

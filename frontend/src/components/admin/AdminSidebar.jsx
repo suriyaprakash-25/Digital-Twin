@@ -95,7 +95,7 @@ const AdminSidebar = ({ onLogout, isOpen, onClose }) => {
                 </div>
 
                 {/* Navigation */}
-                <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+                <nav aria-label="Admin navigation" className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
                     {adminNavigation.map((item) => {
                         const isActive =
                             item.href === '/admin'
@@ -108,6 +108,7 @@ const AdminSidebar = ({ onLogout, isOpen, onClose }) => {
                                 key={item.name}
                                 to={item.href}
                                 onClick={handleNavClick}
+                                aria-current={isActive ? 'page' : undefined}
                                 className={`group flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
                                     isActive
                                         ? 'bg-teal-50 text-teal-700 shadow-sm border border-teal-200/60'
@@ -128,11 +129,12 @@ const AdminSidebar = ({ onLogout, isOpen, onClose }) => {
                             </Link>
                         );
                     })}
-                </div>
+                </nav>
 
                 {/* Logout */}
                 <div className="p-3 border-t border-slate-100">
                     <button
+                        type="button"
                         onClick={onLogout}
                         className="flex items-center w-full px-4 py-3 text-sm font-semibold text-slate-400 rounded-xl hover:bg-red-50 hover:text-red-500 transition-all duration-200"
                     >

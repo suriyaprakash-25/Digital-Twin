@@ -1,11 +1,11 @@
-import { API_BASE_URL } from '../../utils/config';
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback, useId } from 'react';
+import { apiGet, apiPatch, getErrorMessage } from '../../utils/api';
 import { CalendarClock, Activity, AlertCircle, Save, Clock, CheckCircle } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-const GarageAvailabilityCard = ({ garageId, token }) => {
+const GarageAvailabilityCard = ({ garageId }) => {
+  const idPrefix = useId();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -26,10 +26,7 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
 
   const fetchAvailability = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/garage/availability/${garageId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = res.data;
+      const data = await apiGet(`/garage/availability/${garageId}`);
       setAvailabilityMode(data.availabilityMode || 'AUTO');
       setManualStatus(data.manualStatus || 'CLOSED');
       setCurrentStatus(data.currentStatus || 'CLOSED');
@@ -39,16 +36,17 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
       }
       setLoading(false);
     } catch (err) {
-      console.error('Error fetching availability:', err);
+      setError(getErrorMessage(err, 'Failed to load availability settings'));
       setLoading(false);
     }
-  }, [garageId, token]);
+  }, [garageId]);
 
   useEffect(() => {
-    if (garageId && token) {
-      fetchAvailability();
-    }
-  }, [garageId, token, fetchAvailability]);
+    if (!garageId) return undefined;
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) fetchAvailability(); });
+    return () => { cancelled = true; };
+  }, [garageId, fetchAvailability]);
 
   const saveAvailability = async () => {
     setSaving(true);
@@ -61,16 +59,14 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
         businessHours
       };
       
-      const res = await axios.patch(`${API_BASE_URL}/api/garage/availability`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      setCurrentStatus(res.data.currentStatus);
-      if (res.data.currentTime) setCurrentTime(res.data.currentTime);
+      const data = await apiPatch('/garage/availability', payload);
+
+      setCurrentStatus(data.currentStatus);
+      if (data.currentTime) setCurrentTime(data.currentTime);
       setSuccess('Availability updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.msg || 'Failed to update availability');
+      setError(getErrorMessage(err, 'Failed to update availability'));
     } finally {
       setSaving(false);
     }
@@ -87,7 +83,7 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
   };
 
   if (loading) {
-    return <div className="p-6 bg-white rounded-3xl shadow-sm border border-slate-200 animate-pulse h-64 flex items-center justify-center">Loading availability config...</div>;
+    return <div role="status" className="p-6 bg-white rounded-3xl shadow-sm border border-slate-200 animate-pulse h-64 flex items-center justify-center">Loading availability config...</div>;
   }
 
   return (
@@ -121,11 +117,13 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
         </div>
       </div>
 
-      {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-sm font-medium flex items-center gap-2"><AlertCircle size={16}/> {error}</div>}
-      {success && <div className="mb-4 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-medium flex items-center gap-2"><CheckCircle size={16}/> {success}</div>}
+      {error && <div role="alert" className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-sm font-medium flex items-center gap-2"><AlertCircle size={16}/> {error}</div>}
+      {success && <div role="status" className="mb-4 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-medium flex items-center gap-2"><CheckCircle size={16}/> {success}</div>}
 
       <div className="flex gap-4 mb-8">
-        <button 
+        <button
+          type="button"
+          aria-pressed={availabilityMode === 'AUTO'}
           onClick={() => setAvailabilityMode('AUTO')}
           className={`flex-1 p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2
           ${availabilityMode === 'AUTO' ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
@@ -135,7 +133,9 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
           <span className="text-xs text-slate-500 text-center">Uses your business hours</span>
         </button>
 
-        <button 
+        <button
+          type="button"
+          aria-pressed={availabilityMode === 'MANUAL'}
           onClick={() => setAvailabilityMode('MANUAL')}
           className={`flex-1 p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2
           ${availabilityMode === 'MANUAL' ? 'border-teal-600 bg-teal-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
@@ -153,6 +153,8 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
             {['AVAILABLE', 'BUSY', 'CLOSED'].map(status => (
               <button
                 key={status}
+                type="button"
+                aria-pressed={manualStatus === status}
                 onClick={() => setManualStatus(status)}
                 className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm border transition-all
                   ${manualStatus === status && status === 'AVAILABLE' ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm' :
@@ -175,26 +177,29 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
               <div key={day} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-slate-200">
                 <div className="w-28 font-semibold text-slate-700 text-sm">{day}</div>
                 <div className="flex items-center gap-2">
-                  <input 
-                    type="checkbox" 
-                    checked={businessHours[day]?.isOpen}
+                  <input
+                    id={`${idPrefix}-${day}-open`}
+                    type="checkbox"
+                    checked={Boolean(businessHours[day]?.isOpen)}
                     onChange={(e) => handleHourChange(day, 'isOpen', e.target.checked)}
                     className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
                   />
-                  <label className="text-sm text-slate-600 cursor-pointer" onClick={() => handleHourChange(day, 'isOpen', !businessHours[day]?.isOpen)}>Open</label>
+                  <label htmlFor={`${idPrefix}-${day}-open`} className="text-sm text-slate-600 cursor-pointer">Open</label>
                 </div>
                 
                 {businessHours[day]?.isOpen ? (
                   <div className="flex items-center gap-2 ml-auto">
-                    <input 
-                      type="time" 
+                    <input
+                      type="time"
+                      aria-label={`${day} opening time`}
                       value={businessHours[day]?.openTime || ''}
                       onChange={(e) => handleHourChange(day, 'openTime', e.target.value)}
                       className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
                     />
                     <span className="text-slate-400 text-sm">to</span>
-                    <input 
-                      type="time" 
+                    <input
+                      type="time"
+                      aria-label={`${day} closing time`}
                       value={businessHours[day]?.closeTime || ''}
                       onChange={(e) => handleHourChange(day, 'closeTime', e.target.value)}
                       className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
@@ -209,7 +214,8 @@ const GarageAvailabilityCard = ({ garageId, token }) => {
         </div>
       )}
 
-      <button 
+      <button
+        type="button"
         onClick={saveAvailability}
         disabled={saving}
         className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70"

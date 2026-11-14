@@ -15,6 +15,8 @@ const FloatingButton = ({ onClick, isOpen }) => {
       {/* Button */}
       <button
         onClick={onClick}
+        aria-label={isOpen ? 'Close DrivePortz assistant' : 'Open DrivePortz assistant'}
+        aria-expanded={isOpen}
         className={`relative flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all duration-300 ${
           isOpen
             ? 'bg-slate-800 hover:bg-slate-700 shadow-slate-800/30'

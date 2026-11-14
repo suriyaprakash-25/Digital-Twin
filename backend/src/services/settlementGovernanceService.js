@@ -1,6 +1,6 @@
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
-const { SETTLEMENT_STATUS } = require('./settlementStateMachine');
+const { SETTLEMENT_STATUS, transitionSettlement } = require('./settlementStateMachine');
 const { HOLD_REASON } = require('../models/SettlementSchedule');
 const { logFinancialAudit } = require('./auditService');
 
@@ -166,21 +166,19 @@ async function approveSettlement({ settlementId, adminId, role, ip, userAgent, d
     newStatus = SETTLEMENT_STATUS.UNDER_REVIEW;
   }
 
-  await settlements.updateOne(
-    { _id: settlement._id },
-    {
-      $set: {
-        status: newStatus,
-        approvals: updatedApprovals,
-        approvalCount: newApprovalCount,
-        requiredApprovalCount,
-        isHighValue,
-        approvedBy: String(adminId),
-        approvedAt: now,
-        updatedAt: now
-      }
+  await transitionSettlement({
+    collection: settlements,
+    settlement,
+    to: newStatus,
+    set: {
+      approvals: updatedApprovals,
+      approvalCount: newApprovalCount,
+      requiredApprovalCount,
+      isHighValue,
+      approvedBy: String(adminId),
+      approvedAt: now
     }
-  );
+  });
 
   await logFinancialAudit({
     actorId: String(adminId),

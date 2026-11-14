@@ -1,34 +1,17 @@
-import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
 import {
   Car, User, ShieldCheck, History, Calendar,
   Building2, Wrench, Download, QrCode, AlertCircle,
   Activity, Sparkles, Phone, Mail, Award, Image as ImageIcon
 } from 'lucide-react';
-import { API_BASE_URL } from '../utils/config';
+import { API_ROOT_URL, apiGet } from '../utils/api';
+import { getPhotoUrl } from '../utils/imageUrl';
+import { useAsync } from '../hooks/useAsync';
 import MediaManager from '../components/MediaManager';
 
 const Passport = () => {
   const { vehicleId } = useParams();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const fetchPassport = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/api/passport/${vehicleId}`);
-        setData(res.data);
-      } catch (err) {
-        console.error('Error fetching passport:', err);
-        setError(err.response?.data?.msg || 'Failed to load vehicle passport');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPassport();
-  }, [vehicleId]);
+  const { data, error, loading } = useAsync(() => apiGet(`/passport/${vehicleId}`), [vehicleId]);
 
   const handleDownloadQR = () => {
     if (!data?.vehicle?.qrCodeUrl) return;
@@ -42,7 +25,7 @@ const Passport = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div role="status" className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
           <span className="text-sm font-semibold text-slate-500">Retrieving digital passport...</span>
@@ -54,7 +37,7 @@ const Passport = () => {
   if (error || !data) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-md">
+        <div role="alert" className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-md">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-slate-900 mb-2">Access Error</h3>
           <p className="text-slate-500 text-sm mb-6">{error || 'This passport link is invalid or the vehicle no longer exists.'}</p>
@@ -129,7 +112,7 @@ const Passport = () => {
             </p>
           </div>
           <a
-            href={`${API_BASE_URL}/api/passport/pdf/${vehicleId}`}
+            href={`${API_ROOT_URL}/passport/pdf/${vehicleId}`}
             className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all self-start sm:self-center shrink-0"
           >
             <Download className="h-4.5 w-4.5" />
@@ -193,7 +176,7 @@ const Passport = () => {
                     {vehiclePhotos.map(photo => (
                       <div key={photo._id || photo.id} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 group">
                         <img 
-                          src={photo.url?.startsWith('http') ? photo.url : `${API_BASE_URL}${photo.url}`} 
+                          src={getPhotoUrl(photo.url)} 
                           alt="Vehicle" 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />

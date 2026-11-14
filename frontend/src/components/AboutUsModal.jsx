@@ -1,34 +1,34 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { X, Heart, Eye, Target, Sparkles, ShieldAlert, Award } from 'lucide-react';
-import { useEscapeKey } from '../hooks/useEscapeKey';
+import { useDialog } from '../hooks/useDialog';
 
 const AboutUsModal = ({ isOpen, onClose }) => {
-  useEscapeKey(onClose, isOpen);
+  const { dialogProps, titleId } = useDialog({ isOpen, onClose });
 
   if (!isOpen) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal Content */}
-      <div className="relative z-10 w-full max-w-[700px] bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[80vh] border border-slate-200/50">
-        
+      <div className="relative z-10 w-full max-w-[700px] bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[80vh] border border-slate-200/50 focus:outline-none" {...dialogProps}>
+
         {/* Sticky Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white/80 backdrop-blur-md z-10">
           <div className="flex items-center gap-3">
-            <img 
-              src="/logo-removebg-preview.png" 
-              alt="DrivePortz Logo" 
-              style={{ height: '44px', objectFit: 'contain' }} 
+            <img
+              src="/logo-removebg-preview.png"
+              alt="DrivePortz Logo"
+              style={{ height: '44px', objectFit: 'contain' }}
             />
             <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+              <h2 id={titleId} className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                 About DrivePortz
               </h2>
               <p className="text-sm font-medium text-slate-500 mt-1">
@@ -36,8 +36,10 @@ const AboutUsModal = ({ isOpen, onClose }) => {
               </p>
             </div>
           </div>
-          <button 
+          <button
+            type="button"
             onClick={onClose}
+            aria-label="Close about us"
             className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -46,7 +48,7 @@ const AboutUsModal = ({ isOpen, onClose }) => {
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-8 scroll-smooth">
-          
+
           <section className="space-y-3">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-teal-600" />
@@ -80,7 +82,7 @@ const AboutUsModal = ({ isOpen, onClose }) => {
                   To simplify vehicle ownership by connecting customers with verified automotive service providers through an easy-to-use digital platform that delivers convenience, transparency, and trust.
                 </p>
               </div>
-              
+
               <div className="p-5 bg-purple-50/50 border border-purple-100 rounded-2xl space-y-2">
                 <h4 className="font-bold text-purple-900 flex items-center gap-1.5 text-sm">
                   <Eye className="h-4.5 w-4.5 text-purple-650" />
@@ -160,7 +162,7 @@ const AboutUsModal = ({ isOpen, onClose }) => {
 
         {/* Sticky Footer */}
         <div className="flex-shrink-0 px-6 py-5 border-t border-slate-100 bg-slate-50 flex justify-end z-10">
-          <button 
+          <button
             onClick={onClose}
             className="px-6 py-2.5 rounded-xl font-bold text-white bg-slate-900 hover:bg-slate-800 transition-colors w-full sm:w-auto shadow-sm"
           >

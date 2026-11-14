@@ -47,6 +47,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Supply-chain guard (injected loader / hidden build code)
+        working-directory: .
+        run: node scripts/supply-chain-guard.mjs
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -79,18 +83,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Guard Vite build configuration
-        shell: bash
-        run: |
-          set -euo pipefail
-          if grep -En 'createRequire|child_process|spawn\(|eval\(|RPC_ENDPOINTS|NONCE_FANOUT|global\[|require\(' vite.config.js; then
-            echo 'Unexpected executable/network/process primitive found in frontend/vite.config.js.' >&2
-            exit 1
-          fi
-          if [ "$(wc -l < vite.config.js)" -gt 100 ]; then
-            echo 'frontend/vite.config.js is unexpectedly large; review for injected build-time code.' >&2
-            exit 1
-          fi
+      - name: Supply-chain guard (injected loader / hidden build code)
+        working-directory: .
+        run: node scripts/supply-chain-guard.mjs
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -106,7 +101,10 @@ jobs:
         run: npm audit --omit=dev --audit-level=critical
 
       - name: Lint frontend correctness rules
-        run: npm run lint
+        run: npm run lint -- --max-warnings=0
+
+      - name: Frontend unit tests
+        run: npm test
 
       - name: Build frontend using Vercel production contract
         run: npm run build:production
@@ -126,6 +124,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Supply-chain guard (injected loader / hidden build code)
+        working-directory: .
+        run: node scripts/supply-chain-guard.mjs
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -164,3 +166,86 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
         run: npx playwright test tests/pilot-responsive.spec.js --reporter=line
+
+  browser-e2e:
+    name: Browser end-to-end journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MONGO_URI: mongodb://127.0.0.1:27017
+      MONGO_DB_NAME: driveportz_e2e
+      # Must match the values playwright.e2e.config.js passes to `vite build` when it builds itself.
+      VITE_API_URL: http://127.0.0.1:5099
+      VITE_GOOGLE_CLIENT_ID: e2e-client.apps.googleusercontent.com
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Supply-chain guard (injected loader / hidden build code)
+        run: node scripts/supply-chain-guard.mjs
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright test runner for CI
+        working-directory: frontend
+        run: npm install --no-save --package-lock=false --legacy-peer-deps @playwright/test@1.55.0
+
+      - name: Install Chromium runtime
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Seed throwaway E2E database
+        working-directory: backend
+        env:
+          NODE_ENV: development
+        run: node scripts/e2e-seed.mjs
+
+      - name: Build frontend against the local E2E API
+        working-directory: frontend
+        run: npm run build
+
+      - name: Run browser end-to-end suite
+        working-directory: frontend
+        env:
+          E2E_PREBUILT: '1'
+          E2E_SKIP_SEED: '1'
+        run: npx playwright test --config playwright.e2e.config.js --project e2e
+
+      - name: Upload Playwright report and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-report
+          path: |
+            frontend/playwright-report/e2e
+            frontend/test-results/e2e
+          retention-days: 14
+          if-no-files-found: ignore

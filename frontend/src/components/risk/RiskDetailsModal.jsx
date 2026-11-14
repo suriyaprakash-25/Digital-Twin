@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { X, ShieldAlert, AlertTriangle, CheckCircle, Clock, FileText, User, Building2, CreditCard, ArrowRight } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import { useId, useState } from 'react';
+import { X, ShieldAlert, AlertTriangle, CheckCircle, Clock, FileText, User, Building2, CreditCard, ArrowRight, Loader2 } from 'lucide-react';
+import { apiPost, getErrorMessage } from '../../utils/api';
+import { useDialog } from '../../hooks/useDialog';
 import { useToast } from '../../context/toastContextCore';
 
 export default function RiskDetailsModal({ event, onClose, onUpdated }) {
@@ -9,6 +9,8 @@ export default function RiskDetailsModal({ event, onClose, onUpdated }) {
   const [action, setAction] = useState('MARK_REVIEWED');
   const [reviewNote, setReviewNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { dialogProps, titleId } = useDialog({ isOpen: Boolean(event), onClose });
+  const noteId = useId();
 
   if (!event) return null;
 
@@ -32,23 +34,23 @@ export default function RiskDetailsModal({ event, onClose, onUpdated }) {
       return;
     }
 
+    if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/admin/risk/${event.id}/action`,
-        { action, reviewNote: reviewNote.trim() },
-        { headers: getAuthHeaders() }
+      const data = await apiPost(
+        `/admin/risk/${event.id}/action`,
+        { action, reviewNote: reviewNote.trim() }
       );
 
-      if (res.data?.success) {
-        showSuccess(res.data.message || 'Risk event status updated');
+      if (data?.success) {
+        showSuccess(data.message || 'Risk event status updated');
         if (onUpdated) onUpdated();
         onClose();
       } else {
-        showError(res.data?.message || 'Failed to update risk event');
+        showError(data?.message || 'Failed to update risk event');
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Error updating risk status');
+      showError(getErrorMessage(err, 'Error updating risk status'));
     } finally {
       setIsSubmitting(false);
     }
@@ -56,7 +58,7 @@ export default function RiskDetailsModal({ event, onClose, onUpdated }) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div {...dialogProps} className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 focus:outline-none">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
@@ -65,7 +67,7 @@ export default function RiskDetailsModal({ event, onClose, onUpdated }) {
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <h2 id={titleId} className="text-lg font-bold text-white flex items-center gap-2">
                 Risk Event Dossier
                 {getRiskBadge(event.riskLevel, event.riskScore)}
               </h2>
@@ -73,10 +75,12 @@ export default function RiskDetailsModal({ event, onClose, onUpdated }) {
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -155,6 +159,7 @@ export default function RiskDetailsModal({ event, onClose, onUpdated }) {
                 <button
                   type="button"
                   key={opt.id}
+                  aria-pressed={action === opt.id}
                   onClick={() => setAction(opt.id)}
                   className={`p-3 rounded-xl text-left border transition ${
                     action === opt.id
@@ -169,8 +174,9 @@ export default function RiskDetailsModal({ event, onClose, onUpdated }) {
             </div>
 
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Review & Audit Note *</label>
+              <label htmlFor={noteId} className="block text-xs text-slate-400 mb-1">Review & Audit Note *</label>
               <textarea
+                id={noteId}
                 rows={3}
                 required
                 value={reviewNote}
@@ -194,7 +200,9 @@ export default function RiskDetailsModal({ event, onClose, onUpdated }) {
                 className="px-5 py-2 text-xs font-bold text-slate-900 bg-cyan-400 hover:bg-cyan-300 rounded-xl transition flex items-center gap-2 disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Submit Resolution'}
-                <ArrowRight className="w-3.5 h-3.5" />
+                {isSubmitting
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                  : <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />}
               </button>
             </div>
           </form>

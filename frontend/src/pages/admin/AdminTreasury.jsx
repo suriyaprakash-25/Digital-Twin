@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Landmark,
   Clock,
@@ -15,33 +14,34 @@ import {
   Layers,
   ChevronRight
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
-import { useToast } from '../../context/toastContextCore';
+import { apiGet, getErrorMessage } from '../../utils/api';
+import ErrorState from '../../components/common/ErrorState';
 
 export default function AdminTreasury() {
-  const { showError } = useToast();
   const [forecast, setForecast] = useState(null);
   const [aging, setAging] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [search, setSearch] = useState('');
   const [selectedBucket, setSelectedBucket] = useState('ALL');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const [fRes, aRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/admin/treasury/forecast`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/api/admin/treasury/aging`, { headers: getAuthHeaders() })
+      const [fData, aData] = await Promise.all([
+        apiGet('/admin/treasury/forecast'),
+        apiGet('/admin/treasury/aging')
       ]);
 
-      if (fRes.data?.success) setForecast(fRes.data.forecast);
-      if (aRes.data?.success) setAging(aRes.data.aging);
-    } catch {
-      showError('Failed to load treasury operations data');
+      if (fData?.success) setForecast(fData.forecast);
+      if (aData?.success) setAging(aData.aging);
+    } catch (err) {
+      setLoadError(getErrorMessage(err, 'Failed to load treasury operations data'));
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -75,13 +75,17 @@ export default function AdminTreasury() {
         </div>
 
         <button
+          type="button"
           onClick={fetchData}
+          disabled={loading}
           className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           Refresh
         </button>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchData} retrying={loading} />}
 
       {/* 7 KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
@@ -142,6 +146,8 @@ export default function AdminTreasury() {
           {aging?.bucketSummaries && Object.entries(aging.bucketSummaries).map(([bucketKey, bData]) => (
             <button
               key={bucketKey}
+              type="button"
+              aria-pressed={selectedBucket === bucketKey}
               onClick={() => setSelectedBucket(selectedBucket === bucketKey ? 'ALL' : bucketKey)}
               className={`p-3.5 rounded-xl border text-left transition ${
                 selectedBucket === bucketKey
@@ -181,9 +187,10 @@ export default function AdminTreasury() {
           </div>
 
           <div className="relative w-full md:w-64">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
             <input
-              type="text"
+              type="search"
+              aria-label="Search settlement or garage"
               placeholder="Search settlement or garage..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}

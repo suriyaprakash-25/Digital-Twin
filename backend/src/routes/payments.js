@@ -1,1144 +1,436 @@
+/**
+ * Payment HTTP routes — thin adapters (parse, authorise, delegate, format).
+ * Business logic lives in services/payments/* (order creation, capture, refunds, gateways).
+ */
+const crypto = require('crypto');
 const express = require('express');
-const { ObjectId } = require('mongodb');
 const { getDb } = require('../db');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
-const { loadConfig } = require('../config');
-const {
-  createCashfreeOrder,
-  verifyCashfreePayment,
-  verifyCashfreeWebhook,
-  fetchCashfreeOrder,
-  createCashfreeRefund
-} = require('../services/cashfreeService');
+const { verifyCashfreeWebhook } = require('../services/cashfreeService');
 const { PAYMENT_STATUS } = require('../models/Payment');
-const { notifyUser } = require('../services/notifications');
-const { recordPaymentEarnings, reconcileRefundEarnings } = require('../services/earningsService');
 const { idempotencyMiddleware } = require('../middleware/idempotency');
 const { paymentCreationLimiter, refundLimiter } = require('../middleware/financialRateLimit');
-const { evaluateTransactionRisk } = require('../services/paymentRiskService');
+const { limiters } = require('../infrastructure/rateLimit/rateLimiters');
 const { logFinancialAudit } = require('../services/auditService');
 const { beginWebhookEvent, markWebhookEventProcessed } = require('../models/PaymentWebhookEvent');
-const { isPaymentOrderAuthorized, isGarageUserAuthorizedForPayment } = require('../security/paymentAuthorization');
+const { isGarageUserAuthorizedForPayment } = require('../security/paymentAuthorization');
+const { asyncHandler, ForbiddenError, NotFoundError, ValidationError } = require('../core/errors');
+const { parsePagination, setPaginationHeaders } = require('../core/pagination');
+const { safeSearchRegex } = require('../core/text');
+const { logger } = require('../services/logger');
+const { createCheckoutOrder } = require('../services/payments/paymentOrderService');
+const { capturePayment, markPaymentFailed } = require('../services/payments/paymentCaptureService');
+const { initiateRefund, applyRefundStatusEvent } = require('../services/payments/refundService');
+const { getGateway } = require('../services/payments/gateways');
+const {
+  PAID_STATUSES,
+  OPEN_PAYMENT_STATUSES,
+  findPaymentByOrderId,
+  findPaymentByAnyId,
+  canViewPayment,
+  toObjectId,
+} = require('../services/payments/paymentRecords');
 
 const router = express.Router();
 
-function toObjectId(id) {
-  try {
-    return new ObjectId(String(id));
-  } catch {
-    return null;
-  }
+const HISTORY_DEFAULT_LIMIT = 100;
+const RECENT_ACTIVITY_COUNT = 10;
+const DEFAULT_GARAGE_NAME = 'Authorized Service Center';
+const DEFAULT_SERVICE_TYPE = 'Automotive Service';
+const HISTORY_STATUS_FILTERS = Object.freeze({
+  PAID: PAYMENT_STATUS.CAPTURED,
+  FAILED: PAYMENT_STATUS.FAILED,
+  REFUNDED: { $in: [PAYMENT_STATUS.REFUNDED, PAYMENT_STATUS.PARTIALLY_REFUNDED] },
+  PENDING: { $in: OPEN_PAYMENT_STATUSES },
+});
+
+// ---------------------------------------------------------------------------
+// View formatting (Extract Method: was duplicated in 5 handlers)
+// ---------------------------------------------------------------------------
+function toPaymentListItem(p) {
+  return {
+    id: String(p._id),
+    invoiceNumber: p.invoiceNumber || '—',
+    cfOrderId: p.cfOrderId,
+    cashfreePaymentId: p.cashfreePaymentId || '—',
+    orderId: p.cfOrderId,
+    paymentId: p.cashfreePaymentId || '—',
+    amount: p.amount,
+    currency: p.currency || 'INR',
+    serviceType: p.serviceType || DEFAULT_SERVICE_TYPE,
+    garageName: p.garageName || DEFAULT_GARAGE_NAME,
+    vehicleNumber: p.vehicleNumber || 'N/A',
+    vehicleId: p.vehicleId,
+    serviceId: p.serviceId,
+    status: p.status,
+    paymentMethod: p.paymentMethod || 'Online / Cashfree',
+    totalRefundedAmount: p.totalRefundedAmount || 0,
+    refunds: p.refunds || [],
+    date: p.paidAt || p.createdAt,
+  };
+}
+
+function toCaptureView(payment, orderId) {
+  return {
+    id: String(payment._id),
+    invoiceNumber: payment.invoiceNumber,
+    cfOrderId: orderId || payment.cfOrderId,
+    paymentId: payment.cashfreePaymentId || null,
+    amount: payment.amount,
+    currency: payment.currency || 'INR',
+    serviceType: payment.serviceType,
+    garageName: payment.garageName,
+    vehicleNumber: payment.vehicleNumber,
+    status: payment.status,
+    paidAt: payment.paidAt,
+  };
+}
+
+/** Hides abandoned checkout attempts for invoices that were eventually paid. */
+function withoutSupersededAttempts(payments) {
+  const paidKeys = new Set();
+  payments.forEach((p) => {
+    if (PAID_STATUSES.includes(p.status)) {
+      if (p.invoiceNumber && p.invoiceNumber !== '—') paidKeys.add(p.invoiceNumber);
+      if (p.serviceId) paidKeys.add(String(p.serviceId));
+      if (p.invoiceId) paidKeys.add(String(p.invoiceId));
+    }
+  });
+  return payments.filter((p) => {
+    // Abandoned attempts that capture marked as superseded are audit records, not customer history.
+    if (p.supersededBy) return false;
+    if (!OPEN_PAYMENT_STATUSES.includes(p.status)) return true;
+    return !(paidKeys.has(p.invoiceNumber) || paidKeys.has(String(p.serviceId)) || paidKeys.has(String(p.invoiceId)));
+  });
 }
 
 // ---------------------------------------------------------------------------
 // POST /api/payments/create-order
-// Creates a Cashfree Order for an unpaid service invoice
 // ---------------------------------------------------------------------------
-router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMiddleware, async (req, res) => {
+router.post('/create-order', requireAuth, paymentCreationLimiter, idempotencyMiddleware, asyncHandler(async (req, res) => {
   const { invoiceId, serviceId } = req.body || {};
-  const targetId = serviceId || invoiceId;
+  const body = await createCheckoutOrder({ db: getDb(), user: req.user, targetId: serviceId || invoiceId, invoiceId, req });
+  res.status(200).json(body);
+}));
 
-  if (!targetId) {
-    return res.status(400).json({ success: false, message: 'Service or Invoice ID is required' });
-  }
+// ---------------------------------------------------------------------------
+// POST /api/payments/verify — re-verifies with the gateway server-side, then captures.
+// ---------------------------------------------------------------------------
+router.post('/verify', limiters.paymentVerify, optionalAuth, asyncHandler(async (req, res) => {
+  const { cfOrderId, orderId } = req.body || {};
+  const resolvedOrderId = typeof (cfOrderId || orderId) === 'string' ? (cfOrderId || orderId) : null;
+  if (!resolvedOrderId) throw new ValidationError('Payment verification failed: cfOrderId is required');
 
   const db = getDb();
-  const services  = db.collection('services');
-  const invoices  = db.collection('invoices');
-  const vehicles  = db.collection('vehicles');
-  const payments  = db.collection('payments');
-
-  try {
-    const sObjectId = toObjectId(targetId);
-    const idList = [targetId, String(targetId)];
-    if (sObjectId) idList.push(sObjectId);
-
-    const queryFilters = [
-      { _id: { $in: idList } },
-      { id: { $in: idList } },
-      { invoiceNumber: String(targetId) },
-      { invoiceId: { $in: idList } }
-    ];
-
-    if (invoiceId && invoiceId !== targetId) {
-      const invObjectId = toObjectId(invoiceId);
-      const invList = [invoiceId, String(invoiceId)];
-      if (invObjectId) invList.push(invObjectId);
-      queryFilters.push(
-        { _id: { $in: invList } },
-        { invoiceNumber: String(invoiceId) },
-        { invoiceId: { $in: invList } }
-      );
-    }
-
-    let targetDoc = null;
-    let docSource = 'services';
-
-    // 1. Search services collection
-    targetDoc = await services.findOne({ $or: queryFilters, isArchived: { $ne: true } });
-
-    // 2. Search invoices collection
-    if (!targetDoc) {
-      targetDoc = await invoices.findOne({ $or: queryFilters });
-      if (targetDoc) docSource = 'invoices';
-    }
-
-    // 3. Search payments collection
-    if (!targetDoc) {
-      targetDoc = await payments.findOne({ $or: queryFilters });
-      if (targetDoc) {
-        docSource = 'payments';
-        if (targetDoc.serviceId) {
-          const psId = toObjectId(targetDoc.serviceId);
-          const sDoc = await services.findOne(
-            psId
-              ? { $or: [{ _id: psId }, { _id: String(targetDoc.serviceId) }] }
-              : { _id: String(targetDoc.serviceId) }
-          );
-          if (sDoc) targetDoc = { ...sDoc, ...targetDoc };
-        }
-      }
-    }
-
-    if (!targetDoc) {
-      return res.status(404).json({ success: false, message: 'Service record or invoice not found' });
-    }
-
-    // Ownership check
-    let vehicle = null;
-    if (targetDoc.vehicleId) {
-      const vObjectId = toObjectId(targetDoc.vehicleId);
-      vehicle = vObjectId
-        ? await vehicles.findOne({ _id: vObjectId, isArchived: { $ne: true } })
-        : await vehicles.findOne({ $or: [{ _id: String(targetDoc.vehicleId) }, { id: String(targetDoc.vehicleId) }], isArchived: { $ne: true } });
-    } else if (targetDoc.vehicleNumber) {
-      vehicle = await vehicles.findOne({ vehicleNumber: targetDoc.vehicleNumber, isArchived: { $ne: true } });
-    }
-
-    const isOwner = isPaymentOrderAuthorized({ user: req.user, vehicle, targetDoc });
-    if (!isOwner) {
-      return res.status(403).json({ success: false, message: 'Forbidden: You are not authorized to pay for this invoice' });
-    }
-
-    if (targetDoc.invoiceStatus === 'CANCELLED' || targetDoc.status === 'CANCELLED') {
-      return res.status(400).json({ success: false, message: 'Cannot pay for a cancelled invoice' });
-    }
-
-    if (targetDoc.paymentStatus === 'PAID' || targetDoc.status === PAYMENT_STATUS.CAPTURED || targetDoc.status === 'PAID') {
-      return res.status(400).json({ success: false, message: 'This service invoice is already paid' });
-    }
-
-    const existingPaid = await payments.findOne({
-      $or: [
-        { serviceId: String(targetDoc._id) },
-        { invoiceId: String(targetDoc._id) },
-        { invoiceNumber: targetDoc.invoiceNumber }
-      ].filter(f => Object.values(f)[0]),
-      status: { $in: [PAYMENT_STATUS.CAPTURED, PAYMENT_STATUS.PAID] }
-    });
-    if (existingPaid) {
-      return res.status(400).json({ success: false, message: 'This service invoice is already paid' });
-    }
-
-    // Authoritative amount from database
-    const totalCost = Number(
-      targetDoc.totalAmount  !== undefined ? targetDoc.totalAmount  :
-      targetDoc.totalCost    !== undefined ? targetDoc.totalCost    :
-      targetDoc.amount       !== undefined ? targetDoc.amount       :
-      targetDoc.price        !== undefined ? targetDoc.price        :
-      targetDoc.cost         || 0
-    );
-
-    if (Number.isNaN(totalCost) || totalCost <= 0) {
-      return res.status(400).json({ success: false, message: 'Invalid service amount. Invoice total must be greater than zero.' });
-    }
-
-    const invoiceNumber = targetDoc.invoiceNumber || `DP-INV-2026-${String(targetDoc._id).slice(-6).toUpperCase()}`;
-
-    // Risk Assessment (non-blocking)
-    try {
-      await evaluateTransactionRisk({
-        userId:    req.user.id,
-        garageId:  targetDoc.garageId || targetDoc.createdBy,
-        invoiceId: targetDoc._id,
-        amount:    totalCost,
-        operation: 'PAYMENT',
-        dbInstance: db
-      });
-    } catch (riskErr) {
-      console.warn('Risk evaluation warning:', riskErr.message);
-    }
-
-    // Build unique Cashfree order ID (max 50 chars, alphanumeric + _ -)
-    const cfOrderId = `DP_${String(targetDoc._id || targetId).slice(-10)}_${Date.now().toString().slice(-7)}`;
-
-    // User info for prefill
-    const user = req.user || {};
-
-    // Create Cashfree order
-    let cfOrder;
-    try {
-      cfOrder = await createCashfreeOrder({
-        amountInRupees: totalCost,
-        orderId: cfOrderId,
-        customer: {
-          id:    String(user.id || user._id || `cust_${Date.now()}`),
-          name:  user.name  || user.displayName || 'Customer',
-          email: user.email || '',
-          phone: user.phone || '9999999999'
-        },
-        meta: {
-          serviceId:     String(targetDoc.serviceId || targetDoc._id || targetId),
-          invoiceNumber,
-          vehicleId:     String(targetDoc.vehicleId || (vehicle ? vehicle._id : '')),
-          userId:        String(user.id || ''),
-          vehicleNumber: vehicle?.vehicleNumber || targetDoc.vehicleNumber || 'Vehicle',
-          note:          `Invoice ${invoiceNumber} - ${targetDoc.serviceType || 'Automotive Service'}`
-        }
-      });
-    } catch (cfErr) {
-      console.error('Cashfree order creation error:', cfErr?.response?.data || cfErr.message);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to create payment order with Cashfree. ' + (cfErr?.response?.data?.message || cfErr.message || ''),
-        error:   cfErr?.response?.data || cfErr.message
-      });
-    }
-
-    // Persist payment attempt
-    const paymentDoc = {
-      invoiceId:         String(targetDoc._id || targetId),
-      invoiceNumber,
-      serviceId:         String(targetDoc.serviceId || targetDoc._id || targetId),
-      vehicleId:         String(targetDoc.vehicleId || (vehicle ? vehicle._id : '')),
-      vehicleNumber:     vehicle?.vehicleNumber || targetDoc.vehicleNumber || 'N/A',
-      userId:            String(user.id),
-      garageId:          targetDoc.garageId ? String(targetDoc.garageId) : (targetDoc.createdBy ? String(targetDoc.createdBy) : null),
-      garageName:        targetDoc.garageName || 'Authorized Service Center',
-      serviceType:       targetDoc.serviceType || targetDoc.title || 'Automotive Service',
-      amount:            totalCost,
-      amountPaise:       Math.round(totalCost * 100),
-      currency:          'INR',
-      cfOrderId,
-      cashfreeOrderId:   cfOrder.cf_order_id || cfOrderId,
-      paymentSessionId:  cfOrder.payment_session_id || null,
-      status:            PAYMENT_STATUS.CREATED,
-      paymentMethod:     null,
-      failureReason:     null,
-      paidAt:            null,
-      createdAt:         new Date(),
-      updatedAt:         new Date()
-    };
-
-    const pendingQuery = [
-      { invoiceNumber },
-      { invoiceId: String(targetDoc._id || targetId) },
-      { serviceId: String(targetDoc.serviceId || targetDoc._id || targetId) }
-    ];
-    if (targetDoc._id) pendingQuery.push({ _id: targetDoc._id });
-
-    const existingPendingPayment = await payments.findOne({
-      $or: pendingQuery,
-      status: { $in: [PAYMENT_STATUS.CREATED, PAYMENT_STATUS.PENDING] }
-    });
-
-    let paymentRecordId;
-    if (existingPendingPayment) {
-      await payments.updateOne(
-        { _id: existingPendingPayment._id },
-        {
-          $set: {
-            cfOrderId,
-            cashfreeOrderId:  cfOrder.cf_order_id || cfOrderId,
-            paymentSessionId: cfOrder.payment_session_id || null,
-            amountPaise:      Math.round(totalCost * 100),
-            amount:           totalCost,
-            invoiceNumber,
-            vehicleNumber:    vehicle?.vehicleNumber || targetDoc.vehicleNumber || 'N/A',
-            garageName:       targetDoc.garageName || 'Authorized Service Center',
-            serviceType:      targetDoc.serviceType || targetDoc.title || 'Automotive Service',
-            status:           PAYMENT_STATUS.CREATED,
-            updatedAt:        new Date()
-          }
-        }
-      );
-      paymentRecordId = String(existingPendingPayment._id);
-    } else {
-      const insertResult = await payments.insertOne(paymentDoc);
-      paymentRecordId = String(insertResult.insertedId);
-    }
-
-    // Financial audit log
-    try {
-      await logFinancialAudit({
-        actorId:      req.user.id,
-        actorRole:    'USER',
-        action:       'PAYMENT_ORDER_CREATED',
-        resourceType: 'PAYMENT',
-        resourceId:   paymentRecordId,
-        afterState:   { cfOrderId, amount: totalCost },
-        req,
-        dbInstance:   db
-      });
-    } catch (auditErr) {
-      console.warn('Audit logging warning:', auditErr.message);
-    }
-
-    return res.status(200).json({
-      success:          true,
-      message:          'Cashfree order created successfully',
-      cfOrderId,
-      orderId:          cfOrderId,
-      paymentSessionId: cfOrder.payment_session_id,
-      amount:           totalCost,
-      currency:         'INR',
-      invoiceNumber,
-      keyId:            cfOrder.payment_session_id,
-      order: {
-        id:               cfOrderId,
-        keyId:            cfOrder.payment_session_id,
-        cfOrderId,
-        orderId:          cfOrderId,
-        paymentSessionId: cfOrder.payment_session_id,
-        amount:           totalCost,
-        amountPaise:      Math.round(totalCost * 100),
-        currency:         'INR',
-        invoiceNumber,
-        garageName:       targetDoc.garageName || 'Authorized Service Center',
-        serviceType:      targetDoc.serviceType || targetDoc.title || 'Automotive Service',
-        paymentRecordId
-      }
-    });
-  } catch (err) {
-    console.error('Error in /create-order:', err);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error while creating payment order: ' + (err.message || 'Internal server error')
-    });
+  const payment = await findPaymentByOrderId(db.collection('payments'), resolvedOrderId);
+  if (!payment) throw new NotFoundError('Payment record not found for this order ID');
+  if (req.user && String(payment.userId) !== String(req.user.id) && req.user.role !== 'ADMIN') {
+    throw new ForbiddenError('Forbidden: Unauthorized payment verification attempt');
   }
-});
 
-// ---------------------------------------------------------------------------
-// POST /api/payments/verify
-// Called by frontend after Cashfree checkout redirect / JS callback.
-// We re-verify order status directly with Cashfree API (server-side).
-// ---------------------------------------------------------------------------
-router.post('/verify', optionalAuth, async (req, res) => {
-  const { cfOrderId, orderId, serviceId } = req.body || {};
-  const resolvedOrderId = cfOrderId || orderId;
+  if (payment.status === PAYMENT_STATUS.CAPTURED) {
+    return res.status(200).json({ success: true, message: 'Payment is already verified and confirmed', payment: toCaptureView(payment, resolvedOrderId) });
+  }
 
-  if (!resolvedOrderId) {
+  const gateway = getGateway(payment.gateway || 'cashfree');
+  const verification = await gateway.verifyOrderPayment(resolvedOrderId);
+  if (!verification.verified) {
+    if (!['ACTIVE', 'PENDING'].includes(verification.status)) {
+      await markPaymentFailed({ db, payment, reason: `Gateway order status: ${verification.status}` });
+    }
     return res.status(400).json({
       success: false,
-      message: 'Payment verification failed: cfOrderId is required'
+      status: verification.status,
+      msg: `Payment not confirmed by the gateway. Status: ${verification.status}`,
+      message: `Payment not confirmed by the gateway. Status: ${verification.status}`,
     });
   }
 
-  const db = getDb();
-  const payments = db.collection('payments');
-  const services  = db.collection('services');
-
-  try {
-    // 1. Locate stored payment record
-    const payment = await payments.findOne({
-      $or: [{ cfOrderId: resolvedOrderId }, { cashfreeOrderId: resolvedOrderId }]
-    });
-    if (!payment) {
-      return res.status(404).json({ success: false, message: 'Payment record not found for this order ID' });
-    }
-
-    // 2. Authorize user ownership if authenticated
-    if (req.user && String(payment.userId) !== String(req.user.id) && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ success: false, message: 'Forbidden: Unauthorized payment verification attempt' });
-    }
-
-    // 3. Idempotency – already captured
-    if (payment.status === PAYMENT_STATUS.CAPTURED) {
-      return res.status(200).json({
-        success: true,
-        message: 'Payment is already verified and confirmed',
-        payment: {
-          id:         String(payment._id),
-          cfOrderId:  payment.cfOrderId,
-          paymentId:  payment.cashfreePaymentId || null,
-          amount:     payment.amount,
-          status:     payment.status,
-          paidAt:     payment.paidAt
-        }
-      });
-    }
-
-    // 4. Server-side verification via Cashfree API
-    const { verified, paymentId, method, status: cfStatus } = await verifyCashfreePayment(resolvedOrderId);
-
-    if (!verified) {
-      if (cfStatus !== 'ACTIVE' && cfStatus !== 'PENDING') {
-        await payments.updateOne(
-          { _id: payment._id },
-          { $set: { status: PAYMENT_STATUS.FAILED, failureReason: `Cashfree order status: ${cfStatus}`, updatedAt: new Date() } }
-        );
-      }
-      return res.status(400).json({
-        success: false,
-        status: cfStatus,
-        message: `Payment not confirmed by Cashfree. Status: ${cfStatus}`
-      });
-    }
-
-    const paidAt = new Date();
-
-    // 5. Mark payment record as CAPTURED
-    await payments.updateOne(
-      { _id: payment._id },
-      {
-        $set: {
-          status:              PAYMENT_STATUS.CAPTURED,
-          cashfreePaymentId:   paymentId,
-          paymentMethod:       method,
-          paidAt,
-          updatedAt:           paidAt
-        }
-      }
-    );
-
-    // 6. Mark corresponding service/invoice as PAID
-    const targetServiceId = payment.serviceId || serviceId || payment.invoiceId;
-    if (targetServiceId || payment.invoiceNumber) {
-      const sObjectId = toObjectId(targetServiceId);
-      const queryList = [];
-      if (targetServiceId) {
-        queryList.push({ _id: String(targetServiceId) }, { id: String(targetServiceId) });
-        if (sObjectId) queryList.push({ _id: sObjectId });
-      }
-      if (payment.invoiceNumber) queryList.push({ invoiceNumber: payment.invoiceNumber });
-
-      await services.updateOne(
-        { $or: queryList },
-        {
-          $set: {
-            paymentStatus: 'PAID',
-            paidAt,
-            paymentId:     paymentId,
-            paymentMethod: method,
-            cfOrderId:     resolvedOrderId,
-            updatedAt:     paidAt
-          }
-        }
-      ).catch(() => {});
-
-      const invoices = db.collection('invoices');
-      await invoices.updateOne(
-        { $or: queryList },
-        { $set: { status: 'PAID', paidAt, paymentId, paymentMethod: method, updatedAt: paidAt } }
-      ).catch(() => {});
-    }
-
-    // 7. Cleanup stale pending attempts
-    const cleanupFilters = [];
-    if (payment.invoiceNumber && payment.invoiceNumber !== '—') cleanupFilters.push({ invoiceNumber: payment.invoiceNumber });
-    if (payment.invoiceId) {
-      cleanupFilters.push({ invoiceId: String(payment.invoiceId) });
-      const invObj = toObjectId(payment.invoiceId);
-      if (invObj) cleanupFilters.push({ _id: invObj });
-    }
-    if (payment.serviceId) {
-      cleanupFilters.push({ serviceId: String(payment.serviceId) });
-      const srvObj = toObjectId(payment.serviceId);
-      if (srvObj) cleanupFilters.push({ _id: srvObj });
-    }
-    if (cleanupFilters.length > 0) {
-      await payments.deleteMany({
-        _id: { $ne: payment._id },
-        $or: cleanupFilters,
-        status: { $in: [PAYMENT_STATUS.CREATED, PAYMENT_STATUS.PENDING] }
-      }).catch(err => console.warn('Cleanup stale pending payments warning:', err.message));
-    }
-
-    // 8. Garage earnings ledger
-    try {
-      const updatedPaymentDoc = await payments.findOne({ _id: payment._id });
-      if (updatedPaymentDoc) await recordPaymentEarnings({ payment: updatedPaymentDoc, dbInstance: db });
-    } catch (earnErr) {
-      console.warn('Error recording garage earnings ledger:', earnErr.message);
-    }
-
-    // 9. Notifications
-    try {
-      if (payment.userId) {
-        await notifyUser(payment.userId, {
-          title: 'Payment Successful',
-          body:  `Your payment of ₹${payment.amount} for ${payment.serviceType || 'Service'} has been confirmed. (Invoice: ${payment.invoiceNumber || 'N/A'})`,
-          data:  { type: 'PAYMENT_SUCCESS', paymentId, serviceId: String(payment.serviceId || ''), invoiceNumber: payment.invoiceNumber || '' }
-        });
-      }
-      if (payment.garageId) {
-        await notifyUser(payment.garageId, {
-          title: 'Payment Received',
-          body:  `Payment of ₹${payment.amount} received from customer for ${payment.vehicleNumber || 'Vehicle'}.`,
-          data:  { type: 'PAYMENT_SUCCESS', paymentId, serviceId: String(payment.serviceId || ''), invoiceNumber: payment.invoiceNumber || '' }
-        });
-      }
-    } catch (notifErr) {
-      console.warn('Error sending payment notification:', notifErr.message);
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Payment verified and captured successfully!',
-      payment: {
-        id:            String(payment._id),
-        invoiceNumber: payment.invoiceNumber,
-        cfOrderId:     resolvedOrderId,
-        paymentId,
-        amount:        payment.amount,
-        currency:      'INR',
-        serviceType:   payment.serviceType,
-        garageName:    payment.garageName,
-        vehicleNumber: payment.vehicleNumber,
-        status:        PAYMENT_STATUS.CAPTURED,
-        paidAt
-      }
-    });
-  } catch (err) {
-    console.error('Error in /verify:', err);
-    return res.status(500).json({ success: false, message: 'Internal server error verifying payment' });
-  }
-});
+  const result = await capturePayment({
+    db,
+    payment,
+    gatewayPaymentId: verification.gatewayPaymentId,
+    method: verification.method,
+    orderId: resolvedOrderId,
+    gatewayAmountInRupees: verification.amountInRupees,
+    source: 'VERIFY',
+  });
+  return res.status(200).json({
+    success: true,
+    message: result.alreadyCaptured ? 'Payment is already verified and confirmed' : 'Payment verified and captured successfully!',
+    servicePaymentStatus: result.servicePaymentStatus,
+    payment: toCaptureView(result.payment, resolvedOrderId),
+  });
+}));
 
 // ---------------------------------------------------------------------------
 // POST /api/payments/:paymentId/refund
-// Initiates a Cashfree refund for a captured payment
 // ---------------------------------------------------------------------------
-router.post('/:paymentId/refund', requireAuth, refundLimiter, idempotencyMiddleware, async (req, res) => {
-  const { paymentId } = req.params;
+router.post('/:paymentId/refund', requireAuth, refundLimiter, idempotencyMiddleware, asyncHandler(async (req, res) => {
   const { amount, reason = 'Customer requested refund' } = req.body || {};
-
   const db = getDb();
-  const payments = db.collection('payments');
-  const services  = db.collection('services');
+  const payment = await findPaymentByAnyId(db.collection('payments'), req.params.paymentId);
+  if (!payment) throw new NotFoundError('Payment record not found');
 
-  try {
-    const pObjectId = toObjectId(paymentId);
-    const payment = pObjectId
-      ? await payments.findOne({ $or: [{ _id: pObjectId }, { cashfreePaymentId: paymentId }] })
-      : await payments.findOne({ cashfreePaymentId: paymentId });
+  const authorized = await isGarageUserAuthorizedForPayment({ user: req.user, payment, db });
+  if (!authorized) throw new ForbiddenError('Forbidden: You are not authorized to refund this payment');
 
-    if (!payment) {
-      return res.status(404).json({ success: false, message: 'Payment record not found' });
-    }
+  const before = { status: payment.status, totalRefundedAmount: payment.totalRefundedAmount || 0 };
+  const result = await initiateRefund({ db, payment, amount, reason: String(reason), actor: req.user });
 
-    const isAuthorized = await isGarageUserAuthorizedForPayment({ user: req.user, payment, db });
-    if (!isAuthorized) {
-      return res.status(403).json({ success: false, message: 'Forbidden: You are not authorized to refund this payment' });
-    }
+  await logFinancialAudit({
+    actorId: req.user.id,
+    actorRole: req.user.role || 'ADMIN',
+    action: 'REFUND_COMPLETED',
+    resourceType: 'PAYMENT',
+    resourceId: String(payment._id),
+    beforeState: before,
+    afterState: { status: result.payment.status, totalRefundedAmount: result.payment.totalRefundedAmount, refundAmount: result.refund.amount },
+    req,
+    dbInstance: db,
+  }).catch((err) => logger.warn('Refund audit log failed', { error: err.message }));
 
-    if (payment.status !== PAYMENT_STATUS.CAPTURED && payment.status !== PAYMENT_STATUS.PARTIALLY_REFUNDED) {
-      return res.status(400).json({
-        success: false,
-        message: `Only captured payments can be refunded. Current status is ${payment.status}`
-      });
-    }
-
-    if (!payment.cfOrderId) {
-      return res.status(400).json({ success: false, message: 'No Cashfree order ID associated with this payment record' });
-    }
-
-    const originalAmount    = parseFloat(payment.amount) || 0;
-    const alreadyRefunded   = parseFloat(payment.totalRefundedAmount) || 0;
-    const maxRefundable     = Math.max(0, originalAmount - alreadyRefunded);
-
-    if (maxRefundable <= 0) {
-      return res.status(400).json({ success: false, message: 'This payment has already been fully refunded' });
-    }
-
-    const requestedAmount = amount !== undefined ? parseFloat(amount) : maxRefundable;
-    if (isNaN(requestedAmount) || requestedAmount <= 0 || requestedAmount > maxRefundable) {
-      return res.status(400).json({ success: false, message: `Invalid refund amount. Must be between ₹1 and ₹${maxRefundable}` });
-    }
-
-    const refundReceipt = `ref_${String(payment._id).slice(-6)}_${Date.now().toString().slice(-6)}`;
-
-    let cfRefund;
-    try {
-      cfRefund = await createCashfreeRefund({
-        cfOrderId:      payment.cfOrderId,
-        refundId:       refundReceipt,
-        amountInRupees: requestedAmount,
-        reason:         String(reason).slice(0, 100)
-      });
-    } catch (cfErr) {
-      console.error('Cashfree refund API error:', cfErr?.response?.data || cfErr.message);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to process refund with Cashfree',
-        error:   cfErr?.response?.data || cfErr.message
-      });
-    }
-
-    const newTotalRefunded = alreadyRefunded + requestedAmount;
-    const isFullyRefunded  = newTotalRefunded >= originalAmount;
-    const newStatus        = isFullyRefunded ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED;
-    const refundedAt       = new Date();
-
-    const refundEntry = {
-      refundId:     cfRefund.refund_id || refundReceipt,
-      cfRefundId:   cfRefund.cf_refund_id || null,
-      amount:       requestedAmount,
-      currency:     'INR',
-      reason,
-      status:       cfRefund.refund_status || 'PENDING',
-      receipt:      refundReceipt,
-      createdAt:    refundedAt
-    };
-
-    await payments.updateOne(
-      { _id: payment._id },
-      {
-        $set:  { status: newStatus, totalRefundedAmount: newTotalRefunded, refundedAt, updatedAt: refundedAt },
-        $push: { refunds: refundEntry }
-      }
-    );
-
-    if (payment.serviceId) {
-      const sObjectId   = toObjectId(payment.serviceId);
-      const serviceQuery = sObjectId
-        ? { $or: [{ _id: sObjectId }, { _id: String(payment.serviceId) }] }
-        : { _id: String(payment.serviceId) };
-      await services.updateOne(serviceQuery, {
-        $set: { paymentStatus: newStatus, totalRefundedAmount: newTotalRefunded, refundedAt, updatedAt: refundedAt }
-      });
-    }
-
-    try {
-      const updatedPaymentDoc = await payments.findOne({ _id: payment._id });
-      if (updatedPaymentDoc) {
-        await reconcileRefundEarnings({ payment: updatedPaymentDoc, refundAmount: requestedAmount, dbInstance: db });
-      }
-    } catch (recErr) {
-      console.warn('Error reconciling refund earnings:', recErr.message);
-    }
-
-    try {
-      if (payment.userId) {
-        await notifyUser(payment.userId, {
-          title: isFullyRefunded ? 'Payment Refunded' : 'Partial Refund Processed',
-          body:  `A refund of ₹${requestedAmount} has been processed for your invoice ${payment.invoiceNumber || ''}.`,
-          data:  { type: 'REFUND_COMPLETED', cfOrderId: payment.cfOrderId, refundId: cfRefund.refund_id || refundReceipt, amount: String(requestedAmount) }
-        });
-      }
-    } catch (notifErr) {
-      console.warn('Error sending refund notification:', notifErr.message);
-    }
-
-    await logFinancialAudit({
-      actorId:      req.user.id,
-      actorRole:    req.user.role || 'ADMIN',
-      action:       'REFUND_COMPLETED',
-      resourceType: 'PAYMENT',
-      resourceId:   String(payment._id),
-      beforeState:  { status: payment.status, totalRefundedAmount: alreadyRefunded },
-      afterState:   { status: newStatus, totalRefundedAmount: newTotalRefunded, refundAmount: requestedAmount },
-      req,
-      dbInstance:   db
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: `Refund of ₹${requestedAmount} initiated successfully`,
-      refund:  refundEntry,
-      payment: {
-        id:                  String(payment._id),
-        status:              newStatus,
-        totalRefundedAmount: newTotalRefunded,
-        remainingAmount:     Math.max(0, originalAmount - newTotalRefunded)
-      }
-    });
-  } catch (err) {
-    console.error('Error initiating refund:', err);
-    return res.status(500).json({ success: false, message: 'Internal server error processing refund' });
-  }
-});
+  res.status(200).json({
+    success: true,
+    message: `Refund of ₹${result.refund.amount} initiated successfully`,
+    refund: result.refund,
+    payment: {
+      id: String(payment._id),
+      status: result.payment.status,
+      totalRefundedAmount: result.payment.totalRefundedAmount,
+      remainingAmount: result.remainingAmount,
+    },
+  });
+}));
 
 // ---------------------------------------------------------------------------
 // GET /api/payments/:paymentId/refund-status
 // ---------------------------------------------------------------------------
-router.get('/:paymentId/refund-status', requireAuth, async (req, res) => {
-  const { paymentId } = req.params;
-  const db = getDb();
-  const payments = db.collection('payments');
-
-  try {
-    const pObjectId = toObjectId(paymentId);
-    const payment = pObjectId
-      ? await payments.findOne({ $or: [{ _id: pObjectId }, { cashfreePaymentId: paymentId }] })
-      : await payments.findOne({ cashfreePaymentId: paymentId });
-
-    if (!payment) {
-      return res.status(404).json({ success: false, message: 'Payment record not found' });
-    }
-
-    const isOwner =
-      (String(payment.userId) === String(req.user.id)) ||
-      (payment.garageId && String(payment.garageId) === String(req.user.id)) ||
-      (req.user.role === 'ADMIN');
-
-    if (!isOwner) return res.status(403).json({ success: false, message: 'Forbidden' });
-
-    return res.status(200).json({
-      success:             true,
-      cfOrderId:           payment.cfOrderId,
-      cashfreePaymentId:   payment.cashfreePaymentId,
-      status:              payment.status,
-      originalAmount:      payment.amount,
-      totalRefundedAmount: payment.totalRefundedAmount || 0,
-      refunds:             payment.refunds || []
-    });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Error loading refund status' });
-  }
-});
+router.get('/:paymentId/refund-status', requireAuth, asyncHandler(async (req, res) => {
+  const payment = await findPaymentByAnyId(getDb().collection('payments'), req.params.paymentId);
+  if (!payment) throw new NotFoundError('Payment record not found');
+  if (!canViewPayment(req.user, payment)) throw new ForbiddenError();
+  res.status(200).json({
+    success: true,
+    cfOrderId: payment.cfOrderId,
+    cashfreePaymentId: payment.cashfreePaymentId,
+    status: payment.status,
+    originalAmount: payment.amount,
+    totalRefundedAmount: payment.totalRefundedAmount || 0,
+    refunds: payment.refunds || [],
+  });
+}));
 
 // ---------------------------------------------------------------------------
 // GET /api/payments/details/:id
 // ---------------------------------------------------------------------------
-router.get('/details/:id', requireAuth, async (req, res) => {
-  const { id } = req.params;
+router.get('/details/:id', requireAuth, asyncHandler(async (req, res) => {
   const db = getDb();
-  const payments = db.collection('payments');
-  const services  = db.collection('services');
+  const payment = await findPaymentByAnyId(db.collection('payments'), req.params.id);
+  if (!payment) throw new NotFoundError('Payment record not found');
+  if (!canViewPayment(req.user, payment)) throw new ForbiddenError();
 
-  try {
-    const pObjectId = toObjectId(id);
-    const payment = pObjectId
-      ? await payments.findOne({ $or: [{ _id: pObjectId }, { cfOrderId: id }, { cashfreePaymentId: id }] })
-      : await payments.findOne({ $or: [{ cfOrderId: id }, { cashfreePaymentId: id }] });
+  const serviceObjectId = payment.serviceId ? toObjectId(payment.serviceId) : null;
+  const service = serviceObjectId ? await db.collection('services').findOne({ _id: serviceObjectId }, { projection: { invoiceNumber: 1, garageGstin: 1, gstin: 1 } }) : null;
 
-    if (!payment) {
-      return res.status(404).json({ success: false, message: 'Payment record not found' });
-    }
+  res.status(200).json({
+    success: true,
+    payment: {
+      ...toPaymentListItem(payment),
+      invoiceNumber: payment.invoiceNumber || (service && service.invoiceNumber) || '—',
+      garageGstin: (service && (service.garageGstin || service.gstin)) || null,
+      userId: payment.userId,
+      garageId: payment.garageId,
+      failureReason: payment.failureReason,
+      paidAt: payment.paidAt,
+      refundedAt: payment.refundedAt,
+      createdAt: payment.createdAt,
+    },
+  });
+}));
 
-    const isOwner =
-      (String(payment.userId) === String(req.user.id)) ||
-      (payment.garageId && String(payment.garageId) === String(req.user.id)) ||
-      (req.user.role === 'ADMIN');
-
-    if (!isOwner) return res.status(403).json({ success: false, message: 'Forbidden' });
-
-    let service = null;
-    if (payment.serviceId) {
-      const sObjectId = toObjectId(payment.serviceId);
-      service = sObjectId ? await services.findOne({ _id: sObjectId }) : null;
-    }
-
-    return res.status(200).json({
-      success: true,
-      payment: {
-        id:                  String(payment._id),
-        invoiceNumber:       payment.invoiceNumber || service?.invoiceNumber || '—',
-        cfOrderId:           payment.cfOrderId,
-        cashfreePaymentId:   payment.cashfreePaymentId || '—',
-        // Alias fields for compatibility with existing UI components
-        orderId:             payment.cfOrderId,
-        paymentId:           payment.cashfreePaymentId || '—',
-        amount:              payment.amount,
-        currency:            payment.currency || 'INR',
-        status:              payment.status,
-        paymentMethod:       payment.paymentMethod || 'Online / Cashfree',
-        serviceType:         payment.serviceType,
-        garageName:          payment.garageName,
-        vehicleNumber:       payment.vehicleNumber,
-        serviceId:           payment.serviceId,
-        userId:              payment.userId,
-        garageId:            payment.garageId,
-        failureReason:       payment.failureReason,
-        totalRefundedAmount: payment.totalRefundedAmount || 0,
-        refunds:             payment.refunds || [],
-        paidAt:              payment.paidAt,
-        refundedAt:          payment.refundedAt,
-        createdAt:           payment.createdAt
-      }
-    });
-  } catch (err) {
-    console.error('Error fetching payment details:', err);
-    return res.status(500).json({ success: false, message: 'Error fetching payment details' });
-  }
+// ---------------------------------------------------------------------------
+// POST /api/payments/cashfree-webhook — HMAC-SHA256 signed, timestamp-fresh, deduplicated.
+// ---------------------------------------------------------------------------
+const WEBHOOK_EVENT = Object.freeze({
+  PAYMENT_SUCCESS: 'PAYMENT_SUCCESS_WEBHOOK',
+  PAYMENT_FAILED: 'PAYMENT_FAILED_WEBHOOK',
+  REFUND_STATUS: 'REFUND_STATUS_WEBHOOK',
 });
 
-// ---------------------------------------------------------------------------
-// POST /api/payments/cashfree-webhook
-// Cashfree Webhook Handler – signed with HMAC-SHA256
-// Header: x-webhook-signature, x-webhook-timestamp
-// ---------------------------------------------------------------------------
-router.post('/cashfree-webhook', async (req, res) => {
+/** Strategy map: one handler per webhook type (Replace Conditional with Polymorphism). */
+const webhookHandlers = {
+  async [WEBHOOK_EVENT.PAYMENT_SUCCESS]({ db, data, cfOrderId }) {
+    const payment = await findPaymentByOrderId(db.collection('payments'), cfOrderId);
+    if (!payment) return;
+    await capturePayment({
+      db,
+      payment,
+      gatewayPaymentId: data.payment && data.payment.cf_payment_id ? String(data.payment.cf_payment_id) : null,
+      method: data.payment && data.payment.payment_method && data.payment.payment_method.type ? String(data.payment.payment_method.type).toUpperCase() : 'ONLINE',
+      orderId: cfOrderId,
+      gatewayAmountInRupees: Number.isFinite(Number(data.payment && data.payment.payment_amount)) ? Number(data.payment.payment_amount) : null,
+      source: 'WEBHOOK',
+    });
+  },
+  async [WEBHOOK_EVENT.PAYMENT_FAILED]({ db, data, cfOrderId }) {
+    const payment = await findPaymentByOrderId(db.collection('payments'), cfOrderId);
+    if (!payment) return;
+    const reason = (data.payment && data.payment.error_details && data.payment.error_details.error_description) || 'Payment failed via webhook';
+    await markPaymentFailed({ db, payment, reason });
+  },
+  async [WEBHOOK_EVENT.REFUND_STATUS]({ db, data, cfOrderId }) {
+    const refund = data.refund || {};
+    const payment = await findPaymentByOrderId(db.collection('payments'), cfOrderId || refund.order_id);
+    if (!payment) return;
+    await applyRefundStatusEvent({
+      db,
+      payment,
+      refundId: refund.refund_id,
+      gatewayRefundId: refund.cf_refund_id,
+      status: refund.refund_status,
+      amount: refund.refund_amount,
+    });
+  },
+};
+
+router.post('/cashfree-webhook', asyncHandler(async (req, res) => {
   const signature = req.headers['x-webhook-signature'];
   const timestamp = req.headers['x-webhook-timestamp'];
-
-  if (!signature || !timestamp) {
-    return res.status(400).json({ error: 'Missing Cashfree webhook headers' });
-  }
+  if (!signature || !timestamp) return res.status(400).json({ error: 'Missing Cashfree webhook headers' });
 
   const rawBody = req.rawBody || JSON.stringify(req.body);
-  const isValid = verifyCashfreeWebhook({ rawBody, timestamp, signature });
-
-  if (!isValid) {
-    console.warn('⚠️ Cashfree webhook signature mismatch rejected.');
+  if (!verifyCashfreeWebhook({ rawBody, timestamp, signature })) {
+    logger.security('Cashfree webhook rejected (bad signature or stale timestamp)', { requestId: req.requestId });
     return res.status(400).json({ error: 'Invalid webhook signature' });
   }
 
-  const eventPayload = req.body || {};
-  const eventType    = eventPayload.type;         // e.g. "PAYMENT_SUCCESS_WEBHOOK"
-  const data         = eventPayload.data || {};
-  const cfOrderId    = data.order?.order_id;
-  const cfPaymentId  = data.payment?.cf_payment_id ? String(data.payment.cf_payment_id) : null;
-  const eventId      = eventPayload.event_time
-    ? `${cfOrderId}_${eventType}_${eventPayload.event_time}`
-    : `${cfOrderId}_${eventType}_${Date.now()}`;
+  const event = req.body || {};
+  const eventType = event.type || 'unknown';
+  const data = event.data || {};
+  const cfOrderId = (data.order && data.order.order_id) || (data.refund && data.refund.order_id) || null;
+  // Deterministic id: a gateway redelivery of the same body always maps to the same event.
+  const bodyHash = crypto.createHash('sha256').update(Buffer.isBuffer(rawBody) ? rawBody : String(rawBody)).digest('hex').slice(0, 16);
+  const eventId = `${cfOrderId}_${eventType}_${event.event_time || bodyHash}`;
+  const db = getDb();
 
-  const db       = getDb();
-  const payments = db.collection('payments');
-  const services  = db.collection('services');
-
-  try {
-    const claim = await beginWebhookEvent({
-      eventId,
-      eventType:        eventType || 'unknown',
-      cashfreePaymentId: cfPaymentId,
-      cfOrderId,
-      dbInstance: db
-    });
-
-    if (!claim.shouldProcess) {
-      return res.status(200).json({ status: 'ok', message: 'Webhook already processed or currently processing' });
-    }
-  } catch (claimErr) {
-    console.error('Webhook idempotency claim failed:', claimErr);
-    return res.status(500).json({ error: 'Unable to establish webhook idempotency' });
-  }
+  const claim = await beginWebhookEvent({
+    eventId,
+    eventType,
+    cashfreePaymentId: data.payment && data.payment.cf_payment_id ? String(data.payment.cf_payment_id) : null,
+    cfOrderId,
+    dbInstance: db,
+  });
+  if (!claim.shouldProcess) return res.status(200).json({ status: 'ok', message: 'Webhook already processed or currently processing' });
 
   try {
-    if (eventType === 'PAYMENT_SUCCESS_WEBHOOK') {
-      if (cfOrderId) {
-        const paidAt  = new Date();
-        const method  = data.payment?.payment_method?.type ? String(data.payment.payment_method.type).toUpperCase() : 'ONLINE';
-        const payment = await payments.findOne({ $or: [{ cfOrderId }, { cashfreeOrderId: cfOrderId }] });
-
-        if (payment && payment.status !== PAYMENT_STATUS.CAPTURED) {
-          await payments.updateOne(
-            { _id: payment._id },
-            {
-              $set: {
-                status:            PAYMENT_STATUS.CAPTURED,
-                cashfreePaymentId: cfPaymentId || payment.cashfreePaymentId,
-                paymentMethod:     method,
-                paidAt,
-                updatedAt:         new Date()
-              }
-            }
-          );
-
-          if (payment.serviceId) {
-            const sObjectId    = toObjectId(payment.serviceId);
-            const serviceQuery = sObjectId
-              ? { $or: [{ _id: sObjectId }, { _id: String(payment.serviceId) }] }
-              : { _id: String(payment.serviceId) };
-
-            await services.updateOne(serviceQuery, {
-              $set: { paymentStatus: 'PAID', paidAt, paymentId: cfPaymentId, paymentMethod: method, cfOrderId }
-            });
-          }
-
-          try {
-            const updatedDoc = await payments.findOne({ _id: payment._id });
-            if (updatedDoc) await recordPaymentEarnings({ payment: updatedDoc, dbInstance: db });
-          } catch (earnErr) {
-            console.warn('Webhook earnings ledger error:', earnErr.message);
-          }
-        }
-      }
-    } else if (eventType === 'PAYMENT_FAILED_WEBHOOK') {
-      if (cfOrderId) {
-        const errorMsg = data.payment?.error_details?.error_description || 'Payment failed via webhook';
-        await payments.updateOne(
-          { $or: [{ cfOrderId }, { cashfreeOrderId: cfOrderId }], status: { $ne: PAYMENT_STATUS.CAPTURED } },
-          { $set: { status: PAYMENT_STATUS.FAILED, failureReason: errorMsg, updatedAt: new Date() } }
-        );
-      }
-    } else if (eventType === 'REFUND_STATUS_WEBHOOK') {
-      const refundStatus = data.refund?.refund_status;
-      const refundAmount = data.refund ? (parseFloat(data.refund.refund_amount) || 0) : 0;
-
-      if (cfOrderId && refundStatus === 'SUCCESS' && refundAmount > 0) {
-        const payment = await payments.findOne({ $or: [{ cfOrderId }, { cashfreeOrderId: cfOrderId }] });
-        if (payment) {
-          const alreadyRefunded  = parseFloat(payment.totalRefundedAmount) || 0;
-          const newTotalRefunded = Math.max(alreadyRefunded, refundAmount);
-          const isFullyRefunded  = newTotalRefunded >= payment.amount;
-          const newStatus        = isFullyRefunded ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED;
-
-          await payments.updateOne(
-            { _id: payment._id },
-            { $set: { status: newStatus, totalRefundedAmount: newTotalRefunded, refundedAt: new Date(), updatedAt: new Date() } }
-          );
-
-          if (payment.serviceId) {
-            const sObjectId    = toObjectId(payment.serviceId);
-            const serviceQuery = sObjectId
-              ? { $or: [{ _id: sObjectId }, { _id: String(payment.serviceId) }] }
-              : { _id: String(payment.serviceId) };
-            await services.updateOne(serviceQuery, {
-              $set: { paymentStatus: newStatus, totalRefundedAmount: newTotalRefunded, refundedAt: new Date() }
-            });
-          }
-
-          try {
-            const updatedDoc = await payments.findOne({ _id: payment._id });
-            if (updatedDoc) await reconcileRefundEarnings({ payment: updatedDoc, refundAmount, dbInstance: db });
-          } catch (recErr) {
-            console.warn('Webhook refund earnings reconciliation error:', recErr.message);
-          }
-        }
-      }
-    }
-
+    const handler = webhookHandlers[eventType];
+    if (handler && cfOrderId) await handler({ db, data, cfOrderId });
     await markWebhookEventProcessed(eventId, { status: 'PROCESSED', dbInstance: db });
     return res.status(200).json({ status: 'ok' });
   } catch (err) {
-    if (eventId) {
-      try {
-        await markWebhookEventProcessed(eventId, {
-          status:        'FAILED',
-          failureReason: String(err?.message || err).slice(0, 500),
-          dbInstance:    db
-        });
-      } catch (markErr) {
-        console.error('Failed to mark webhook event as failed:', markErr.message);
-      }
-    }
-    console.error('Error handling Cashfree webhook event:', err);
+    await markWebhookEventProcessed(eventId, { status: 'FAILED', failureReason: String(err && err.message || err).slice(0, 500), dbInstance: db })
+      .catch((markErr) => logger.error('Failed to mark webhook event as failed', { error: markErr.message }));
+    logger.error('Error handling Cashfree webhook event', { eventType, error: err.message });
     return res.status(500).json({ error: 'Internal server error processing webhook' });
   }
-});
+}));
 
 // ---------------------------------------------------------------------------
 // GET /api/payments/status/:orderId
 // ---------------------------------------------------------------------------
-router.get('/status/:orderId', requireAuth, async (req, res) => {
-  const { orderId } = req.params;
-  const db = getDb();
-  const payments = db.collection('payments');
-
-  try {
-    const payment = await payments.findOne({
-      $or: [{ cfOrderId: orderId }, { cashfreeOrderId: orderId }]
-    });
-    if (!payment) {
-      return res.status(404).json({ success: false, message: 'Payment order not found' });
-    }
-
-    if (String(payment.userId) !== String(req.user.id) && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ success: false, message: 'Forbidden' });
-    }
-
-    return res.status(200).json({
-      success: true,
-      payment: {
-        id:                  String(payment._id),
-        invoiceNumber:       payment.invoiceNumber,
-        cfOrderId:           payment.cfOrderId,
-        cashfreePaymentId:   payment.cashfreePaymentId,
-        // Alias for UI compatibility
-        orderId:             payment.cfOrderId,
-        paymentId:           payment.cashfreePaymentId,
-        amount:              payment.amount,
-        status:              payment.status,
-        serviceType:         payment.serviceType,
-        garageName:          payment.garageName,
-        vehicleNumber:       payment.vehicleNumber,
-        totalRefundedAmount: payment.totalRefundedAmount || 0,
-        paidAt:              payment.paidAt
-      }
-    });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Error checking payment status' });
-  }
-});
+router.get('/status/:orderId', requireAuth, asyncHandler(async (req, res) => {
+  const payment = await findPaymentByOrderId(getDb().collection('payments'), req.params.orderId);
+  if (!payment) throw new NotFoundError('Payment order not found');
+  if (String(payment.userId) !== String(req.user.id) && req.user.role !== 'ADMIN') throw new ForbiddenError();
+  const view = toPaymentListItem(payment);
+  res.status(200).json({ success: true, payment: { ...view, cashfreePaymentId: payment.cashfreePaymentId, paymentId: payment.cashfreePaymentId, paidAt: payment.paidAt } });
+}));
 
 // ---------------------------------------------------------------------------
-// GET /api/payments/history
+// GET /api/payments/history — paginated (?page&limit), headers carry totals.
 // ---------------------------------------------------------------------------
-router.get('/history', requireAuth, async (req, res) => {
+router.get('/history', requireAuth, asyncHandler(async (req, res) => {
   const { status, search } = req.query;
-  const db = getDb();
-  const payments = db.collection('payments');
+  const payments = getDb().collection('payments');
+  const query = { userId: String(req.user.id) };
 
-  try {
-    const query = { userId: String(req.user.id) };
-
-    if (status && status !== 'ALL') {
-      if (status === 'PAID') query.status = PAYMENT_STATUS.CAPTURED;
-      else if (status === 'FAILED') query.status = PAYMENT_STATUS.FAILED;
-      else if (status === 'REFUNDED') query.status = { $in: [PAYMENT_STATUS.REFUNDED, PAYMENT_STATUS.PARTIALLY_REFUNDED] };
-      else if (status === 'PENDING') query.status = { $in: [PAYMENT_STATUS.CREATED, PAYMENT_STATUS.PENDING] };
-      else query.status = status;
-    }
-
-    if (search && search.trim()) {
-      const regex = new RegExp(search.trim(), 'i');
-      query.$or = [
-        { invoiceNumber: regex },
-        { vehicleNumber: regex },
-        { garageName: regex },
-        { serviceType: regex },
-        { cashfreePaymentId: regex },
-        { cfOrderId: regex }
-      ];
-    }
-
-    const userPayments = await payments.find(query).sort({ createdAt: -1 }).limit(100).toArray();
-
-    // Deduplicate: if invoice is CAPTURED omit older pending attempts
-    const capturedInvoiceKeys = new Set();
-    userPayments.forEach(p => {
-      if (p.status === PAYMENT_STATUS.CAPTURED || p.status === 'PAID') {
-        if (p.invoiceNumber && p.invoiceNumber !== '—') capturedInvoiceKeys.add(p.invoiceNumber);
-        if (p.serviceId) capturedInvoiceKeys.add(String(p.serviceId));
-        if (p.invoiceId) capturedInvoiceKeys.add(String(p.invoiceId));
-      }
-    });
-
-    const active = userPayments.filter(p => {
-      if (p.status === PAYMENT_STATUS.CREATED || p.status === PAYMENT_STATUS.PENDING) {
-        if (p.invoiceNumber && capturedInvoiceKeys.has(p.invoiceNumber)) return false;
-        if (p.serviceId   && capturedInvoiceKeys.has(String(p.serviceId)))   return false;
-        if (p.invoiceId   && capturedInvoiceKeys.has(String(p.invoiceId)))   return false;
-      }
-      return true;
-    });
-
-    const formatted = active.map(p => ({
-      id:                  String(p._id),
-      invoiceNumber:       p.invoiceNumber || '—',
-      cfOrderId:           p.cfOrderId,
-      cashfreePaymentId:   p.cashfreePaymentId || '—',
-      // Aliases for UI compatibility
-      orderId:             p.cfOrderId,
-      paymentId:           p.cashfreePaymentId || '—',
-      amount:              p.amount,
-      currency:            p.currency || 'INR',
-      serviceType:         p.serviceType || 'Automotive Service',
-      garageName:          p.garageName || 'Authorized Service Center',
-      vehicleNumber:       p.vehicleNumber || 'N/A',
-      vehicleId:           p.vehicleId,
-      serviceId:           p.serviceId,
-      status:              p.status,
-      paymentMethod:       p.paymentMethod || 'Online / Cashfree',
-      totalRefundedAmount: p.totalRefundedAmount || 0,
-      refunds:             p.refunds || [],
-      date:                p.paidAt || p.createdAt
-    }));
-
-    return res.status(200).json({ success: true, payments: formatted });
-  } catch (err) {
-    console.error('Error fetching payment history:', err);
-    return res.status(500).json({ success: false, message: 'Error fetching payment history' });
+  if (typeof status === 'string' && status !== 'ALL') {
+    query.status = HISTORY_STATUS_FILTERS[status] || status;
   }
-});
+  const regex = safeSearchRegex(search);
+  if (regex) {
+    query.$or = ['invoiceNumber', 'vehicleNumber', 'garageName', 'serviceType', 'cashfreePaymentId', 'cfOrderId'].map((field) => ({ [field]: regex }));
+  }
+
+  const page = parsePagination(req.query, { defaultLimit: HISTORY_DEFAULT_LIMIT });
+  const [rows, total] = await Promise.all([
+    payments.find(query).sort({ createdAt: -1 }).skip(page.skip).limit(page.limit).toArray(),
+    payments.countDocuments(query),
+  ]);
+  setPaginationHeaders(res, { total, page: page.page, limit: page.limit });
+  res.status(200).json({ success: true, payments: withoutSupersededAttempts(rows).map(toPaymentListItem) });
+}));
 
 // ---------------------------------------------------------------------------
 // GET /api/payments/customer/financial-summary
 // ---------------------------------------------------------------------------
-router.get('/customer/financial-summary', requireAuth, async (req, res) => {
-  const db = getDb();
-  const payments = db.collection('payments');
-  const invoices  = db.collection('invoices');
-  const userId    = String(req.user.id);
-
-  try {
-    const userPayments = await payments.find({ userId }).toArray();
-    const userInvoices = await invoices.find({ customerId: userId }).toArray();
-
-    const capturedInvoiceKeys = new Set();
-    userPayments.forEach(p => {
-      if (p.status === PAYMENT_STATUS.CAPTURED || p.status === 'PAID') {
-        if (p.invoiceNumber && p.invoiceNumber !== '—') capturedInvoiceKeys.add(p.invoiceNumber);
-        if (p.serviceId) capturedInvoiceKeys.add(String(p.serviceId));
-        if (p.invoiceId) capturedInvoiceKeys.add(String(p.invoiceId));
-      }
-    });
-
-    const activeUserPayments = userPayments.filter(p => {
-      if (p.status === PAYMENT_STATUS.CREATED || p.status === PAYMENT_STATUS.PENDING) {
-        if (p.invoiceNumber && capturedInvoiceKeys.has(p.invoiceNumber)) return false;
-        if (p.serviceId   && capturedInvoiceKeys.has(String(p.serviceId)))   return false;
-        if (p.invoiceId   && capturedInvoiceKeys.has(String(p.invoiceId)))   return false;
-      }
-      return true;
-    });
-
-    let totalPaidPaise = 0, pendingPaise = 0, refundPaise = 0;
-    const statusDistribution = { PENDING: 0, AUTHORIZED: 0, CAPTURED: 0, FAILED: 0, PARTIALLY_REFUNDED: 0, REFUNDED: 0 };
-    const vehicleSet = new Set();
-
-    activeUserPayments.forEach(p => {
-      const amtPaise = Math.round(Number(p.amountPaise || (p.amount * 100)) || 0);
-      const refPaise = Math.round(Number(p.refundedPaise || ((p.totalRefundedAmount || 0) * 100)) || 0);
-
-      if (p.status === PAYMENT_STATUS.CAPTURED || p.status === 'PAID') {
-        totalPaidPaise += (amtPaise - refPaise); statusDistribution.CAPTURED++;
-      } else if (p.status === PAYMENT_STATUS.REFUNDED) {
-        refundPaise += amtPaise; statusDistribution.REFUNDED++;
-      } else if (p.status === PAYMENT_STATUS.PARTIALLY_REFUNDED) {
-        totalPaidPaise += (amtPaise - refPaise); refundPaise += refPaise; statusDistribution.PARTIALLY_REFUNDED++;
-      } else if (p.status === PAYMENT_STATUS.PENDING || p.status === PAYMENT_STATUS.CREATED) {
-        pendingPaise += amtPaise; statusDistribution.PENDING++;
-      } else if (p.status === PAYMENT_STATUS.AUTHORIZED) {
-        pendingPaise += amtPaise; statusDistribution.AUTHORIZED++;
-      } else if (p.status === PAYMENT_STATUS.FAILED) {
-        statusDistribution.FAILED++;
-      }
-      if (p.vehicleNumber) vehicleSet.add(p.vehicleNumber);
-    });
-
-    const recentActivity = activeUserPayments
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-      .slice(0, 10)
-      .map(p => ({
-        id:                  String(p._id),
-        invoiceNumber:       p.invoiceNumber || '—',
-        cfOrderId:           p.cfOrderId,
-        cashfreePaymentId:   p.cashfreePaymentId || '—',
-        orderId:             p.cfOrderId,
-        paymentId:           p.cashfreePaymentId || '—',
-        amount:              p.amount,
-        status:              p.status,
-        serviceType:         p.serviceType || 'Automotive Service',
-        garageName:          p.garageName || 'Authorized Service Center',
-        vehicleNumber:       p.vehicleNumber || 'N/A',
-        totalRefundedAmount: p.totalRefundedAmount || 0,
-        refunds:             p.refunds || [],
-        date:                p.paidAt || p.createdAt
-      }));
-
-    return res.status(200).json({
-      success: true,
-      summary: {
-        totalPaidAmount:    totalPaidPaise / 100,
-        totalPaidPaise,
-        pendingAmount:      pendingPaise / 100,
-        pendingPaise,
-        refundAmount:       refundPaise / 100,
-        refundPaise,
-        transactionsCount:  userPayments.length,
-        invoicesCount:      userInvoices.length || userPayments.length,
-        statusDistribution,
-        vehicles:           Array.from(vehicleSet),
-        recentActivity
-      }
-    });
-  } catch (err) {
-    console.error('Error computing customer financial summary:', err);
-    return res.status(500).json({ success: false, message: 'Error computing financial summary' });
-  }
+const SUMMARY_PROJECTION = Object.freeze({
+  status: 1, amount: 1, amountPaise: 1, totalRefundedAmount: 1, refundedPaise: 1, invoiceNumber: 1, serviceId: 1, invoiceId: 1,
+  vehicleNumber: 1, createdAt: 1, paidAt: 1, cfOrderId: 1, cashfreePaymentId: 1, serviceType: 1, garageName: 1, refunds: 1, currency: 1, vehicleId: 1, paymentMethod: 1, supersededBy: 1,
 });
 
+router.get('/customer/financial-summary', requireAuth, asyncHandler(async (req, res) => {
+  const db = getDb();
+  const userId = String(req.user.id);
+  const [userPayments, invoicesCount] = await Promise.all([
+    db.collection('payments').find({ userId }, { projection: SUMMARY_PROJECTION }).sort({ createdAt: -1 }).toArray(),
+    db.collection('invoices').countDocuments({ customerId: userId }),
+  ]);
+  const active = withoutSupersededAttempts(userPayments);
+
+  let totalPaidPaise = 0;
+  let pendingPaise = 0;
+  let refundPaise = 0;
+  const statusDistribution = { PENDING: 0, AUTHORIZED: 0, CAPTURED: 0, FAILED: 0, PARTIALLY_REFUNDED: 0, REFUNDED: 0 };
+  const vehicles = new Set();
+
+  active.forEach((p) => {
+    const amtPaise = Math.round(Number(p.amountPaise || p.amount * 100) || 0);
+    const refPaise = Math.round(Number(p.refundedPaise || (p.totalRefundedAmount || 0) * 100) || 0);
+    if (PAID_STATUSES.includes(p.status)) {
+      totalPaidPaise += amtPaise - refPaise; statusDistribution.CAPTURED += 1;
+    } else if (p.status === PAYMENT_STATUS.REFUNDED) {
+      refundPaise += amtPaise; statusDistribution.REFUNDED += 1;
+    } else if (p.status === PAYMENT_STATUS.PARTIALLY_REFUNDED) {
+      totalPaidPaise += amtPaise - refPaise; refundPaise += refPaise; statusDistribution.PARTIALLY_REFUNDED += 1;
+    } else if (OPEN_PAYMENT_STATUSES.includes(p.status)) {
+      pendingPaise += amtPaise; statusDistribution.PENDING += 1;
+    } else if (p.status === PAYMENT_STATUS.AUTHORIZED) {
+      pendingPaise += amtPaise; statusDistribution.AUTHORIZED += 1;
+    } else if (p.status === PAYMENT_STATUS.FAILED) {
+      statusDistribution.FAILED += 1;
+    }
+    if (p.vehicleNumber) vehicles.add(p.vehicleNumber);
+  });
+
+  res.status(200).json({
+    success: true,
+    summary: {
+      totalPaidAmount: totalPaidPaise / 100,
+      totalPaidPaise,
+      pendingAmount: pendingPaise / 100,
+      pendingPaise,
+      refundAmount: refundPaise / 100,
+      refundPaise,
+      transactionsCount: userPayments.length,
+      invoicesCount: invoicesCount || userPayments.length,
+      statusDistribution,
+      vehicles: Array.from(vehicles),
+      recentActivity: active.slice(0, RECENT_ACTIVITY_COUNT).map(toPaymentListItem),
+    },
+  });
+}));
+
 module.exports = router;
+module.exports.webhookHandlers = webhookHandlers;

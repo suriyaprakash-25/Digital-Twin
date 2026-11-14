@@ -1,22 +1,13 @@
 const express = require('express');
-const rateLimit = require('express-rate-limit');
 const { requireAuth } = require('../middleware/auth');
 const { upload } = require('../utils/uploads');
+const { createLimiter } = require('../infrastructure/rateLimit/rateLimiters');
 const feedbackController = require('../controllers/feedbackController');
 
 const router = express.Router();
 
-// Rate limiter: maximum 20 feedback submissions per 15 minutes per IP
-const feedbackLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: {
-    success: false,
-    msg: 'Too many feedback submissions from this IP, please try again after 15 minutes.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
+// Max 20 feedback submissions per 15 minutes (shared store across instances)
+const feedbackLimiter = createLimiter({ name: 'feedback', max: 20, message: 'Too many feedback submissions, please try again after 15 minutes.' });
 
 // POST /api/feedback
 router.post(

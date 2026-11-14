@@ -278,8 +278,10 @@ async function runPhase6ABTestSuite() {
   }
 
   // TEST 12: Temporary provider failure transitions to RETRY_PENDING
+  // (A provider failure can only follow an attempted payout: the settlement is PROCESSING.)
   try {
     const testSetDoc = await settlements.findOne({ garageId: testGarageId });
+    await settlements.updateOne({ _id: testSetDoc._id }, { $set: { status: SETTLEMENT_STATUS.PROCESSING } });
     const retryRes = await scheduleSettlementRetry({
       settlementId: testSetDoc.settlementId,
       failureReason: 'Bank API timeout',
@@ -302,7 +304,8 @@ async function runPhase6ABTestSuite() {
   // TEST 13: Permanent provider failure transitions to FAILED_PERMANENTLY after 5 retries
   try {
     const testSetDoc = await settlements.findOne({ garageId: testGarageId });
-    await settlements.updateOne({ _id: testSetDoc._id }, { $set: { retryCount: 5 } });
+    // Retry #6 picked the settlement up again (RETRY_PENDING -> PROCESSING) and failed.
+    await settlements.updateOne({ _id: testSetDoc._id }, { $set: { retryCount: 5, status: SETTLEMENT_STATUS.PROCESSING } });
 
     const maxRetryRes = await scheduleSettlementRetry({
       settlementId: testSetDoc.settlementId,

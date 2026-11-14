@@ -1,7 +1,6 @@
-import { API_BASE_URL } from '../utils/config';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiPost, getErrorMessage } from '../utils/api';
 import { ShieldCheck, Mail, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '../context/toastContextCore';
 
@@ -16,15 +15,15 @@ function ForgotPassword() {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
-      if (res.data.success) {
+      const data = await apiPost('/auth/forgot-password', { email });
+      if (data.success) {
         showToast('OTP sent successfully. Redirecting...', 'success');
         setTimeout(() => {
           navigate('/verify-otp', { state: { email } });
         }, 1500);
       }
     } catch (err) {
-      showToast(err.response?.data?.msg || 'An error occurred. Please try again.', 'error');
+      showToast(getErrorMessage(err, 'An error occurred. Please try again.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -53,15 +52,17 @@ function ForgotPassword() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label htmlFor="forgot-email" className="block text-sm font-semibold text-slate-700 mb-2">
                   Email Address
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
+                    <Mail aria-hidden="true" className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                   </div>
                   <input
+                    id="forgot-email"
                     type="email"
+                    autoComplete="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

@@ -1,6 +1,6 @@
-import { API_BASE_URL } from '../../utils/config';
-import { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
+import { Fragment, useCallback, useEffect, useState } from 'react';
+import { apiGet, apiGetPage, getErrorMessage } from '../../utils/api';
+import ErrorState from '../../components/common/ErrorState';
 import { Users, Search, ChevronLeft, ChevronRight, Eye, Car, Wrench, UserCircle2 } from 'lucide-react';
 import { getPhotoUrl } from '../../utils/imageUrl';
 
@@ -17,25 +17,22 @@ const AdminUsers = () => {
     const [userDetail, setUserDetail] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
 
-    const token = localStorage.getItem('token');
-
     const fetchUsers = useCallback(async (p = 1, q = '') => {
         setLoading(true);
+        setError('');
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/admin/users`, {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { page: p, limit: 20, search: q }
-            });
-            setUsers(res.data.items || []);
-            setTotal(res.data.total || 0);
-            setTotalPages(res.data.totalPages || 1);
-            setPage(res.data.page || 1);
+            const res = await apiGetPage('/admin/users', { page: p, limit: 20, search: q });
+            const data = res.data || {};
+            setUsers(data.items || []);
+            setTotal(data.total || res.total || 0);
+            setTotalPages(data.totalPages || res.totalPages || 1);
+            setPage(data.page || res.page || 1);
         } catch (err) {
-            setError(err.response?.data?.msg || 'Failed to load users');
+            setError(getErrorMessage(err, 'Failed to load users'));
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, []);
 
     useEffect(() => {
         fetchUsers(1, search);
@@ -55,10 +52,8 @@ const AdminUsers = () => {
         setExpandedUser(userId);
         setDetailLoading(true);
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/admin/users/${userId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setUserDetail(res.data);
+            const data = await apiGet(`/admin/users/${userId}`);
+            setUserDetail(data);
         } catch {
             setUserDetail(null);
         } finally {
@@ -99,9 +94,10 @@ const AdminUsers = () => {
 
                 <form onSubmit={handleSearch} className="flex items-center gap-2">
                     <div className="relative flex-1 sm:flex-none">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" aria-hidden="true" />
                         <input
-                            type="text"
+                            type="search"
+                            aria-label="Search users by name or email"
                             placeholder="Search by name or email..."
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
@@ -117,9 +113,7 @@ const AdminUsers = () => {
                 </form>
             </div>
 
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm font-medium">{error}</div>
-            )}
+            {error && <ErrorState message={error} onRetry={() => fetchUsers(page, search)} retrying={loading} />}
 
             {/* Desktop Table */}
             <div className="hidden md:block rounded-2xl bg-white border border-slate-200 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
@@ -152,9 +146,8 @@ const AdminUsers = () => {
                             </thead>
                             <tbody>
                                 {users.map((user) => (
-                                    <>
+                                    <Fragment key={user.id}>
                                         <tr
-                                            key={user.id}
                                             className={`border-b border-slate-50 hover:bg-teal-50/30 transition-colors cursor-pointer ${expandedUser === user.id ? 'bg-teal-50/20' : ''}`}
                                             onClick={() => handleExpand(user.id)}
                                         >
@@ -195,11 +188,14 @@ const AdminUsers = () => {
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 <button
+                                                    type="button"
                                                     onClick={(e) => { e.stopPropagation(); handleExpand(user.id); }}
                                                     className="p-2 rounded-lg hover:bg-teal-50 text-slate-500 hover:text-teal-600 transition-colors"
                                                     title="View details"
+                                                    aria-label={`View details for ${user.name || user.email || 'user'}`}
+                                                    aria-expanded={expandedUser === user.id}
                                                 >
-                                                    <Eye className="h-4 w-4" />
+                                                    <Eye className="h-4 w-4" aria-hidden="true" />
                                                 </button>
                                             </td>
                                         </tr>
@@ -261,7 +257,7 @@ const AdminUsers = () => {
                                                 </td>
                                             </tr>
                                         )}
-                                    </>
+                                    </Fragment>
                                 ))}
                             </tbody>
                         </table>
@@ -287,6 +283,8 @@ const AdminUsers = () => {
                     users.map((user) => (
                         <div key={user.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                             <button
+                                type="button"
+                                aria-expanded={expandedUser === user.id}
                                 className="w-full text-left p-4 hover:bg-slate-50 transition-colors"
                                 onClick={() => handleExpand(user.id)}
                             >
@@ -376,6 +374,7 @@ const AdminUsers = () => {
                     </p>
                     <div className="flex items-center gap-2">
                         <button
+                            type="button"
                             onClick={() => fetchUsers(page - 1, search)}
                             disabled={page <= 1}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
@@ -383,6 +382,7 @@ const AdminUsers = () => {
                             <ChevronLeft className="h-4 w-4" /> Previous
                         </button>
                         <button
+                            type="button"
                             onClick={() => fetchUsers(page + 1, search)}
                             disabled={page >= totalPages}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"

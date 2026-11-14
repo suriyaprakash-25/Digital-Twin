@@ -29,10 +29,12 @@ const GarageGallery = ({ images = [] }) => {
       {/* Grid of Images */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {validImages.map((url, idx) => (
-          <div
+          <button
+            type="button"
             key={idx}
             onClick={() => setLightboxIndex(idx)}
-            className="group relative aspect-4/3 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 cursor-pointer shadow-xs hover:shadow-md transition-all hover:-translate-y-0.5"
+            aria-label={`Open garage photo ${idx + 1} of ${validImages.length}`}
+            className="group relative block w-full aspect-4/3 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 cursor-pointer shadow-xs hover:shadow-md transition-all hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
           >
             <img
               src={getPhotoUrl(url)}
@@ -45,12 +47,12 @@ const GarageGallery = ({ images = [] }) => {
                 }
               }}
             />
-            <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <div className="p-2 rounded-full bg-white/20 backdrop-blur-md text-white">
-                <Maximize2 className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
+            <span className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="p-2 rounded-full bg-white/20 backdrop-blur-md text-white">
+                <Maximize2 className="w-4 h-4" aria-hidden="true" />
+              </span>
+            </span>
+          </button>
         ))}
       </div>
 

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import {
   FileSpreadsheet,
   Download,
@@ -12,11 +11,12 @@ import {
   Building2,
   CheckCircle2,
   Clock,
-  Printer,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../utils/api';
+import { apiGet, apiRequest, getErrorMessage } from '../utils/api';
+import ErrorState from '../components/common/ErrorState';
+import GarageStatementModal from '../components/garage/GarageStatementModal';
 import { useToast } from '../context/toastContextCore';
 
 export default function GarageReports() {
@@ -31,6 +31,8 @@ export default function GarageReports() {
   const [loading, setLoading] = useState(true);
   const [statementView, setStatementView] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState(null);
 
   // Pagination for transactions
   const [page, setPage] = useState(1);
@@ -47,47 +49,55 @@ export default function GarageReports() {
       }
 
       // Fetch summary
-      const sumRes = await axios.get(`${API_BASE_URL}/api/garage/reports/summary`, { params, headers: getAuthHeaders() });
-      if (sumRes.data?.success) {
-        setSummary(sumRes.data.summary);
+      const sumData = await apiGet('/garage/reports/summary', params);
+      if (sumData?.success) {
+        setSummary(sumData.summary);
       }
 
       // Fetch transactions
-      const txRes = await axios.get(`${API_BASE_URL}/api/garage/reports/transactions`, { params: { ...params, page, limit: 15 }, headers: getAuthHeaders() });
-      if (txRes.data?.success) {
-        setTransactions(txRes.data.transactions || []);
-        setTotalPages(txRes.data.totalPages || 1);
-        setTotalCount(txRes.data.totalCount || 0);
+      const txData = await apiGet('/garage/reports/transactions', { ...params, page, limit: 15 });
+      if (txData?.success) {
+        setTransactions(txData.transactions || []);
+        setTotalPages(txData.totalPages || 1);
+        setTotalCount(txData.totalCount || 0);
       }
-    } catch {
-      showError('Failed to load garage reports');
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to load garage reports'));
     } finally {
       setLoading(false);
     }
-  }, [period, dateFrom, dateTo, page, showError]);
+  }, [period, dateFrom, dateTo, page]);
 
   useEffect(() => {
-    fetchReports();
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) fetchReports(); });
+    return () => { cancelled = true; };
   }, [fetchReports]);
 
   const handleGenerateStatement = async () => {
+    if (isGenerating) return;
+    setIsGenerating(true);
     try {
       const params = { period };
       if (period === 'CUSTOM') {
         if (dateFrom) params.dateFrom = dateFrom;
         if (dateTo) params.dateTo = dateTo;
       }
-      const res = await axios.get(`${API_BASE_URL}/api/garage/reports/statement`, { params, headers: getAuthHeaders() });
-      if (res.data?.success) {
-        setStatement(res.data.statement);
+      const data = await apiGet('/garage/reports/statement', params);
+      if (data?.success) {
+        setStatement(data.statement);
         setStatementView(true);
       }
-    } catch {
-      showError('Error generating statement');
+    } catch (err) {
+      showError(getErrorMessage(err, 'Error generating statement'));
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   const handleExport = async (format = 'csv') => {
+    if (isExporting) return;
     setIsExporting(true);
     try {
       const params = { period, format, reportType: 'TRANSACTIONS' };
@@ -96,13 +106,14 @@ export default function GarageReports() {
         if (dateTo) params.dateTo = dateTo;
       }
 
-      const res = await axios.get(`${API_BASE_URL}/api/garage/reports/export`, {
+      const { data } = await apiRequest({
+        method: 'get',
+        url: '/garage/reports/export',
         params,
-        headers: getAuthHeaders(),
         responseType: 'blob'
       });
 
-      const blob = new Blob([res.data], {
+      const blob = new Blob([data], {
         type: format === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv'
       });
       const url = window.URL.createObjectURL(blob);
@@ -115,8 +126,8 @@ export default function GarageReports() {
       window.URL.revokeObjectURL(url);
 
       showSuccess(`Exported ${format.toUpperCase()} report successfully`);
-    } catch {
-      showError('Failed to export financial report');
+    } catch (err) {
+      showError(getErrorMessage(err, 'Failed to export financial report'));
     } finally {
       setIsExporting(false);
     }
@@ -142,6 +153,7 @@ export default function GarageReports() {
 
           <div className="flex flex-wrap items-center gap-3">
             <button
+              type="button"
               onClick={() => handleExport('csv')}
               disabled={isExporting}
               className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 transition shadow-xs disabled:opacity-60"
@@ -150,6 +162,7 @@ export default function GarageReports() {
               Export CSV
             </button>
             <button
+              type="button"
               onClick={() => handleExport('xlsx')}
               disabled={isExporting}
               className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold text-emerald-700 transition shadow-xs disabled:opacity-60"
@@ -158,10 +171,12 @@ export default function GarageReports() {
               Export Excel (XLSX)
             </button>
             <button
+              type="button"
               onClick={handleGenerateStatement}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-sm"
+              disabled={isGenerating}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-sm disabled:opacity-60"
             >
-              <FileText className="w-3.5 h-3.5" />
+              {isGenerating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <FileText className="w-3.5 h-3.5" />}
               View Statement
             </button>
           </div>
@@ -186,6 +201,8 @@ export default function GarageReports() {
             ].map(p => (
               <button
                 key={p.id}
+                type="button"
+                aria-pressed={period === p.id}
                 onClick={() => { setPeriod(p.id); setPage(1); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
                   period === p.id
@@ -202,6 +219,7 @@ export default function GarageReports() {
             <div className="flex items-center gap-2">
               <input
                 type="date"
+                aria-label="From date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-teal-500"
@@ -209,6 +227,7 @@ export default function GarageReports() {
               <span className="text-slate-400 text-xs">to</span>
               <input
                 type="date"
+                aria-label="To date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-teal-500"
@@ -216,6 +235,8 @@ export default function GarageReports() {
             </div>
           )}
         </div>
+
+        {error && <ErrorState message={error} onRetry={fetchReports} retrying={loading} />}
 
         {/* Financial KPI Summary Cards */}
         {summary && (
@@ -255,77 +276,7 @@ export default function GarageReports() {
 
         {/* Printable Statement Modal/View */}
         {statementView && statement && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden p-6 md:p-8 space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div>
-                  <span className="text-xs font-bold text-teal-600 uppercase tracking-wider">DrivePortz Official Financial Statement</span>
-                  <h2 className="text-xl font-black text-slate-900 mt-0.5">{statement.statementId}</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => window.print()}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    Print
-                  </button>
-                  <button
-                    onClick={() => setStatementView(false)}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 rounded-xl text-xs font-semibold transition"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-
-              {/* Garage Info */}
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
-                <div>
-                  <span className="text-slate-500 block">Service Partner</span>
-                  <strong className="text-slate-900 text-sm">{statement.garage.name}</strong>
-                  <p className="text-slate-500 mt-1">{statement.garage.address}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-slate-500 block">Statement Period</span>
-                  <strong className="text-slate-900 text-sm">{statement.period}</strong>
-                  <p className="text-slate-500 mt-1">Generated: {new Date(statement.generatedAt).toLocaleDateString()}</p>
-                </div>
-              </div>
-
-              {/* Statement Summary Breakdown */}
-              <div className="border border-slate-200 rounded-2xl overflow-hidden">
-                <table className="w-full text-xs">
-                  <tbody className="divide-y divide-slate-100">
-                    <tr className="bg-slate-50">
-                      <td className="px-4 py-3 text-slate-600 font-medium">Total Period Gross Volume (GMV)</td>
-                      <td className="px-4 py-3 text-right font-bold text-slate-900 font-mono">₹{statement.summary.grossRevenue.toLocaleString('en-IN')}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 text-slate-600">Less: Refund Adjustments</td>
-                      <td className="px-4 py-3 text-right font-bold text-rose-600 font-mono">- ₹{statement.summary.refundAmount.toLocaleString('en-IN')}</td>
-                    </tr>
-                    <tr className="bg-teal-50/70 border-t border-teal-200">
-                      <td className="px-4 py-3 font-bold text-teal-800">Net Partner Earnings</td>
-                      <td className="px-4 py-3 text-right font-black text-teal-700 text-sm font-mono">₹{statement.summary.garageNetRevenue.toLocaleString('en-IN')}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 text-slate-600">Less: Completed Settlement Payouts</td>
-                      <td className="px-4 py-3 text-right font-bold text-emerald-600 font-mono">- ₹{statement.summary.settledAmount.toLocaleString('en-IN')}</td>
-                    </tr>
-                    <tr className="bg-slate-50 font-bold border-t border-slate-200">
-                      <td className="px-4 py-3 text-slate-900">Closing Available Withdrawal Balance</td>
-                      <td className="px-4 py-3 text-right font-black text-teal-800 text-sm font-mono">₹{statement.summary.availableBalance.toLocaleString('en-IN')}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <p className="text-[11px] text-slate-500 text-center">
-                This statement is system-generated and mathematically verified by DrivePortz Financial Core.
-              </p>
-            </div>
-          </div>
+          <GarageStatementModal statement={statement} onClose={() => setStatementView(false)} />
         )}
 
         {/* Transactions Breakdown Table */}
@@ -397,6 +348,8 @@ export default function GarageReports() {
               </span>
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
+                  aria-label="Previous page"
                   disabled={page <= 1}
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40 transition shadow-xs"
@@ -407,6 +360,8 @@ export default function GarageReports() {
                   Page {page} of {totalPages}
                 </span>
                 <button
+                  type="button"
+                  aria-label="Next page"
                   disabled={page >= totalPages}
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40 transition shadow-xs"

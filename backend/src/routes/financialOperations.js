@@ -6,11 +6,12 @@ const { requireAuth } = require('../middleware/auth');
 const { requirePermission, PERMISSIONS } = require('../middleware/permissionMiddleware');
 const { requireIdempotency } = require('../middleware/idempotency');
 const { financialMutationLimiter } = require('../middleware/financialRateLimit');
-const { SETTLEMENT_STATUS, canTransitionSettlementStatus } = require('../services/settlementStateMachine');
+const { SETTLEMENT_STATUS, transitionSettlement, normalizeSettlementStatus } = require('../services/settlementStateMachine');
 const { approveSettlement, placeSettlementHold, releaseSettlementHold, HIGH_VALUE_THRESHOLD_RUPEES } = require('../services/settlementGovernanceService');
 const { scheduleSettlementRetry } = require('../services/settlementRetryService');
 const { getSettlementProvider } = require('../services/settlementProvider');
 const { logFinancialAudit } = require('../services/auditService');
+const { aggregateKpis, countWhere, sumWhere, inList, equals } = require('../core/aggregation');
 
 function safeObjectId(id) {
   try { return new ObjectId(String(id)); } catch { return null; }
@@ -26,48 +27,43 @@ router.get('/summary', requireAuth, requirePermission(PERMISSIONS.FINANCIAL_REPO
   const reconciliations = db.collection('settlement_reconciliation');
 
   try {
-    const allSettlements = await settlements.find({}).toArray();
-    const activeHolds = await holds.find({ active: true }).toArray();
-    const openReconciliations = await reconciliations.find({ status: 'OPEN' }).toArray();
-
-    let pendingAmount = 0;
-    let pendingCount = 0;
-    let underReviewAmount = 0;
-    let underReviewCount = 0;
-    let highValuePendingAmount = 0;
-    let highValuePendingCount = 0;
-    let processingAmount = 0;
-    let processingCount = 0;
-    let settledAmount = 0;
-    let settledCount = 0;
-    let failedCount = 0;
-    let retryQueueCount = 0;
-
-    allSettlements.forEach(s => {
-      const amt = parseFloat(s.approvedAmount || s.requestedAmount) || 0;
-      if (s.status === SETTLEMENT_STATUS.REQUESTED) {
-        pendingAmount += amt;
-        pendingCount++;
-      } else if (s.status === SETTLEMENT_STATUS.UNDER_REVIEW) {
-        underReviewAmount += amt;
-        underReviewCount++;
-      } else if (s.status === SETTLEMENT_STATUS.PROCESSING) {
-        processingAmount += amt;
-        processingCount++;
-      } else if (s.status === SETTLEMENT_STATUS.SETTLED || s.status === 'COMPLETED') {
-        settledAmount += amt;
-        settledCount++;
-      } else if (s.status === SETTLEMENT_STATUS.FAILED || s.status === SETTLEMENT_STATUS.FAILED_PERMANENTLY) {
-        failedCount++;
-      } else if (s.status === SETTLEMENT_STATUS.RETRY_PENDING) {
-        retryQueueCount++;
-      }
-
-      if (s.isHighValue && s.approvalCount < (s.requiredApprovalCount || 2) && !['SETTLED', 'COMPLETED', 'REJECTED', 'CANCELLED'].includes(s.status)) {
-        highValuePendingAmount += amt;
-        highValuePendingCount++;
-      }
-    });
+    // Single aggregation instead of loading every settlement into memory.
+    const amount = { $ifNull: ['$approvedAmount', '$requestedAmount'] };
+    const SETTLED_STATES = [SETTLEMENT_STATUS.SETTLED, 'COMPLETED'];
+    const FAILED_STATES = [SETTLEMENT_STATUS.FAILED, SETTLEMENT_STATUS.FAILED_PERMANENTLY];
+    const CLOSED_STATES = ['SETTLED', 'COMPLETED', 'REJECTED', 'CANCELLED'];
+    const DEFAULT_REQUIRED_APPROVALS = 2;
+    const awaitingSecondApproval = {
+      $and: [
+        { $eq: ['$isHighValue', true] },
+        { $lt: [{ $ifNull: ['$approvalCount', 0] }, { $ifNull: ['$requiredApprovalCount', DEFAULT_REQUIRED_APPROVALS] }] },
+        { $not: [inList('$status', CLOSED_STATES)] }
+      ]
+    };
+    const [kpi, activeHoldsCount, openReconciliationsCount] = await Promise.all([
+      aggregateKpis(settlements, {
+        pendingAmount: sumWhere(equals('$status', SETTLEMENT_STATUS.REQUESTED), amount),
+        pendingCount: countWhere(equals('$status', SETTLEMENT_STATUS.REQUESTED)),
+        underReviewAmount: sumWhere(equals('$status', SETTLEMENT_STATUS.UNDER_REVIEW), amount),
+        underReviewCount: countWhere(equals('$status', SETTLEMENT_STATUS.UNDER_REVIEW)),
+        processingAmount: sumWhere(equals('$status', SETTLEMENT_STATUS.PROCESSING), amount),
+        processingCount: countWhere(equals('$status', SETTLEMENT_STATUS.PROCESSING)),
+        settledAmount: sumWhere(inList('$status', SETTLED_STATES), amount),
+        settledCount: countWhere(inList('$status', SETTLED_STATES)),
+        failedCount: countWhere(inList('$status', FAILED_STATES)),
+        retryQueueCount: countWhere(equals('$status', SETTLEMENT_STATUS.RETRY_PENDING)),
+        highValuePendingAmount: sumWhere(awaitingSecondApproval, amount),
+        highValuePendingCount: countWhere(awaitingSecondApproval)
+      }),
+      holds.countDocuments({ active: true }),
+      reconciliations.countDocuments({ status: 'OPEN' })
+    ]);
+    const {
+      pendingAmount, pendingCount, underReviewAmount, underReviewCount, highValuePendingAmount, highValuePendingCount,
+      processingAmount, processingCount, settledAmount, settledCount, failedCount, retryQueueCount
+    } = kpi;
+    const activeHolds = { length: activeHoldsCount };
+    const openReconciliations = { length: openReconciliationsCount };
 
     return res.status(200).json({
       success: true,
@@ -223,22 +219,20 @@ router.post('/:id/reject', requireAuth, requirePermission(PERMISSIONS.SETTLEMENT
       return res.status(404).json({ success: false, message: 'Settlement not found' });
     }
 
-    if (settlement.status === SETTLEMENT_STATUS.SETTLED || settlement.status === 'COMPLETED') {
+    if (normalizeSettlementStatus(settlement.status) === SETTLEMENT_STATUS.SETTLED) {
       return res.status(400).json({ success: false, message: 'Cannot reject an already settled settlement' });
     }
 
-    await settlements.updateOne(
-      { _id: settlement._id },
-      {
-        $set: {
-          status: SETTLEMENT_STATUS.REJECTED,
-          failureReason: reason || 'Rejected by finance admin',
-          rejectedBy: String(req.user.id),
-          rejectedAt: now,
-          updatedAt: now
-        }
+    await transitionSettlement({
+      collection: settlements,
+      settlement,
+      to: SETTLEMENT_STATUS.REJECTED,
+      set: {
+        failureReason: reason || 'Rejected by finance admin',
+        rejectedBy: String(req.user.id),
+        rejectedAt: now
       }
-    );
+    });
 
     // Unlock linked earnings back to AVAILABLE
     if (settlement.earningsIds && settlement.earningsIds.length > 0) {
@@ -275,6 +269,7 @@ router.post('/:id/reject', requireAuth, requirePermission(PERMISSIONS.SETTLEMENT
       message: `Settlement ${settlement.settlementId} rejected and earnings unlocked.`
     });
   } catch (err) {
+    if (err.code && err.status) return res.status(err.status).json({ success: false, message: err.message, code: err.code });
     return res.status(500).json({ success: false, message: 'Error rejecting settlement' });
   }
 });
@@ -360,7 +355,7 @@ router.post('/:id/process', requireAuth, requirePermission(PERMISSIONS.SETTLEMEN
       return res.status(404).json({ success: false, message: 'Settlement not found' });
     }
 
-    if (settlement.status === SETTLEMENT_STATUS.SETTLED || settlement.status === 'COMPLETED') {
+    if (normalizeSettlementStatus(settlement.status) === SETTLEMENT_STATUS.SETTLED) {
       return res.status(400).json({ success: false, message: 'Settlement has already been settled' });
     }
 
@@ -390,33 +385,44 @@ router.post('/:id/process', requireAuth, requirePermission(PERMISSIONS.SETTLEMEN
     const payoutProfile = await payoutProfiles.findOne({ garageId: String(settlement.garageId) });
     const provider = getSettlementProvider();
 
-    // Call Provider Abstraction
-    const result = await provider.processSettlement({
+    // Claim the settlement (APPROVED|RETRY_PENDING -> PROCESSING) BEFORE calling the provider.
+    // The compare-and-swap guarantees only one operator/request can ever trigger this payout.
+    const processing = await transitionSettlement({
+      collection: settlements,
       settlement,
-      payoutProfile,
-      simulationMode
+      to: SETTLEMENT_STATUS.PROCESSING,
+      set: { processingStartedBy: String(req.user.id), processingStartedAt: now }
     });
 
+    // Call Provider Abstraction
+    let result;
+    try {
+      result = await provider.processSettlement({
+        settlement: processing,
+        payoutProfile,
+        simulationMode
+      });
+    } catch (providerErr) {
+      result = { success: false, failureReason: providerErr.message, failureCode: 'PROVIDER_EXCEPTION', isTemporary: true };
+    }
+
     if (result.success) {
-      // Transition to SETTLED
-      await settlements.updateOne(
-        { _id: settlement._id },
-        {
-          $set: {
-            status: SETTLEMENT_STATUS.SETTLED,
-            transferId: result.transferId,
-            providerTransactionId: result.providerTransactionId,
-            providerReference: result.providerReference,
-            provider: result.provider,
-            providerMessage: result.message,
-            processedBy: String(req.user.id),
-            processedAt: now,
-            settledAt: now,
-            completedAt: now,
-            updatedAt: now
-          }
+      await transitionSettlement({
+        collection: settlements,
+        settlement: processing,
+        to: SETTLEMENT_STATUS.SETTLED,
+        set: {
+          transferId: result.transferId,
+          providerTransactionId: result.providerTransactionId,
+          providerReference: result.providerReference,
+          provider: result.provider,
+          providerMessage: result.message,
+          processedBy: String(req.user.id),
+          processedAt: now,
+          settledAt: now,
+          completedAt: now
         }
-      );
+      });
 
       // Transition linked earnings to SETTLED
       if (settlement.earningsIds && settlement.earningsIds.length > 0) {
@@ -475,8 +481,9 @@ router.post('/:id/process', requireAuth, requirePermission(PERMISSIONS.SETTLEMEN
       });
     }
   } catch (err) {
+    if (err.code && err.status) return res.status(err.status).json({ success: false, message: err.message, code: err.code });
     console.error('Error executing settlement payout:', err);
-    return res.status(500).json({ success: false, message: `Payout execution error: ${err.message}` });
+    return res.status(500).json({ success: false, message: 'Payout execution error' });
   }
 });
 

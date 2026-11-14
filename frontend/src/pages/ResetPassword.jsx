@@ -1,7 +1,7 @@
-import { API_BASE_URL } from '../utils/config';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { apiPost, getErrorMessage } from '../utils/api';
+import { validateResetPassword } from '../components/auth/passwordPolicy';
 import { Lock, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '../context/toastContextCore';
 
@@ -33,21 +33,28 @@ function ResetPassword() {
       return;
     }
 
+    const policyError = validateResetPassword(newPassword);
+    if (policyError) {
+      showToast(policyError, 'error');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/reset-password`, {
+      const data = await apiPost('/auth/reset-password', {
         email,
         otp,
         newPassword
       });
 
-      if (res.data.success) {
+      if (data.success) {
         showToast('Password updated successfully! Redirecting to login...', 'success');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       }
     } catch (err) {
-      showToast(err.response?.data?.msg || 'An error occurred. Please try again.', 'error');
+      showToast(getErrorMessage(err, 'An error occurred. Please try again.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -78,11 +85,14 @@ function ResetPassword() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label htmlFor="reset-new-password" className="block text-sm font-semibold text-slate-700 mb-2">
                   New Password
                 </label>
                 <input
+                  id="reset-new-password"
                   type="password"
+                  autoComplete="new-password"
+                  aria-describedby="reset-password-rules"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -92,11 +102,13 @@ function ResetPassword() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label htmlFor="reset-confirm-password" className="block text-sm font-semibold text-slate-700 mb-2">
                   Confirm Password
                 </label>
                 <input
+                  id="reset-confirm-password"
                   type="password"
+                  autoComplete="new-password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -105,7 +117,7 @@ function ResetPassword() {
                 />
               </div>
 
-              <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
+              <div id="reset-password-rules" className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
                 <p className="font-semibold text-slate-700 mb-2">Password must contain:</p>
                 <p className={newPassword.length >= 8 ? 'text-teal-600' : ''}>• At least 8 characters</p>
                 <p className={/[A-Z]/.test(newPassword) ? 'text-teal-600' : ''}>• One uppercase letter</p>

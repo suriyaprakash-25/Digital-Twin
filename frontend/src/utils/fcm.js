@@ -1,5 +1,4 @@
-import { API_BASE_URL } from './config';
-import axios from 'axios';
+import { apiPost, getAccessToken } from './api';
 import { initializeApp, getApps } from 'firebase/app';
 import { getMessaging, getToken, isSupported } from 'firebase/messaging';
 
@@ -17,8 +16,9 @@ function getFirebaseConfigFromEnv() {
   return { apiKey, authDomain, projectId, messagingSenderId, appId };
 }
 
-export async function tryRegisterFcmToken({ authToken, requestPermission = false }) {
-  if (!authToken) return { ok: false, reason: 'missing_auth_token' };
+// Auth comes from the api layer (in-memory access token + session cookie).
+export async function tryRegisterFcmToken({ requestPermission = false } = {}) {
+  if (!getAccessToken()) return { ok: false, reason: 'missing_auth_token' };
 
   const supported = await isSupported().catch(() => false);
   if (!supported) return { ok: false, reason: 'messaging_not_supported' };
@@ -66,14 +66,9 @@ export async function tryRegisterFcmToken({ authToken, requestPermission = false
     return { ok: false, reason: 'no_token_returned' };
   }
 
-  await axios.post(
-    `${API_BASE_URL}/api/notifications/token`,
-    { token, platform: 'web' },
-    {
-      headers: {
-        Authorization: `Bearer ${authToken}`
-      }
-    }
+  await apiPost(
+    '/notifications/token',
+    { token, platform: 'web' }
   );
 
   return { ok: true, token };

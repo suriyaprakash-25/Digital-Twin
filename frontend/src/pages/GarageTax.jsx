@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import {
   FileCheck2,
   Calendar,
@@ -10,7 +9,8 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../utils/api';
+import { apiGet, apiRequest, getErrorMessage } from '../utils/api';
+import ErrorState from '../components/common/ErrorState';
 import { useToast } from '../context/toastContextCore';
 
 export default function GarageTax() {
@@ -24,6 +24,8 @@ export default function GarageTax() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [error, setError] = useState(null);
+  const [exporting, setExporting] = useState(null);
 
   const fetchTaxData = useCallback(async () => {
     setLoading(true);
@@ -36,44 +38,54 @@ export default function GarageTax() {
         limit: 20
       };
 
-      const [sumRes, txRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/garage/tax/summary`, { params, headers: getAuthHeaders() }),
-        axios.get(`${API_BASE_URL}/api/garage/tax/transactions`, { params, headers: getAuthHeaders() })
+      const [sumData, txData] = await Promise.all([
+        apiGet('/garage/tax/summary', params),
+        apiGet('/garage/tax/transactions', params)
       ]);
 
-      if (sumRes.data?.success) setSummary(sumRes.data.summary);
-      if (txRes.data?.success) {
-        setTransactions(txRes.data.transactions || []);
-        setTotalPages(txRes.data.totalPages || 1);
-        setTotalCount(txRes.data.totalCount || 0);
+      if (sumData?.success) setSummary(sumData.summary);
+      if (txData?.success) {
+        setTransactions(txData.transactions || []);
+        setTotalPages(txData.totalPages || 1);
+        setTotalCount(txData.totalCount || 0);
       }
-    } catch {
-      showError('Failed to load garage tax data');
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to load garage tax data'));
     } finally {
       setLoading(false);
     }
-  }, [period, dateFrom, dateTo, page, showError]);
+  }, [period, dateFrom, dateTo, page]);
 
   useEffect(() => {
-    fetchTaxData();
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) fetchTaxData(); });
+    return () => { cancelled = true; };
   }, [fetchTaxData]);
 
   const handleExport = async (format) => {
+    if (exporting) return;
+    setExporting(format);
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/garage/tax/export`, {
+      const { data } = await apiRequest({
+        method: 'get',
+        url: '/garage/tax/export',
         params: { period, dateFrom, dateTo, format },
-        responseType: 'blob',
-        headers: getAuthHeaders()
+        responseType: 'blob'
       });
 
-      const blob = new Blob([res.data]);
+      const blob = new Blob([data]);
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
+      link.href = url;
       link.download = `Garage_Tax_Report_${new Date().toISOString().split('T')[0]}.${format}`;
       link.click();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
       showSuccess(`Tax report ${format.toUpperCase()} downloaded`);
-    } catch {
-      showError('Export failed');
+    } catch (err) {
+      showError(getErrorMessage(err, 'Export failed'));
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -96,6 +108,7 @@ export default function GarageTax() {
 
         <div className="flex flex-wrap items-center gap-2">
           <select
+            aria-label="Reporting period"
             value={period}
             onChange={(e) => { setPeriod(e.target.value); setPage(1); }}
             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 shadow-sm"
@@ -108,14 +121,18 @@ export default function GarageTax() {
           </select>
 
           <button
+            type="button"
             onClick={() => handleExport('csv')}
+            disabled={Boolean(exporting)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5 text-teal-600" />
             CSV
           </button>
           <button
+            type="button"
             onClick={() => handleExport('xlsx')}
+            disabled={Boolean(exporting)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 transition shadow-sm"
           >
             <Download className="w-3.5 h-3.5 text-teal-600" />
@@ -123,6 +140,8 @@ export default function GarageTax() {
           </button>
         </div>
       </div>
+
+      {error && <ErrorState message={error} onRetry={fetchTaxData} retrying={loading} />}
 
       {/* 5 Summary KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -221,6 +240,8 @@ export default function GarageTax() {
             </span>
             <div className="flex items-center gap-2">
               <button
+                type="button"
+                aria-label="Previous page"
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 disabled:opacity-40 transition shadow-sm"
@@ -231,6 +252,8 @@ export default function GarageTax() {
                 Page {page} of {totalPages}
               </span>
               <button
+                type="button"
+                aria-label="Next page"
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 disabled:opacity-40 transition shadow-sm"

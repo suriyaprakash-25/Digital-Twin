@@ -1,30 +1,11 @@
-import { API_BASE_URL } from '../../utils/config';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { apiGet } from '../../utils/api';
+import { useAsync } from '../../hooks/useAsync';
+import ErrorState from '../../components/common/ErrorState';
 import { Users, Building2, Car, Wrench, IndianRupee, ShieldCheck, Activity, TrendingUp } from 'lucide-react';
 import StatsCard from '../../components/admin/StatsCard';
 
 const AdminDashboard = () => {
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`${API_BASE_URL}/api/admin/dashboard`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setStats(res.data);
-            } catch (err) {
-                setError(err.response?.data?.msg || 'Failed to load dashboard');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchStats();
-    }, []);
+    const { data: stats, loading, error, refetch } = useAsync(() => apiGet('/admin/dashboard'), []);
 
     if (loading) {
         return (
@@ -42,13 +23,7 @@ const AdminDashboard = () => {
     if (error) {
         return (
             <div className="flex items-center justify-center h-96">
-                <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-50 flex items-center justify-center">
-                        <Activity className="h-8 w-8 text-red-400" />
-                    </div>
-                    <h3 className="text-slate-900 font-bold text-lg mb-1">Failed to load dashboard</h3>
-                    <p className="text-slate-500 text-sm">{error}</p>
-                </div>
+                <ErrorState title="Failed to load dashboard" message={error} onRetry={() => refetch()} className="max-w-lg w-full" />
             </div>
         );
     }

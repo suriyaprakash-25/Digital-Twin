@@ -66,12 +66,12 @@ router.post('/run', requireAuth, requirePermission(PERMISSIONS.FINANCIAL_REPORT_
     const result = await runFinancialIntegrityScan();
     return res.status(200).json({ success: true, scanResult: result });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Integrity scan failed: ' + err.message });
+    return res.status(500).json({ success: false, message: 'Integrity scan failed', error: err.message });
   }
 });
 
 // Resolve an integrity issue
-router.post('/:id/resolve', requireAuth, requirePermission(PERMISSIONS.RECONCILIATION_RUN), async (req, res) => {
+router.post('/:id/resolve', requireAuth, requirePermission(PERMISSIONS.RECONCILIATION_RESOLVE), async (req, res) => {
   const { resolutionNote } = req.body;
   try {
     const result = await resolveFinancialIntegrityIssue(req.params.id, {

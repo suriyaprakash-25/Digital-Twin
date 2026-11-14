@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
 import {
   ShieldAlert,
   Search,
@@ -19,19 +18,24 @@ import {
   ChevronRight,
   FileText
 } from 'lucide-react';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import { apiGetPage, apiPost, getErrorMessage } from '../../utils/api';
 import { useToast } from '../../context/toastContextCore';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import ErrorState from '../../components/common/ErrorState';
+import RiskCaseDossierModal, { RiskLevelBadge } from '../../components/risk/RiskCaseDossierModal';
 
 export default function AdminRiskCases() {
   const { showSuccess, showError } = useToast();
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [levelFilter, setLevelFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 350);
   const [selectedCase, setSelectedCase] = useState(null);
   const [actionNote, setActionNote] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -39,84 +43,67 @@ export default function AdminRiskCases() {
 
   const fetchCases = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const params = {
         page,
         limit: 20,
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
         level: levelFilter !== 'ALL' ? levelFilter : undefined,
-        search: search || undefined
+        search: debouncedSearch || undefined
       };
 
-      const res = await axios.get(`${API_BASE_URL}/api/admin/risk-cases`, { params, headers: getAuthHeaders() });
-      if (res.data?.success) {
-        setCases(res.data.riskCases || []);
-        setTotalPages(res.data.totalPages || 1);
-        setTotalCount(res.data.totalCount || 0);
+      const { data, total, totalPages: headerPages } = await apiGetPage('/admin/risk-cases', params);
+      if (data?.success) {
+        setCases(data.riskCases || []);
+        setTotalPages(data.totalPages || headerPages || 1);
+        setTotalCount(data.totalCount || total || 0);
       }
-    } catch {
-      showError('Failed to load risk cases');
+    } catch (err) {
+      setLoadError(getErrorMessage(err, 'Failed to load risk cases'));
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, levelFilter, search, showError]);
+  }, [page, statusFilter, levelFilter, debouncedSearch]);
 
   useEffect(() => {
     fetchCases();
   }, [fetchCases]);
 
-  const handleAction = async (actionType) => {
-    if (!selectedCase) return;
-    setActionLoading(true);
+  // Shared runner for dossier actions: one request at a time, consistent toasts.
+  const runCaseAction = async (key, path, body, successMessage, errorMessage) => {
+    if (!selectedCase || pendingAction) return;
+    setPendingAction(key);
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/admin/risk-cases/${selectedCase.riskCaseNumber}/action`,
-        { action: actionType, note: actionNote },
-        { headers: getAuthHeaders() }
-      );
-
-      if (res.data?.success) {
-        showSuccess(`Action ${actionType} executed successfully`);
+      const data = await apiPost(path, body);
+      if (data?.success) {
+        showSuccess(successMessage);
         setSelectedCase(null);
         setActionNote('');
         fetchCases();
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to execute risk action');
+      showError(getErrorMessage(err, errorMessage));
     } finally {
-      setActionLoading(false);
+      setPendingAction(null);
     }
   };
 
-  const handleResolve = async (resolutionStatus) => {
-    if (!selectedCase) return;
-    setActionLoading(true);
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/admin/risk-cases/${selectedCase.riskCaseNumber}/resolve`,
-        { resolutionStatus, resolutionNote: actionNote },
-        { headers: getAuthHeaders() }
-      );
+  const handleAction = (actionType) => runCaseAction(
+    actionType,
+    `/admin/risk-cases/${selectedCase?.riskCaseNumber}/action`,
+    { action: actionType, note: actionNote },
+    `Action ${actionType} executed successfully`,
+    'Failed to execute risk action'
+  );
 
-      if (res.data?.success) {
-        showSuccess(`Case resolved as ${resolutionStatus}`);
-        setSelectedCase(null);
-        setActionNote('');
-        fetchCases();
-      }
-    } catch (err) {
-      showError(err.response?.data?.message || 'Failed to resolve risk case');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const getLevelBadge = (level) => {
-    if (level === 'CRITICAL') return <span className="px-2 py-0.5 rounded text-[10px] font-black bg-red-500/20 text-red-400 border border-red-500/40">CRITICAL</span>;
-    if (level === 'HIGH') return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40">HIGH</span>;
-    if (level === 'MEDIUM') return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/40">MEDIUM</span>;
-    return <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">LOW</span>;
-  };
+  const handleResolve = (resolutionStatus) => runCaseAction(
+    resolutionStatus,
+    `/admin/risk-cases/${selectedCase?.riskCaseNumber}/resolve`,
+    { resolutionStatus, resolutionNote: actionNote },
+    `Case resolved as ${resolutionStatus}`,
+    'Failed to resolve risk case'
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-8 space-y-8">
@@ -136,10 +123,12 @@ export default function AdminRiskCases() {
         </div>
 
         <button
+          type="button"
           onClick={fetchCases}
+          disabled={loading}
           className="flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           Refresh
         </button>
       </div>
@@ -148,17 +137,19 @@ export default function AdminRiskCases() {
       <div className="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-64">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
             <input
-              type="text"
+              type="search"
+              aria-label="Search risk cases"
               placeholder="Search case #, garage, user..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-500"
             />
           </div>
 
           <select
+            aria-label="Filter by risk level"
             value={levelFilter}
             onChange={(e) => { setLevelFilter(e.target.value); setPage(1); }}
             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900"
@@ -171,6 +162,7 @@ export default function AdminRiskCases() {
           </select>
 
           <select
+            aria-label="Filter by status"
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900"
@@ -187,6 +179,8 @@ export default function AdminRiskCases() {
 
         <span className="text-xs text-slate-500">Total Cases: {totalCount}</span>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchCases} retrying={loading} />}
 
       {/* Risk Cases Table */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
@@ -221,7 +215,7 @@ export default function AdminRiskCases() {
                 cases.map((c) => (
                   <tr key={c._id} className="hover:bg-slate-100/40 transition">
                     <td className="px-6 py-3.5 font-mono font-semibold text-red-400">{c.riskCaseNumber}</td>
-                    <td className="px-6 py-3.5">{getLevelBadge(c.riskLevel)}</td>
+                    <td className="px-6 py-3.5"><RiskLevelBadge level={c.riskLevel} /></td>
                     <td className="px-6 py-3.5 font-bold text-slate-900">{c.score} / 100</td>
                     <td className="px-6 py-3.5 text-slate-600">
                       <div className="flex flex-col gap-0.5 text-[11px]">
@@ -245,6 +239,7 @@ export default function AdminRiskCases() {
                     </td>
                     <td className="px-6 py-3.5 text-right">
                       <button
+                        type="button"
                         onClick={() => setSelectedCase(c)}
                         className="px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-semibold transition"
                       >
@@ -268,9 +263,10 @@ export default function AdminRiskCases() {
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
+                aria-label="Previous page"
                 className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               </button>
               <span className="text-xs font-semibold text-slate-600 px-2">
                 Page {page} of {totalPages}
@@ -278,9 +274,10 @@ export default function AdminRiskCases() {
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                aria-label="Next page"
                 className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-700 text-slate-600 disabled:opacity-40 transition"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -288,105 +285,15 @@ export default function AdminRiskCases() {
       </div>
 
       {/* Investigation Dossier Modal */}
-      {selectedCase && (
-        <div className="fixed inset-0 z-50 bg-slate-100/90 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
-            
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-              <div>
-                <h3 className="text-lg font-black text-slate-900">{selectedCase.riskCaseNumber}</h3>
-                <span className="text-xs text-slate-500">Risk Investigation Dossier</span>
-              </div>
-              <button
-                onClick={() => setSelectedCase(null)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-900"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Score & Badges */}
-            <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200">
-              <div>
-                <span className="text-xs text-slate-500 block mb-1">Risk Score</span>
-                <span className="text-2xl font-black text-slate-900">{selectedCase.score} / 100</span>
-              </div>
-              <div className="text-right">
-                <span className="text-xs text-slate-500 block mb-1">Risk Level</span>
-                {getLevelBadge(selectedCase.riskLevel)}
-              </div>
-            </div>
-
-            {/* Evidence & Signals */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Explainable Signals Triggered</h4>
-              <div className="flex flex-wrap gap-1.5">
-                {selectedCase.signals?.map((s, i) => (
-                  <span key={i} className="px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/30 text-xs font-semibold">
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Evidence JSON summary */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Correlated Entity Evidence</h4>
-              <pre className="p-3 bg-white rounded-xl border border-slate-200 text-[11px] text-slate-600 font-mono overflow-x-auto">
-                {JSON.stringify(selectedCase.evidence || {}, null, 2)}
-              </pre>
-            </div>
-
-            {/* Action Note input */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Investigation Note / Justification</label>
-              <textarea
-                rows={2}
-                placeholder="Enter investigation findings, rationale, or instructions..."
-                value={actionNote}
-                onChange={(e) => setActionNote(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-500"
-              />
-            </div>
-
-            {/* Admin Actions */}
-            <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-slate-200">
-              <button
-                disabled={actionLoading}
-                onClick={() => handleAction('HOLD_SETTLEMENT')}
-                className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition"
-              >
-                Place Settlement Hold
-              </button>
-
-              <button
-                disabled={actionLoading}
-                onClick={() => handleAction('ESCALATE')}
-                className="px-3.5 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 rounded-xl text-xs font-bold transition"
-              >
-                Escalate Case
-              </button>
-
-              <button
-                disabled={actionLoading}
-                onClick={() => handleResolve('FALSE_POSITIVE')}
-                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-700 text-slate-600 rounded-xl text-xs font-semibold transition"
-              >
-                False Positive
-              </button>
-
-              <button
-                disabled={actionLoading}
-                onClick={() => handleResolve('CONFIRMED')}
-                className="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition"
-              >
-                Confirm Fraud
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      <RiskCaseDossierModal
+        riskCase={selectedCase}
+        onClose={() => setSelectedCase(null)}
+        note={actionNote}
+        onNoteChange={setActionNote}
+        pendingAction={pendingAction}
+        onAction={handleAction}
+        onResolve={handleResolve}
+      />
 
     </div>
   );

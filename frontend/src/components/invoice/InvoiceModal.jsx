@@ -1,6 +1,6 @@
-import { API_BASE_URL } from '../../utils/config';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { apiGet, getErrorMessage } from '../../utils/api';
+import { useDialog } from '../../hooks/useDialog';
 import {
   X,
   FileText,
@@ -23,6 +23,7 @@ const InvoiceModal = ({ isOpen, onClose, serviceId, initialInvoiceData = null, o
   const [invoice, setInvoice] = useState(initialInvoiceData);
   const [loading, setLoading] = useState(!initialInvoiceData);
   const [error, setError] = useState('');
+  const { dialogProps, titleId } = useDialog({ isOpen, onClose });
 
   useEffect(() => {
     if (!isOpen || !serviceId) return;
@@ -31,17 +32,13 @@ const InvoiceModal = ({ isOpen, onClose, serviceId, initialInvoiceData = null, o
       setLoading(true);
       setError('');
       try {
-        const token = localStorage.getItem('token');
-        const apiBaseUrl = API_BASE_URL;
-        const res = await axios.get(`${apiBaseUrl}/api/invoices/${serviceId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.data?.success) {
-          setInvoice(res.data.invoice);
+        const data = await apiGet(`/invoices/${serviceId}`);
+        if (data?.success) {
+          setInvoice(data.invoice);
         }
       } catch (err) {
         console.error('Error loading invoice details:', err);
-        setError(err.response?.data?.message || 'Failed to load invoice');
+        setError(getErrorMessage(err, 'Failed to load invoice'));
       } finally {
         setLoading(false);
       }
@@ -62,7 +59,8 @@ const InvoiceModal = ({ isOpen, onClose, serviceId, initialInvoiceData = null, o
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
       <div
-        className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full my-auto overflow-hidden animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col"
+        {...dialogProps}
+        className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full my-auto overflow-hidden animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Top Bar */}
@@ -71,9 +69,9 @@ const InvoiceModal = ({ isOpen, onClose, serviceId, initialInvoiceData = null, o
             <span className="p-1.5 bg-teal-50 text-teal-600 rounded-xl border border-teal-100">
               <FileText className="h-4 w-4" />
             </span>
-            <span className="font-extrabold text-sm text-slate-800 tracking-tight">
+            <h2 id={titleId} className="font-extrabold text-sm text-slate-800 tracking-tight">
               Tax Invoice / Service Bill
-            </span>
+            </h2>
           </div>
 
           <div className="flex items-center gap-2">
@@ -106,7 +104,7 @@ const InvoiceModal = ({ isOpen, onClose, serviceId, initialInvoiceData = null, o
               <p className="text-xs font-bold text-slate-400">Loading verified invoice details...</p>
             </div>
           ) : error ? (
-            <div className="p-6 bg-red-50 border border-red-200 rounded-2xl text-center text-sm font-bold text-red-700 flex items-center justify-center gap-2">
+            <div role="alert" className="p-6 bg-red-50 border border-red-200 rounded-2xl text-center text-sm font-bold text-red-700 flex items-center justify-center gap-2">
               <AlertCircle className="h-5 w-5" />
               {error}
             </div>

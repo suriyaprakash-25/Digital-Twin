@@ -1,8 +1,6 @@
-import { API_BASE_URL } from '../utils/config';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { ArrowLeft, Search, SlidersHorizontal, Wrench, ShieldCheck, Star, Images, Info, MessageSquare, AlertCircle, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { ArrowLeft, Search, Wrench, AlertCircle } from 'lucide-react';
 import GarageHeader from '../components/garage/GarageHeader';
 import GarageGallery from '../components/garage/GarageGallery';
 import ServiceCard from '../components/garage/ServiceCard';
@@ -10,15 +8,21 @@ import BusinessInfo from '../components/garage/BusinessInfo';
 import RatingDistribution from '../components/garage/RatingDistribution';
 import ReviewList from '../components/garage/ReviewList';
 import WriteReview from '../components/garage/WriteReview';
-import MediaManager from '../components/MediaManager';
+import BookingRequestModal from '../components/garage/BookingRequestModal';
+import CustomIssueModal from '../components/garage/CustomIssueModal';
+import BookingSuccessModal from '../components/garage/BookingSuccessModal';
+import ErrorState from '../components/common/ErrorState';
+import { apiGet, getErrorMessage } from '../utils/api';
+import { useAuth } from '../context/authContextCore';
 
 const GarageDetails = () => {
   const { garageId } = useParams();
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const { isAuthenticated } = useAuth();
 
   const [garage, setGarage] = useState(null);
   const [reviewsData, setReviewsData] = useState({ reviews: [], ratingDistribution: {}, averageRating: 4.8, totalReviews: 0, userCanReview: false, completedBookings: [] });
+  const [reviewsError, setReviewsError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -30,35 +34,20 @@ const GarageDetails = () => {
   // Review Sorting
   const [reviewSort, setReviewSort] = useState('newest');
 
-  // Request Booking Modal State
-  const [selectedServiceForRequest, setSelectedServiceForRequest] = useState(null);
+  // Booking flows
   const [userVehicles, setUserVehicles] = useState([]);
-  const [bookingVehicleId, setBookingVehicleId] = useState('');
-  const [bookingDate, setBookingDate] = useState('');
-  const [bookingNotes, setBookingNotes] = useState('');
-  const [bookingSubmitting, setBookingSubmitting] = useState(false);
-  const [bookingStatus, setBookingStatus] = useState({ type: '', msg: '' });
-  const [successBookingId, setSuccessBookingId] = useState(null);
-  const [successBookingType, setSuccessBookingType] = useState(null);
-
-  // Custom Issue State
+  const [selectedServiceForRequest, setSelectedServiceForRequest] = useState(null);
   const [isCustomIssueModalOpen, setIsCustomIssueModalOpen] = useState(false);
-  const [customIssueDescription, setCustomIssueDescription] = useState('');
-  const [customIssueDuration, setCustomIssueDuration] = useState('Not sure');
-  const [customIssueUrgency, setCustomIssueUrgency] = useState('Not sure');
-  const [showSafetyWarning, setShowSafetyWarning] = useState(false);
-
-  const headers = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
+  const [successBooking, setSuccessBooking] = useState(null); // { id, type }
 
   const fetchGarageDetails = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/garages/details/${garageId}`);
-      setGarage(res.data);
+      const data = await apiGet(`/garages/details/${garageId}`);
+      setGarage(data);
     } catch (err) {
-      console.error('Error fetching garage details:', err);
-      setError(err.response?.data?.msg || 'Failed to load garage details');
+      setError(getErrorMessage(err, 'Failed to load garage details'));
     } finally {
       setLoading(false);
     }
@@ -66,30 +55,29 @@ const GarageDetails = () => {
 
   const fetchReviews = useCallback(async (sort = reviewSort) => {
     try {
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-      const res = await axios.get(`${API_BASE_URL}/api/garages/${garageId}/reviews?sort=${sort}`, config);
-      setReviewsData(res.data);
+      const data = await apiGet(`/garages/${garageId}/reviews`, { sort });
+      setReviewsData(data);
+      setReviewsError(null);
     } catch (err) {
-      console.error('Error fetching reviews:', err);
+      setReviewsError(getErrorMessage(err, 'Failed to load reviews'));
     }
-  }, [garageId, reviewSort, token]);
+  }, [garageId, reviewSort]);
 
   useEffect(() => {
-    fetchGarageDetails();
-
-    if (token) {
-      axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, headers)
-        .then(res => {
-          const list = Array.isArray(res.data) ? res.data : [];
-          setUserVehicles(list);
-          if (list.length > 0) setBookingVehicleId(list[0].id);
-        })
-        .catch(() => {});
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) fetchGarageDetails(); });
+    if (isAuthenticated) {
+      apiGet('/vehicles/myvehicles')
+        .then(data => { if (!cancelled) setUserVehicles(Array.isArray(data) ? data : []); })
+        .catch(() => { /* vehicle list is optional: the booking form validates selection */ });
     }
-  }, [fetchGarageDetails, token, headers]);
+    return () => { cancelled = true; };
+  }, [fetchGarageDetails, isAuthenticated]);
 
   useEffect(() => {
-    fetchReviews();
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) fetchReviews(); });
+    return () => { cancelled = true; };
   }, [fetchReviews]);
 
   const handleReviewSortChange = (newSort) => {
@@ -129,130 +117,13 @@ const GarageDetails = () => {
     return list;
   }, [garage, serviceCategoryFilter, serviceSearch, serviceSort]);
 
-  // Modals state reset and ESC handler
   const closeModals = useCallback(() => {
     setSelectedServiceForRequest(null);
-    setSuccessBookingId(null);
-    setSuccessBookingType(null);
-    setBookingStatus({ type: '', msg: '' });
-    setBookingDate('');
-    setBookingNotes('');
     setIsCustomIssueModalOpen(false);
-    setCustomIssueDescription('');
-    setShowSafetyWarning(false);
+    setSuccessBooking(null);
   }, []);
 
-  useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === 'Escape') closeModals();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [closeModals]);
-
-  // Handle Request Booking Submission
-  const handleRequestBooking = async (e) => {
-    e.preventDefault();
-    setBookingStatus({ type: '', msg: '' });
-
-    if (!token) {
-      setBookingStatus({ type: 'error', msg: 'Please log in as a vehicle owner to request a booking.' });
-      return;
-    }
-
-    if (!bookingVehicleId) {
-      setBookingStatus({ type: 'error', msg: 'Please select a vehicle or add one to your fleet first.' });
-      return;
-    }
-
-    setBookingSubmitting(true);
-    try {
-      const targetGarageId = garage.id || garage._id || garageId;
-      const targetServiceId = selectedServiceForRequest.id || selectedServiceForRequest._id;
-
-      const res = await axios.post(
-        `${API_BASE_URL}/api/bookings`,
-        {
-          garageId: targetGarageId,
-          serviceId: targetServiceId,
-          vehicleId: bookingVehicleId,
-          scheduledFor: bookingDate || undefined,
-          notes: bookingNotes
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      setBookingStatus({ type: 'success', msg: 'Booking request sent successfully!' });
-      setSuccessBookingId(res.data.id);
-      setSuccessBookingType('SERVICE');
-    } catch (err) {
-      console.error('Booking request error:', err);
-      setBookingStatus({
-        type: 'error',
-        msg: err.response?.data?.msg || err.response?.data?.message || 'Failed to submit booking request. Please try again.'
-      });
-    } finally {
-      setBookingSubmitting(false);
-    }
-  };
-
-  const handleCustomIssueSubmit = async (e) => {
-    e.preventDefault();
-    setBookingStatus({ type: '', msg: '' });
-
-    if (!token) {
-      setBookingStatus({ type: 'error', msg: 'Please log in as a vehicle owner to report an issue.' });
-      return;
-    }
-    if (!bookingVehicleId) {
-      setBookingStatus({ type: 'error', msg: 'Please select a vehicle.' });
-      return;
-    }
-    if (!customIssueDescription || customIssueDescription.trim().length < 5) {
-      setBookingStatus({ type: 'error', msg: 'Please provide a clearer description of the issue.' });
-      return;
-    }
-
-    const safetyTerms = /\b(brake|brakes|steering|burst|leak|smoke|fire|overheating)\b/i;
-    if (safetyTerms.test(customIssueDescription) && !showSafetyWarning) {
-      setShowSafetyWarning(true);
-      return;
-    }
-
-    setBookingSubmitting(true);
-    try {
-      const targetGarageId = garage.id || garage._id || garageId;
-      const res = await axios.post(
-        `${API_BASE_URL}/api/bookings`,
-        {
-          garageId: targetGarageId,
-          vehicleId: bookingVehicleId,
-          isCustomIssue: true,
-          issueDetails: {
-            description: customIssueDescription,
-            duration: customIssueDuration,
-            urgency: customIssueUrgency
-          }
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setBookingStatus({ type: 'success', msg: 'Issue reported successfully!' });
-      setSuccessBookingId(res.data.id);
-      setSuccessBookingType('CUSTOM_ISSUE');
-      setIsCustomIssueModalOpen(false); // Move to success state
-    } catch (err) {
-      console.error('Custom issue request error:', err);
-      setBookingStatus({
-        type: 'error',
-        msg: err.response?.data?.msg || 'Failed to submit issue. Please try again.'
-      });
-    } finally {
-      setBookingSubmitting(false);
-    }
-  };
+  const targetGarageId = garage ? (garage.id || garage._id || garageId) : garageId;
 
   if (loading) {
     return (
@@ -267,14 +138,26 @@ const GarageDetails = () => {
   if (error || !garage) {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4 text-center space-y-4">
-        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-        <h2 className="text-xl font-bold text-slate-900">{error || 'Garage Not Found'}</h2>
-        <button
-          onClick={() => navigate('/marketplace')}
-          className="px-5 py-2.5 rounded-xl bg-teal-600 text-white text-xs font-bold shadow-sm"
-        >
-          Back to Marketplace
-        </button>
+        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" aria-hidden="true" />
+        <h2 role="alert" className="text-xl font-bold text-slate-900">{error || 'Garage Not Found'}</h2>
+        <div className="flex items-center justify-center gap-3">
+          {error && (
+            <button
+              type="button"
+              onClick={fetchGarageDetails}
+              className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold shadow-sm"
+            >
+              Retry
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => navigate('/marketplace')}
+            className="px-5 py-2.5 rounded-xl bg-teal-600 text-white text-xs font-bold shadow-sm"
+          >
+            Back to Marketplace
+          </button>
+        </div>
       </div>
     );
   }
@@ -283,6 +166,7 @@ const GarageDetails = () => {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 space-y-8 animate-in fade-in duration-300">
       {/* Back Button */}
       <button
+        type="button"
         onClick={() => navigate('/marketplace')}
         className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors group"
       >
@@ -317,12 +201,8 @@ const GarageDetails = () => {
           </p>
         </div>
         <button
-          onClick={() => {
-            setBookingStatus({ type: '', msg: '' });
-            setShowSafetyWarning(false);
-            setCustomIssueDescription('');
-            setIsCustomIssueModalOpen(true);
-          }}
+          type="button"
+          onClick={() => setIsCustomIssueModalOpen(true)}
           className="shrink-0 whitespace-nowrap bg-indigo-600 hover:bg-indigo-700 transition-colors text-white text-sm font-bold py-3 px-6 rounded-xl shadow-sm"
         >
           Report a Vehicle Issue
@@ -341,7 +221,8 @@ const GarageDetails = () => {
             <div className="relative w-full sm:w-60">
               <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
               <input
-                type="text"
+                type="search"
+                aria-label="Search services"
                 value={serviceSearch}
                 onChange={(e) => setServiceSearch(e.target.value)}
                 placeholder="Search services..."
@@ -351,6 +232,7 @@ const GarageDetails = () => {
 
             {/* Sort */}
             <select
+              aria-label="Sort services"
               value={serviceSort}
               onChange={(e) => setServiceSort(e.target.value)}
               className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800 focus:outline-none"
@@ -399,14 +281,15 @@ const GarageDetails = () => {
         />
 
         {/* Section 6: Write Review Form (Only if eligible or logged in) */}
-        {token && reviewsData.userCanReview ? (
+        {reviewsError && <ErrorState title="Could not load reviews" message={reviewsError} onRetry={() => fetchReviews(reviewSort)} />}
+
+        {isAuthenticated && reviewsData.userCanReview ? (
           <WriteReview
             garageId={garage.id}
-            token={token}
             completedBookings={reviewsData.completedBookings}
             onReviewSubmitted={handleReviewSubmitted}
           />
-        ) : token ? (
+        ) : isAuthenticated ? (
           <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl text-center text-xs sm:text-sm font-semibold text-slate-600">
             ℹ️ You can write a customer review after completing a service booking at {garage.name}.
           </div>
@@ -417,238 +300,41 @@ const GarageDetails = () => {
         )}
       </div>
 
-      {/* Request Booking Modal */}
-      {(selectedServiceForRequest || successBookingId) && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            {successBookingId ? (
-              <div className="text-center space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner animate-bounce">
-                    <CheckCircle className="h-8 w-8" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-extrabold text-slate-900">Booking Requested</h3>
-                    <p className="text-xs text-slate-500 font-medium mt-1">The garage will review and confirm shortly.</p>
-                </div>
-                
-                <div className="border border-slate-100 bg-slate-50 rounded-xl p-4 text-left shadow-sm">
-                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-3">
-                        <Images className="h-4 w-4 text-teal-600" />
-                        {successBookingType === 'CUSTOM_ISSUE' ? 'Vehicle Issue Photos' : 'Customer Damage Photos'}
-                    </h4>
-                    <p className="text-[10px] text-slate-500 mb-3">
-                      {successBookingType === 'CUSTOM_ISSUE' 
-                        ? 'Upload photos demonstrating the problem you are experiencing (Optional).' 
-                        : 'Upload photos of your vehicle\'s condition or specific damage before the service (Optional).'}
-                    </p>
-                    <MediaManager 
-                      entityId={successBookingId} 
-                      entityType="BOOKING" 
-                      category={successBookingType === 'CUSTOM_ISSUE' ? 'CUSTOMER_ISSUE' : 'CUSTOMER_DAMAGE'} 
-                      label="Upload Photos" 
-                    />
-                </div>
-
-                <button
-                    onClick={() => {
-                        closeModals();
-                        navigate('/user-dashboard');
-                    }}
-                    className="w-full py-3 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-sm hover:bg-slate-800 transition-colors"
-                >
-                    Done
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                  <h3 className="text-lg font-bold text-slate-900">
-                    Request Service: {selectedServiceForRequest.title}
-                  </h3>
-                  <button type="button" onClick={closeModals} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                {bookingStatus.msg && (
-                  <div className={`p-3 rounded-xl text-xs font-semibold ${
-                    bookingStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-700'
-                  }`}>
-                    {bookingStatus.msg}
-                  </div>
-                )}
-
-                <form onSubmit={handleRequestBooking} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Select Your Vehicle *</label>
-                    <select
-                      value={bookingVehicleId}
-                      onChange={(e) => setBookingVehicleId(e.target.value)}
-                      className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold"
-                      required
-                    >
-                      {userVehicles.map(v => (
-                        <option key={v.id} value={v.id}>{v.vehicleNumber} ({v.brand} {v.model})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Preferred Date &amp; Time</label>
-                    <input
-                      type="datetime-local"
-                      value={bookingDate}
-                      onChange={(e) => setBookingDate(e.target.value)}
-                      className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Notes / Instructions</label>
-                    <textarea
-                      value={bookingNotes}
-                      onChange={(e) => setBookingNotes(e.target.value)}
-                      placeholder="Any specific issues or preferences..."
-                      rows={2}
-                      className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium"
-                    />
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={closeModals}
-                      className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={bookingSubmitting}
-                      className="flex-1 py-2.5 rounded-xl bg-teal-600 text-white text-xs font-bold shadow-sm"
-                    >
-                      {bookingSubmitting ? 'Sending Request...' : 'Confirm Booking'}
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
+      {/* Booking flows */}
+      {selectedServiceForRequest && !successBooking && (
+        <BookingRequestModal
+          garageId={targetGarageId}
+          service={selectedServiceForRequest}
+          vehicles={userVehicles}
+          isAuthenticated={isAuthenticated}
+          onClose={closeModals}
+          onBooked={(id) => setSuccessBooking({ id, type: 'SERVICE' })}
+        />
       )}
 
-      {/* Custom Issue Modal */}
-      {isCustomIssueModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-lg font-bold text-slate-900">
-                Report a Vehicle Issue
-              </h3>
-              <button type="button" onClick={closeModals} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 transition-colors">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+      {isCustomIssueModalOpen && !successBooking && (
+        <CustomIssueModal
+          garageId={targetGarageId}
+          vehicles={userVehicles}
+          isAuthenticated={isAuthenticated}
+          onClose={closeModals}
+          onBooked={(id) => {
+            setIsCustomIssueModalOpen(false);
+            setSuccessBooking({ id, type: 'CUSTOM_ISSUE' });
+          }}
+        />
+      )}
 
-            {bookingStatus.msg && (
-              <div className={`p-3 mb-4 rounded-xl text-xs font-semibold ${
-                bookingStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-700'
-              }`}>
-                {bookingStatus.msg}
-              </div>
-            )}
-
-            <form onSubmit={handleCustomIssueSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">Select Your Vehicle *</label>
-                <select
-                  value={bookingVehicleId}
-                  onChange={(e) => setBookingVehicleId(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold"
-                  required
-                >
-                  {userVehicles.map(v => (
-                    <option key={v.id} value={v.id}>{v.vehicleNumber} ({v.brand} {v.model})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">What problem are you experiencing? *</label>
-                <textarea
-                  required
-                  value={customIssueDescription}
-                  onChange={(e) => {
-                    setCustomIssueDescription(e.target.value);
-                    setShowSafetyWarning(false); // Reset warning on edit
-                  }}
-                  placeholder="Describe what is happening with your vehicle. For example: My brake pedal feels soft and the vehicle takes longer to stop."
-                  rows={4}
-                  maxLength={1000}
-                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">When did the problem start?</label>
-                <select
-                  value={customIssueDuration}
-                  onChange={(e) => setCustomIssueDuration(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold"
-                >
-                  <option value="Today">Today</option>
-                  <option value="A few days ago">A few days ago</option>
-                  <option value="More than a week ago">More than a week ago</option>
-                  <option value="More than a month ago">More than a month ago</option>
-                  <option value="Not sure">Not sure</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold uppercase text-slate-700 mb-1">How is the issue affecting your vehicle?</label>
-                <select
-                  value={customIssueUrgency}
-                  onChange={(e) => setCustomIssueUrgency(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold"
-                >
-                  <option value="Vehicle is working normally">Vehicle is working normally</option>
-                  <option value="Vehicle is working but has a problem">Vehicle is working but has a problem</option>
-                  <option value="Difficult to drive">Difficult to drive</option>
-                  <option value="Unable to drive">Unable to drive</option>
-                  <option value="Not sure">Not sure</option>
-                </select>
-              </div>
-
-              {showSafetyWarning && (
-                <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-xl">
-                  <div className="flex gap-3">
-                    <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
-                    <p className="text-xs text-orange-800 font-semibold">
-                      <strong>Safety Notice:</strong> Some vehicle problems may make a vehicle unsafe to drive. If you believe your vehicle is unsafe, avoid driving it and consider appropriate professional or emergency assistance. Click Submit again to proceed.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={closeModals}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={bookingSubmitting}
-                  className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-sm"
-                >
-                  {bookingSubmitting ? 'Sending...' : (showSafetyWarning ? 'Acknowledge & Submit' : 'Submit Issue')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {successBooking && (
+        <BookingSuccessModal
+          bookingId={successBooking.id}
+          bookingType={successBooking.type}
+          onClose={closeModals}
+          onDone={() => {
+            closeModals();
+            navigate('/user-dashboard');
+          }}
+        />
       )}
     </div>
   );

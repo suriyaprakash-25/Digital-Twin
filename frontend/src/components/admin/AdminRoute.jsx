@@ -1,29 +1,13 @@
-import { Navigate } from 'react-router-dom';
+import ProtectedRoute from '../ProtectedRoute';
+import { ROLES } from '../../utils/roles';
 
 /**
  * Route guard for admin pages.
- * - No token → redirect to /login
- * - Token but not ADMIN role → redirect to /user-dashboard
+ * - No token -> /login
+ * - Signed in but not ADMIN (after role normalisation) -> that role's home page
  */
-const AdminRoute = ({ children }) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        return <Navigate to="/login" replace />;
-    }
-
-    try {
-        const userRaw = localStorage.getItem('user');
-        const user = userRaw ? JSON.parse(userRaw) : null;
-        const role = String(user?.role || '').toUpperCase();
-
-        if (role !== 'ADMIN') {
-            return <Navigate to="/user-dashboard" replace />;
-        }
-    } catch {
-        return <Navigate to="/login" replace />;
-    }
-
-    return children;
-};
+const AdminRoute = ({ children }) => (
+  <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>{children}</ProtectedRoute>
+);
 
 export default AdminRoute;

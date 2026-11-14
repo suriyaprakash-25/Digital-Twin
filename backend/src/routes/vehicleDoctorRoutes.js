@@ -1,17 +1,17 @@
 const express = require('express');
-const router = express.Router();
-const multer = require('multer');
-const path = require('path');
 const { requireAuth } = require('../middleware/auth');
+const { createUploader } = require('../utils/uploads');
+const { limiters } = require('../infrastructure/rateLimit/rateLimiters');
 const vehicleDoctorController = require('../controllers/vehicleDoctorController');
 
-// Multer setup for local temp storage
-const upload = multer({ dest: path.join(__dirname, '../../uploads/') });
+const MAX_DIAGNOSIS_IMAGES = 5;
+// Images only, signature-verified, size-capped (previously: any file type, unlimited size).
+const imageUpload = createUploader(['image/jpeg', 'image/png', 'image/webp']);
 
-// Needs to be an express Router
-const routerObj = express.Router();
+const router = express.Router();
 
-routerObj.post('/analyze', requireAuth, upload.array('images', 5), vehicleDoctorController.analyzeSymptoms);
-routerObj.get('/history', requireAuth, vehicleDoctorController.getHistory);
+// Each analysis calls a paid LLM: per-user rate limit protects cost and availability.
+router.post('/analyze', requireAuth, limiters.ai, imageUpload.array('images', MAX_DIAGNOSIS_IMAGES), vehicleDoctorController.analyzeSymptoms);
+router.get('/history', requireAuth, vehicleDoctorController.getHistory);
 
-module.exports = routerObj;
+module.exports = router;

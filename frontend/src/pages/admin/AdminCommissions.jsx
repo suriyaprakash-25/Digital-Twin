@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import {
   Percent,
   IndianRupee,
@@ -17,7 +16,9 @@ import {
   ChevronRight
 } from 'lucide-react';
 import CommissionDetailsModal from '../../components/commission/CommissionDetailsModal';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import ErrorState from '../../components/common/ErrorState';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { apiGet, apiGetPage, getErrorMessage } from '../../utils/api';
 
 const AdminCommissions = () => {
   const [commissions, setCommissions] = useState([]);
@@ -33,37 +34,36 @@ const AdminCommissions = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 350);
+  const [loadError, setLoadError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedCommission, setSelectedCommission] = useState(null);
 
   const fetchCommissions = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [sumRes, allRes] = await Promise.allSettled([
-        axios.get(`${API_BASE_URL}/api/admin/commissions/summary`, {
-          headers: getAuthHeaders()
-        }),
-        axios.get(`${API_BASE_URL}/api/admin/commissions/all`, {
-          headers: getAuthHeaders(),
-          params: { page, limit: 20, status: statusFilter, search }
-        })
+        apiGet('/admin/commissions/summary'),
+        apiGetPage('/admin/commissions/all', { page, limit: 20, status: statusFilter, search: debouncedSearch })
       ]);
 
-      if (sumRes.status === 'fulfilled' && sumRes.value.data?.success) {
-        setSummary(sumRes.value.data.summary);
+      if (sumRes.status === 'fulfilled' && sumRes.value?.success) {
+        setSummary(sumRes.value.summary);
       }
 
       if (allRes.status === 'fulfilled' && allRes.value.data?.success) {
         setCommissions(allRes.value.data.commissions || []);
-        setTotalPages(allRes.value.data.totalPages || 1);
+        setTotalPages(allRes.value.data.totalPages || allRes.value.totalPages || 1);
       }
-    } catch (err) {
-      console.error('Error fetching admin commissions:', err);
+
+      const failed = [sumRes, allRes].find((r) => r.status === 'rejected');
+      if (failed) setLoadError(getErrorMessage(failed.reason, 'Could not load commission data.'));
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, debouncedSearch, statusFilter]);
 
   useEffect(() => {
     fetchCommissions();
@@ -91,7 +91,9 @@ const AdminCommissions = () => {
         </div>
 
         <button
+          type="button"
           onClick={fetchCommissions}
+          disabled={loading}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs self-start md:self-auto"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -158,11 +160,12 @@ const AdminCommissions = () => {
       {/* Search and Filters */}
       <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:max-w-md">
-          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
-            type="text"
+            type="search"
+            aria-label="Search commissions"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search by invoice number, garage, vehicle, payment ID..."
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-teal-500"
           />
@@ -173,7 +176,8 @@ const AdminCommissions = () => {
             <button
               key={status}
               type="button"
-              onClick={() => setStatusFilter(status)}
+              aria-pressed={statusFilter === status}
+              onClick={() => { setStatusFilter(status); setPage(1); }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 statusFilter === status
                   ? 'bg-white text-slate-900 shadow-sm'
@@ -185,6 +189,8 @@ const AdminCommissions = () => {
           ))}
         </div>
       </div>
+
+      {loadError && <ErrorState message={loadError} onRetry={fetchCommissions} retrying={loading} />}
 
       {/* Global Commission Table */}
       <div className="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
@@ -268,18 +274,20 @@ const AdminCommissions = () => {
               <button
                 type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
+                aria-label="Previous page"
                 disabled={page === 1}
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                aria-label="Next page"
                 disabled={page === totalPages}
                 className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           </div>

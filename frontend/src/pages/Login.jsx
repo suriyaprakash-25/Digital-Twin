@@ -1,11 +1,11 @@
-import { API_BASE_URL } from '../utils/config';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import { Lock, Mail, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { tryRegisterFcmToken } from '../utils/fcm';
 import GoogleSignInButton from '../components/GoogleSignInButton';
-import { normalizeRole } from '../utils/roles';
+import { homePathForRole } from '../utils/roles';
+import { apiPost, getErrorMessage } from '../utils/api';
+import { useAuth } from '../context/authContextCore';
+import { registerPushAfterLogin } from '../utils/pushRegistration';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -14,6 +14,14 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
+
+    // Store the session, register push (best effort, after a user gesture) and go home.
+    const completeLogin = (data) => {
+        login({ token: data.token, user: data.user });
+        registerPushAfterLogin();
+        navigate(homePathForRole(data.user?.role));
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -21,27 +29,14 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+            const data = await apiPost('/auth/login', {
                 email,
                 password,
             });
-
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-
-            // Best-effort: request permission after a user gesture (login click)
-            tryRegisterFcmToken({ authToken: response.data.token, requestPermission: true }).catch(() => {
-                // ignore
-            });
-
-            const role = normalizeRole(response.data.user?.role);
-            if (role === 'ADMIN') {
-                navigate('/admin');
-            } else {
-                navigate(role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard');
-            }
+            completeLogin(data);
         } catch (err) {
-            setError(err.response?.data?.msg || 'Failed to login. Please try again.');
+            // Includes the 429 RATE_LIMIT_EXCEEDED message from the backend.
+            setError(getErrorMessage(err, 'Failed to login. Please try again.'));
         } finally {
             setIsLoading(false);
         }
@@ -52,25 +47,12 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/auth/google`, {
+            const data = await apiPost('/auth/google', {
                 credential,
             });
-
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-
-            tryRegisterFcmToken({ authToken: response.data.token, requestPermission: true }).catch(() => {
-                // ignore
-            });
-
-            const role = normalizeRole(response.data.user?.role);
-            if (role === 'ADMIN') {
-                navigate('/admin');
-            } else {
-                navigate(role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard');
-            }
+            completeLogin(data);
         } catch (err) {
-            setError(err.response?.data?.msg || 'Google Sign In failed. Please try again.');
+            setError(getErrorMessage(err, 'Google Sign In failed. Please try again.'));
         } finally {
             setIsLoading(false);
         }
@@ -101,13 +83,14 @@ const Login = () => {
 
                 <form className="mt-10 space-y-6" onSubmit={handleLogin}>
                     {error && (
-                        <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-sm text-center font-medium shadow-sm">
+                        <div role="alert" className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-sm text-center font-medium shadow-sm">
                             {error}
                         </div>
                     )}
 
                     <div className="space-y-5">
                         <div className="relative group">
+                            <label htmlFor="email-address" className="sr-only">Email address</label>
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                             </div>
@@ -115,6 +98,7 @@ const Login = () => {
                                 id="email-address"
                                 name="email"
                                 type="email"
+                                autoComplete="email"
                                 required
                                 className="block w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all sm:text-sm shadow-sm hover:border-slate-300"
                                 placeholder="Email address"
@@ -123,6 +107,7 @@ const Login = () => {
                             />
                         </div>
                         <div className="relative group">
+                            <label htmlFor="password" className="sr-only">Password</label>
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                             </div>
@@ -130,6 +115,7 @@ const Login = () => {
                                 id="password"
                                 name="password"
                                 type={showPassword ? "text" : "password"}
+                                autoComplete="current-password"
                                 required
                                 className="block w-full pl-11 pr-12 py-3.5 border border-slate-200 rounded-xl text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all sm:text-sm shadow-sm hover:border-slate-300"
                                 placeholder="Password"
@@ -139,12 +125,14 @@ const Login = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                aria-pressed={showPassword}
                                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                             >
                                 {showPassword ? (
-                                    <EyeOff className="h-5 w-5" />
+                                    <EyeOff className="h-5 w-5" aria-hidden="true" />
                                 ) : (
-                                    <Eye className="h-5 w-5" />
+                                    <Eye className="h-5 w-5" aria-hidden="true" />
                                 )}
                             </button>
                         </div>

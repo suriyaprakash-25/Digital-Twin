@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { apiDelete, apiGet, apiUpload } from '../utils/api';
 import { Camera, UploadCloud } from 'lucide-react';
-import { API_BASE_URL } from '../utils/config';
 import { getPhotoUrl } from '../utils/imageUrl';
 
 /**
@@ -20,18 +19,13 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
-  const token = localStorage.getItem('token');
-  const baseUrl = API_BASE_URL;
-
   const fetchMedia = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${baseUrl}/api/media/${entityType}/${entityId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const data = await apiGet(`/media/${entityType}/${entityId}`);
       // Filter by category locally, or we could pass category as query param.
       // For now, filtering locally is fine since total photos per entity is small.
-      const filtered = res.data.filter(m => m.category === category);
+      const filtered = (Array.isArray(data) ? data : []).filter(m => m.category === category);
       setMedia(filtered);
     } catch (err) {
       console.error('Error fetching media:', err);
@@ -39,7 +33,7 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
     } finally {
       setLoading(false);
     }
-  }, [baseUrl, entityType, entityId, token, category]);
+  }, [entityType, entityId, category]);
 
   useEffect(() => {
     if (entityId) {
@@ -61,12 +55,8 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
     formData.append('category', category);
 
     try {
-      const res = await axios.post(`${baseUrl}/api/media/upload`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setMedia(prev => [...prev, res.data.media]);
+      const data = await apiUpload('/media/upload', formData);
+      setMedia(prev => [...prev, data.media]);
     } catch (err) {
       console.error('Error uploading media:', err);
       setError('Upload failed. Please try again.');
@@ -81,9 +71,7 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
     if (!window.confirm('Are you sure you want to delete this photo?')) return;
 
     try {
-      await axios.delete(`${baseUrl}/api/media/${mediaId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiDelete(`/media/${mediaId}`);
       setMedia(prev => prev.filter(m => m._id !== mediaId));
     } catch (err) {
       console.error('Error deleting media:', err);
@@ -94,7 +82,7 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
   return (
     <div className="mt-4 mb-6">
       <h3 className="text-lg font-semibold text-slate-800 mb-2">{label}</h3>
-      {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+      {error && <p role="alert" className="text-red-500 text-sm mb-2">{error}</p>}
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         {media.map((m) => (
@@ -113,8 +101,10 @@ export default function MediaManager({ entityId, entityType, category, readOnly 
                 }}
                 className="absolute top-2 right-2 bg-white bg-opacity-75 text-red-600 hover:text-red-800 hover:bg-opacity-100 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 title="Delete Photo"
+                aria-label="Delete photo"
+                type="button"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </button>

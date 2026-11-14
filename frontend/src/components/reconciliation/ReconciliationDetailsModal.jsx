@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
   X,
   Scale,
@@ -12,17 +12,28 @@ import {
   AlertCircle,
   Clock,
   ShieldCheck,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
-import axios from 'axios';
-import { API_BASE_URL, getAuthHeaders } from '../../utils/api';
+import { apiPost, getErrorMessage } from '../../utils/api';
+import { useDialog } from '../../hooks/useDialog';
 
 const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolved }) => {
   const [resolutionNote, setResolutionNote] = useState('');
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
+  const { dialogProps, titleId } = useDialog({ isOpen: Boolean(isOpen && reconciliation), onClose });
+  const noteId = useId();
 
   if (!isOpen || !reconciliation) return null;
+
+  // Prefer gateway-neutral fields; keep legacy razorpay* names as fallbacks.
+  const gatewayPaymentId = reconciliation.gatewayPaymentId || reconciliation.cfPaymentId || reconciliation.razorpayPaymentId;
+  const gatewayOrderId = reconciliation.gatewayOrderId || reconciliation.cfOrderId || reconciliation.razorpayOrderId;
+  const gatewayAmount = reconciliation.gatewayAmount ?? reconciliation.razorpayAmount;
+  const gatewayPaymentStatus = reconciliation.gatewayPaymentStatus || gatewayPaymentStatus;
+  const gatewayRefundAmount = reconciliation.gatewayRefundAmount ?? gatewayRefundAmount;
+  const gatewayCurrency = reconciliation.gatewayCurrency || reconciliation.razorpayCurrency;
 
   const isMatched = reconciliation.reconciliationStatus === 'MATCHED';
   const isMismatch = reconciliation.reconciliationStatus === 'MISMATCH';
@@ -36,22 +47,22 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
       return;
     }
 
+    if (resolving) return;
     setResolving(true);
     setError('');
 
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/admin/reconciliation/${reconciliation.id}/resolve`,
-        { resolutionNote, resolutionAction: 'MANUAL_RESOLUTION' },
-        { headers: getAuthHeaders() }
+      const data = await apiPost(
+        `/admin/reconciliation/${reconciliation.id}/resolve`,
+        { resolutionNote, resolutionAction: 'MANUAL_RESOLUTION' }
       );
 
-      if (res.data?.success) {
+      if (data?.success) {
         if (onResolved) onResolved();
         onClose();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to resolve reconciliation record');
+      setError(getErrorMessage(err, 'Failed to resolve reconciliation record'));
     } finally {
       setResolving(false);
     }
@@ -60,16 +71,19 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        {...dialogProps}
+        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="bg-slate-900 text-white p-6 relative">
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-2 mb-2">
             <span className="p-2 bg-teal-500/20 text-teal-400 rounded-xl border border-teal-500/30">
@@ -79,7 +93,7 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
               Reconciliation Audit Report
             </span>
           </div>
-          <h2 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
+          <h2 id={titleId} className="text-xl font-black tracking-tight text-white flex items-center gap-2">
             <span>Invoice: {reconciliation.invoiceNumber || 'Financial Audit'}</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
@@ -135,12 +149,12 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
               <span className="font-mono text-[11px] font-bold text-slate-800 block truncate">{reconciliation.paymentId}</span>
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Razorpay ID</span>
-              <span className="font-mono text-[11px] font-bold text-slate-800 block truncate">{reconciliation.razorpayPaymentId || '—'}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Gateway Payment ID</span>
+              <span className="font-mono text-[11px] font-bold text-slate-800 block truncate">{gatewayPaymentId || '—'}</span>
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Order ID</span>
-              <span className="font-mono text-[11px] font-bold text-slate-800 block truncate">{reconciliation.razorpayOrderId || '—'}</span>
+              <span className="font-mono text-[11px] font-bold text-slate-800 block truncate">{gatewayOrderId || '—'}</span>
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Garage</span>
@@ -163,7 +177,7 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
                 <tr className="bg-slate-50 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-100">
                   <th className="py-2.5 px-4">Financial Metric</th>
                   <th className="py-2.5 px-4">DrivePortz Record</th>
-                  <th className="py-2.5 px-4">Razorpay Gateway</th>
+                  <th className="py-2.5 px-4">Payment Gateway</th>
                   <th className="py-2.5 px-4 text-right">Variance</th>
                 </tr>
               </thead>
@@ -171,7 +185,7 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
                 <tr>
                   <td className="py-3 px-4 font-bold text-slate-800">Gross Paid Amount</td>
                   <td className="py-3 px-4 font-black text-slate-900">₹{(reconciliation.expectedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                  <td className="py-3 px-4 font-black text-slate-900">₹{(reconciliation.razorpayAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td className="py-3 px-4 font-black text-slate-900">₹{(gatewayAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                   <td className="py-3 px-4 font-black text-right">
                     {reconciliation.amountDifference > 0 ? (
                       <span className="text-red-600">₹{reconciliation.amountDifference.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -183,9 +197,9 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
                 <tr>
                   <td className="py-3 px-4 font-bold text-slate-800">Payment Status</td>
                   <td className="py-3 px-4 font-bold text-slate-700">{reconciliation.expectedPaymentStatus}</td>
-                  <td className="py-3 px-4 font-bold text-slate-700">{reconciliation.razorpayPaymentStatus}</td>
+                  <td className="py-3 px-4 font-bold text-slate-700">{gatewayPaymentStatus}</td>
                   <td className="py-3 px-4 text-right">
-                    {reconciliation.expectedPaymentStatus?.toLowerCase() === reconciliation.razorpayPaymentStatus?.toLowerCase() || (reconciliation.expectedPaymentStatus === 'CAPTURED' && reconciliation.razorpayPaymentStatus === 'captured') ? (
+                    {reconciliation.expectedPaymentStatus?.toLowerCase() === gatewayPaymentStatus?.toLowerCase() || (reconciliation.expectedPaymentStatus === 'CAPTURED' && gatewayPaymentStatus === 'captured') ? (
                       <span className="text-emerald-600 font-bold">Consistent</span>
                     ) : (
                       <span className="text-amber-600 font-bold">Differs</span>
@@ -195,15 +209,15 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
                 <tr>
                   <td className="py-3 px-4 font-bold text-slate-800">Refund Amount</td>
                   <td className="py-3 px-4 font-bold text-slate-700">₹{(reconciliation.expectedRefundAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                  <td className="py-3 px-4 font-bold text-slate-700">₹{(reconciliation.razorpayRefundAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td className="py-3 px-4 font-bold text-slate-700">₹{(gatewayRefundAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                   <td className="py-3 px-4 text-right font-bold text-slate-600">
-                    ₹{(Math.abs((reconciliation.expectedRefundAmount || 0) - (reconciliation.razorpayRefundAmount || 0))).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    ₹{(Math.abs((reconciliation.expectedRefundAmount || 0) - (gatewayRefundAmount || 0))).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-bold text-slate-800">Currency</td>
                   <td className="py-3 px-4 font-bold text-slate-700">{reconciliation.expectedCurrency || 'INR'}</td>
-                  <td className="py-3 px-4 font-bold text-slate-700">{reconciliation.razorpayCurrency || 'INR'}</td>
+                  <td className="py-3 px-4 font-bold text-slate-700">{gatewayCurrency || 'INR'}</td>
                   <td className="py-3 px-4 text-right font-bold text-emerald-600">Match</td>
                 </tr>
               </tbody>
@@ -234,8 +248,10 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
           ) : (isMismatch || isMissing) ? (
             <form onSubmit={handleResolve} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
               <h4 className="text-xs font-extrabold text-slate-900">Resolve Discrepancy</h4>
-              {error && <p className="text-xs font-bold text-red-600">{error}</p>}
+              {error && <p role="alert" className="text-xs font-bold text-red-600">{error}</p>}
+              <label htmlFor={noteId} className="sr-only">Resolution note</label>
               <textarea
+                id={noteId}
                 rows="2"
                 required
                 placeholder="Explain the audit investigation and resolution rationale..."
@@ -246,8 +262,9 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
               <button
                 type="submit"
                 disabled={resolving}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-60"
               >
+                {resolving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
                 {resolving ? 'Saving...' : 'Mark Discrepancy Resolved'}
               </button>
             </form>
@@ -257,6 +274,7 @@ const ReconciliationDetailsModal = ({ isOpen, onClose, reconciliation, onResolve
         {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
           <button
+            type="button"
             onClick={onClose}
             className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
           >

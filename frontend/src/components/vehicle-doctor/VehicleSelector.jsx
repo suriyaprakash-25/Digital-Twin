@@ -7,12 +7,13 @@ const VehicleSelector = ({ vehicles, selectedVehicleId, onChange }) => {
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-8">
       <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-        <Car className="w-5 h-5 text-teal-600" />
-        Select Vehicle to Diagnose
+        <Car className="w-5 h-5 text-teal-600" aria-hidden="true" />
+        <label htmlFor="doctor-vehicle">Select Vehicle to Diagnose</label>
       </h3>
       
       <div className="relative">
         <select
+          id="doctor-vehicle"
           value={selectedVehicleId}
           onChange={(e) => onChange(e.target.value)}
           className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-teal-500 focus:border-teal-500 block p-3.5 pr-10 font-medium cursor-pointer"

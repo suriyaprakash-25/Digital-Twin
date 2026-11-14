@@ -1,44 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Car, Plus, History, Settings2, ShieldAlert, FileText, MoreVertical, Edit, Trash2, Activity, QrCode, ShieldCheck, UserPlus } from 'lucide-react';
-import { API_BASE_URL } from '../utils/config';
+import { apiDelete, apiGet, getErrorMessage } from '../utils/api';
+import { getPhotoUrl } from '../utils/imageUrl';
+import { useAsync } from '../hooks/useAsync';
+import { useToast } from '../context/toastContextCore';
+import ErrorState from '../components/common/ErrorState';
 
 const MyVehicles = () => {
-    const [vehicles, setVehicles] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [openMenuId, setOpenMenuId] = useState(null);
     const navigate = useNavigate();
+    const { showError } = useToast();
 
-    const fetchVehicles = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_BASE_URL}/api/vehicles/myvehicles`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setVehicles(res.data);
-        } catch (err) {
-            console.error('Error fetching vehicles:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchVehicles();
-    }, []);
+    const { data, error, loading, refetch } = useAsync(() => apiGet('/vehicles/myvehicles'), [], { initialData: [] });
+    const vehicles = Array.isArray(data) ? data : [];
 
     const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this vehicle and all its service history?")) {
             try {
-                const token = localStorage.getItem('token');
-                await axios.delete(`${API_BASE_URL}/api/vehicles/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                fetchVehicles();
+                await apiDelete(`/vehicles/${id}`);
+                refetch({ silent: true });
             } catch (err) {
                 console.error('Error deleting vehicle:', err);
-                alert('Failed to delete vehicle. Please try again.');
+                showError(getErrorMessage(err, 'Failed to delete vehicle. Please try again.'));
             }
         }
         setOpenMenuId(null);
@@ -60,11 +44,13 @@ const MyVehicles = () => {
                 </Link>
             </header>
 
+            {error && <ErrorState className="mb-4" message={error} onRetry={() => refetch()} retrying={loading} />}
+
             {loading ? (
-                <div className="flex justify-center items-center py-24">
+                <div role="status" aria-label="Loading vehicles" className="flex justify-center items-center py-24">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-teal-600"></div>
                 </div>
-            ) : vehicles.length === 0 ? (
+            ) : error ? null : vehicles.length === 0 ? (
                 <div className="bg-white border border-slate-200 border-dashed rounded-2xl md:rounded-3xl p-6 md:p-16 text-center shadow-sm">
                     <div className="mx-auto h-16 w-16 md:h-24 md:w-24 bg-teal-50 rounded-full flex items-center justify-center border border-teal-100 mb-4 md:mb-6 shadow-sm">
                         <Car className="h-8 w-8 md:h-12 md:w-12 text-teal-400" />
@@ -110,7 +96,11 @@ const MyVehicles = () => {
                                             tabIndex={-1}
                                         >
                                             <button
+                                                type="button"
                                                 onClick={() => setOpenMenuId(openMenuId === vehicle.id ? null : vehicle.id)}
+                                                aria-label={`Options for ${vehicle.vehicleNumber || 'vehicle'}`}
+                                                aria-haspopup="menu"
+                                                aria-expanded={openMenuId === vehicle.id}
                                                 className="w-8 h-8 md:w-9 md:h-9 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-full transition-colors focus:outline-none flex items-center justify-center shadow-xs"
                                                 title="Options"
                                             >
@@ -197,7 +187,7 @@ const MyVehicles = () => {
                                     <div className="mt-3 flex flex-wrap gap-1.5 md:gap-2">
                                         {vehicle.rcBookUrl && (
                                             <a
-                                                href={`${API_BASE_URL}${vehicle.rcBookUrl}`}
+                                                href={getPhotoUrl(vehicle.rcBookUrl)}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-1 text-[10px] md:text-xs font-bold text-teal-600 bg-teal-50 px-2.5 py-1.5 rounded-lg border border-teal-100 hover:bg-teal-100 transition-colors"
@@ -208,7 +198,7 @@ const MyVehicles = () => {
                                         )}
                                         {vehicle.insuranceDocumentUrl && (
                                             <a
-                                                href={`${API_BASE_URL}${vehicle.insuranceDocumentUrl}`}
+                                                href={getPhotoUrl(vehicle.insuranceDocumentUrl)}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-1 text-[10px] md:text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors"

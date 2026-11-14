@@ -1,6 +1,6 @@
-import { API_BASE_URL } from '../../utils/config';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useId, useState } from 'react';
+import { apiPost, apiPut, getErrorMessage } from '../../utils/api';
+import { useDialog } from '../../hooks/useDialog';
 import {
   X,
   Plus,
@@ -29,6 +29,8 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
   const [mechanicNotes, setMechanicNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [confirmFinalize, setConfirmFinalize] = useState(false);
+  const { dialogProps, titleId } = useDialog({ isOpen: Boolean(isOpen && service), onClose });
+  const fieldId = useId();
 
   useEffect(() => {
     if (!service) return;
@@ -87,31 +89,27 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const apiBaseUrl = API_BASE_URL;
-
       const validParts = parts.filter(p => p.partName.trim() !== '');
 
-      const res = await axios.put(
-        `${apiBaseUrl}/api/garage/invoices/garage/${service.id || service._id}`,
+      const data = await apiPut(
+        `/garage/invoices/garage/${service.id || service._id}`,
         {
           partsReplaced: validParts,
           laborAmount: parseFloat(laborAmount) || 0,
           additionalCharges: parseFloat(additionalCharges) || 0,
           discountAmount: parseFloat(discountAmount) || 0,
           mechanicNotes
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
 
-      if (res.data?.success) {
+      if (data?.success) {
         showToast('Draft invoice updated successfully', 'success');
-        if (onInvoiceUpdated) onInvoiceUpdated(res.data.invoice);
+        if (onInvoiceUpdated) onInvoiceUpdated(data.invoice);
         onClose();
       }
     } catch (err) {
       console.error('Error updating draft invoice:', err);
-      showToast(err.response?.data?.message || 'Failed to save draft invoice', 'error');
+      showToast(getErrorMessage(err, 'Failed to save draft invoice'), 'error');
     } finally {
       setSaving(false);
     }
@@ -120,39 +118,35 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
   const handleFinalizeBill = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const apiBaseUrl = API_BASE_URL;
-
       const validParts = parts.filter(p => p.partName.trim() !== '');
 
-      const res = await axios.post(
-        `${apiBaseUrl}/api/garage/invoices/garage/${service.id || service._id}/finalize`,
+      const data = await apiPost(
+        `/garage/invoices/garage/${service.id || service._id}/finalize`,
         {
           partsReplaced: validParts,
           laborAmount: parseFloat(laborAmount) || 0,
           additionalCharges: parseFloat(additionalCharges) || 0,
           discountAmount: parseFloat(discountAmount) || 0,
           mechanicNotes
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
 
-      if (res.data?.success) {
-        showToast(`Bill finalized with Invoice No: ${res.data.invoiceNumber}`, 'success');
+      if (data?.success) {
+        showToast(`Bill finalized with Invoice No: ${data.invoiceNumber}`, 'success');
         if (onInvoiceUpdated) {
           onInvoiceUpdated({
             id: service.id || service._id,
-            invoiceNumber: res.data.invoiceNumber,
+            invoiceNumber: data.invoiceNumber,
             invoiceStatus: 'FINALIZED',
-            totalCost: res.data.totalAmount,
-            totalAmount: res.data.totalAmount
+            totalCost: data.totalAmount,
+            totalAmount: data.totalAmount
           });
         }
         onClose();
       }
     } catch (err) {
       console.error('Error finalizing bill:', err);
-      showToast(err.response?.data?.message || 'Failed to finalize invoice', 'error');
+      showToast(getErrorMessage(err, 'Failed to finalize invoice'), 'error');
     } finally {
       setSaving(false);
       setConfirmFinalize(false);
@@ -162,7 +156,8 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
       <div
-        className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full my-auto overflow-hidden animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col"
+        {...dialogProps}
+        className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full my-auto overflow-hidden animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -172,7 +167,7 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
               <FileCheck className="h-4 w-4" />
             </span>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-800 tracking-tight">
+              <h3 id={titleId} className="font-extrabold text-sm text-slate-800 tracking-tight">
                 {isFinalized ? 'View Finalized Invoice' : 'Create / Finalize Service Bill'}
               </h3>
               {service.invoiceNumber && (
@@ -184,6 +179,7 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
           <button
             onClick={onClose}
             type="button"
+            aria-label="Close billing dialog"
             className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors"
           >
             <X className="h-5 w-5" />
@@ -240,6 +236,7 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
                     <input
                       type="text"
                       placeholder="Part Name (e.g. Synthetic Engine Oil 5W30)"
+                      aria-label={`Part ${idx + 1} name`}
                       value={part.partName}
                       disabled={isPaid || isFinalized}
                       onChange={(e) => handlePartChange(idx, 'partName', e.target.value)}
@@ -248,6 +245,7 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
                     <input
                       type="text"
                       placeholder="Brand (Optional)"
+                      aria-label={`Part ${idx + 1} brand`}
                       value={part.brand}
                       disabled={isPaid || isFinalized}
                       onChange={(e) => handlePartChange(idx, 'brand', e.target.value)}
@@ -258,6 +256,7 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
                         type="number"
                         min="1"
                         placeholder="Qty"
+                        aria-label={`Part ${idx + 1} quantity`}
                         value={part.quantity}
                         disabled={isPaid || isFinalized}
                         onChange={(e) => handlePartChange(idx, 'quantity', e.target.value)}
@@ -270,6 +269,7 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
                           min="0"
                           step="any"
                           placeholder="Price"
+                          aria-label={`Part ${idx + 1} unit price`}
                           value={part.unitPrice}
                           disabled={isPaid || isFinalized}
                           onChange={(e) => handlePartChange(idx, 'unitPrice', e.target.value)}
@@ -285,6 +285,7 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
                           onClick={() => handleRemovePart(idx)}
                           className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
                           title="Remove item"
+                          aria-label={`Remove part ${idx + 1}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -299,12 +300,13 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
           {/* Charges Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+              <label htmlFor={`${fieldId}-labor`} className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
                 Labor & Service (₹)
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
                 <input
+                  id={`${fieldId}-labor`}
                   type="number"
                   min="0"
                   value={laborAmount}
@@ -316,12 +318,13 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
             </div>
 
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+              <label htmlFor={`${fieldId}-additional`} className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
                 Additional Charges (₹)
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
                 <input
+                  id={`${fieldId}-additional`}
                   type="number"
                   min="0"
                   value={additionalCharges}
@@ -333,12 +336,13 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
             </div>
 
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block mb-1">
+              <label htmlFor={`${fieldId}-discount`} className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block mb-1">
                 Discount (₹)
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600 text-xs font-bold">₹</span>
                 <input
+                  id={`${fieldId}-discount`}
                   type="number"
                   min="0"
                   value={discountAmount}
@@ -352,10 +356,11 @@ const GarageBillingModal = ({ isOpen, onClose, service, onInvoiceUpdated }) => {
 
           {/* Notes */}
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+            <label htmlFor={`${fieldId}-notes`} className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
               Mechanic / Service Notes
             </label>
             <textarea
+              id={`${fieldId}-notes`}
               rows="2"
               value={mechanicNotes}
               disabled={isPaid || isFinalized}

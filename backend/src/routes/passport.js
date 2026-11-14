@@ -1,491 +1,73 @@
+/**
+ * /api/passport: thin HTTP adapters for the vehicle digital passport (JSON + PDF).
+ *
+ * These routes are public (the QR code and the frontend /passport/:vehicleId page). optionalAuth
+ * only decides the audience: the vehicle's owner (or an admin) gets the full view, everyone else
+ * the buyer-safe allow-list built in services/passport/presenters.js. Anonymous traffic is rate
+ * limited per IP so the public view cannot be scraped at speed.
+ */
 const express = require('express');
-const { ObjectId } = require('mongodb');
-const { getDb } = require('../db');
-const calculateHealthScore = require('../utils/healthCalc');
-const generateQRCode = require('../utils/generateQRCode');
-const PDFDocument = require('pdfkit');
+
+const { optionalAuth } = require('../middleware/auth');
+const { AppError } = require('../core/errors');
+const { createLimiter } = require('../infrastructure/rateLimit/rateLimiters');
+const { getPassportService, writePassportPdf } = require('../services/passport');
+const { MSG, PUBLIC_RATE_LIMIT } = require('../services/passport/constants');
 
 const router = express.Router();
 
-function safeObjectId(id) {
+const publicPassportLimiter = createLimiter({
+  name: 'passport-public',
+  windowMs: PUBLIC_RATE_LIMIT.WINDOW_MS,
+  max: PUBLIC_RATE_LIMIT.MAX,
+  message: MSG.RATE_LIMITED,
+});
+
+const isClientError = (err) => err instanceof AppError && err.expose;
+
+/** Legacy `{ msg }` error shape. 5xx details are logged, never returned. */
+function sendMsgError(res, err, fallbackMsg) {
+  if (isClientError(err)) return res.status(err.status).json({ msg: err.message });
+  console.error(`${fallbackMsg}:`, err);
+  return res.status(500).json({ msg: fallbackMsg });
+}
+
+function passportHandler({ forcePublic }) {
+  return async function getPassport(req, res) {
+    try {
+      const view = await getPassportService().getPassport(req.user, req.params.vehicleId, { forcePublic });
+      return res.status(200).json(view);
+    } catch (err) {
+      return sendMsgError(res, err, 'Server error fetching vehicle passport');
+    }
+  };
+}
+
+const safeFilePart = (value) => String(value || 'vehicle').replace(/[^A-Za-z0-9_-]/g, '');
+
+// GET /api/passport/pdf/:vehicleId (two segments, so it never collides with '/:vehicleId').
+router.get('/pdf/:vehicleId', publicPassportLimiter, optionalAuth, async (req, res) => {
+  let model;
   try {
-    return new ObjectId(String(id));
-  } catch {
-    return null;
-  }
-}
-
-function maskPhone(phone) {
-  if (!phone) return '';
-  const str = String(phone).trim();
-  if (str.length <= 4) return '****';
-  return str.slice(0, 2) + '*'.repeat(Math.max(2, str.length - 4)) + str.slice(-2);
-}
-
-function maskEmail(email) {
-  if (!email) return '';
-  const parts = String(email).trim().split('@');
-  if (parts.length !== 2) return '****';
-  const name = parts[0];
-  const domain = parts[1];
-  if (name.length <= 2) return `*@${domain}`;
-  return `${name[0]}***${name[name.length - 1]}@${domain}`;
-}
-
-function getPublicPassportUrl(req, vehicleId) {
-  const baseUrl = process.env.FRONTEND_URL || 'https://www.driveportz.com';
-  return `${baseUrl.replace(/\/$/, '')}/passport/${vehicleId}`;
-}
-
-const getPassportHandler = async (req, res) => {
-  const { vehicleId } = req.params;
-  const db = getDb();
-
-  if (!vehicleId || !vehicleId.trim()) {
-    return res.status(400).json({ msg: 'Vehicle ID is required' });
-  }
-
-  const cleanId = String(vehicleId).trim();
-  const objId = safeObjectId(cleanId);
-
-  try {
-    // Flexible query: match ObjectId, string _id, custom id, or passportId
-    const queryConditions = [
-      { _id: cleanId },
-      { id: cleanId },
-      { passportId: cleanId }
-    ];
-    if (objId) {
-      queryConditions.unshift({ _id: objId });
-    }
-
-    const vehicle = await db.collection('vehicles').findOne({
-      $or: queryConditions,
-      isArchived: { $ne: true }
-    });
-
-    if (!vehicle) {
-      return res.status(404).json({ msg: 'Vehicle passport not found or vehicle is archived' });
-    }
-
-    const actualVehicleId = String(vehicle._id);
-
-    // Fetch associated service records, sorting latest first
-    const services = await db.collection('services')
-      .find({
-        $or: [
-          { vehicleId: actualVehicleId },
-          { vehicleId: cleanId },
-          ...(vehicle.id ? [{ vehicleId: String(vehicle.id) }] : [])
-        ],
-        isArchived: { $ne: true }
-      })
-      .sort({ serviceDate: -1 })
-      .toArray();
-
-    // Always generate fresh QR Code with production URL https://www.driveportz.com/passport/:vehicleId
-    const passportUrl = getPublicPassportUrl(req, actualVehicleId);
-    let qrCodeUrl = null;
-    try {
-      qrCodeUrl = await generateQRCode(passportUrl);
-      // Persist the updated QR code with the production domain
-      await db.collection('vehicles').updateOne(
-        { _id: vehicle._id },
-        { $set: { qrCodeUrl } }
-      );
-    } catch (qrErr) {
-      console.error('Failed to generate or store QR code', qrErr);
-      qrCodeUrl = vehicle.qrCodeUrl || null;
-    }
-
-    // Calculate vehicle health
-    let healthScore = 100;
-    try {
-      const healthData = calculateHealthScore(vehicle, services);
-      healthScore = healthData.healthScore;
-    } catch (hErr) {
-      console.error('Failed to calculate vehicle health, defaulting to 100', hErr);
-    }
-
-    // Fetch current owner details (sanitized for public passport)
-    let ownerDetails = {
-      name: vehicle.ownerName || 'Verified Owner',
-      email: maskEmail(vehicle.email || ''),
-      phone: maskPhone(vehicle.phone || '')
-    };
-
-    if (vehicle.ownerId) {
-      try {
-        const ownerObjId = safeObjectId(vehicle.ownerId);
-        if (ownerObjId) {
-          const ownerUser = await db.collection('users').findOne({ _id: ownerObjId });
-          if (ownerUser) {
-            ownerDetails.name = ownerUser.name || ownerDetails.name;
-            ownerDetails.email = maskEmail(ownerUser.email || '');
-            ownerDetails.phone = maskPhone(ownerUser.phone || '');
-          }
-        }
-      } catch (userErr) {
-        console.error('Failed to look up owner details', userErr);
-      }
-    }
-
-    // Fetch ownership history
-    let ownershipHistory = [];
-    try {
-      ownershipHistory = await db.collection('ownershipHistory')
-        .find({
-          $or: [
-            { vehicleId: actualVehicleId },
-            { vehicleId: cleanId }
-          ]
-        })
-        .sort({ fromDate: 1 })
-        .toArray();
-    } catch (hErr) {
-      console.error('Failed to fetch ownership history', hErr);
-    }
-
-    if (ownershipHistory.length === 0) {
-      const fallbackFromDate = vehicle.purchaseDate
-        ? new Date(vehicle.purchaseDate).toISOString()
-        : vehicle.createdAt || new Date(2024, 0, 1).toISOString();
-      ownershipHistory.push({
-        vehicleId: actualVehicleId,
-        ownerId: vehicle.ownerId,
-        ownerName: vehicle.ownerName || 'Original Owner',
-        fromDate: fallbackFromDate,
-        toDate: null
-      });
-    }
-
-    // Extract parts replaced
-    const partsReplaced = [];
-    services.forEach(s => {
-      if (Array.isArray(s.partsReplaced)) {
-        s.partsReplaced.forEach(p => {
-          if (p.partName) {
-            partsReplaced.push({
-              partName: p.partName,
-              brand: p.brand || 'Genuine Part',
-              cost: p.cost || 0,
-              date: s.serviceDate,
-              garageName: s.garageName || 'Authorized Service Center'
-            });
-          }
-        });
-      }
-    });
-
-    const vehiclePhotos = await db.collection('media').find({
-      entityType: 'VEHICLE',
-      category: 'VEHICLE_PROFILE',
-      $or: [
-        { entityId: actualVehicleId },
-        { entityId: cleanId },
-        ...(vehicle.id ? [{ entityId: String(vehicle.id) }] : [])
-      ]
-    }).toArray();
-
-    return res.status(200).json({
-      vehicle: {
-        id: actualVehicleId,
-        vehicleNumber: vehicle.vehicleNumber,
-        brand: vehicle.brand,
-        model: vehicle.model,
-        variant: vehicle.variant,
-        year: vehicle.manufacturingYear || vehicle.year,
-        fuelType: vehicle.fuelType,
-        color: vehicle.color,
-        registrationDate: vehicle.registrationDate,
-        registeredRTO: vehicle.registeredRTO,
-        chassisNumber: vehicle.chassisNumber ? `${vehicle.chassisNumber.slice(0, 5)}...${vehicle.chassisNumber.slice(-4)}` : null,
-        engineNumber: vehicle.engineNumber ? `${vehicle.engineNumber.slice(0, 4)}...${vehicle.engineNumber.slice(-3)}` : null,
-        currentOdometerKm: vehicle.currentOdometerKm,
-        qrCodeUrl: qrCodeUrl || null
-      },
-      vehiclePhotos,
-      owner: ownerDetails,
-      healthScore,
-      services: services.map((s) => ({
-        id: String(s._id),
-        serviceDate: s.serviceDate,
-        garageName: s.garageName || 'Authorized Service Center',
-        serviceType: s.serviceType,
-        totalCost: s.totalCost || s.cost || 0,
-        verifiedService: s.verifiedService === true
-      })),
-      ownershipHistory: ownershipHistory.map(h => ({
-        id: String(h._id || ''),
-        ownerName: h.ownerName || 'Registered Owner',
-        fromDate: h.fromDate,
-        toDate: h.toDate
-      })),
-      partsReplaced
-    });
+    model = await getPassportService().getPdfModel(req.user, req.params.vehicleId);
   } catch (err) {
-    console.error('Error fetching vehicle passport details:', err);
-    return res.status(500).json({ msg: 'Server error fetching vehicle passport', error: String(err && err.message ? err.message : err) });
+    return sendMsgError(res, err, 'Server error generating PDF passport');
   }
-};
-
-// Route aliases for public access
-router.get('/:vehicleId', getPassportHandler);
-router.get('/public/:vehicleId', getPassportHandler);
-
-// GET /api/passport/pdf/:vehicleId
-router.get('/pdf/:vehicleId', async (req, res) => {
-  const { vehicleId } = req.params;
-  const db = getDb();
-
-  let vehicleObjectId;
   try {
-    vehicleObjectId = new ObjectId(vehicleId);
-  } catch (e) {
-    return res.status(400).json({ msg: 'Invalid vehicle ID' });
-  }
-
-  try {
-    const vehicle = await db.collection('vehicles').findOne({ _id: vehicleObjectId, isArchived: { $ne: true } });
-    if (!vehicle) {
-      return res.status(404).json({ msg: 'Vehicle not found' });
-    }
-
-    // Fetch associated service records, sorting latest first
-    const services = await db.collection('services')
-      .find({ vehicleId: String(vehicleId), isArchived: { $ne: true } })
-      .sort({ serviceDate: -1 })
-      .toArray();
-
-    // Fetch insurance records
-    const insuranceRecords = await db.collection('insurance')
-      .find({ vehicleId: String(vehicleId) })
-      .sort({ expiryDate: -1 })
-      .toArray();
-
-    // Fetch ownership history
-    let ownershipHistory = await db.collection('ownershipHistory')
-      .find({ vehicleId: String(vehicleId) })
-      .sort({ fromDate: 1 })
-      .toArray();
-
-    if (ownershipHistory.length === 0) {
-      const fallbackFromDate = vehicle.purchaseDate
-        ? new Date(vehicle.purchaseDate).toISOString()
-        : vehicle.createdAt || new Date(2024, 0, 1).toISOString();
-      ownershipHistory.push({
-        ownerName: vehicle.ownerName || 'Original Owner',
-        fromDate: fallbackFromDate,
-        toDate: null
-      });
-    }
-
-    // Extract parts replaced
-    const partsReplaced = [];
-    services.forEach(s => {
-      if (Array.isArray(s.partsReplaced)) {
-        s.partsReplaced.forEach(p => {
-          if (p.partName) {
-            partsReplaced.push({
-              partName: p.partName,
-              brand: p.brand || 'Unknown Brand',
-              cost: p.cost || 0,
-              date: s.serviceDate,
-              garageName: s.garageName || 'Unknown Garage'
-            });
-          }
-        });
-      }
-    });
-
-    // Calculate score
-    const healthResult = calculateHealthScore(vehicle, services);
-
-    // Fetch owner details
-    let ownerDetails = {
-      name: vehicle.ownerName || 'Unknown Owner',
-      email: '',
-      phone: vehicle.phone || ''
-    };
-    if (vehicle.ownerId) {
-      const ownerUser = await db.collection('users').findOne({ _id: new ObjectId(vehicle.ownerId) });
-      if (ownerUser) {
-        ownerDetails.name = ownerUser.name || ownerDetails.name;
-        ownerDetails.email = ownerUser.email || '';
-        ownerDetails.phone = ownerUser.phone || ownerDetails.phone;
-      }
-    }
-
-    // Initialize PDF Document
-    const doc = new PDFDocument({ margin: 50 });
-
-    // Set Response headers for PDF download
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=passport_${vehicle.vehicleNumber || 'vehicle'}.pdf`);
-
-    doc.pipe(res);
-
-    // Styling & Layout
-    const primaryColor = '#0d9488'; // Teal-600
-    const darkColor = '#0f172a'; // Slate-900
-
-    // Header Title
-    doc.fillColor(primaryColor).fontSize(24).font('Helvetica-Bold').text('Driveportz Passport', { align: 'center' });
-    doc.fillColor(darkColor).fontSize(10).font('Helvetica').text(`Generated on ${new Date().toLocaleDateString()} • Verified Driveportz Report`, { align: 'center', paragraphGap: 20 });
-
-    doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(50, doc.y).lineTo(562, doc.y).stroke();
-    doc.moveDown(1.5);
-
-    // Row 1: Vehicle Info & Owner Info
-    const startY = doc.y;
-    
-    // Left column: Vehicle Info
-    doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('Vehicle Information', 50, startY);
-    doc.fontSize(10).font('Helvetica').fillColor(darkColor);
-    doc.moveDown(0.5);
-    doc.text(`Vehicle Number: ${vehicle.vehicleNumber || 'N/A'}`, { font: 'Helvetica-Bold' });
-    doc.text(`Brand / Make: ${vehicle.brand || 'N/A'}`);
-    doc.text(`Model: ${vehicle.model || 'N/A'}`);
-    doc.text(`Variant: ${vehicle.variant || 'N/A'}`);
-    doc.text(`Manufacturing Year: ${vehicle.year || vehicle.manufacturingYear || 'N/A'}`);
-    doc.text(`Fuel Type: ${vehicle.fuelType || 'N/A'}`);
-    doc.text(`Odometer Overage: ${vehicle.currentOdometerKm?.toLocaleString() || 0} km`);
-    if (vehicle.chassisNumber) doc.text(`Chassis Number: ${vehicle.chassisNumber}`);
-    if (vehicle.engineNumber) doc.text(`Engine Number: ${vehicle.engineNumber}`);
-
-    // Right column: Owner & Health
-    const rightColX = 320;
-    doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('Current Owner', rightColX, startY);
-    doc.fontSize(10).font('Helvetica').fillColor(darkColor);
-    doc.moveDown(0.5);
-    doc.text(`Name: ${ownerDetails.name}`);
-    if (ownerDetails.email) doc.text(`Email: ${ownerDetails.email}`);
-    if (ownerDetails.phone) doc.text(`Phone: ${ownerDetails.phone}`);
-    
-    doc.moveDown(1.5);
-    doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('Vehicle IQ Score', rightColX);
-    doc.fontSize(10).font('Helvetica').fillColor(darkColor);
-    doc.moveDown(0.5);
-    doc.fontSize(18).font('Helvetica-Bold').fillColor(primaryColor).text(`${healthResult.healthScore} / 100`, { paragraphGap: 3 });
-    doc.fontSize(11).font('Helvetica-Bold').fillColor(
-      healthResult.healthScore >= 85 ? '#10b981' : // Green
-      healthResult.healthScore >= 70 ? '#3b82f6' : // Blue
-      healthResult.healthScore >= 50 ? '#f59e0b' : // Orange
-      '#ef4444' // Red
-    ).text(`${healthResult.conditionLevel} Condition`, { paragraphGap: 10 });
-
-    doc.moveDown(1);
-    
-    // Always generate fresh QR Code for PDF pointing to https://www.driveportz.com/passport/:vehicleId
-    try {
-      const pdfPassportUrl = getPublicPassportUrl(req, vehicleId);
-      const pdfQrDataUrl = await generateQRCode(pdfPassportUrl);
-      const base64Data = pdfQrDataUrl.replace(/^data:image\/png;base64,/, "");
-      const qrBuffer = Buffer.from(base64Data, 'base64');
-      doc.image(qrBuffer, rightColX, doc.y, { width: 90 });
-      doc.fillColor('#64748b').fontSize(8).font('Helvetica-Oblique').text('Scan to View Online Passport', rightColX + 3, doc.y + 95);
-    } catch (qrErr) {
-      console.error('Failed to embed QR code in PDF:', qrErr);
-    }
-
-    // Set Y position back down to clear columns
-    doc.y = Math.max(doc.y + 110, startY + 220);
-    doc.moveDown(1.5);
-
-    // Section: Insurance Records
-    doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('Insurance Coverages', 50);
-    doc.strokeColor('#e2e8f0').lineWidth(0.5).moveTo(50, doc.y + 3).lineTo(562, doc.y + 3).stroke();
-    doc.moveDown(0.8);
-    
-    if (insuranceRecords.length === 0) {
-      doc.fillColor('#64748b').fontSize(10).font('Helvetica-Oblique').text('No insurance policy history registered.', 50);
-      doc.moveDown(1);
-    } else {
-      doc.fontSize(9).font('Helvetica-Bold').fillColor(darkColor);
-      doc.text('Provider', 50, doc.y, { width: 150, continued: true });
-      doc.text('Policy Number', { width: 130, continued: true });
-      doc.text('Start Date', { width: 90, continued: true });
-      doc.text('Expiry Date', { width: 90, continued: true });
-      doc.text('Status', { width: 70 });
-      doc.font('Helvetica').moveDown(0.3);
-      
-      insuranceRecords.slice(0, 5).forEach(policy => {
-        const active = new Date(policy.expiryDate) >= new Date();
-        doc.text(policy.provider, 50, doc.y, { width: 150, continued: true });
-        doc.text(policy.policyNumber, { width: 130, continued: true });
-        doc.text(policy.startDate, { width: 90, continued: true });
-        doc.text(policy.expiryDate, { width: 90, continued: true });
-        doc.fillColor(active ? '#10b981' : '#ef4444').font('Helvetica-Bold').text(active ? 'Active' : 'Expired', { width: 70 });
-        doc.fillColor(darkColor).font('Helvetica').moveDown(0.2);
-      });
-      doc.moveDown(1);
-    }
-
-    // Section: Ownership Timeline
-    doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('Ownership History Logs', 50);
-    doc.strokeColor('#e2e8f0').lineWidth(0.5).moveTo(50, doc.y + 3).lineTo(562, doc.y + 3).stroke();
-    doc.moveDown(0.8);
-
-    ownershipHistory.forEach((h, index) => {
-      const from = new Date(h.fromDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-      const to = h.toDate ? new Date(h.toDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'Present';
-      doc.fontSize(10).fillColor(darkColor).font('Helvetica-Bold').text(`Owner #${index + 1}: ${h.ownerName}`, 50, doc.y, { continued: true });
-      doc.fillColor('#64748b').font('Helvetica').text(`   (Period: ${from} to ${to})`);
-      doc.moveDown(0.3);
-    });
-    doc.moveDown(1);
-
-    // Section: Replaced Components
-    doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('Parts Replaced Lifecycle', 50);
-    doc.strokeColor('#e2e8f0').lineWidth(0.5).moveTo(50, doc.y + 3).lineTo(562, doc.y + 3).stroke();
-    doc.moveDown(0.8);
-
-    if (partsReplaced.length === 0) {
-      doc.fillColor('#64748b').fontSize(10).font('Helvetica-Oblique').text('No consumable component replacements logged.', 50);
-      doc.moveDown(1);
-    } else {
-      doc.fontSize(9).font('Helvetica-Bold').fillColor(darkColor);
-      doc.text('Part Name', 50, doc.y, { width: 150, continued: true });
-      doc.text('Brand', { width: 120, continued: true });
-      doc.text('Replacement Date', { width: 110, continued: true });
-      doc.text('Cost', { width: 80, continued: true });
-      doc.text('Workshop', { width: 100 });
-      doc.font('Helvetica').moveDown(0.3);
-
-      partsReplaced.slice(0, 8).forEach(part => {
-        doc.text(part.partName, 50, doc.y, { width: 150, continued: true });
-        doc.text(part.brand, { width: 120, continued: true });
-        doc.text(part.date, { width: 110, continued: true });
-        doc.text(`₹${part.cost}`, { width: 80, continued: true });
-        doc.text(part.garageName, { width: 100 });
-        doc.moveDown(0.2);
-      });
-      doc.moveDown(1);
-    }
-
-    // Add a new page if service timeline is long
-    if (services.length > 0) {
-      doc.addPage();
-      doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('Verified Service Log History', 50, 50);
-      doc.strokeColor('#e2e8f0').lineWidth(0.5).moveTo(50, doc.y + 3).lineTo(562, doc.y + 3).stroke();
-      doc.moveDown(0.8);
-
-      services.slice(0, 15).forEach((s) => {
-        const date = new Date(s.serviceDate).toLocaleDateString();
-        doc.fontSize(10).fillColor(darkColor).font('Helvetica-Bold').text(`${date} - ${s.serviceType}`, 50, doc.y);
-        doc.fontSize(9).fillColor('#475569').font('Helvetica').text(`Workshop: ${s.garageName || 'Unknown Garage'} | Category: ${s.serviceCategory} | Total Cost: ₹${(s.totalCost || s.cost || 0).toLocaleString()}`);
-        if (s.verifiedService) {
-          doc.fillColor('#10b981').font('Helvetica-Bold').text('✔ Verified Maintenance Log');
-        }
-        doc.moveDown(0.5);
-      });
-    }
-
-    doc.end();
+    // Sanitised: a raw plate value with CR/LF or quotes used to make setHeader throw.
+    res.setHeader('Content-Disposition', `attachment; filename=passport_${safeFilePart(model.vehicle.vehicleNumber) || 'vehicle'}.pdf`);
+    return writePassportPdf(model, res);
   } catch (err) {
-    console.error('Error generating PDF passport:', err);
-    return res.status(500).json({ msg: 'Server error generating PDF passport', error: String(err && err.message ? err.message : err) });
+    console.error('Error rendering PDF passport:', err);
+    if (!res.headersSent) return res.status(500).json({ msg: 'Server error generating PDF passport' });
+    return res.destroy(err);
   }
 });
+
+// The owner (or an admin) sees full detail here; everyone else gets the public view.
+router.get('/:vehicleId', publicPassportLimiter, optionalAuth, passportHandler({ forcePublic: false }));
+// Always the buyer-facing view, even for the owner (lets an owner preview what buyers see).
+router.get('/public/:vehicleId', publicPassportLimiter, passportHandler({ forcePublic: true }));
 
 module.exports = router;

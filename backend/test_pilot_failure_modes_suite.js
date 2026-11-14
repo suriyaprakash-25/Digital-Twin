@@ -62,9 +62,10 @@ async function testInterruptedProductionUploadFailsClosed() {
     process.env.JWT_SECRET_KEY = 'pilot-production-secret-key-at-least-32-characters';
     process.env.MONGO_URI = 'mongodb://127.0.0.1:27017/driveportz_ci';
     process.env.FRONTEND_URL = 'https://www.driveportz.com';
-    process.env.RAZORPAY_KEY_ID = 'rzp_test_pilot_failure_modes';
-    process.env.RAZORPAY_KEY_SECRET = 'pilot_failure_mode_secret';
-    process.env.RAZORPAY_WEBHOOK_SECRET = 'pilot_failure_mode_webhook_secret';
+    // Payments run on Cashfree since the gateway migration; production validation requires its keys.
+    process.env.CASHFREE_APP_ID = 'cf_app_pilot_failure_modes_123456';
+    process.env.CASHFREE_SECRET_KEY = 'cfsk_pilot_failure_mode_secret_123456';
+    process.env.CASHFREE_WEBHOOK_SECRET = 'cf_webhook_pilot_failure_mode_secret';
     delete process.env.CLOUDINARY_CLOUD_NAME;
     delete process.env.CLOUDINARY_API_KEY;
     delete process.env.CLOUDINARY_API_SECRET;

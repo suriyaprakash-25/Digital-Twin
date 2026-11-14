@@ -1,7 +1,6 @@
-import { API_BASE_URL } from '../utils/config';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiUpload, getErrorMessage } from '../utils/api';
 import { Car, CheckCircle, Hash, Calendar, Fuel, FileText, User, Phone, IndianRupee, Activity, Tag, FileCheck, Layers, Image as ImageIcon } from 'lucide-react';
 import MediaManager from '../components/MediaManager';
 
@@ -33,25 +32,19 @@ const AddVehicle = () => {
         setIsLoading(true);
 
         try {
-            const token = localStorage.getItem('token');
             const submitData = new FormData();
             Object.keys(formData).forEach(key => submitData.append(key, formData[key]));
             if (rcBookFile) submitData.append('rcBook', rcBookFile);
             if (insuranceFile) submitData.append('insuranceDocument', insuranceFile);
 
-            const res = await axios.post(`${API_BASE_URL}/api/vehicles/add`, submitData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const data = await apiUpload('/vehicles/add', submitData);
 
             setStatus({ type: 'success', message: 'Vehicle added successfully!' });
-            setSuccessResult({ vehicleId: res.data.vehicleId });
+            setSuccessResult({ vehicleId: data.vehicleId });
         } catch (err) {
             setStatus({
                 type: 'error',
-                message: err.response?.data?.msg || 'Failed to add vehicle. Please try again.'
+                message: getErrorMessage(err, 'Failed to add vehicle. Please try again.')
             });
         } finally {
             setIsLoading(false);
@@ -60,13 +53,14 @@ const AddVehicle = () => {
 
     const renderInputGroup = (label, name, type = "text", icon = <Hash className="h-4 w-4 md:h-5 md:w-5" />, placeholder = "", options = null, extraProps = {}) => (
         <div className="space-y-1.5 pb-1 lg:pb-2">
-            <label className="text-xs md:text-sm font-bold text-slate-700">{label}</label>
+            <label htmlFor={`vehicle-${name}`} className="text-xs md:text-sm font-bold text-slate-700">{label}</label>
             <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-teal-500 transition-colors">
                     {icon}
                 </div>
                 {options ? (
                     <select
+                        id={`vehicle-${name}`}
                         name={name}
                         value={formData[name]}
                         onChange={handleChange}
@@ -77,6 +71,7 @@ const AddVehicle = () => {
                     </select>
                 ) : (
                     <input
+                        id={`vehicle-${name}`}
                         name={name}
                         type={type}
                         placeholder={placeholder}
@@ -140,7 +135,7 @@ const AddVehicle = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-8">
                 {status.message && (
-                    <div className={`p-3 md:p-4 rounded-xl flex items-center gap-3 text-xs md:text-sm font-semibold shadow-sm ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+                    <div role={status.type === 'error' ? 'alert' : 'status'} className={`p-3 md:p-4 rounded-xl flex items-center gap-3 text-xs md:text-sm font-semibold shadow-sm ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
                         }`}>
                         {status.type === 'success' && <CheckCircle className="h-4.5 w-4.5 md:h-5 md:w-5" />}
                         {status.message}
@@ -191,12 +186,13 @@ const AddVehicle = () => {
                             {renderInputGroup("Engine Number", "engineNumber", "text", <Hash className="h-4 w-4 md:h-5 md:w-5" />, "")}
 
                             <div className="space-y-1.5">
-                                <label className="text-xs md:text-sm font-bold text-slate-700">RC Book Document (Optional)</label>
+                                <label htmlFor="vehicle-rcBook" className="text-xs md:text-sm font-bold text-slate-700">RC Book Document (Optional)</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
                                         <FileText className="h-4 w-4 md:h-5 md:w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                                     </div>
                                     <input
+                                        id="vehicle-rcBook"
                                         name="rcBook"
                                         type="file"
                                         accept=".pdf,image/*"
@@ -207,12 +203,13 @@ const AddVehicle = () => {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs md:text-sm font-bold text-slate-700">Insurance Document (Optional)</label>
+                                <label htmlFor="vehicle-insuranceDocument" className="text-xs md:text-sm font-bold text-slate-700">Insurance Document (Optional)</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
                                         <FileText className="h-4 w-4 md:h-5 md:w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
                                     </div>
                                     <input
+                                        id="vehicle-insuranceDocument"
                                         name="insuranceDocument"
                                         type="file"
                                         accept=".pdf,image/*"

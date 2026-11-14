@@ -1,5 +1,9 @@
 const crypto = require('crypto');
-const axios = require('axios');
+const { createResilientClient } = require('../infrastructure/http/resilientHttp');
+const { PAYMENTS } = require('../core/constants');
+
+// Timeouts + circuit breaker for every Cashfree call (axios alone waits forever).
+const http = createResilientClient('cashfree', { timeoutMs: PAYMENTS.GATEWAY_TIMEOUT_MS });
 const { loadConfig } = require('../config');
 
 /**
@@ -73,7 +77,7 @@ async function createCashfreeOrder({ amountInRupees, orderId, customer = {}, met
     order_note: meta.note || 'DrivePortz Automotive Service Payment'
   };
 
-  const response = await axios.post(`${baseUrl}/orders`, payload, { headers });
+  const response = await http.post(`${baseUrl}/orders`, payload, { headers });
   return response.data; // includes cf_order_id, order_status, payment_session_id
 }
 
@@ -83,7 +87,7 @@ async function createCashfreeOrder({ amountInRupees, orderId, customer = {}, met
  */
 async function fetchCashfreeOrder(cfOrderId) {
   const { baseUrl, headers } = getCashfreeConfig();
-  const response = await axios.get(`${baseUrl}/orders/${encodeURIComponent(cfOrderId)}`, { headers });
+  const response = await http.get(`${baseUrl}/orders/${encodeURIComponent(cfOrderId)}`, { headers });
   return response.data;
 }
 
@@ -93,7 +97,7 @@ async function fetchCashfreeOrder(cfOrderId) {
  */
 async function fetchOrderPayments(cfOrderId) {
   const { baseUrl, headers } = getCashfreeConfig();
-  const response = await axios.get(`${baseUrl}/orders/${encodeURIComponent(cfOrderId)}/payments`, { headers });
+  const response = await http.get(`${baseUrl}/orders/${encodeURIComponent(cfOrderId)}/payments`, { headers });
   return response.data; // Array of payment objects
 }
 
@@ -108,8 +112,17 @@ async function fetchOrderPayments(cfOrderId) {
  * @param {string}        params.signature  - x-webhook-signature header value
  * @returns {boolean}
  */
+function isWebhookTimestampFresh(timestamp, now = Date.now()) {
+  const raw = Number(timestamp);
+  if (!Number.isFinite(raw) || raw <= 0) return false;
+  const ms = raw < 1e12 ? raw * 1000 : raw; // accept epoch seconds or milliseconds
+  return Math.abs(now - ms) <= PAYMENTS.WEBHOOK_MAX_SKEW_MS;
+}
+
 function verifyCashfreeWebhook({ rawBody, timestamp, signature }) {
   if (!rawBody || !timestamp || !signature) return false;
+  // Replay protection: a captured (validly signed) webhook cannot be re-sent days later.
+  if (!isWebhookTimestampFresh(timestamp)) return false;
 
   const { secretKey, webhookSecret } = getCashfreeConfig();
   const signingKey = webhookSecret || secretKey;
@@ -145,7 +158,7 @@ function verifyCashfreeWebhook({ rawBody, timestamp, signature }) {
  * @param {string} cfOrderId - Our internal order ID (equals Cashfree order_id)
  * @returns {{ verified: boolean, paymentId: string|null, method: string, status: string }}
  */
-async function verifyCashfreePayment(cfOrderId, maxRetries = 3, retryDelayMs = 800) {
+async function verifyCashfreePayment(cfOrderId, maxRetries = PAYMENTS.VERIFY_MAX_RETRIES, retryDelayMs = PAYMENTS.VERIFY_RETRY_DELAY_MS) {
   if (!cfOrderId) return { verified: false, paymentId: null, method: 'Unknown', status: 'FAILED' };
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -168,7 +181,7 @@ async function verifyCashfreePayment(cfOrderId, maxRetries = 3, retryDelayMs = 8
           // non-critical: proceed without payment method detail
         }
 
-        return { verified: true, paymentId, method, status: 'PAID' };
+        return { verified: true, paymentId, method, status: 'PAID', amountInRupees: Number(order.order_amount) };
       }
 
       // If order is permanently terminated or expired
@@ -215,7 +228,7 @@ async function createCashfreeRefund({ cfOrderId, refundId, amountInRupees, reaso
     refund_note:   String(reason).slice(0, 100)
   };
 
-  const response = await axios.post(
+  const response = await http.post(
     `${baseUrl}/orders/${encodeURIComponent(cfOrderId)}/refunds`,
     payload,
     { headers }
@@ -223,8 +236,19 @@ async function createCashfreeRefund({ cfOrderId, refundId, amountInRupees, reaso
   return response.data; // { refund_id, refund_status, refund_amount, ... }
 }
 
+/**
+ * Lists refunds for an order: GET /pg/orders/:orderId/refunds
+ */
+async function fetchOrderRefunds(cfOrderId) {
+  const { baseUrl, headers } = getCashfreeConfig();
+  const response = await http.get(`${baseUrl}/orders/${encodeURIComponent(cfOrderId)}/refunds`, { headers });
+  return Array.isArray(response.data) ? response.data : [];
+}
+
 module.exports = {
   getCashfreeConfig,
+  fetchOrderRefunds,
+  isWebhookTimestampFresh,
   createCashfreeOrder,
   fetchCashfreeOrder,
   fetchOrderPayments,

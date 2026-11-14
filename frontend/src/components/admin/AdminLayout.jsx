@@ -1,14 +1,18 @@
 import { Outlet } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import SkipLink from '../common/SkipLink';
+import PageLoader from '../common/PageLoader';
+import { useAuth } from '../../context/authContextCore';
 import AdminSidebar from './AdminSidebar';
 import { Menu, LogOut } from 'lucide-react';
 import NotificationBell from '../notifications/NotificationBell';
 
 const AdminLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { logout } = useAuth();
 
-    const handleLogout = () => {
-        localStorage.clear();
+    const handleLogout = async () => {
+        await logout();
         window.location.replace('/');
     };
 
@@ -22,6 +26,7 @@ const AdminLayout = () => {
 
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+            <SkipLink />
             <AdminSidebar
                 onLogout={handleLogout}
                 isOpen={sidebarOpen}
@@ -60,8 +65,10 @@ const AdminLayout = () => {
                     </div>
                 </div>
 
-                <main className="flex-1 overflow-y-auto w-full z-10 p-4 sm:p-6 lg:p-8">
-                    <Outlet />
+                <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto w-full z-10 p-4 sm:p-6 lg:p-8 focus:outline-none">
+                    <Suspense fallback={<PageLoader />}>
+                        <Outlet />
+                    </Suspense>
                 </main>
             </div>
         </div>

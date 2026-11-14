@@ -1,16 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope, ClipboardList, HelpCircle, Headphones, Info, Star, CreditCard, Percent, Receipt, AlertTriangle, FileSpreadsheet, DollarSign } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Car, Wrench, LogOut, PieChart, Store, Building2, UserCircle2, X, Stethoscope, ClipboardList, HelpCircle, Headphones, Star, CreditCard, Percent, Receipt, AlertTriangle, FileSpreadsheet, Landmark, Scale } from 'lucide-react';
 import { FEATURES } from '../config/features';
-
-import { normalizeRole } from '../utils/roles';
+import { useAuth } from '../context/authContextCore';
 
 
 const Sidebar = ({ onLogout, isOpen, onClose }) => {
     const location = useLocation();
 
-    const userRaw = localStorage.getItem('user');
-    const user = userRaw ? JSON.parse(userRaw) : null;
-    const role = normalizeRole(user?.role);
+    const { role } = useAuth();
 
     const dashboardHref = role === 'GARAGE' ? '/garage-dashboard' : '/user-dashboard';
 
@@ -22,6 +19,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         { name: 'Add Vehicle', href: '/add-vehicle', icon: PlusCircle },
         { name: 'My Vehicles', href: '/my-vehicles', icon: Car },
         { name: 'Payment Center', href: '/payments', icon: CreditCard },
+        { name: 'My Disputes', href: '/my-disputes', icon: AlertTriangle },
         { name: 'Analytics', href: '/analytics', icon: PieChart },
     ];
 
@@ -49,9 +47,11 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         {
             label: 'FINANCE',
             items: [
+                { name: 'Financial Center', href: '/garage/financial-center', icon: Landmark },
                 { name: 'Payments & Invoices', href: '/garage/payments', icon: CreditCard },
                 { name: 'Earnings', href: '/garage/earnings', icon: Percent },
-                { name: 'Settlement History', href: '/garage/settlements', icon: Receipt }
+                { name: 'Settlement History', href: '/garage/settlements', icon: Receipt },
+                { name: 'Tax & GST', href: '/garage/tax', icon: Scale }
             ]
         },
         {
@@ -119,7 +119,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                 </div>
 
                 {/* Navigation */}
-                <div className="flex-1 overflow-y-auto py-5 px-3.5 space-y-1">
+                <nav aria-label="Main navigation" className="flex-1 overflow-y-auto py-5 px-3.5 space-y-1">
                     {role === 'GARAGE' ? (
                         garageSections.map((section, idx) => (
                             <div key={section.label} className={idx > 0 ? 'pt-3 mt-3 border-t border-slate-100' : ''}>
@@ -136,6 +136,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                                                 key={item.name}
                                                 to={item.href}
                                                 onClick={handleNavClick}
+                                                aria-current={isActive ? 'page' : undefined}
                                                 className={`group flex items-center px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 ${
                                                     isActive
                                                         ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-100/50'
@@ -167,6 +168,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                                     key={item.name}
                                     to={item.href}
                                     onClick={handleNavClick}
+                                    aria-current={isActive ? 'page' : undefined}
                                     className={`group flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
                                         isActive
                                             ? 'bg-teal-50 text-teal-700 shadow-sm shadow-teal-100/50'
@@ -186,7 +188,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                             );
                         })
                     )}
-                </div>
+                </nav>
 
                 {/* Secondary items (Help, Support, Version) */}
                 <div className="p-4 border-t border-slate-100 bg-slate-50/30 space-y-1">
