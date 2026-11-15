@@ -4,8 +4,6 @@ backend/venv/
 *.pyc
 backend/uploads/
 # Environment variables
-.env
-.env.*
 !.env.example
 backend/.env
 backend/.env.*
@@ -22,3 +20,4 @@ backend/garage-platform-cc42d-firebase-adminsdk-fbsvc-fbfa40d04a.json
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
+config.bat
