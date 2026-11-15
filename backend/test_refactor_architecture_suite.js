@@ -35,7 +35,7 @@ function tokenFor(user) {
 
 async function unitTests() {
   console.log('\n— Unit: core abstractions (no database) —');
-  const { MemoryCacheProvider } = require('./src/infrastructure/cache/cache');
+  const { MemoryCacheProvider, RedisCacheProvider, createCacheProvider } = require('./src/infrastructure/cache/cache');
   const { CircuitBreaker, BREAKER_STATE } = require('./src/infrastructure/http/resilientHttp');
   const { parsePagination } = require('./src/core/pagination');
   const { escapeRegex, safeSearchRegex, asString } = require('./src/core/text');
@@ -65,6 +65,135 @@ async function unitTests() {
     const hit = await cache.get('k');
     hit.x = 99;
     assert.deepStrictEqual(await cache.get('k'), { x: 1 }, 'cached values are isolated from caller mutation');
+  });
+
+  await test('RedisCacheProvider: get/set/del, prefix invalidation and wrap with fake Redis client', async () => {
+    const redisStore = new Map();
+    const fakeRedis = {
+      async get(key) { return redisStore.get(key) || null; },
+      async set(key, val, mode, ttl) { redisStore.set(key, val); },
+      async del(...keys) {
+        let count = 0;
+        keys.forEach((k) => { if (redisStore.delete(k)) count++; });
+        return count;
+      },
+      async keys(pattern) {
+        const prefix = pattern.replace(/\*$/, '');
+        return [...redisStore.keys()].filter((k) => k.startsWith(prefix));
+      },
+    };
+
+    const redisCache = new RedisCacheProvider({ client: fakeRedis, prefix: 'test:' });
+    await redisCache.set('user:1', { name: 'Alice' }, 1000);
+    assert.deepStrictEqual(await redisCache.get('user:1'), { name: 'Alice' });
+
+    let calls = 0;
+    const wrapped = await redisCache.wrap('user:1', 1000, async () => { calls++; return { name: 'Bob' }; });
+    assert.strictEqual(calls, 0, 'hit returned from cache');
+    assert.deepStrictEqual(wrapped, { name: 'Alice' });
+
+    await redisCache.set('user:2', { name: 'Bob' }, 1000);
+    await redisCache.set('order:1', { total: 50 }, 1000);
+    await redisCache.invalidatePrefix('user:');
+    assert.strictEqual(await redisCache.get('user:1'), undefined);
+    assert.strictEqual(await redisCache.get('user:2'), undefined);
+    assert.deepStrictEqual(await redisCache.get('order:1'), { total: 50 });
+
+    await redisCache.clear();
+    assert.strictEqual(await redisCache.get('order:1'), undefined);
+    assert.strictEqual(createCacheProvider('redis', { client: fakeRedis }) instanceof RedisCacheProvider, true);
+  });
+
+  await test('RedisCacheProvider: graceful fallback when client is null or throwing', async () => {
+    const brokenRedis = {
+      async get() { throw new Error('Redis connection refused'); },
+      async set() { throw new Error('Redis connection refused'); },
+      async del() { throw new Error('Redis connection refused'); },
+      async keys() { throw new Error('Redis connection refused'); },
+    };
+    const cache = new RedisCacheProvider({ client: brokenRedis });
+    assert.strictEqual(await cache.get('any'), undefined);
+    await assert.doesNotReject(cache.set('any', { a: 1 }));
+    await assert.doesNotReject(cache.delete('any'));
+    await assert.doesNotReject(cache.invalidatePrefix('pre'));
+    assert.strictEqual(cache.getStats().errors > 0, true);
+  });
+
+  await test('ServiceRecordRepository: findHistoryPageForVehicle applies bounded pagination and total count', async () => {
+    const records = [
+      { _id: '1', vehicleId: 'v1', serviceDate: '2026-11-03', serviceType: 'Wash' },
+      { _id: '2', vehicleId: 'v1', serviceDate: '2026-11-02', serviceType: 'Oil' },
+      { _id: '3', vehicleId: 'v1', serviceDate: '2026-11-01', serviceType: 'Tire' },
+    ];
+    function makeCursor(items) {
+      let skipN = 0;
+      let limitN = items.length;
+      const c = {
+        sort() { return c; },
+        skip(s) { skipN = s; return c; },
+        limit(l) { limitN = l; return c; },
+        async toArray() { return items.slice(skipN, skipN + limitN); },
+      };
+      return c;
+    }
+    const fakeCol = {
+      find() { return makeCursor(records); },
+      async countDocuments() { return records.length; },
+    };
+    const fakeDb = { collection: () => fakeCol };
+    const { ServiceRecordRepository } = require('./src/repositories/ServiceRecordRepository');
+    const repo = new ServiceRecordRepository(fakeDb);
+    const p1 = await repo.findHistoryPageForVehicle('v1', { skip: 0, limit: 2, page: 1 });
+    assert.strictEqual(p1.items.length, 2);
+    assert.strictEqual(p1.total, 3);
+    assert.strictEqual(p1.page, 1);
+    assert.strictEqual(p1.limit, 2);
+  });
+
+  await test('Settlement & Forecast services route through repositories', async () => {
+    const { checkSettlementEligibility } = require('./src/services/settlementEligibilityService');
+    const { getGarageSettlementForecast, getTreasuryForecast } = require('./src/services/settlementForecastService');
+
+    const mockDb = {
+      collection: () => ({
+        findOne: async () => ({ _id: 'g1', ownerUserId: 'u1' }),
+        find: () => ({ toArray: async () => [] }),
+      }),
+    };
+
+    const fakeRepos = {
+      garages: { findById: async () => ({ _id: 'g1', name: 'Test Garage', isActive: true, isSuspended: false }), db: mockDb },
+      users: { findById: async () => null, db: mockDb },
+      payoutProfiles: { findForGarage: async () => ({ bankAccountLast4: '1234', isVerified: true }), db: mockDb },
+      settlements: {
+        findActiveHold: async () => null,
+        findAllActiveHolds: async () => [],
+        findSchedule: async () => ({ nextRunAt: new Date() }),
+        findActiveSettlement: async () => null,
+        findPending: async () => [],
+        findPendingForGarage: async () => [],
+        findSettledSince: async () => [],
+        findPastSettledForGarage: async () => [],
+        count: async () => 0,
+        db: mockDb,
+      },
+      earnings: {
+        findAvailableForGarage: async () => [{ garageNetPaise: 200000 }],
+        findAllAvailable: async () => [{ garageNetPaise: 500000 }],
+        db: mockDb,
+      },
+    };
+
+    const elig = await checkSettlementEligibility('g1', 1000, null, fakeRepos);
+    assert.strictEqual(elig.eligible, true);
+    assert.strictEqual(elig.availablePaise, 200000);
+
+    const forecast = await getGarageSettlementForecast('g1', null, fakeRepos);
+    assert.strictEqual(forecast.availablePaise, 200000);
+    assert.strictEqual(forecast.currentAvailableBalance, 2000);
+
+    const treasury = await getTreasuryForecast(null, fakeRepos);
+    assert.strictEqual(treasury.currentAvailablePaise, 500000);
   });
 
   await test('Circuit breaker: opens after threshold, half-opens after timeout, closes on success', async () => {

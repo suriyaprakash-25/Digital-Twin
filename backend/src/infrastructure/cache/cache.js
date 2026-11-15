@@ -74,7 +74,120 @@ class MemoryCacheProvider extends CacheProvider {
 
   async clear() { this.store.clear(); }
 
-  getStats() { return { ...this.stats, size: this.store.size }; }
+  getStats() { return { ...this.stats, size: this.store.size, kind: 'memory' }; }
+}
+
+class RedisCacheProvider extends CacheProvider {
+  /**
+   * @param {{ client?: any, redisUrl?: string, prefix?: string, defaultTtlMs?: number }} [options]
+   */
+  constructor({ client, redisUrl = process.env.REDIS_URL, prefix = 'dp:cache:', defaultTtlMs = CACHE.DEFAULT_TTL_MS } = {}) {
+    super();
+    this.prefix = prefix;
+    this.defaultTtlMs = defaultTtlMs;
+    this.client = client || null;
+    this.redisUrl = redisUrl;
+    this.stats = { hits: 0, misses: 0, errors: 0 };
+    if (!this.client && (redisUrl || process.env.REDIS_URL)) {
+      this._initClient(redisUrl || process.env.REDIS_URL);
+    }
+  }
+
+  _initClient(url) {
+    try {
+      const Redis = require('ioredis');
+      this.client = new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 1 });
+    } catch {
+      try {
+        const { createClient } = require('redis');
+        this.client = createClient({ url });
+        if (typeof this.client.connect === 'function') {
+          this.client.connect().catch(() => {});
+        }
+      } catch {
+        // Driver not available or failed initialization; client remains null and falls back safely
+      }
+    }
+  }
+
+  _key(key) {
+    return `${this.prefix}${key}`;
+  }
+
+  async get(key) {
+    if (!this.client) {
+      this.stats.misses += 1;
+      return undefined;
+    }
+    try {
+      const raw = await this.client.get(this._key(key));
+      if (!raw) {
+        this.stats.misses += 1;
+        return undefined;
+      }
+      this.stats.hits += 1;
+      return JSON.parse(raw);
+    } catch (err) {
+      this.stats.errors += 1;
+      return undefined;
+    }
+  }
+
+  async set(key, value, ttlMs = this.defaultTtlMs) {
+    if (!this.client) return;
+    try {
+      const serialized = JSON.stringify(value);
+      const k = this._key(key);
+      if (typeof this.client.set === 'function') {
+        if (ttlMs) {
+          // Standard ioredis / node-redis PX option
+          await this.client.set(k, serialized, 'PX', ttlMs);
+        } else {
+          await this.client.set(k, serialized);
+        }
+      }
+    } catch (err) {
+      this.stats.errors += 1;
+    }
+  }
+
+  async delete(key) {
+    if (!this.client) return;
+    try {
+      await this.client.del(this._key(key));
+    } catch (err) {
+      this.stats.errors += 1;
+    }
+  }
+
+  async invalidatePrefix(prefix) {
+    if (!this.client) return;
+    try {
+      const pattern = `${this._key(prefix)}*`;
+      let keys = [];
+      if (typeof this.client.scanStream === 'function') {
+        const stream = this.client.scanStream({ match: pattern, count: 100 });
+        for await (const chunk of stream) {
+          if (chunk && chunk.length) keys.push(...chunk);
+        }
+      } else if (typeof this.client.keys === 'function') {
+        keys = await this.client.keys(pattern);
+      }
+      if (keys.length && typeof this.client.del === 'function') {
+        await this.client.del(...keys);
+      }
+    } catch (err) {
+      this.stats.errors += 1;
+    }
+  }
+
+  async clear() {
+    return this.invalidatePrefix('');
+  }
+
+  getStats() {
+    return { ...this.stats, kind: 'redis' };
+  }
 }
 
 /**
@@ -92,11 +205,13 @@ function invalidateCacheOnWrite(...prefixes) {
   };
 }
 
-function createCacheProvider(kind = process.env.CACHE_PROVIDER || 'memory') {
+function createCacheProvider(kind = process.env.CACHE_PROVIDER || 'memory', options = {}) {
   switch (String(kind).toLowerCase()) {
+    case 'redis':
+      return new RedisCacheProvider(options);
     case 'memory':
     default:
-      return new MemoryCacheProvider();
+      return new MemoryCacheProvider(options);
   }
 }
 
@@ -114,4 +229,13 @@ const CACHE_KEYS = Object.freeze({
   KNOWLEDGE_BASE: 'kb:',
 });
 
-module.exports = { CacheProvider, MemoryCacheProvider, createCacheProvider, getCache, setCache, invalidateCacheOnWrite, CACHE_KEYS };
+module.exports = {
+  CacheProvider,
+  MemoryCacheProvider,
+  RedisCacheProvider,
+  createCacheProvider,
+  getCache,
+  setCache,
+  invalidateCacheOnWrite,
+  CACHE_KEYS,
+};

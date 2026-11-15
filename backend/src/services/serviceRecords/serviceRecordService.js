@@ -136,14 +136,29 @@ function createServiceRecordService({ repos, accessPolicy, now = () => new Date(
     };
   }
 
-  async function getVehicleHistory(user, vehicleId) {
+  async function getVehicleHistory(user, vehicleId, query = {}) {
     const vehicle = await repos.vehicles.findActiveById(vehicleId);
     if (!vehicle) throw new NotFoundError('Vehicle not found');
     if (!(await accessPolicy.canAccessVehicle(user, vehicle))) {
       throw new ForbiddenError('Unauthorized to view service history for this vehicle');
     }
-    const records = await repos.serviceRecords.findHistoryForVehicle(vehicleId);
-    return records.map(toHistoryView);
+    const page = parsePagination(query, { defaultLimit: 50, maxLimit: 100 });
+    let items = [];
+    let total = 0;
+    if (typeof repos.serviceRecords.findHistoryPageForVehicle === 'function') {
+      const paged = await repos.serviceRecords.findHistoryPageForVehicle(vehicleId, page);
+      items = paged.items;
+      total = paged.total;
+    } else {
+      const all = await repos.serviceRecords.findHistoryForVehicle(vehicleId);
+      total = all.length;
+      items = all.slice(page.skip, page.skip + page.limit);
+    }
+    const records = items.map(toHistoryView);
+    return {
+      records,
+      pagination: { total, page: page.page, limit: page.limit },
+    };
   }
 
   async function deleteRecord(user, serviceId) {

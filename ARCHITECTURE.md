@@ -200,11 +200,16 @@ Other settings:
 - The SPA entry chunk is 193 kB, down from 2,119 kB.
 - `requireAuth` reads the user through a 30-second read-through cache, removing the hottest query. Code paths that change a user's role, `tokenVersion` or disabled flag call `invalidateAuthUser`; other instances converge within the TTL.
 
+**Fixed in the fourth pass (November 2026)**
+
+- `settlementEligibilityService` and `settlementForecastService` now route all queries through `SettlementRepository` and `EarningsRepository` with zero direct collection calls.
+- Vehicle service history (`GET /api/services/:vehicle_id`) now enforces cursor and header-based pagination using the standard `X-Total-Count`, `X-Page`, `X-Limit`, and `X-Total-Pages` response headers.
+- `RedisCacheProvider` implements the `CacheProvider` interface in `infrastructure/cache/cache.js`, enabling distributed multi-instance cache invalidation and graceful fallback.
+
 **Known and next**
 
-1. Some older services still query collections directly rather than through repositories: `settlementEligibilityService`, `earningsService` and `settlementForecastService` (which also scans in memory). The routes layer is down to 115 direct calls from 295; `payments.js` passes collections into payment services.
-2. Vehicle service history and the per-user admin detail are bounded but not yet paginated.
-3. The `vendor-three` chunk (688 kB) loads only with the landing-page hero.
+1. The `vendor-three` chunk (688 kB) loads only with the landing-page hero.
+2. Per-user admin detail listing can receive cursor pagination as account volumes reach 100k+.
 
 ## 12. Trade-offs
 

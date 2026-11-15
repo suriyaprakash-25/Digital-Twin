@@ -59,8 +59,11 @@ router.get('/completion-details', requireAuth, async (req, res) => {
 
 router.get('/:vehicle_id', requireAuth, async (req, res) => {
   try {
-    const history = await getServiceRecordModule().records.getVehicleHistory(req.user, req.params.vehicle_id);
-    return res.status(200).json(history);
+    const result = await getServiceRecordModule().records.getVehicleHistory(req.user, req.params.vehicle_id, req.query);
+    const records = Array.isArray(result) ? result : (result && result.records ? result.records : []);
+    const pagination = result && result.pagination ? result.pagination : { total: records.length, page: 1, limit: records.length };
+    setPaginationHeaders(res, pagination);
+    return res.status(200).json(records);
   } catch (err) {
     return sendMsgError(res, err, 'Error fetching service history');
   }

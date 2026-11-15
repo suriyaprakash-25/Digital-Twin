@@ -114,6 +114,27 @@ class ServiceRecordRepository extends BaseRepository {
     );
   }
 
+  /**
+   * Active records for a vehicle with pagination metadata (X-Total-Count header pattern).
+   * @param {string} vehicleId
+   * @param {{ skip: number, limit: number, page: number }} page
+   * @returns {Promise<{ items: object[], total: number, page: number, limit: number }>}
+   */
+  findHistoryPageForVehicle(vehicleId, page = { skip: 0, limit: 50, page: 1 }) {
+    const objectId = toObjectId(vehicleId);
+    const id = String(vehicleId);
+    const filter = {
+      $or: [
+        ...(objectId ? [{ vehicleId: objectId }, { vehicleId: String(objectId) }] : []),
+        { vehicleId: id },
+        { vehicle_id: id },
+        { 'vehicle.id': id },
+      ],
+      ...NOT_ARCHIVED,
+    };
+    return this.findPage(filter, page, { sort: { serviceDate: -1, createdAt: -1 } });
+  }
+
   deleteById(serviceObjectId) {
     return this.collection.deleteOne({ _id: serviceObjectId });
   }

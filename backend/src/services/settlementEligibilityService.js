@@ -1,7 +1,7 @@
-const { ObjectId } = require('mongodb');
-const { getDb } = require('../db');
 const { SETTLEMENT_STATUS } = require('./settlementStateMachine');
 const { loadConfig } = require('../config');
+const { createRepositories } = require('../repositories');
+const { resolveGarageIds } = require('../utils/garageResolver');
 
 const ELIGIBILITY_REASON = {
   GARAGE_NOT_FOUND: 'GARAGE_NOT_FOUND',
@@ -18,38 +18,25 @@ const ELIGIBILITY_REASON = {
   RECONCILIATION_HOLD: 'RECONCILIATION_HOLD'
 };
 
-function safeObjectId(id) {
-  try { return new ObjectId(String(id)); } catch { return null; }
-}
-
 /**
  * Deterministically checks whether a garage is eligible for a settlement payout
+ * Routed completely through repositories (SettlementRepository, EarningsRepository, PayoutProfileRepository, GarageRepository, UserRepository)
  * @param {string} garageId
  * @param {number} [amount] - In Rupees
  * @param {Object} [dbInstance]
+ * @param {Object} [injectedRepos]
  * @returns {Promise<Object>} Eligibility evaluation
  */
-async function checkSettlementEligibility(garageId, amount, dbInstance) {
-  const db = dbInstance || getDb();
-  const garages = db.collection('garages');
-  const users = db.collection('users');
-  const payoutProfiles = db.collection('garage_payout_profiles');
-  const settlements = db.collection('settlements');
-  const holds = db.collection('settlement_holds');
-  const earnings = db.collection('garage_earnings');
+async function checkSettlementEligibility(garageId, amount, dbInstance, injectedRepos) {
+  const repos = injectedRepos || createRepositories(dbInstance);
 
   const config = loadConfig();
   const minSettlementRupees = parseFloat(process.env.MIN_SETTLEMENT_AMOUNT) || 500;
   const minSettlementPaise = Math.round(minSettlementRupees * 100);
 
   // 1. Garage Exists
-  const gId = safeObjectId(garageId);
-  const searchCriteria = gId
-    ? { $or: [{ _id: gId }, { _id: String(garageId) }, { id: String(garageId) }] }
-    : { $or: [{ _id: String(garageId) }, { id: String(garageId) }] };
-
-  const garageDoc = await garages.findOne(searchCriteria);
-  const userDoc = await users.findOne(searchCriteria);
+  const garageDoc = await repos.garages.findById(garageId);
+  const userDoc = await repos.users.findById(garageId);
 
   if (!garageDoc && !userDoc) {
     return {
@@ -79,11 +66,11 @@ async function checkSettlementEligibility(garageId, amount, dbInstance) {
     };
   }
 
-  const { resolveGarageIds } = require('../utils/garageResolver');
+  const db = dbInstance || repos.garages.db;
   const garageIds = await resolveGarageIds(garageId, db);
 
   // 4. Payout Profile Check
-  const payoutProfile = await payoutProfiles.findOne({ garageId: { $in: garageIds } });
+  const payoutProfile = await repos.payoutProfiles.findForGarage(garageIds);
   if (!payoutProfile || !payoutProfile.bankAccountLast4) {
     return {
       eligible: false,
@@ -102,7 +89,7 @@ async function checkSettlementEligibility(garageId, amount, dbInstance) {
   }
 
   // 6. Active Holds Check
-  const activeHold = await holds.findOne({ garageId: { $in: garageIds }, active: true });
+  const activeHold = await repos.settlements.findActiveHold(garageIds);
   if (activeHold) {
     return {
       eligible: false,
@@ -112,18 +99,13 @@ async function checkSettlementEligibility(garageId, amount, dbInstance) {
   }
 
   // 7. Active Processing Settlement Check
-  const activeSettlement = await settlements.findOne({
-    garageId: { $in: garageIds },
-    status: {
-      $in: [
-        SETTLEMENT_STATUS.REQUESTED,
-        SETTLEMENT_STATUS.UNDER_REVIEW,
-        SETTLEMENT_STATUS.APPROVED,
-        SETTLEMENT_STATUS.PROCESSING,
-        SETTLEMENT_STATUS.RETRY_PENDING
-      ]
-    }
-  });
+  const activeSettlement = await repos.settlements.findActiveSettlement(garageIds, [
+    SETTLEMENT_STATUS.REQUESTED,
+    SETTLEMENT_STATUS.UNDER_REVIEW,
+    SETTLEMENT_STATUS.APPROVED,
+    SETTLEMENT_STATUS.PROCESSING,
+    SETTLEMENT_STATUS.RETRY_PENDING
+  ]);
 
   if (activeSettlement) {
     return {
@@ -134,12 +116,7 @@ async function checkSettlementEligibility(garageId, amount, dbInstance) {
   }
 
   // 8. Calculate Authoritative Available Balance in Integer Paise
-  const availableEarningsDocs = await earnings
-    .find({
-      garageId: { $in: garageIds },
-      status: { $in: ['AVAILABLE', 'REFUND_ADJUSTMENT'] }
-    })
-    .toArray();
+  const availableEarningsDocs = await repos.earnings.findAvailableForGarage(garageIds);
 
   let availablePaise = 0;
   availableEarningsDocs.forEach(e => {

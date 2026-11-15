@@ -99,6 +99,14 @@ class EarningsRepository extends BaseRepository {
     );
   }
 
+  /** All withdrawable earnings across the entire platform. */
+  findAllAvailable() {
+    return this.find(
+      { status: { $in: AVAILABLE_EARNINGS_STATUSES } },
+      { projection: { status: 1, netAfterRefundPaise: 1, netAfterRefund: 1, garageNetPaise: 1, garageNetAmount: 1, createdAt: 1 } },
+    );
+  }
+
   /**
    * Compare-and-swap lock of earnings into a settlement: only rows that are still available move.
    * @returns {Promise<number>} how many rows this call locked

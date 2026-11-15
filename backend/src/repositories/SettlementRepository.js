@@ -72,6 +72,87 @@ class SettlementRepository extends BaseRepository {
     return this.db.collection(REQUEST_LOCK_COLLECTION);
   }
 
+  get holdsCollection() {
+    return this.db.collection('settlement_holds');
+  }
+
+  get schedulesCollection() {
+    return this.db.collection('settlement_schedules');
+  }
+
+  /**
+   * Find an active hold on a garage partner.
+   */
+  findActiveHold(garageIds) {
+    const list = Array.isArray(garageIds) ? garageIds : [garageIds];
+    return this.holdsCollection.findOne({ garageId: { $in: list }, active: true });
+  }
+
+  /**
+   * All active holds currently placed across the platform.
+   */
+  findAllActiveHolds() {
+    return this.holdsCollection.find({ active: true }).toArray();
+  }
+
+  /**
+   * Find the payout schedule configuration for a garage partner.
+   */
+  findSchedule(garageIds) {
+    const list = Array.isArray(garageIds) ? garageIds : [garageIds];
+    return this.schedulesCollection.findOne({ garageId: { $in: list } });
+  }
+
+  /**
+   * Find any active settlement in progress for a garage.
+   */
+  findActiveSettlement(garageIds, statuses = SETTLEMENT_STATUS_GROUPS.PENDING) {
+    const list = Array.isArray(garageIds) ? garageIds : [garageIds];
+    return this.findOne({
+      garageId: { $in: list },
+      status: { $in: statuses },
+    });
+  }
+
+  /**
+   * Find settlements matching pending status groups across the platform.
+   */
+  findPending(statuses = SETTLEMENT_STATUS_GROUPS.PENDING) {
+    return this.find({ status: { $in: statuses } });
+  }
+
+  /**
+   * Find pending settlements for a specific garage.
+   */
+  findPendingForGarage(garageIds, statuses = SETTLEMENT_STATUS_GROUPS.PENDING) {
+    const list = Array.isArray(garageIds) ? garageIds : [garageIds];
+    return this.find({
+      garageId: { $in: list },
+      status: { $in: statuses },
+    });
+  }
+
+  /**
+   * Find settled settlements completed since a given date.
+   */
+  findSettledSince(sinceDate, statuses = SETTLEMENT_STATUS_GROUPS.SETTLED) {
+    return this.find({
+      status: { $in: statuses },
+      createdAt: { $gte: sinceDate },
+    });
+  }
+
+  /**
+   * Find past settled payouts for a garage, newest first.
+   */
+  findPastSettledForGarage(garageIds, limit = 10, statuses = SETTLEMENT_STATUS_GROUPS.SETTLED) {
+    const list = Array.isArray(garageIds) ? garageIds : [garageIds];
+    return this.find(
+      { garageId: { $in: list }, status: { $in: statuses } },
+      { sort: { createdAt: -1 }, limit },
+    );
+  }
+
   /**
    * Per-garage mutex for settlement requests, enforced by the unique _id of the lock document
    * (a unique constraint, not a read-then-write check). Expired locks are reclaimed first.

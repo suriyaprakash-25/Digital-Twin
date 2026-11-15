@@ -1,27 +1,21 @@
-const { ObjectId } = require('mongodb');
-const { getDb } = require('../db');
 const { SETTLEMENT_STATUS } = require('./settlementStateMachine');
-
-function safeObjectId(id) {
-  try { return new ObjectId(String(id)); } catch { return null; }
-}
+const { SETTLEMENT_STATUS_GROUPS } = require('../repositories/SettlementRepository');
+const { createRepositories } = require('../repositories');
+const { resolveGarageIds } = require('../utils/garageResolver');
 
 /**
  * Calculates platform-wide treasury forecasting in integer paise
+ * Routed completely through repositories (SettlementRepository, EarningsRepository)
  * @param {Object} [dbInstance]
+ * @param {Object} [injectedRepos]
  * @returns {Promise<Object>}
  */
-async function getTreasuryForecast(dbInstance) {
-  const db = dbInstance || getDb();
-  const earnings = db.collection('garage_earnings');
-  const settlements = db.collection('settlements');
-  const holds = db.collection('settlement_holds');
+async function getTreasuryForecast(dbInstance, injectedRepos) {
+  const repos = injectedRepos || createRepositories(dbInstance);
   const now = new Date();
 
   // 1. Current Available Garage Balances in Integer Paise
-  const availableEarningsDocs = await earnings
-    .find({ status: { $in: ['AVAILABLE', 'REFUND_ADJUSTMENT'] } })
-    .toArray();
+  const availableEarningsDocs = await repos.earnings.findAllAvailable();
 
   let availablePaise = 0;
   availableEarningsDocs.forEach(e => {
@@ -32,19 +26,7 @@ async function getTreasuryForecast(dbInstance) {
   });
 
   // 2. Pending, Under Review, and Processing Settlements
-  const pendingSettlementsDocs = await settlements
-    .find({
-      status: {
-        $in: [
-          SETTLEMENT_STATUS.REQUESTED,
-          SETTLEMENT_STATUS.UNDER_REVIEW,
-          SETTLEMENT_STATUS.APPROVED,
-          SETTLEMENT_STATUS.PROCESSING,
-          SETTLEMENT_STATUS.RETRY_PENDING
-        ]
-      }
-    })
-    .toArray();
+  const pendingSettlementsDocs = await repos.settlements.findPending(SETTLEMENT_STATUS_GROUPS.PENDING);
 
   let pendingPaise = 0;
   let processingPaise = 0;
@@ -64,16 +46,11 @@ async function getTreasuryForecast(dbInstance) {
   });
 
   // 3. Locked Hold Funds
-  const activeHolds = await holds.find({ active: true }).toArray();
+  const activeHolds = await repos.settlements.findAllActiveHolds();
 
   // 4. Historical Payouts in last 30 days
   const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-  const past30SettledDocs = await settlements
-    .find({
-      status: { $in: [SETTLEMENT_STATUS.SETTLED, 'COMPLETED'] },
-      createdAt: { $gte: thirtyDaysAgo }
-    })
-    .toArray();
+  const past30SettledDocs = await repos.settlements.findSettledSince(thirtyDaysAgo);
 
   let past30TotalPaise = 0;
   past30SettledDocs.forEach(s => {
@@ -96,11 +73,11 @@ async function getTreasuryForecast(dbInstance) {
   const projected30DayPayoutPaise = dailyPayoutAveragePaise * 30;
 
   // Failure Rate Calculation
-  const totalCompletedOrFailed = await settlements.countDocuments({
+  const totalCompletedOrFailed = await repos.settlements.count({
     createdAt: { $gte: thirtyDaysAgo },
     status: { $in: [SETTLEMENT_STATUS.SETTLED, 'COMPLETED', SETTLEMENT_STATUS.FAILED, SETTLEMENT_STATUS.FAILED_PERMANENTLY] }
   });
-  const failedCount = await settlements.countDocuments({
+  const failedCount = await repos.settlements.count({
     createdAt: { $gte: thirtyDaysAgo },
     status: { $in: [SETTLEMENT_STATUS.FAILED, SETTLEMENT_STATUS.FAILED_PERMANENTLY] }
   });
@@ -134,28 +111,21 @@ async function getTreasuryForecast(dbInstance) {
 
 /**
  * Calculates garage-specific settlement forecast with strict isolation
+ * Routed completely through repositories (SettlementRepository, EarningsRepository)
  * @param {string} garageId
  * @param {Object} [dbInstance]
+ * @param {Object} [injectedRepos]
  * @returns {Promise<Object>}
  */
-async function getGarageSettlementForecast(garageId, dbInstance) {
-  const db = dbInstance || getDb();
-  const earnings = db.collection('garage_earnings');
-  const settlements = db.collection('settlements');
-  const schedules = db.collection('settlement_schedules');
-  const holds = db.collection('settlement_holds');
-  const { resolveGarageIds } = require('../utils/garageResolver');
+async function getGarageSettlementForecast(garageId, dbInstance, injectedRepos) {
+  const repos = injectedRepos || createRepositories(dbInstance);
+  const db = dbInstance || repos.settlements.db;
   const now = new Date();
 
   const garageIds = await resolveGarageIds(garageId, db);
 
   // 1. Available balance in integer paise
-  const availableEarnings = await earnings
-    .find({
-      garageId: { $in: garageIds },
-      status: { $in: ['AVAILABLE', 'REFUND_ADJUSTMENT'] }
-    })
-    .toArray();
+  const availableEarnings = await repos.earnings.findAvailableForGarage(garageIds);
 
   let availablePaise = 0;
   availableEarnings.forEach(e => {
@@ -166,20 +136,7 @@ async function getGarageSettlementForecast(garageId, dbInstance) {
   });
 
   // 2. Pending settlements for this garage
-  const pendingSettlements = await settlements
-    .find({
-      garageId: { $in: garageIds },
-      status: {
-        $in: [
-          SETTLEMENT_STATUS.REQUESTED,
-          SETTLEMENT_STATUS.UNDER_REVIEW,
-          SETTLEMENT_STATUS.APPROVED,
-          SETTLEMENT_STATUS.PROCESSING,
-          SETTLEMENT_STATUS.RETRY_PENDING
-        ]
-      }
-    })
-    .toArray();
+  const pendingSettlements = await repos.settlements.findPendingForGarage(garageIds, SETTLEMENT_STATUS_GROUPS.PENDING);
 
   let pendingPaise = 0;
   pendingSettlements.forEach(s => {
@@ -188,14 +145,7 @@ async function getGarageSettlementForecast(garageId, dbInstance) {
   });
 
   // 3. Historical Settled Average
-  const pastSettled = await settlements
-    .find({
-      garageId: { $in: garageIds },
-      status: { $in: [SETTLEMENT_STATUS.SETTLED, 'COMPLETED'] }
-    })
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .toArray();
+  const pastSettled = await repos.settlements.findPastSettledForGarage(garageIds, 10);
 
   let pastTotalPaise = 0;
   pastSettled.forEach(s => {
@@ -208,8 +158,8 @@ async function getGarageSettlementForecast(garageId, dbInstance) {
     : 0;
 
   // 4. Schedule & Hold info
-  const scheduleDoc = await schedules.findOne({ garageId: { $in: garageIds } });
-  const activeHold = await holds.findOne({ garageId: { $in: garageIds }, active: true });
+  const scheduleDoc = await repos.settlements.findSchedule(garageIds);
+  const activeHold = await repos.settlements.findActiveHold(garageIds);
 
   const estimatedPayoutDate = scheduleDoc?.nextRunAt || new Date(now.getTime() + (24 * 60 * 60 * 1000));
 
